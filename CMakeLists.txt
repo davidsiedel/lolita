@@ -64,14 +64,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
 
 ######################################################################
 ## Package: Intel MKL support
-#find_package(MKL REQUIRED)
-#if (MKL_FOUND)
-#    include_directories(${MKL_INCLUDE_DIRS})
-#    set(INCL_DIRS ${INCL_DIRS} ${MKL_INCLUDE_DIRS})
-#    set(LINK_LIBS ${LINK_LIBS} ${MKL_LIBRARIES})
-#    set(HAVE_INTEL_MKL TRUE)
-#    add_definitions(-DHAVE_INTEL_MKL)
-#endif()
+find_package(MKL REQUIRED)
+if (MKL_FOUND)
+    include_directories(${MKL_INCLUDE_DIRS})
+    set(INCL_DIRS ${INCL_DIRS} ${MKL_INCLUDE_DIRS})
+    set(LINK_LIBS ${LINK_LIBS} ${MKL_LIBRARIES})
+    set(HAVE_INTEL_MKL TRUE)
+    add_definitions(-DHAVE_INTEL_MKL)
+endif()
 
 ######################################################################
 ## Package: Eigen3

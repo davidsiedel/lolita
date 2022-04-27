@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <unordered_map>
 
-#include "lolita/lolita_lolita.hxx"
+#include "lolita/lolita.hxx"
 #include "lolita/lolita_numerics.hxx"
 
 namespace lolita
@@ -644,12 +644,14 @@ namespace lolita
             void
             apply(
                     auto &
-                    fun
+                    fun,
+                    auto &&...
+                    args
             )
             {
-                fun.template operator()<K>();
+                fun.template operator()<K>(args...);
                 if constexpr (K < N - 1) {
-                    apply<K + 1, N>(fun);
+                    apply<K + 1, N>(fun, args...);
                 }
             }
 
@@ -696,40 +698,42 @@ namespace lolita
             detail::apply<T, 0>(fun);
         }
 
-        template<auto N>
-        static constexpr
-        void
-        apply(
-                auto &
-                fun
-        )
-        {
-            detail::apply<0, N>(fun);
-        }
-
-        template<auto N>
+        template<auto N, auto K = 0>
         static constexpr
         void
         apply(
                 auto &
                 fun,
-                auto & col
+                auto &&...
+                args
         )
         {
-            detail::apply<0, N>(fun, col);
+            detail::apply<K, N>(fun, args...);
         }
 
-        template<auto N>
-        static constexpr
-        void
-        apply(
-                auto &
-                fun,
-                auto const & col
-        )
-        {
-            detail::apply<0, N>(fun, col);
-        }
+//        template<auto N>
+//        static constexpr
+//        void
+//        apply(
+//                auto &
+//                fun,
+//                auto & col
+//        )
+//        {
+//            detail::apply<0, N>(fun, col);
+//        }
+//
+//        template<auto N>
+//        static constexpr
+//        void
+//        apply(
+//                auto &
+//                fun,
+//                auto const & col
+//        )
+//        {
+//            detail::apply<0, N>(fun, col);
+//        }
 
         template<typename T, typename U>
         static constexpr
@@ -1032,18 +1036,36 @@ namespace lolita
             auto const static constexpr value = true;
         };
 
+        namespace detail
+        {
+
+            template<typename F, typename Tuple>
+            constexpr
+            decltype(auto)
+            apply(
+                    F &&
+                    f,
+                    Tuple &&
+                    t
+            )
+            {
+                auto const constexpr size = std::remove_cvref_t<Tuple>::size();
+                return detail::apply_impl(std::forward<F>(f), std::forward<Tuple>(t), std::make_index_sequence<size>{});
+            }
+
+        }
+
         template<typename F, typename Tuple>
         constexpr
         decltype(auto)
         apply(
-            F &&
-            f,
-            Tuple &&
-            t
+                F &&
+                f,
+                Tuple &&
+                t
         )
         {
-            auto const constexpr size = std::remove_cvref_t<Tuple>::size();
-            return detail::apply_impl(std::forward<F>(f), std::forward<Tuple>(t), std::make_index_sequence<size>{});
+            detail::apply([&](auto const &... x){(..., f(x));}, t);
         }
 
         template<typename T, typename U>
@@ -1059,7 +1081,8 @@ namespace lolita
                 }
                 count ++;
             };
-            apply([&](auto const &... x){(..., find_index(x));}, T());
+            //apply([&](auto const &... x){(..., find_index(x));}, T());
+            apply(find_index, T());
             return index;
         }
 
@@ -1083,7 +1106,8 @@ namespace lolita
                 }
                 count ++;
             };
-            apply([&](auto const &... x){(..., find_index(x));}, C);
+            //apply([&](auto const &... x){(..., find_index(x));}, C);
+            apply(find_index, C);
             return index;
         }
 
@@ -1098,7 +1122,8 @@ namespace lolita
                     value = true;
                 }
             };
-            apply([&](auto const &... x){(..., find_index(x));}, T());
+            //apply([&](auto const &... x){(..., find_index(x));}, T());
+            apply(find_index, T());
             return value;
         }
 
@@ -1120,7 +1145,8 @@ namespace lolita
                     }
                 }
             };
-            apply([&](auto const &... x){(..., find_index(x));}, C);
+            //apply([&](auto const &... x){(..., find_index(x));}, C);
+            apply(find_index, C);
             return value;
         }
 

@@ -5,12 +5,45 @@
 #ifndef LOLITA_LOLITA_CORE_HXX
 #define LOLITA_LOLITA_CORE_HXX
 
+#include <MGIS/Behaviour/Behaviour.hxx>
+#include <MGIS/Behaviour/Behaviour.h>
+#include <MGIS/Behaviour/MaterialStateManager.h>
+#include <MGIS/Behaviour/MaterialStateManager.hxx>
+#include <MGIS/Behaviour/Integrate.hxx>
+#include <MGIS/Behaviour/Integrate.h>
+
 #include "lolita.hxx"
-#include "lolita_lolita.hxx"
 #include "lolita_matrix.hxx"
+#include "lolita_pointers.hxx"
 
 namespace lolita::core
 {
+
+    enum struct HypothesisType
+    {
+
+        PlaneStrain,
+        PlaneStress,
+        AxySymmetric,
+        Volumetric
+
+    };
+
+    enum struct StrainType
+    {
+
+        LargeStrain,
+        SmallStrain
+
+    };
+
+    enum struct OutputResult
+    {
+
+        BehaviourLawIntegrationFailure,
+        BehaviourLawIntegrationSuccess
+
+    };
 
     enum struct MeshFormatType
     {
@@ -22,9 +55,8 @@ namespace lolita::core
     enum struct LoadType
     {
 
-        Volumetric,
-        Dirichlet,
-        Neumann
+        Natural,
+        Constraint,
 
     };
 
@@ -35,16 +67,6 @@ namespace lolita::core
         AxiSymmetric
 
     };
-
-//    enum struct Body
-//    {
-//
-//        Cell,
-//        Face,
-//        Edge,
-//        Node
-//
-//    };
 
     enum struct Model
     {
@@ -62,7 +84,7 @@ namespace lolita::core
 
     };
 
-    enum struct Basis
+    enum struct BasisName
     {
 
         Monomial,
@@ -70,19 +92,42 @@ namespace lolita::core
 
     };
 
-    struct BasisDescription
+    enum struct MappingOperator
+    {
+
+        Gradient,
+        SymmetricGradient,
+        Divergence,
+        SmallStrain,
+        LargeStrain,
+        Identity,
+
+    };
+
+    enum struct FiniteElementMethod
+    {
+
+        Lagrange,
+        HybridHighOrder
+
+    };
+
+    auto const static constexpr fem_hho = FiniteElementMethod::HybridHighOrder;
+    auto const static constexpr fem_lag = FiniteElementMethod::Lagrange;
+
+    struct Basis
     {
 
         constexpr
-        BasisDescription()
+        Basis()
                 :
                 basis(),
                 ord()
         {}
 
         constexpr
-        BasisDescription(
-                Basis
+        Basis(
+                BasisName
                 basis_arg,
                 Indx
                 order_arg
@@ -95,7 +140,7 @@ namespace lolita::core
         constexpr
         Bool
         operator==(
-                BasisDescription const &
+                Basis const &
                 other
         )
         const = default;
@@ -103,12 +148,12 @@ namespace lolita::core
         constexpr
         Bool
         operator!=(
-                BasisDescription const &
+                Basis const &
                 other
         )
         const = default;
 
-        Basis basis;
+        BasisName basis;
 
         Indx ord;
 
@@ -151,62 +196,6 @@ namespace lolita::core
 
     };
 
-    enum struct MappingOperator
-    {
-
-        Gradient,
-        SymmetricGradient,
-        Divergence,
-        SmallStrain,
-        LargeStrain,
-        Identity,
-
-    };
-
-//    struct Mapping
-//    {
-//
-//        constexpr
-//        Bool
-//        operator==(
-//                Mapping const &
-//                other
-//        )
-//        const = default;
-//
-//        constexpr
-//        Bool
-//        operator!=(
-//                Mapping const &
-//                other
-//        )
-//        const = default;
-//
-//        MappingOperator mapping;
-//
-//        Indx ord;
-//
-//    };
-
-    enum struct FiniteElementMethod
-    {
-
-        Lagrange,
-        HybridHighOrder
-
-    };
-
-    auto const static constexpr fem_hho = FiniteElementMethod::HybridHighOrder;
-    auto const static constexpr fem_lag = FiniteElementMethod::Lagrange;
-
-    template<auto M>
-    struct MeshInteriorDomain
-    {
-
-        MeshInteriorDomain() = default;
-
-    };
-
     struct Domain
     {
 
@@ -241,20 +230,31 @@ namespace lolita::core
         )
         const = default;
 
+        constexpr
+        auto
+        ordIntegration(
+                auto
+                ord_arg
+        )
+        const
+        {
+            return frame == EuclideanFrame::AxiSymmetric ? Indx(2 * ord_arg + 1) : Indx(2 * ord_arg);
+        }
+
         Indx dim;
 
         EuclideanFrame frame;
 
     };
 
-    struct FField
+    struct Field
     {
 
         constexpr
-        FField() = default;
+        Field() = default;
 
         constexpr
-        FField(
+        Field(
                 Indx
                 ord_arg,
                 Indx
@@ -266,19 +266,19 @@ namespace lolita::core
         {}
 
         static constexpr
-        FField
+        auto
         fromMapping(
-                FField const &
+                Field const &
                 field_description_arg,
                 MappingOperator
                 operator_type_arg
         )
         {
             if (isIn(operator_type_arg, MappingOperator::Gradient, MappingOperator::SymmetricGradient)) {
-                return FField(numerics::pow(2, field_description_arg.ord), field_description_arg.dim);
+                return Field(numerics::pow(2, field_description_arg.ord), field_description_arg.dim);
             }
             else if (isIn(operator_type_arg, MappingOperator::LargeStrain, MappingOperator::SmallStrain)) {
-                return FField(numerics::pow(2, field_description_arg.ord), 3);
+                return Field(numerics::pow(2, field_description_arg.ord), 3);
             }
             else {
                 return field_description_arg;
@@ -288,7 +288,7 @@ namespace lolita::core
         constexpr
         Bool
         operator==(
-                FField const &
+                Field const &
                 other
         )
         const = default;
@@ -296,7 +296,7 @@ namespace lolita::core
         constexpr
         Bool
         operator!=(
-                FField const &
+                Field const &
                 other
         )
         const = default;
@@ -451,13 +451,158 @@ namespace lolita::core
 
     using HHO = Discretization<FiniteElementMethod::HybridHighOrder>;
 
+    template<Domain D>
+    struct LoadComponent
+    {
+
+        auto const static constexpr zero = [] (auto const &, auto const &) constexpr { return Real(0); };
+
+        LoadComponent()
+        :
+        function(zero),
+        load_type(LoadType::Natural)
+        {}
+
+        LoadComponent(
+                LoadType
+                load_type_arg
+        )
+        :
+        function(zero),
+        load_type(load_type_arg)
+        {}
+
+        LoadComponent(
+                auto &&
+                function_arg,
+                LoadType
+                load_type_arg
+        )
+        :
+        function(function_arg),
+        load_type(load_type_arg)
+        {}
+
+        auto
+        getImposedValue(
+                auto const &
+                point_arg,
+                auto const &
+                time_arg
+        )
+        const
+        {
+            return function(point_arg, time_arg);
+        }
+
+        std::function<Real(Vector<Real, D.dim> const &, Real const &)> function;
+
+        LoadType load_type;
+
+    };
+
+    template<Domain D>
+    struct LoadL
+    {
+
+        LoadL(
+                auto &&
+                felabel_arg,
+                auto &&
+                label_arg,
+                auto
+                i_arg,
+                auto
+                j_arg,
+                auto &&
+                fun
+        )
+        :
+        fe_label(felabel_arg),
+        label(label_arg),
+        components(i_arg, j_arg),
+        load(SharedPointer<LoadComponent<D>>(fun))
+        {}
+
+        Strg label;
+
+        Char fe_label;
+
+        Pair<Indx> components;
+
+        SharedPointer<LoadComponent<D>> load;
+
+    };
+
+    template<Domain D, auto F>
+    static constexpr
+    auto
+    field()
+    {
+        return Field(F.ord_field, D.dim);
+    }
+
+//    template<Domain D, auto F>
+//    struct Load : public Array<LoadComponent<D>, field<D, F>().rows(), field<D, F>().cols()>
+//    {
+//
+//        using Base = Array<LoadComponent<D>, field<D, F>().rows(), field<D, F>().cols()>;
+//
+//        auto const static constexpr finite_element = F;
+//
+//        Load()
+////        :
+////        Base(setDefault())
+//        {}
+//
+//        Load(
+//                auto &&
+//                label_arg,
+//                auto &&...
+//                load_component_args
+//        )
+//        requires(sizeof...(load_component_args) == Base::size())
+//        :
+//        Base{load_component_args...},
+//        label(label_arg)
+//        {}
+//
+////        static
+////        auto
+////        setDefault()
+////        {
+////            auto base = Array<SharedPointer<LoadComponent<D>>, field<D, F>().rows(), field<D, F>().cols()>();
+////            for (int i = 0; i < field<D, F>().rows(); ++i) {
+////                for (int j = 0; j < field<D, F>().cols(); ++j) {
+////                    base.get(i, j) = SharedPointer<LoadComponent<D>>(LoadComponent<D>());
+////                }
+////            }
+////            return base;
+////        }
+//
+//        Strg label;
+//
+//    };
+
+//    template<Domain D, auto... F>
+//    struct MixedElementLoads : public Collection<Load<D, F>...>
+//    {
+//
+//    };
+//
+//    template<Domain D, auto... M>
+//    struct CoupledElementLoads : public Collection<Load<D, F>...>
+//    {
+//
+//    };
+
     template<FiniteElementMethod Fem, typename... OperatorType>
     struct FiniteElement
     {
 
         auto const static constexpr method = Fem;
 
-        static_assert(areSame<MappingOperator, OperatorType...>() && sizeof...(OperatorType) > 0);
+        static_assert(IsSameAs<MappingOperator, OperatorType...> && sizeof...(OperatorType) > 0);
 
         constexpr
         FiniteElement(
@@ -571,12 +716,12 @@ namespace lolita::core
         const
         {
             auto res = Indx(0);
-            auto find_index = [& res](auto const & x) constexpr mutable {
+            auto set_ord_integration = [& res](auto const & x) constexpr mutable {
                 for (int i = 0; i < x.mappings.size(); ++i) {
                     res = numerics::max(res, x.discretization.ordMapping(x.mappings.get(i)));
                 }
             };
-            aggregate::apply([&](auto const &... x){(..., find_index(x));}, * this);
+            aggregate::apply(set_ord_integration, * this);
             return res;
         }
 
@@ -639,13 +784,13 @@ namespace lolita::core
         )
         const = default;
 
-//        constexpr
-//        auto
-//        ordIntegration()
-//        const
-//        {
-//            return numerics::max(M.ordIntegration()...);
-//        }
+        constexpr
+        auto
+        ordIntegration()
+        const
+        {
+            return numerics::max(M.ordIntegration()...);
+        }
 
         constexpr
         auto
@@ -661,6 +806,112 @@ namespace lolita::core
         QuadratureRule quadrature_rule;
 
         // un point de gauss, plusiuers lois de comportment
+
+    };
+
+    struct Behaviour
+    {
+
+        using BehaviourPointer = SharedPointer<mgis::behaviour::Behaviour>;
+
+        Behaviour()
+        :
+        ptr_behaviour(),
+        strain_type(StrainType::SmallStrain)
+        {}
+
+        Behaviour(
+                Strg const &
+                path,
+                Strg const &
+                name,
+                HypothesisType const &
+                hypothesis_type,
+                StrainType const &
+                strain_type_arg = StrainType::SmallStrain
+        )
+        :
+        strain_type(strain_type_arg),
+        ptr_behaviour(
+        getMgisBehaviour(
+                path,
+                name,
+                hypothesis_type,
+                strain_type_arg
+        )
+        )
+        {}
+
+    private:
+
+        inline static
+        mgis::behaviour::Hypothesis
+        getMgisHypothesis(
+                HypothesisType
+                hypothesis_type_arg
+        )
+        {
+            mgis::behaviour::Hypothesis hypothesis;
+            switch (hypothesis_type_arg) {
+                case HypothesisType::PlaneStrain:
+                    hypothesis = mgis::behaviour::Hypothesis::PLANESTRAIN;
+                    break;
+                case HypothesisType::PlaneStress:
+                    hypothesis = mgis::behaviour::Hypothesis::PLANESTRESS;
+                    break;
+                case HypothesisType::AxySymmetric:
+                    hypothesis = mgis::behaviour::Hypothesis::AXISYMMETRICAL;
+                    break;
+                case HypothesisType::Volumetric:
+                    hypothesis = mgis::behaviour::Hypothesis::TRIDIMENSIONAL;
+                    break;
+                default:
+                    assert(false);
+            }
+            return hypothesis;
+        }
+
+        static inline
+        BehaviourPointer
+        getMgisBehaviour(
+                Strg const &
+                path_arg,
+                Strg const &
+                name_arg,
+                HypothesisType
+                hypothesis_type_arg,
+                StrainType
+                strain_type_arg
+        )
+        {
+            BehaviourPointer a;
+            mgis::behaviour::Hypothesis hyp = getMgisHypothesis(hypothesis_type_arg);
+            if (strain_type_arg == StrainType::SmallStrain) {
+                a = BehaviourPointer(mgis::behaviour::load(path_arg, name_arg, hyp));
+                return a;
+            }
+            else {
+                mgis::behaviour::FiniteStrainBehaviourOptions opt;
+                opt.stress_measure = mgis::behaviour::FiniteStrainBehaviourOptions::PK1;
+                opt.tangent_operator = mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF;
+                a = BehaviourPointer(mgis::behaviour::load(opt, path_arg, name_arg, hyp));
+                return a;
+            }
+        }
+
+    public:
+
+        BehaviourPointer ptr_behaviour;
+
+        StrainType strain_type;
+
+    };
+
+    template<auto M>
+    struct MeshInteriorDomain
+    {
+
+        MeshInteriorDomain() = default;
 
     };
 
@@ -687,618 +938,6 @@ namespace lolita::core
 
 
     };
-
-    namespace detail
-    {
-
-        template<FiniteElementMethod, auto>
-        struct FiniteElementDescriptionPolicy;
-
-        template<auto discrete_field_arg>
-        struct FiniteElementDescriptionPolicy<FiniteElementMethod::HybridHighOrder, discrete_field_arg>
-        {
-
-            using DiscreteField = std::remove_cvref_t<decltype(discrete_field_arg)>;
-
-        private:
-
-            auto const static constexpr num_mappings = discrete_field_arg.mappings.size();
-
-        public:
-
-            constexpr
-            FiniteElementDescriptionPolicy(
-                    Model
-                    model_arg,
-                    Indx
-                    cell_order_arg,
-                    Indx
-                    face_order_arg,
-                    auto...
-                    mapping_order_args
-            )
-            :
-                    cell_order(cell_order_arg),
-                    face_order(face_order_arg),
-                    discrete_field(setDiscreteField(Array<Indx, num_mappings>{static_cast<Indx>(mapping_order_args)...}))
-            {
-                static_assert(sizeof...(mapping_order_args) == num_mappings);
-            }
-
-            constexpr
-            FiniteElementDescriptionPolicy(
-                    Model &&
-                    model_arg,
-                    Indx &&
-                    cell_order_arg,
-                    Indx &&
-                    face_order_arg
-            )
-            :
-                    cell_order(cell_order_arg),
-                    face_order(face_order_arg),
-                    discrete_field(setDiscreteField(cell_order_arg, face_order_arg))
-            {}
-
-//            constexpr bool operator==(FiniteElementPolicy const &) const = default;
-//
-//            constexpr bool operator!=(FiniteElementPolicy const &) const = default;
-
-            constexpr
-            Bool
-            operator==(
-                    FiniteElementDescriptionPolicy const &
-                    other
-            )
-            const
-            {
-                auto eq_0 = cell_order == other.cell_order;
-                auto eq_1 = face_order == other.face_order;
-                auto eq_2 = discrete_field == other.discrete_field;
-                return eq_0 && eq_1 && eq_2;
-            }
-
-            constexpr
-            Bool
-            operator!=(
-                    FiniteElementDescriptionPolicy const &
-                    other
-            )
-            const
-            {
-                return !(other == * this);
-            }
-
-            constexpr
-            auto
-            getIntegrationOrder()
-            const
-            {
-                auto val = Indx(0);
-                for (int i = 0; i < num_mappings; ++i) {
-                    auto const & mapping_description = discrete_field.mappings.get(i);
-                    if (mapping_description.ord_mapping > val) {
-                        val = mapping_description.ord_mapping;
-                    }
-                }
-                return val;
-            }
-
-        private:
-
-            static constexpr
-            auto
-            setDiscreteField(
-                    auto const &
-                    mapping_order_array_arg
-            )
-            {
-                auto other = discrete_field_arg;
-                for (int i = 0; i < num_mappings; ++i) {
-                    other.mappings.get(i).ord_mapping = mapping_order_array_arg.get(i);
-                }
-                return other;
-            }
-
-            static constexpr
-            auto
-            setDiscreteField(
-                    Indx
-                    cell_order_arg,
-                    Indx
-                    face_order_arg
-            )
-            {
-                auto other = discrete_field_arg;
-                for (int i = 0; i < num_mappings; ++i) {
-                    auto & mapping_description = other.mappings.get(i);
-                    if (mapping_description.mapping == MappingOperator::Identity) {
-                        mapping_description.ord_mapping = cell_order_arg;
-                    } else {
-                        mapping_description.ord_mapping = face_order_arg;
-                    }
-                }
-                return other;
-            }
-
-        public:
-
-            Indx cell_order;
-
-            Indx face_order;
-
-            DiscreteField discrete_field;
-
-        };
-
-    }
-
-    template<auto discrete_field_arg>
-    using FiniteElementDescription = detail::FiniteElementDescriptionPolicy<discrete_field_arg.finite_element_method, discrete_field_arg>;
-
-//    auto const static constexpr fld_scalar = Field::Scalar;
-//    auto const static constexpr fld_vector = Field::Vector;
-
-//    struct TensorDescription
-//    {
-//
-//        constexpr
-//        TensorDescription()
-//        :
-//        rows(-1),
-//        cols(-1),
-//        size(-1),
-//        storage_option(matrix::StorageOption::RowMajor)
-//        {}
-//
-//        constexpr explicit
-//        TensorDescription(
-//                Intg
-//                rows_arg,
-//                matrix::StorageOption
-//                storage_option_arg = matrix::StorageOption::RowMajor
-//        )
-//        :
-//        rows(rows_arg),
-//        cols(1),
-//        size(rows_arg),
-//        storage_option(storage_option_arg)
-//        {
-//            assert(rows_arg >= -1);
-//        }
-//
-//        constexpr
-//        TensorDescription(
-//                Intg
-//                rows_arg,
-//                Intg
-//                cols_arg,
-//                matrix::StorageOption
-//                storage_option_arg = matrix::StorageOption::RowMajor
-//        )
-//        :
-//        rows(rows_arg),
-//        cols(cols_arg),
-//        size(rows_arg * cols_arg),
-//        storage_option(storage_option_arg)
-//        {
-//            assert(rows_arg >= -1);
-//            assert(cols_arg >= -1);
-//        }
-//
-//        constexpr
-//        Bool
-//        operator==(
-//                TensorDescription const &
-//                other
-//        )
-//        const = default;
-//
-//        constexpr
-//        Bool
-//        operator!=(
-//                TensorDescription const &
-//                other
-//        )
-//        const = default;
-//
-//        Intg rows;
-//
-//        Intg cols;
-//
-//        Intg size;
-//
-//        matrix::StorageOption storage_option;
-//
-//    };
-
-//    struct FieldDescription
-//    {
-//
-//        constexpr
-//        FieldDescription()
-//        :
-//        field(Field::Scalar),
-//        dim_field(0),
-//        tensor_description()
-//        {}
-//
-//        constexpr inline
-//        FieldDescription(
-//                Field
-//                field_arg,
-//                Indx
-//                dim_field_arg
-//        )
-//        :
-//        field(field_arg),
-//        dim_field(dim_field_arg),
-//        tensor_description(setTensorDescription(field_arg, dim_field_arg))
-//        {}
-//
-//        constexpr
-//        Bool
-//        operator==(
-//                FieldDescription const &
-//                other
-//        )
-//        const
-//        {
-//            auto eq_0 = field == other.field;
-//            auto eq_1 = dim_field == other.dim_field;
-//            auto eq_2 = tensor_description == other.tensor_description;
-//            return eq_0 && eq_1 && eq_2;
-//        }
-//
-//        constexpr
-//        Bool
-//        operator!=(
-//                FieldDescription const &
-//                other
-//        )
-//        const
-//        {
-//            return !(other == * this);
-//        }
-//
-//    private:
-//
-//        static constexpr inline
-//        TensorDescription
-//        setTensorDescription(
-//                Field
-//                field_arg,
-//                Indx
-//                dim_field_arg
-//        )
-//        {
-//            if (field_arg == Field::Scalar) {
-//                return TensorDescription(1);
-//            }
-//            else if (field_arg == Field::Vector) {
-//                return TensorDescription(dim_field_arg);
-//            }
-//            else if (field_arg == Field::Tensor) {
-//                return TensorDescription(dim_field_arg, dim_field_arg);
-//            }
-//            else {
-//                return TensorDescription();
-//            }
-//        }
-//
-//    public:
-//
-//        static constexpr inline
-//        FieldDescription
-//        fromMapping(
-//                FieldDescription const &
-//                field_description_arg,
-//                Mapping
-//                operator_type_arg
-//        )
-//        {
-//            if (operator_type_arg == Mapping::Gradient || operator_type_arg == Mapping::SymmetricGradient) {
-//                if (field_description_arg.field == Field::Scalar) {
-//                    return FieldDescription(Field::Vector, field_description_arg.dim_field);
-//                }
-//                else if (field_description_arg.field == Field::Vector) {
-//                    return FieldDescription(Field::Tensor, field_description_arg.dim_field);
-//                }
-//                else {
-//                    assert(false);
-//                }
-//            }
-//            else if (operator_type_arg == Mapping::LargeStrain || operator_type_arg == Mapping::SmallStrain) {
-//                if (field_description_arg.field == Field::Scalar) {
-//                    return FieldDescription(Field::Vector, 3);
-//                }
-//                else if (field_description_arg.field == Field::Vector) {
-//                    return FieldDescription(Field::Tensor, 3);
-//                }
-//                else {
-//                    assert(false);
-//                }
-//            }
-//            else {
-//                return field_description_arg;
-//            }
-//        }
-//
-//        Field field;
-//
-//        Indx dim_field;
-//
-//        TensorDescription tensor_description;
-//
-//    };
-//
-//
-//    namespace detail
-//    {
-//
-//        template<FiniteElementMethod, auto>
-//        struct FiniteElementDescriptionPolicy;
-//
-//        template<auto discrete_field_arg>
-//        struct FiniteElementDescriptionPolicy<FiniteElementMethod::HybridHighOrder, discrete_field_arg>
-//        {
-//
-//            using DiscreteField = std::remove_cvref_t<decltype(discrete_field_arg)>;
-//
-//        private:
-//
-//            auto const static constexpr num_mappings = discrete_field_arg.mappings.size();
-//
-//        public:
-//
-//            constexpr
-//            FiniteElementDescriptionPolicy(
-//                    elt::Model &&
-//                    model_arg,
-//                    Indx &&
-//                    cell_order_arg,
-//                    Indx &&
-//                    face_order_arg,
-//                    auto &&...
-//                    mapping_order_args
-//            )
-//            :
-//                    cell_order(cell_order_arg),
-//                    face_order(face_order_arg),
-//                    discrete_field(setDiscreteField(Array<Indx, num_mappings>{static_cast<Indx>(mapping_order_args)...}))
-//            {
-//                static_assert(sizeof...(mapping_order_args) == num_mappings);
-//            }
-//
-//            constexpr
-//            FiniteElementDescriptionPolicy(
-//                    elt::Model &&
-//                    model_arg,
-//                    Indx &&
-//                    cell_order_arg,
-//                    Indx &&
-//                    face_order_arg
-//            )
-//            :
-//                    cell_order(cell_order_arg),
-//                    face_order(face_order_arg),
-//                    discrete_field(setDiscreteField(cell_order_arg, face_order_arg))
-//            {}
-//
-////            constexpr bool operator==(FiniteElementPolicy const &) const = default;
-////
-////            constexpr bool operator!=(FiniteElementPolicy const &) const = default;
-//
-//            constexpr
-//            Bool
-//            operator==(
-//                    FiniteElementDescriptionPolicy const &
-//                    other
-//            )
-//            const
-//            {
-//                auto eq_0 = cell_order == other.cell_order;
-//                auto eq_1 = face_order == other.face_order;
-//                auto eq_2 = discrete_field == other.discrete_field;
-//                return eq_0 && eq_1 && eq_2;
-//            }
-//
-//            constexpr
-//            Bool
-//            operator!=(
-//                    FiniteElementDescriptionPolicy const &
-//                    other
-//            )
-//            const
-//            {
-//                return !(other == * this);
-//            }
-//
-//            constexpr
-//            auto
-//            getIntegrationOrder()
-//            const
-//            {
-//                auto val = Indx(0);
-//                for (int i = 0; i < num_mappings; ++i) {
-//                    auto const & mapping_description = discrete_field.mappings.get(i);
-//                    if (mapping_description.ord_mapping > val) {
-//                        val = mapping_description.ord_mapping;
-//                    }
-//                }
-//                return val;
-//            }
-//
-//        private:
-//
-//            static constexpr
-//            auto
-//            setDiscreteField(
-//                    auto const &
-//                    mapping_order_array_arg
-//            )
-//            {
-//                auto other = discrete_field_arg;
-//                for (int i = 0; i < num_mappings; ++i) {
-//                    other.mappings.get(i).ord_mapping = mapping_order_array_arg.get(i);
-//                }
-//                return other;
-//            }
-//
-//            static constexpr
-//            auto
-//            setDiscreteField(
-//                    Indx
-//                    cell_order_arg,
-//                    Indx
-//                    face_order_arg
-//            )
-//            {
-//                auto other = discrete_field_arg;
-//                for (int i = 0; i < num_mappings; ++i) {
-//                    auto & mapping_description = other.mappings.get(i);
-//                    if (mapping_description.mapping == Mapping::Identity) {
-//                        mapping_description.ord_mapping = cell_order_arg;
-//                    } else {
-//                        mapping_description.ord_mapping = face_order_arg;
-//                    }
-//                }
-//                return other;
-//            }
-//
-//        public:
-//
-//            Indx cell_order;
-//
-//            Indx face_order;
-//
-//            DiscreteField discrete_field;
-//
-//        };
-//
-//    }
-//
-//    template<auto discrete_field_arg>
-//    using FiniteElementDescription = detail::FiniteElementDescriptionPolicy<discrete_field_arg.finite_element_method, discrete_field_arg>;
-//
-//    template<auto... finite_element_args>
-//    struct MixedElementDescription : public Aggregate<std::remove_cvref_t<decltype(finite_element_args)>...>
-//    {
-//
-//        template<template<auto> typename T>
-//        using Elements = Collection<T<finite_element_args>...>;
-//
-//    private:
-//
-//        using FiniteElementAggregate = Aggregate<std::remove_cvref_t<decltype(finite_element_args)>...>;
-//
-//    public:
-//
-////        auto const static constexpr finite_elements = FiniteElementAggregate{finite_element_args...};
-//
-//        constexpr
-//        MixedElementDescription(
-//                elt::Model &&
-//                model_arg,
-//                Indx &&
-//                dim_euclidean_arg,
-//                EuclideanFrame &&
-//                frame_type_arg,
-//                Quadrature &&
-//                quadrature_type_arg
-//        )
-//        :
-//        FiniteElementAggregate({finite_element_args...}),
-//        model(model_arg),
-//        dim_euclidean(dim_euclidean_arg),
-//        frame_type(frame_type_arg),
-//        quadrature_description(quadrature_type_arg, setIntegrationOrder(frame_type_arg))
-//        {}
-//
-//        constexpr
-//        Bool
-//        operator==(
-//                MixedElementDescription const &
-//                other
-//        )
-//        const
-//        {
-//            auto eq_0 = model == other.model;
-//            auto eq_1 = dim_euclidean == other.dim_euclidean;
-//            auto eq_2 = frame_type == other.frame_type;
-//            auto eq_3 = quadrature_description == other.quadrature_description;
-//            return eq_0 && eq_1 && eq_2 && eq_3;
-//        }
-//
-//        constexpr
-//        Bool
-//        operator!=(
-//                MixedElementDescription const &
-//                other
-//        )
-//        const
-//        {
-//            return !(other == * this);
-//        }
-//
-//        static constexpr
-//        auto
-//        setIntegrationOrder(
-//                EuclideanFrame const &
-//                frame_arg
-//        )
-//        {
-//            auto val = max(finite_element_args.getIntegrationOrder()...);
-//            if (frame_arg == EuclideanFrame::AxiSymmetric) {
-//                val += 1;
-//            }
-//            return val;
-//        }
-//
-//
-//        QuadratureDescription quadrature_description;
-//
-//        Indx dim_euclidean;
-//
-//        EuclideanFrame frame_type;
-//
-//        elt::Model model;
-//
-//        // une loi de comportement
-//
-//    };
-//
-//    template<auto... A>
-//    struct CoupledElement
-//    {
-//
-//        // un point de gauss, plusiuers lois de comportment
-//
-//    };
-//
-//    template<auto A>
-//    struct MeshInteriorDomain
-//    {
-//
-//
-//
-//    };
-//
-//    template<typename T>
-//    struct DDomain
-//    {
-//
-//        //
-//
-//    };
-//
-//    template<auto... A>
-//    struct Mesh
-//    {
-//
-//
-//
-//    };
 
 }
 

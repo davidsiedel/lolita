@@ -71,26 +71,90 @@ namespace lolita
      */
     using FileStream = std::ifstream;
 
-//    template<typename T, auto... A>
-//    struct Array;
-//
-//    template<typename...T>
-//    struct Collection;
-//
-//    template<typename...T>
-//    struct Aggregate;
-//
-//    template<typename K, typename T>
-//    struct UnorderedMap;
-//
-//    template<typename T>
-//    struct SharedPointer;
-//
-//    template<typename T>
-//    struct UniquePointer;
-//
-//    template<typename T, auto... A>
-//    struct Matrix;
+    template<typename T>
+    using Raww = std::remove_cvref_t<T>;
+
+    template<typename T, typename... U>
+    concept IsSameAs = std::conjunction_v<std::is_same<T, U>...>;
+
+    template<typename T, typename... U>
+    concept IsContainedIn = std::disjunction_v<std::is_same<T, U>...>;
+
+    template<typename T>
+    concept NaturalType = IsSameAs<Raww<T>, Indx>;
+
+    template<typename T>
+    concept IntegerType = IsSameAs<Raww<T>, Intg, Indx>;
+
+    template<typename T>
+    concept RealType = IsSameAs<Raww<T>, Real, Intg, Indx>;
+
+    template<typename T, typename... U>
+    static constexpr
+    auto
+    areSame(
+            T &&
+            val,
+            U &&...
+            values
+    )
+    {
+        auto res = Bool(true);
+        auto set_res = [& val, & res] (auto && x) constexpr mutable {
+            if (val != static_cast<T>(x)) res = false;
+        };
+        (set_res(std::forward<U>(values)), ...);
+        return res;
+    }
+
+    template<typename T, typename... U>
+    static constexpr
+    auto
+    isIn(
+            T &&
+            val,
+            U &&...
+            values
+    )
+    {
+        auto res = Bool(false);
+        auto set_res = [&] (auto && x) constexpr mutable {
+            if (val == static_cast<T>(x)) res = true;
+        };
+        (set_res(std::forward<U>(values)), ...);
+        return res;
+    }
+
+    template<typename T, typename... U>
+    inline static
+    void
+    print(
+            std::ostream &
+            out,
+            T &&
+            arg,
+            U &&...
+            args
+    )
+    {
+        out << std::forward<T>(arg);
+        ((out << " " << std::forward<U>(args)), ...);
+    }
+
+    template<typename T, typename... U>
+    inline static
+    void
+    print(
+            T &&
+            arg,
+            U &&...
+            args
+    )
+    {
+        std::cout << std::forward<T>(arg);
+        ((std::cout << " " << std::forward<U>(args)), ...);
+        std::cout << std::endl;
+    }
 
 }
 

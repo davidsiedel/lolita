@@ -8,7 +8,6 @@
 #include <fstream>
 
 #include "lolita/lolita.hxx"
-#include "lolita/lolita_lolita.hxx"
 #include "lolita/lolita_containers.hxx"
 
 namespace lolita::file

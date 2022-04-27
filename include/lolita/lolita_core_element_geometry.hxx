@@ -5,7 +5,7 @@
 #ifndef LOLITA_LOLITA_CORE_ELEMENT_GEOMETRY_HXX
 #define LOLITA_LOLITA_CORE_ELEMENT_GEOMETRY_HXX
 
-#include "lolita/lolita_lolita.hxx"
+#include "lolita/lolita.hxx"
 #include "lolita/lolita_containers.hxx"
 #include "lolita/lolita_core.hxx"
 //#include "lolita/lolita_collection.hxx"
@@ -397,40 +397,6 @@ namespace lolita::core::element
                 >
         >;
 
-//        template<template<Element, auto...> typename T>
-//        using Components2 = Collection<
-//                Collection<
-//                        T<pnt_00>,
-//                        T<pnt_00>
-//                >
-//        >;
-//
-//    private:
-//
-//        using Connectivity = Collection<
-//                Collection<Array<Indx, 2, 1>>
-//        >;
-//
-//    public:
-
-//        auto const static constexpr node_connectivity = Connectivity(
-//                Collection(
-//                        Array<Indx, 2, 1>{
-//                                0,
-//                                1
-//                        }
-//                )
-//        );
-
-//        auto const static constexpr node_connectivity = Components<detail::ElementNodeConnectivity>(
-//                Collection(
-//                        Array<Indx, 2, 1>{
-//                                0,
-//                                1
-//                        }
-//                )
-//        );
-
         auto const static constexpr node_connectivity = Components<detail::ElementNodeConnectivity>{
                 {
                     {
@@ -439,14 +405,6 @@ namespace lolita::core::element
                     }
                 }
         };
-
-
-//        auto const static constexpr node_con = Components2<detail::ElementNodeConnectivity>{
-//                {
-//                    {0},
-//                    {1}
-//                }
-//        };
 
         /**
          * @brief
@@ -487,7 +445,7 @@ namespace lolita::core::element
                 derivative_direction
         )
         {
-            assert(0 <= derivative_direction <= 0);
+            assert(derivative_direction == 0);
             auto value = Real(0);
             value += - nodal_field_values(0) * (1.0 / 2.0);
             value += + nodal_field_values(1) * (1.0 / 2.0);
@@ -538,46 +496,6 @@ namespace lolita::core::element
                 >
         >;
 
-//        template<template<Element, auto...> typename T>
-//        using Components2 = Collection<
-//                Collection<
-//                        T<seg_02>,
-//                        T<seg_02>,
-//                        T<seg_02>
-//                >,
-//                Collection<
-//                        T<pnt_00>,
-//                        T<pnt_00>,
-//                        T<pnt_00>
-//                >
-//        >;
-//
-//    private:
-//
-//        using Connectivity = Collection<
-//                Collection<Array<Indx, 3, 2>>,
-//                Collection<Array<Indx, 3, 1>>
-//        >;
-//
-//    public:
-
-//        auto const static constexpr node_connectivity = Connectivity(
-//                Collection(
-//                        Array<Indx, 3, 2>{
-//                                0, 1,
-//                                1, 2,
-//                                2, 0
-//                        }
-//                ),
-//                Collection(
-//                        Array<Indx, 3, 1>{
-//                                0,
-//                                1,
-//                                2
-//                        }
-//                )
-//        );
-
         auto const static constexpr node_connectivity = Components<detail::ElementNodeConnectivity>{
                 {
                         {
@@ -594,19 +512,6 @@ namespace lolita::core::element
                         }
                 }
         };
-
-//        auto const static constexpr node_con = Components2<detail::ElementNodeConnectivity>{
-//                {
-//                        {0, 1},
-//                        {1, 2},
-//                        {2, 0},
-//                },
-//                {
-//                        {0},
-//                        {1},
-//                        {2},
-//                }
-//        };
 
         /**
          * @brief
@@ -707,50 +612,6 @@ namespace lolita::core::element
                 >
         >;
 
-//        template<template<Element, auto...> typename T>
-//        using Components2 = Collection<
-//                Collection<
-//                        T<seg_02>,
-//                        T<seg_02>,
-//                        T<seg_02>,
-//                        T<seg_02>
-//                >,
-//                Collection<
-//                        T<pnt_00>,
-//                        T<pnt_00>,
-//                        T<pnt_00>,
-//                        T<pnt_00>
-//                >
-//        >;
-//
-//    private:
-//
-//        using Connectivity = Collection<
-//                Collection<Array<Indx, 4, 2>>,
-//                Collection<Array<Indx, 4, 1>>
-//        >;
-//
-//    public:
-
-//        auto const static constexpr node_connectivity = Connectivity(
-//                Collection(
-//                        Array<Indx, 4, 2>{
-//                                0, 1,
-//                                1, 2,
-//                                2, 3,
-//                                3, 0
-//                        }
-//                ),
-//                Collection(
-//                        Array<Indx, 4, 1>{
-//                                0,
-//                                1,
-//                                2,
-//                                3
-//                        }
-//                )
-//        );
-
         auto const static constexpr node_connectivity = Components<detail::ElementNodeConnectivity>{
                 {
                         {
@@ -769,21 +630,6 @@ namespace lolita::core::element
                         }
                 }
         };
-
-//        auto const static constexpr node_con = Components2<detail::ElementNodeConnectivity>{
-//                {
-//                        {0, 1},
-//                        {1, 2},
-//                        {2, 3},
-//                        {3, 0},
-//                },
-//                {
-//                        {0},
-//                        {1},
-//                        {2},
-//                        {3},
-//                }
-//        };
 
         /**
          * @brief
@@ -890,69 +736,6 @@ namespace lolita::core::element
                 >
         >;
 
-//        template<template<Element, auto...> typename T>
-//        using Components2 = Collection<
-//                Collection<
-//                        T<tri_03>,
-//                        T<tri_03>,
-//                        T<tri_03>,
-//                        T<tri_03>
-//                >,
-//                Collection<
-//                        T<seg_02>,
-//                        T<seg_02>,
-//                        T<seg_02>,
-//                        T<seg_02>,
-//                        T<seg_02>,
-//                        T<seg_02>
-//                >,
-//                Collection<
-//                        T<pnt_00>,
-//                        T<pnt_00>,
-//                        T<pnt_00>,
-//                        T<pnt_00>
-//                >
-//        >;
-//
-//    private:
-//
-//        using Connectivity = Collection<
-//                Collection<Array<Indx, 4, 3>>,
-//                Collection<Array<Indx, 6, 2>>,
-//                Collection<Array<Indx, 4, 1>>
-//        >;
-//
-//    public:
-
-//        auto const static constexpr node_connectivity = Connectivity(
-//                Collection(
-//                        Array<Indx, 4, 3>{
-//                                0, 1, 3,
-//                                0, 3, 2,
-//                                0, 2, 1,
-//                                1, 2, 3
-//                        }
-//                ),
-//                Collection(
-//                        Array<Indx, 6, 2>{
-//                                0, 1,
-//                                1, 2,
-//                                2, 0,
-//                                0, 3,
-//                                3, 2,
-//                                1, 3
-//                        }
-//                ),
-//                Collection(
-//                        Array<Indx, 4, 1>{
-//                                0,
-//                                1,
-//                                2,
-//                                3
-//                        }
-//                )
-//        );
-
         auto const static constexpr node_connectivity = Components<detail::ElementNodeConnectivity>{
                 {
                         {
@@ -981,29 +764,6 @@ namespace lolita::core::element
                         }
                 }
         };
-
-//        auto const static constexpr node_con = Components2<detail::ElementNodeConnectivity>{
-//                {
-//                        {0, 1, 3},
-//                        {0, 3, 2},
-//                        {0, 2, 1},
-//                        {1, 2, 3},
-//                },
-//                {
-//                        {0, 1},
-//                        {1, 2},
-//                        {2, 0},
-//                        {0, 3},
-//                        {3, 2},
-//                        {1, 3},
-//                },
-//                {
-//                        {0},
-//                        {1},
-//                        {2},
-//                        {3},
-//                }
-//        };
 
         /**
          * @brief
@@ -1214,7 +974,8 @@ namespace lolita::core::element
     };
 
     template<Element E, Quadrature Q>
-    requires(Segment<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 1)
+//    requires(Segment<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 1)
+    requires(Segment<E>)
     struct ElementQuadrature<E, Q>
     {
 
@@ -1231,95 +992,7 @@ namespace lolita::core::element
     };
 
     template<Element E, Quadrature Q>
-    requires(Segment<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 2)
-    struct ElementQuadrature<E, Q>
-    {
-
-        /**
-         * @brief
-         */
-        auto const static constexpr dim_quadrature = 2;
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_points = Array<Real, dim_quadrature, E.dimPoint()>{
-                -0.5773502691896257,
-                +0.5773502691896257
-        };
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_weights = Array<Real, dim_quadrature>{
-                +1.0000000000000000,
-                +1.0000000000000000
-        };
-
-    };
-
-    template<Element E, Quadrature Q>
-    requires(Segment<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 3)
-    struct ElementQuadrature<E, Q>
-    {
-
-        /**
-         * @brief
-         */
-        auto const static constexpr dim_quadrature = 3;
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_points = Array<Real, dim_quadrature, E.dimPoint()>{
-                -0.7745966692414834,
-                +0.0000000000000000,
-                +0.7745966692414834
-        };
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_weights = Array<Real, dim_quadrature>{
-                +0.5555555555555557,
-                +0.8888888888888888,
-                +0.5555555555555557
-        };
-
-    };
-
-    template<Element E, Quadrature Q>
-    requires(Segment<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 4)
-    struct ElementQuadrature<E, Q>
-    {
-
-        /**
-         * @brief
-         */
-        auto const static constexpr dim_quadrature = 3;
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_points = Array<Real, dim_quadrature, E.dimPoint()>{
-                -0.7745966692414834,
-                +0.0000000000000000,
-                +0.7745966692414834
-        };
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_weights = Array<Real, dim_quadrature>{
-                +0.5555555555555557,
-                +0.8888888888888888,
-                +0.5555555555555557
-        };
-
-    };
-
-    template<Element E, Quadrature Q>
-    requires(Triangle<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 1)
+    requires(Triangle<E>)
     struct ElementQuadrature<E, Q>
     {
 
@@ -1331,94 +1004,6 @@ namespace lolita::core::element
 
         auto const static constexpr reference_weights = Array<Real, dim_quadrature>{
                 +2.0000000000000000
-        };
-
-    };
-
-    template<Element E, Quadrature Q>
-    requires(Triangle<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 2)
-    struct ElementQuadrature<E, Q>
-    {
-
-        /**
-         * @brief
-         */
-        auto const static constexpr dim_quadrature = 2;
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_points = Array<Real, dim_quadrature, E.dimPoint()>{
-                +0.0000000000000000, +0.0000000000000000,
-                +0.0000000000000000, +0.0000000000000000
-        };
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_weights = Array<Real, dim_quadrature>{
-                +1.0000000000000000,
-                +1.0000000000000000
-        };
-
-    };
-
-    template<Element E, Quadrature Q>
-    requires(Triangle<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 3)
-    struct ElementQuadrature<E, Q>
-    {
-
-        /**
-         * @brief
-         */
-        auto const static constexpr dim_quadrature = 3;
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_points = Array<Real, dim_quadrature, E.dimPoint()>{
-                +0.0000000000000000, +0.0000000000000000,
-                +0.0000000000000000, +0.0000000000000000,
-                +0.0000000000000000, +0.0000000000000000,
-        };
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_weights = Array<Real, dim_quadrature>{
-                +0.5555555555555557,
-                +0.8888888888888888,
-                +0.5555555555555557
-        };
-
-    };
-
-    template<Element E, Quadrature Q>
-    requires(Triangle<E> && Q.quadrature == QuadratureRule::Gauss && Q.ord == 4)
-    struct ElementQuadrature<E, Q>
-    {
-
-        /**
-         * @brief
-         */
-        auto const static constexpr dim_quadrature = 3;
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_points = Array<Real, dim_quadrature, E.dimPoint()>{
-                +0.0000000000000000, +0.0000000000000000,
-                +0.0000000000000000, +0.0000000000000000,
-                +0.0000000000000000, +0.0000000000000000,
-        };
-
-        /**
-         * @brief
-         */
-        auto const static constexpr reference_weights = Array<Real, dim_quadrature>{
-                +0.5555555555555557,
-                +0.8888888888888888,
-                +0.5555555555555557
         };
 
     };

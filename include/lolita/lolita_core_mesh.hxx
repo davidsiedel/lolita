@@ -222,7 +222,8 @@ namespace lolita::core::mesh
             auto & nodes = element_collection.template get<0>().template get<0>();
             auto hash = getElementHash<elt::pnt_00>(Array<Indx, 1>{node_tag_arg});
             auto ptr_node = SharedPointer<Element<elt::pnt_00>>(Element<elt::pnt_00>());
-            ptr_node.get().coordinates = coordinates_arg;
+            //ptr_node.get().coordinates = coordinates_arg;
+            ptr_node.get().coordinates = SharedPointer<Vector<Real, D.dim>>(coordinates_arg);
             ptr_node.get().tag = nodes.size();
             nodes.data.insert({hash, ptr_node});
         }
@@ -338,6 +339,7 @@ namespace lolita::core::mesh
             if constexpr((I == 0) && (J == 0)) {
                 ptr_element_arg.get().tag = elements.size();
                 ptr_element_arg.get().components = element_components_arg;
+                //ptr_element_arg.get().initialize();
                 elements.data.insert({element_hash, ptr_element_arg});
             }
         }

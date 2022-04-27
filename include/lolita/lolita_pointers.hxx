@@ -91,6 +91,13 @@ namespace lolita
             return * data;
         }
 
+        Bool
+        exists()
+        const
+        {
+            return data != nullptr;
+        }
+
         template<typename U>
         static
         auto
@@ -158,7 +165,7 @@ namespace lolita
                 other
         )
         :
-        data(std::make_unique<T>(other.get()))
+        data(setData(other))
         {}
 
 
@@ -167,7 +174,7 @@ namespace lolita
                 other
         )
         :
-        data(std::move(other.data))
+        data(setData(other))
         {}
 
         UniquePointer &
@@ -176,7 +183,9 @@ namespace lolita
                 other
         )
         {
-            data = std::make_unique<T>(other.get());
+            if (other.data != nullptr) {
+                data = std::make_unique<T>(other.get());
+            }
             return * this;
         }
 
@@ -187,7 +196,9 @@ namespace lolita
         )
         noexcept
         {
-            data = std::move(other.data);
+            if (other.data != nullptr) {
+                data = std::move(other.data);
+            }
             return * this;
         }
 
@@ -216,6 +227,31 @@ namespace lolita
         const
         {
             return * data;
+        }
+
+        Bool
+        exists()
+        const
+        {
+            return data != nullptr;
+        }
+
+        auto
+        setData(
+                UniquePointer const &
+                other
+        )
+        {
+            return other.data == nullptr ? nullptr : std::make_unique<T>(other.get());
+        }
+
+        auto
+        setData(
+                UniquePointer &&
+                other
+        )
+        {
+            return other.data == nullptr ? nullptr : std::move(other.data);
         }
 
         template<typename U>
