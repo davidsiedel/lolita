@@ -38,6 +38,7 @@ TEST(test_lolita, test_lolita_1)
     );
     mgis::behaviour::MaterialDataManager material_data_manager(bhv.ptr_behaviour.get(), 1);
     matrix::MatMap<Vector<Real, 5>>(material_data_manager.s0.gradients.data()) = Vector<Real, 5>::Zero();
+
 //    material_data_manager.s0.gradients = Vector<Real, 5>::Zero();
 //    material_data_manager.s0.set = Vector<Real, 5>::Zero();
 //    print(material_data_manager.s0.gradients);
