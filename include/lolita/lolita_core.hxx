@@ -204,14 +204,14 @@ namespace lolita::core
 
         constexpr
         Domain(
-                Indx
-                dim_arg,
                 EuclideanFrame
-                euclidean_frame_arg
+                euclidean_frame_arg,
+                Indx
+                dim_arg
         )
         :
-        dim(dim_arg),
-        frame(euclidean_frame_arg)
+        frame(euclidean_frame_arg),
+        dim(dim_arg)
         {}
 
         constexpr
@@ -241,9 +241,9 @@ namespace lolita::core
             return frame == EuclideanFrame::AxiSymmetric ? Indx(2 * ord_arg + 1) : Indx(2 * ord_arg);
         }
 
-        Indx dim;
-
         EuclideanFrame frame;
+
+        Indx dim;
 
     };
 
@@ -651,11 +651,7 @@ namespace lolita::core
                 ord_integration_arg = numerics::max(ord_integration_arg, discretization.ordMapping(m));
             };
             std::for_each(mappings.data.begin(), mappings.data.end(), set_ord_integration);
-            ord_integration_arg *= 2;
-            if (domain_arg.frame == EuclideanFrame::AxiSymmetric) {
-                ord_integration_arg += 1;
-            }
-            return ord_integration_arg;
+            return domain_arg.template ordIntegration(ord_integration_arg);
         }
 
         Char tag;
@@ -669,14 +665,58 @@ namespace lolita::core
     };
 
     template<auto... F>
+    struct Elements : public Aggregate<std::remove_cvref_t<decltype(F)>...>
+    {
+
+        template<template<auto, Domain, auto> typename T, auto E, Domain D>
+        using Type = Collection<SharedPointer<T<E, D, F>>...>;
+//        using Type = Collection<UniquePointer<T<E, D, F>>...>;
+//        using Type = Collection<T<E, D, F>...>;
+
+        constexpr
+        Elements()
+        :
+        Aggregate<std::remove_cvref_t<decltype(F)>...>({F...})
+        {}
+
+        constexpr
+        Bool
+        operator==(
+                Elements const &
+                other
+        )
+        const = default;
+
+        constexpr
+        Bool
+        operator!=(
+                Elements const &
+                other
+        )
+        const = default;
+
+        constexpr
+        auto
+        ordIntegration(
+                Domain const &
+                domain_arg
+        )
+        const
+        {
+            return numerics::max(F.ordIntegration(domain_arg)...);
+        }
+
+    };
+
+    template<auto... F>
     struct MixedElement : public Aggregate<std::remove_cvref_t<decltype(F)>...>
     {
 
         template<template<auto> typename T>
         using Elements = Collection<T<F>...>;
 
-        template<template<auto...> typename T, auto E, Domain D, auto M, auto C>
-        using Elements2 = Collection<T<E, D, F, M, C>...>;
+        template<template<auto...> typename T, auto E, Domain D>
+        using Elements2 = Collection<T<E, D, F>...>;
 
     private:
 

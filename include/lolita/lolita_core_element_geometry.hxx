@@ -917,6 +917,22 @@ namespace lolita::core::element
         return collection::index<typename Elements<3, ElementGeometry>::template Type<E.dim>, ElementGeometry<E>>();
     }
 
+    template<Indx I, Indx J>
+    static constexpr
+    auto
+    element()
+    {
+        return Elements<3, ElementGeometry>::template Type<I>::template Type<J>::element;
+    }
+
+    template<Indx I>
+    constexpr inline
+    auto
+    numElements()
+    {
+        return Elements<3, ElementGeometry>::template Type<I>::size();
+    }
+
     template<Element E, Indx I, Indx J>
     constexpr inline
     auto

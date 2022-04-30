@@ -35,7 +35,8 @@ find_package(GTest REQUIRED)
 # Now simply link against gtest or gtest_main as needed. Eg
 add_executable(${PROJECT_NAME}_test
         main.cxx
-        test_lolita.cxx)
+        test_lolita.cxx
+        test_mgis.cxx)
 add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME}_test)
 #target_link_libraries(${PROJECT_NAME}_test
 #        PUBLIC ${PROJECT_NAME} gtest)

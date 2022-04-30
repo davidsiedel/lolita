@@ -106,12 +106,18 @@ namespace lolita::core::element
      * CONN
      */
 
-    template<Element E, Domain D, auto C>
+    template<Element E, Domain D, auto F>
+    struct FiniteElementUnknownMod;
+
+    template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
     struct FiniteElementConnectivity;
 
-    template<Element E, Domain D, auto C>
+    template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
+    struct FiniteElementGeometry;
+
+    template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
     requires(!Point<E>)
-    struct FiniteElementConnectivity<E, D, C> : public ElementGeometry<E>
+    struct FiniteElementConnectivity<E, D, T, A...> : public ElementGeometry<E>
     {
 
     private:
@@ -119,45 +125,130 @@ namespace lolita::core::element
         using Self = FiniteElementConnectivity;
 
         template<Element Eb>
-        using FiniteElementPointer = SharedPointer<FiniteElement<Eb, D, C>>;
+        using FiniteElementPointer = SharedPointer<T<Eb, D, A...>>;
 
     public:
 
+//        template<Element Eb>
+//        struct Component : public FiniteElementPointer<Eb>
+//        {
+//
+//        private:
+//
+//            using Base = FiniteElementPointer<Eb>;
+//
+//        public:
+//
+//            Component()
+//            :
+//            Base(),
+//            orientation()
+//            {}
+//
+//            Component(
+//                    Base const &
+//                    base_arg,
+//                    Intg
+//                    orientation_arg
+//            )
+//            :
+//            Base(base_arg),
+//            orientation(orientation_arg)
+//            {}
+//
+//            Component(
+//                    Base &&
+//                    base_arg,
+//                    Intg
+//                    orientation_arg
+//            )
+//            :
+//            Base(base_arg),
+//            orientation(orientation_arg)
+//            {}
+//
+////            Component(
+////                    typename Base::Type const &
+////                    element_arg,
+////                    Intg
+////                    orientation_arg
+////            )
+////            :
+////            Base(element_arg),
+////            orientation(orientation_arg)
+////            {}
+//
+//            Bool
+//            operator==(
+//                    Component const &
+//                    other
+//            )
+//            const = default;
+//
+//            Bool
+//            operator!=(
+//                    Component const &
+//                    other
+//            )
+//            const = default;
+//
+//            Intg orientation;
+//
+//        };
+
         template<Element Eb>
-        struct Component : public FiniteElementPointer<Eb>
+        struct Neighbour
         {
 
-        private:
+            Neighbour()
+            :
+            ptr()
+            {}
 
-            using Base = Self::FiniteElementPointer<Eb>;
+            Neighbour(
+                    SharedPointer<T<Eb, D, A...>> const &
+                    ptr_arg
+            )
+            :
+            ptr(ptr_arg)
+            {}
 
-        public:
+            Bool
+            operator==(
+                    Neighbour const &
+                    other
+            )
+            const = default;
+
+            Bool
+            operator!=(
+                    Neighbour const &
+                    other
+            )
+            const = default;
+
+            SharedPointer<T<Eb, D, A...>> ptr;
+
+        };
+
+        template<Element Eb>
+        struct Component
+        {
 
             Component()
             :
-            Base(),
+            ptr(),
             orientation()
             {}
 
             Component(
-                    Base const &
-                    base_arg,
+                    SharedPointer<T<Eb, D, A...>> const &
+                    ptr_arg,
                     Intg
                     orientation_arg
             )
             :
-            Base(base_arg),
-            orientation(orientation_arg)
-            {}
-
-            Component(
-                    typename Base::Type const &
-                    element_arg,
-                    Intg
-                    orientation_arg
-            )
-            :
-            Base(element_arg),
+            ptr(ptr_arg),
             orientation(orientation_arg)
             {}
 
@@ -175,17 +266,18 @@ namespace lolita::core::element
             )
             const = default;
 
+            SharedPointer<T<Eb, D, A...>> ptr;
+
             Intg orientation;
 
         };
 
         using Components = ElementComponents<E, Component>;
 
-        using Neighbours = ElementNeighbourArray<E, D.dim, FiniteElementPointer>;
+        using Neighbours = ElementNeighbourArray<E, D.dim, Neighbour>;
 
         FiniteElementConnectivity()
         :
-        tag(),
         components(),
         neighbours()
         {}
@@ -239,7 +331,7 @@ namespace lolita::core::element
             auto current_nodes_coordinates = Matrix<Real, D.dim, E.num_nodes>();
             auto const & nodes = components.template get<E.dim - 1>().template get<0>();
             for (Indx i = 0; i < E.num_nodes; ++i) {
-                current_nodes_coordinates.col(i) = nodes.get(i).get().getCurrentCoordinates();
+                current_nodes_coordinates.col(i) = nodes.get(i).ptr.get().getCurrentCoordinates();
             }
             return current_nodes_coordinates;
         }
@@ -252,48 +344,68 @@ namespace lolita::core::element
             return ReferenceCoordinates(Self::reference_nodes.data.data());
         }
 
-        auto
-        getHash()
-        const
-        {
-            StrgStream ss;
-            auto const & nodes = components.template get<E.dim - 1>().template get<0>();
-            for (Indx i = 0; i < E.num_nodes; ++i) {
-                ss << nodes.get(i).get().getHash();
-            }
-            return ss.str();
-        }
-
-        Indx tag;
-
         Components components;
 
         Neighbours neighbours;
 
     };
 
-    template<Element E, Domain D, auto C>
+    template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
     requires(Point<E>)
-    struct FiniteElementConnectivity<E, D, C> : public ElementGeometry<E>
+    struct FiniteElementConnectivity<E, D, T, A...> : public ElementGeometry<E>
     {
 
     private:
 
         using Self = FiniteElementConnectivity;
 
-        template<Element N>
-        using FiniteElementPointer = SharedPointer<FiniteElement<N, D, C>>;
+        template<Element Eb>
+        using FiniteElementPointer = SharedPointer<T<Eb, D, A...>>;
 
     public:
 
         //using Coordinates = Vector<Real, D.dim>;
         using Coordinates = SharedPointer<Vector<Real, D.dim>>;
 
-        using Neighbours = ElementNeighbourArray<E, D.dim, FiniteElementPointer>;
+        template<Element Eb>
+        struct Neighbour
+        {
+
+            Neighbour()
+                    :
+                    ptr()
+            {}
+
+            Neighbour(
+                    SharedPointer<T<Eb, D, A...>> const &
+                    ptr_arg
+            )
+                    :
+                    ptr(ptr_arg)
+            {}
+
+            Bool
+            operator==(
+                    Neighbour const &
+                    other
+            )
+            const = default;
+
+            Bool
+            operator!=(
+                    Neighbour const &
+                    other
+            )
+            const = default;
+
+            SharedPointer<T<Eb, D, A...>> ptr;
+
+        };
+
+        using Neighbours = ElementNeighbourArray<E, D.dim, Neighbour>;
 
         FiniteElementConnectivity()
         :
-        tag(),
         coordinates(),
         neighbours()
         {}
@@ -341,17 +453,6 @@ namespace lolita::core::element
             return Vector<Real, 1>{0.0};
         }
 
-        auto
-        getHash()
-        const
-        {
-            StrgStream ss;
-            ss << tag + 1;
-            return ss.str();
-        }
-
-        Indx tag;
-
         Coordinates coordinates;
 
         Neighbours neighbours;
@@ -363,17 +464,19 @@ namespace lolita::core::element
      */
 
     template<Element E, Basis B>
-    struct EB;
+    struct FiniteElementBasis;
 
     template<Element E, Basis B>
     requires(B.basis == BasisName::Monomial)
-    struct EB<E, B>
+    struct FiniteElementBasis<E, B>
     {
 
         auto const static constexpr dim_basis = numerics::binomial(E.dim + B.ord, E.dim);
 
-        template<auto D, auto M>
-        struct Implementation : public FiniteElement<E, D, M>
+//        template<typename T>
+//        struct Implementation : public T
+        template<Domain D, template<Element, Domain, auto...> typename T, auto... A>
+        struct Implementation : public FiniteElementGeometry<E, D, T, A...>
         {
 
         private:
@@ -494,26 +597,26 @@ namespace lolita::core::element
     auto
     dimBasis()
     {
-        return EB<E, B>::dim_basis;
+        return FiniteElementBasis<E, B>::dim_basis;
     }
 
     /*
      * BUILD
      */
 
-    template<Element E, Domain D, auto M>
-    struct FiniteElementGeometry : public FiniteElementConnectivity<E, D, M>
+    template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
+    struct FiniteElementGeometry : public FiniteElementConnectivity<E, D, T, A...>
     {
 
     private:
 
-        using Self = element::FiniteElementGeometry<E, D, M>;
+        using Self = element::FiniteElementGeometry<E, D, T, A...>;
 
     public:
 
         FiniteElementGeometry()
         :
-        FiniteElementConnectivity<E, D, M>()
+        FiniteElementConnectivity<E, D, T, A...>()
         {}
 
         template<Basis B>
@@ -524,7 +627,8 @@ namespace lolita::core::element
         )
         const
         {
-            using FiniteElementBasis = typename element::EB<E, B>::template Implementation<D, M>;
+//            using FiniteElementBasis = typename EB<E, B>::template Implementation<FiniteElementGeometry>;
+            using FiniteElementBasis = typename FiniteElementBasis<E, B>::template Implementation<D, T, A...>;
             return static_cast<FiniteElementBasis const *>(this)->evaluate(point_arg);
         }
 
@@ -538,8 +642,8 @@ namespace lolita::core::element
         )
         const
         {
-            //using FiniteElementBasis = typename finite_element::FiniteElementBasis<E, B>::template Implementation<M>;
-            using FiniteElementBasis = typename element::EB<E, B>::template Implementation<D, M>;
+//            using FiniteElementBasis = typename EB<E, B>::template Implementation<FiniteElementGeometry>;
+            using FiniteElementBasis = typename FiniteElementBasis<E, B>::template Implementation<D, T, A...>;
             return static_cast<FiniteElementBasis const *>(this)->evaluate(point_arg, derivative_direction_arg);
         }
 
@@ -728,7 +832,7 @@ namespace lolita::core::element
                 index_arg
         )
         {
-            using ComponentGeometry = FiniteElementGeometry<component<E, I, J>(), D, M>;
+            using ComponentGeometry = FiniteElementGeometry<component<E, I, J>(), D, T, A...>;
             return ComponentGeometry::template getReferenceQuadratureWeight<Q>(index_arg);
         }
 
@@ -743,7 +847,7 @@ namespace lolita::core::element
         )
         {
             auto p = Vector<Real, E.dimPoint()>();
-            using ComponentGeometry = FiniteElementGeometry<component<E, I, J>(), D, M>;
+            using ComponentGeometry = FiniteElementGeometry<component<E, I, J>(), D, T, A...>;
             auto const & cpt_node_tags = ElementGeometry<E>::node_connectivity.template get<I>().template get<J>();
             auto const & elt_reference_nodes = ElementGeometry<E>::reference_nodes;
             for (Indx i = 0; i < E.dimPoint(); ++i) {
@@ -936,12 +1040,10 @@ namespace lolita::core::element
     struct FiniteElementPolicy2;
 
     template<Element E, Domain D, auto F>
-    struct FiniteElementUnknown2 : public FiniteElementGeometry<E, D, F>
+    struct FiniteElementUnknown2
     {
 
         auto const static constexpr field = Field(F.ord_field, D.dim);
-
-        using Module = typename FiniteElementPolicy2<E, D, F>::Module;
 
         static constexpr
         auto
@@ -963,18 +1065,18 @@ namespace lolita::core::element
             using Coefficients = Vector<Real, dimUnknowns()>;
 
             DegreeOfFreedom()
-            requires(StaticMatrixType<Coefficients>)
-                    :
-                    coefficients(Coefficients::Zero()),
-                    index(0)
+//            requires(StaticMatrixType<Coefficients>)
+            :
+            coefficients(),
+            index()
             {}
 
-            DegreeOfFreedom()
-            requires(DynamicMatrixType<Coefficients>)
-                    :
-                    coefficients(Coefficients::Zero(0)),
-                    index(0)
-            {}
+//            DegreeOfFreedom()
+//            requires(DynamicMatrixType<Coefficients>)
+//                    :
+//                    coefficients(Coefficients::Zero(0)),
+//                    index(0)
+//            {}
 
             explicit
             DegreeOfFreedom(
@@ -1011,10 +1113,11 @@ namespace lolita::core::element
 
         FiniteElementUnknown2()
         :
-        FiniteElementGeometry<E, D, F>(),
-        unknowns(setUnknowns()),
+//        FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>(),
+        unknowns(),
         bindings(),
-        loads()
+        loads(),
+        mat()
         {}
 
     private:
@@ -1034,159 +1137,34 @@ namespace lolita::core::element
 
     public:
 
-        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> unknowns;
+//        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> unknowns;
+//
+//        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> bindings;
 
-        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> bindings;
+        Array<DegreeOfFreedom, field.rows(), field.cols()> unknowns;
+
+        Array<DegreeOfFreedom, field.rows(), field.cols()> bindings;
 
         Array<SharedPointer<LoadComponent<D>>, field.rows(), field.cols()> loads;
+
+        SharedPointer<mgis::behaviour::MaterialDataManager> mat;
+
+        Indx itemp;
 
     };
 
     template<Element E, Domain D, auto F>
     requires(Cell<E, D>)
-    struct FiniteElementUnknownMod : public FiniteElementUnknown2<E, D, F>
-    {
-
-    };
-
-    /*
-     * Unknowns
-     */
-
-    template<Element E, Domain D, auto F, auto M, auto C>
-    struct FiniteElementPolicy;
-
-    template<Element E, Domain D, auto F, auto M, auto C>
-    struct FiniteElementBase;
-
-    template<Element E, Domain D, auto F, auto M, auto C>
-    struct FiniteElementUnknown
-    {
-
-        auto const static constexpr mixed_element_index = aggregate::index(C, M);
-
-        auto const static constexpr finite_element_index = aggregate::index(M, F);
-
-        auto const static constexpr field = Field(F.ord_field, D.dim);
-
-        static constexpr
-        auto
-        dimUnknowns()
-        {
-            return numerics::max(-1, FiniteElementPolicy<E, D, F, M, C>::dimUnknowns());
-        }
-
-        static constexpr
-        auto
-        numUnknowns()
-        {
-            return numerics::max(-1, dimUnknowns() * field.size());
-        }
-
-        static
-        auto
-        fetch(
-                auto &
-                finite_element_arg
-        )
-        {
-            return finite_element_arg.template get<mixed_element_index>().template get<finite_element_index>();
-        }
-
-        struct DegreeOfFreedom
-        {
-
-            using Coefficients = Vector<Real, dimUnknowns()>;
-
-            DegreeOfFreedom()
-            requires(StaticMatrixType<Coefficients>)
-            :
-            coefficients(Coefficients::Zero()),
-            index(0)
-            {}
-
-            DegreeOfFreedom()
-            requires(DynamicMatrixType<Coefficients>)
-            :
-            coefficients(Coefficients::Zero(0)),
-            index(0)
-            {}
-
-            explicit
-            DegreeOfFreedom(
-                    RealType auto &
-                    index_arg
-            )
-            requires(StaticMatrixType<Coefficients>)
-            :
-            coefficients(Coefficients::Zero()),
-            index(index_arg)
-            {
-                index_arg += dimUnknowns();
-            }
-
-            DegreeOfFreedom(
-                    RealType auto
-                    size_arg,
-                    RealType auto &
-                    index_arg
-            )
-            requires(DynamicMatrixType<Coefficients>)
-            :
-            coefficients(Coefficients::Zero(size_arg)),
-            index(index_arg)
-            {
-                index_arg += size_arg;
-            }
-
-            Coefficients coefficients;
-
-            Indx index;
-
-        };
-
-        FiniteElementUnknown()
-        :
-        unknowns(setUnknowns()),
-        bindings(),
-        loads()
-        {}
-
-    private:
-
-        static
-        auto
-        setUnknowns()
-        {
-            auto dof = Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()>();
-            for (int i = 0; i < field.rows(); ++i) {
-                for (int j = 0; j < field.cols(); ++j) {
-                    dof.get(i, j) = UniquePointer<DegreeOfFreedom>(DegreeOfFreedom());
-                }
-            }
-            return dof;
-        }
-
-    public:
-
-        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> unknowns;
-
-        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> bindings;
-
-        Array<SharedPointer<LoadComponent<D>>, field.rows(), field.cols()> loads;
-
-    };
-
-    template<Element E, Domain D, auto F, auto M, auto C>
-    requires(Cell<E, D>)
-    struct FiniteElementBase<E, D, F, M, C> : public FiniteElementUnknown<E, D, F, M, C>
+    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknown2<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
     {
 
     private:
 
-        using Base = FiniteElementUnknown<E, D, F, M, C>;
+        using Base = FiniteElementUnknown2<E, D, F>;
 
-        using Module = typename FiniteElementPolicy<E, D, F, M, C>::Module;
+        using Base2 = FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>;
+
+        using Module = typename FiniteElementPolicy2<E, D, F>::Module;
 
     public:
 
@@ -1232,113 +1210,154 @@ namespace lolita::core::element
         auto
         colsOperator()
         {
-            return FiniteElementPolicy<E, D, F, M, C>::colsOperator();
+            return FiniteElementPolicy2<E, D, F>::colsOperator();
         }
 
-        auto const static constexpr quadrature = Quadrature(C.quadrature_rule, D.ordIntegration(C.ordIntegration()));
+        auto const static constexpr quadrature = Quadrature(QuadratureRule::Gauss, 1);
 
         using Operators = Array<Matrix<Real, rowsOperator(), colsOperator()>, dimQuadrature<E, quadrature>()>;
 
-//        FiniteElementBase()
-//        :
-//        Base()
-//        {}
+        FiniteElementUnknownMod()
+        :
+        Base(),
+        Base2()
+        {}
 
         Operators operators;
 
         Module module;
 
         void
-        getGrads(
-                auto const &
-                finite_element_arg
-        )
+        getGrads()
+        const
         {
-            using Implementation = typename FiniteElementPolicy<E, D, F, M, C>::Implementation;
-            auto res = static_cast<Implementation *>(this)->getGradients(finite_element_arg, 0);
+            using Implementation = typename FiniteElementPolicy2<E, D, F>::Implementation;
+            auto res = static_cast<Implementation const *>(this)->getGradients(0);
             print("res");
             print(res);
-            auto extf = static_cast<Implementation *>(this)->getExternalForces(finite_element_arg, 0);
+            auto extf = static_cast<Implementation const *>(this)->getExternalForces(0);
             print("extf");
             print(extf);
         }
 
         void
-        initialize(
-                auto &
-                finite_element_arg
-        )
+        initialize()
         {
-            using Implementation = typename FiniteElementPolicy<E, D, F, M, C>::Implementation;
-            static_cast<Implementation *>(this)->setModule(finite_element_arg);
+            using Implementation = typename FiniteElementPolicy2<E, D, F>::Implementation;
+            static_cast<Implementation *>(this)->setModule();
             auto set_num_components = [&] <auto I> ()
-            mutable
+                    mutable
             {
-                static_cast<Implementation *>(this)->template setOperator<F.mappings.get(I), I>(finite_element_arg);
+                static_cast<Implementation *>(this)->template setOperator<F.mappings.get(I), I>();
             };
             collection::apply<F.mappings.size()>(set_num_components);
         }
 
     };
 
-    template<Element E, Domain D, auto F, auto M, auto C>
+    template<Element E, Domain D, auto F>
     requires(Face<E, D>)
-    struct FiniteElementBase<E, D, F, M, C> : public FiniteElementUnknown<E, D, F, M, C>
+    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknown2<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
     {
 
+    private:
+
+        using Base = FiniteElementUnknown2<E, D, F>;
+
+        using Base2 = FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>;
+
+        using Module = typename FiniteElementPolicy2<E, D, F>::Module;
+
+    public:
+
+        FiniteElementUnknownMod()
+                :
+                Base(),
+                Base2()
+        {}
+
         void
-        initialize(
-                auto &
-                finite_element_arg
-        )
+        initialize()
         {
 
         }
 
     };
 
-    template<Element E, Domain D, auto F, auto M, auto C>
+    template<Element E, Domain D, auto F>
     requires(Edge<E, D>)
-    struct FiniteElementBase<E, D, F, M, C> : public FiniteElementUnknown<E, D, F, M, C>
+    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknown2<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
     {
 
+    private:
+
+        using Base = FiniteElementUnknown2<E, D, F>;
+
+        using Base2 = FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>;
+
+        using Module = typename FiniteElementPolicy2<E, D, F>::Module;
+
+    public:
+
+        FiniteElementUnknownMod()
+                :
+                Base(),
+                Base2()
+        {}
+
         void
-        initialize(
-                auto &
-                finite_element_arg
-        )
+        initialize()
         {
 
         }
 
     };
 
-    template<Element E, Domain D, auto F, auto M, auto C>
+    template<Element E, Domain D, auto F>
     requires(Node<E, D>)
-    struct FiniteElementBase<E, D, F, M, C> : public FiniteElementUnknown<E, D, F, M, C>
+    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknown2<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
     {
 
+    private:
+
+        using Base = FiniteElementUnknown2<E, D, F>;
+
+        using Base2 = FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>;
+
+        using Module = typename FiniteElementPolicy2<E, D, F>::Module;
+
+    public:
+
+        FiniteElementUnknownMod()
+                :
+                Base(),
+                Base2()
+        {}
+
         void
-        initialize(
-                auto &
-                finite_element_arg
-        )
+        initialize()
         {
 
         }
 
     };
 
-    template<Element E, Domain D, auto F, auto M, auto C>
-    requires(Cell<E, D> && F.method == fem_hho && M.model == Model::Solid)
-    struct FiniteElementPolicy<E, D, F, M, C>
+    template<Element E, Domain D, auto F>
+    requires(Cell<E, D> && F.method == fem_hho)
+    struct FiniteElementPolicy2<E, D, F>
     {
+
+    private:
+
+        using Base = FiniteElementUnknownMod<E, D, F>;
+
+    public:
 
         static constexpr
         auto
         dimUnknowns()
         {
-            return Intg(EB<E, Basis(BasisName::Monomial, F.discretization.ord_cell)>::dim_basis);
+            return Intg(FiniteElementBasis<E, Basis(BasisName::Monomial, F.discretization.ord_cell)>::dim_basis);
         }
 
         static constexpr
@@ -1347,12 +1366,12 @@ namespace lolita::core::element
         {
             auto in = Intg(0);
             auto set_num_components = [&] <auto K> () constexpr mutable {
-                auto nj = FiniteElementBase<component<E, 0, K>(), D, F, M, C>::numUnknowns();
+                auto nj = FiniteElementUnknownMod<component<E, 0, K>(), D, F>::numUnknowns();
                 auto num_c = numComponents<E, 0, K>();
                 in += num_c * nj;
             };
             collection::apply<numComponents<E, 0>()>(set_num_components);
-            return FiniteElementBase<E, D, F, M, C>::numUnknowns() + in;
+            return FiniteElementUnknownMod<E, D, F>::numUnknowns() + in;
         }
 
         struct Module
@@ -1362,38 +1381,23 @@ namespace lolita::core::element
 
         };
 
-        struct Implementation : public FiniteElementBase<E, D, F, M, C>
+        struct Implementation : public FiniteElementUnknownMod<E, D, F>
         {
 
-        private:
-
-            using Base = FiniteElementBase<E, D, F, M, C>;
-
-        public:
-
             void
-            setModule(
-                    auto &
-                    finite_element_arg
-            )
+            setModule()
             {
                 this->module.stabilization.setOnes();
-                this->module.stabilization(0, 0) = finite_element_arg.tag;
+                this->module.stabilization(0, 0) = 3;
             }
 
             template<MappingOperator Map, auto I>
             void
-            setOperator(
-                    auto &
-                    finite_element_arg
-            );
+            setOperator();
 
             template<MappingOperator Map, auto I>
             void
-            setOperator(
-                    auto &
-                    finite_element_arg
-            )
+            setOperator()
             requires(Map == MappingOperator::Gradient)
             {
                 auto const constexpr ord_max = numerics::max(
@@ -1405,7 +1409,7 @@ namespace lolita::core::element
                  * Defining constants
                  */
                 auto const constexpr ord_qad_grd = D.ordIntegration(ord_max);
-                auto const constexpr qad_grd = Quadrature(C.quadrature_rule, ord_qad_grd);
+                auto const constexpr qad_grd = Quadrature(QuadratureRule::Gauss, ord_qad_grd);
                 auto const constexpr dim_qad_grd = dimQuadrature<E, qad_grd>();
                 auto const constexpr bas_grd = Basis(BasisName::Monomial, F.discretization.ordMapping(Map));
                 auto const constexpr bas_cel = Basis(BasisName::Monomial, F.discretization.ord_cell);
@@ -1416,25 +1420,15 @@ namespace lolita::core::element
                  * LHS
                  */
                 auto get_lhs = [&] ()
-                mutable
+                        mutable
                 {
                     auto lhs = Matrix<Real, dim_bas_grd, dim_bas_grd>().setZero();
                     for (int i = 0; i < dim_qad_grd; ++i) {
-                        auto pt = finite_element_arg.template getReferenceQuadraturePoint<qad_grd>(i);
-                        auto wt = finite_element_arg.template getCurrentQuadratureWeight<qad_grd>(i);
-                        auto vr = finite_element_arg.template getBasisEvaluation<bas_grd>(pt);
+                        auto pt = this->template getReferenceQuadraturePoint<qad_grd>(i);
+                        auto wt = this->template getCurrentQuadratureWeight<qad_grd>(i);
+                        auto vr = this->template getBasisEvaluation<bas_grd>(pt);
                         lhs += wt * vr * vr.transpose();
                     }
-                    //auto mymat1 = Matrix<Real, dim_bas_grd, dim_bas_grd>().setIdentity();
-                    //auto res1 = mymat1.llt().solve(Matrix<Real, dim_bas_grd, dim_bas_grd>::Identity());
-                    //print(mymat1);
-                    //print(res1);
-                    //print("lhs before inv");
-                    //print(lhs);
-                    //Matrix<Real, dim_bas_grd, dim_bas_grd> rhs = Matrix<Real, dim_bas_grd, dim_bas_grd>::Identity();
-                    //Matrix<Real, dim_bas_grd, dim_bas_grd> res = lhs.llt().solve(rhs);
-                    //print("lhs after inv");
-                    //print(res);
                     lhs = lhs.llt().solve(decltype(lhs)::Identity());
                     return lhs;
                 };
@@ -1447,7 +1441,7 @@ namespace lolita::core::element
                         auto
                         j_arg
                 )
-                mutable
+                        mutable
                 {
                     /*
                      * Initializing the RHS part of the gradient operator
@@ -1462,13 +1456,13 @@ namespace lolita::core::element
                             auto
                             j_arg
                     )
-                    mutable
+                            mutable
                     {
                         for (int i = 0; i < dim_qad_grd; ++i) {
-                            auto pc = finite_element_arg.template getReferenceQuadraturePoint<qad_grd>(i);
-                            auto wc = finite_element_arg.template getCurrentQuadratureWeight<qad_grd>(i);
-                            auto vr = finite_element_arg.template getBasisEvaluation<bas_grd>(pc);
-                            auto vc = finite_element_arg.template getBasisDerivative<bas_cel>(pc, j_arg);
+                            auto pc = this->template getReferenceQuadraturePoint<qad_grd>(i);
+                            auto wc = this->template getCurrentQuadratureWeight<qad_grd>(i);
+                            auto vr = this->template getBasisEvaluation<bas_grd>(pc);
+                            auto vc = this->template getBasisDerivative<bas_cel>(pc, j_arg);
                             auto prt = rhs.template block<dim_bas_grd, dim_bas_cel>(0, dim_bas_cel * i_arg);
                             prt += wc * vr * vc.transpose();
                         }
@@ -1477,11 +1471,11 @@ namespace lolita::core::element
                      * Defining the face offset
                      */
                     auto get_faces_offset = [] <auto N> ()
-                    constexpr
+                            constexpr
                     {
-                        auto in = FiniteElementBase<E, D, F, M, C>::numUnknowns();
+                        auto in = FiniteElementUnknownMod<E, D, F>::numUnknowns();
                         auto set_num_components = [&] <auto K> () constexpr mutable {
-                            auto nj = FiniteElementBase<component<E, 0, K - 1>(), D, F, M, C>::numUnknowns();
+                            auto nj = FiniteElementUnknownMod<component<E, 0, K - 1>(), D, F>::numUnknowns();
                             auto num_c = numComponents<E, 0, K - 1>();
                             in += num_c * nj;
                         };
@@ -1499,18 +1493,18 @@ namespace lolita::core::element
                             auto
                             num_f
                     )
-                    mutable
+                            mutable
                     {
                         auto const constexpr dim_bas_fce = dimBasis<component<E, 0, K>(), bas_fce>();
-                        auto const & face = finite_element_arg.template getComponentPointer<0, K>(num_f).get();
-                        auto const & n_dir = finite_element_arg.template getComponentPointer<0, K>(num_f).orientation;
+                        auto const & face = this->template getComponentPointer<0, K>(num_f).get();
+                        auto const & n_dir = this->template getComponentPointer<0, K>(num_f).orientation;
                         for (int i = 0; i < dim_qad_grd; ++i) {
                             auto pf = face.template getReferenceQuadraturePoint<qad_grd>(i);
-                            auto pc = finite_element_arg.template getComponentReferenceQuadraturePoint<qad_grd, 0, K>(num_f, i);
+                            auto pc = this->template getComponentReferenceQuadraturePoint<qad_grd, 0, K>(num_f, i);
                             auto wf = face.template getCurrentQuadratureWeight<qad_grd>(i);
                             auto n = face.getNormalVector(pf);
-                            auto vr = finite_element_arg.template getBasisEvaluation<bas_grd>(pc);
-                            auto vc = finite_element_arg.template getBasisEvaluation<bas_cel>(pc);
+                            auto vr = this->template getBasisEvaluation<bas_grd>(pc);
+                            auto vc = this->template getBasisEvaluation<bas_cel>(pc);
                             auto vf = face.template getBasisEvaluation<bas_fce>(pf);
                             auto offset = dim_bas_cel * i_arg;
                             auto prt_cell = rhs.template block<dim_bas_grd, dim_bas_cel>(0, offset);
@@ -1530,7 +1524,7 @@ namespace lolita::core::element
                             auto
                             j_arg
                     )
-                    mutable
+                            mutable
                     {
                         for (int i = 0; i < numComponents<E, 0, K>(); ++i) {
                             set_rhs_face.template operator()<K>(i_arg, j_arg, i);
@@ -1551,8 +1545,8 @@ namespace lolita::core::element
                     for (int j = 0; j < grd.cols(); ++j) {
                         auto rhs = get_rhs(i, j);
                         for (int k = 0; k < dimQuadrature<E, this->quadrature>(); ++k) {
-                            auto pnt = finite_element_arg.template getReferenceQuadraturePoint<this->quadrature>(k);
-                            auto vct = finite_element_arg.template getBasisEvaluation<bas_grd>(pnt);
+                            auto pnt = this->template getReferenceQuadraturePoint<this->quadrature>(k);
+                            auto vct = this->template getBasisEvaluation<bas_grd>(pnt);
                             this->operators.get(k).row(this->rowOperator(Map) + row) = vct.transpose() * lhs * rhs;
                         }
                         row += 1;
@@ -1562,10 +1556,7 @@ namespace lolita::core::element
 
             template<MappingOperator Map, auto I>
             void
-            setOperator(
-                    auto &
-                    finite_element_arg
-            )
+            setOperator()
             requires(Map == MappingOperator::Identity)
             {
                 /*
@@ -1584,7 +1575,7 @@ namespace lolita::core::element
                         auto
                         j_arg
                 )
-                mutable
+                        mutable
                 {
                     /*
                      * Initializing the RHS part of the identity operator
@@ -1599,7 +1590,7 @@ namespace lolita::core::element
                             auto
                             j_arg
                     )
-                    mutable
+                            mutable
                     {
                         auto prt = rhs.template block<dim_bas_ide, dim_bas_cel>(0, dim_bas_cel * i_arg);
                         prt = Matrix<Real, dim_bas_ide, dim_bas_cel>::Identity();
@@ -1616,8 +1607,8 @@ namespace lolita::core::element
                     for (int j = 0; j < grd.cols(); ++j) {
                         auto rhs = get_rhs(i, j);
                         for (int k = 0; k < dimQuadrature<E, this->quadrature>(); ++k) {
-                            auto pnt = finite_element_arg.template getReferenceQuadraturePoint<this->quadrature>(k);
-                            auto vct = finite_element_arg.template getBasisEvaluation<bas_ide>(pnt);
+                            auto pnt = this->template getReferenceQuadraturePoint<this->quadrature>(k);
+                            auto vct = this->template getBasisEvaluation<bas_ide>(pnt);
                             this->operators.get(k).row(this->rowOperator(Map) + row) = vct.transpose() * rhs;
                         }
                         row += 1;
@@ -1626,31 +1617,29 @@ namespace lolita::core::element
             }
 
             auto
-            getUnknowns(
-                    auto const &
-                    finite_element_arg
-            )
+            getUnknowns()
             const
             {
                 auto offset = Indx(0);
                 auto vec = Vector<Real, Base::colsOperator()>().setZero();
                 auto get_cell_unknowns = [&] ()
-                mutable
+                        mutable
                 {
                     auto const constexpr dim_cel_unk = Base::dimUnknowns();
-                    auto const & cel = this->fetch(finite_element_arg);
+                    //auto const & cel = this->fetch(finite_element_arg);
                     for (int i = 0; i < Base::field.rows(); ++i) {
                         for (int j = 0; j < Base::field.cols(); ++j) {
-                            vec.template segment<dim_cel_unk>(offset) = cel.unknowns.get(i, j).get().coefficients;
+                            vec.template segment<dim_cel_unk>(offset) = this->unknowns.get(i, j).get().coefficients;
                             offset += dim_cel_unk;
                         }
                     }
                 };
                 auto get_face_unknowns = [&] <auto K> (auto num_f)
-                mutable
+                        mutable
                 {
-                    auto const constexpr dim_fce_unk = FiniteElementBase<component<E, 0, K>(), D, F, M, C>::dimUnknowns();
-                    auto const & fce = this->fetch(finite_element_arg.template getComponentPointer<0, K>(num_f).get());
+                    auto const constexpr dim_fce_unk = FiniteElementUnknownMod<component<E, 0, K>(), D, F>::dimUnknowns();
+                    //auto const & fce = this->fetch(finite_element_arg.template getComponentPointer<0, K>(num_f).get());
+                    auto const & fce = this->template getComponentPointer<0, K>(num_f).get();
                     for (int i = 0; i < Base::field.rows(); ++i) {
                         for (int j = 0; j < Base::field.cols(); ++j) {
                             vec.template segment<dim_fce_unk>(offset) = fce.unknowns.get(i, j).get().coefficients;
@@ -1659,7 +1648,7 @@ namespace lolita::core::element
                     }
                 };
                 auto get_faces_unknowns = [&] <auto K> ()
-                mutable
+                        mutable
                 {
                     for (int i = 0; i < numComponents<E, 0, K>(); ++i) {
                         get_face_unknowns.template operator()<K>(i);
@@ -1672,8 +1661,6 @@ namespace lolita::core::element
 
             auto
             getGradients(
-                    auto const &
-                    finite_element_arg,
                     auto
                     index_arg
             )
@@ -1681,13 +1668,11 @@ namespace lolita::core::element
             {
                 print("ops :");
                 print(this->operators.get(index_arg));
-                return Vector<Real, Base::rowsOperator()>(this->operators.get(index_arg) * getUnknowns(finite_element_arg));
+                return Vector<Real, Base::rowsOperator()>(this->operators.get(index_arg) * getUnknowns());
             }
 
             auto
             getExternalForces(
-                    auto const &
-                    finite_element_arg,
                     auto const &
                     time_arg
             )
@@ -1700,19 +1685,19 @@ namespace lolita::core::element
                 auto offset = Indx(0);
                 auto vec = Vector<Real, Base::colsOperator()>().setZero();
                 auto get_cell_unknowns = [&] ()
-                mutable
+                        mutable
                 {
-                    auto const & cel = this->fetch(finite_element_arg);
+                    //auto const & cel = this->fetch(finite_element_arg);
                     for (int i = 0; i < this->field.rows(); ++i) {
                         for (int j = 0; j < this->field.cols(); ++j) {
                             for (int k = 0; k < dimQuadrature<E, this->quadrature>(); ++k) {
-                                auto pnt = finite_element_arg.template getReferenceQuadraturePoint<this->quadrature>(k);
-                                auto pntc = finite_element_arg.template getCurrentQuadraturePoint<this->quadrature>(k);
-                                auto wgt = finite_element_arg.template getCurrentQuadratureWeight<this->quadrature>(k);
-                                auto vct = finite_element_arg.template getBasisEvaluation<bas_cel>(pnt);
+                                auto pnt = this->template getReferenceQuadraturePoint<this->quadrature>(k);
+                                auto pntc = this->template getCurrentQuadraturePoint<this->quadrature>(k);
+                                auto wgt = this->template getCurrentQuadratureWeight<this->quadrature>(k);
+                                auto vct = this->template getBasisEvaluation<bas_cel>(pnt);
                                 auto val = Real();
-                                if (cel.loads.get(i, j).exists()) {
-                                    val = cel.loads.get(i, j).get().getImposedValue(pntc, time_arg);
+                                if (this->loads.get(i, j).exists()) {
+                                    val = this->loads.get(i, j).get().getImposedValue(pntc, time_arg);
                                 }
                                 else {
                                     val = 0;
@@ -1726,8 +1711,9 @@ namespace lolita::core::element
                 auto get_face_unknowns = [&] <auto K> (auto num_f)
                         mutable
                 {
-                    auto const constexpr dim_fce_unk = FiniteElementBase<component<E, 0, K>(), D, F, M, C>::dimUnknowns();
-                    auto const & fce = this->fetch(finite_element_arg.template getComponentPointer<0, K>(num_f).get());
+                    auto const constexpr dim_fce_unk = FiniteElementUnknownMod<component<E, 0, K>(), D, F>::dimUnknowns();
+                    //auto const & fce = this->fetch(finite_element_arg.template getComponentPointer<0, K>(num_f).get());
+                    auto const & fce = this->template getComponentPointer<0, K>(num_f).get();
                     for (int i = 0; i < Base::field.rows(); ++i) {
                         for (int j = 0; j < Base::field.cols(); ++j) {
                             vec.template segment<dim_fce_unk>(offset) = fce.unknowns.get(i, j).get().coefficients;
@@ -1751,16 +1737,16 @@ namespace lolita::core::element
 
     };
 
-    template<Element E, Domain D, auto F, auto M, auto C>
-    requires(Face<E, D> && F.method == fem_hho && M.model == Model::Solid)
-    struct FiniteElementPolicy<E, D, F, M, C>
+    template<Element E, Domain D, auto F>
+    requires(Face<E, D> && F.method == fem_hho)
+    struct FiniteElementPolicy2<E, D, F>
     {
 
         static constexpr
         auto
         dimUnknowns()
         {
-            return Intg(EB<E, Basis(BasisName::Monomial, F.discretization.ord_face)>::dim_basis);
+            return Intg(FiniteElementBasis<E, Basis(BasisName::Monomial, F.discretization.ord_face)>::dim_basis);
         }
 
         struct Module
@@ -1768,40 +1754,16 @@ namespace lolita::core::element
 
         };
 
-        struct Implementation : public FiniteElementBase<E, D, F, M, C>
+        struct Implementation : public FiniteElementUnknownMod<E, D, F>
         {
 
         };
 
     };
 
-    template<Element E, Domain D, auto F, auto M, auto C>
-    requires(Edge<E, D> && F.method == fem_hho && M.model == Model::Solid)
-    struct FiniteElementPolicy<E, D, F, M, C>
-    {
-
-        static constexpr
-        auto
-        dimUnknowns()
-        {
-            return Intg(0);
-        }
-
-        struct Module
-        {
-
-        };
-
-        struct Implementation : public FiniteElementBase<E, D, F, M, C>
-        {
-
-        };
-
-    };
-
-    template<Element E, Domain D, auto F, auto M, auto C>
-    requires(Node<E, D> && F.method == fem_hho && M.model == Model::Solid)
-    struct FiniteElementPolicy<E, D, F, M, C>
+    template<Element E, Domain D, auto F>
+    requires(Edge<E, D> && F.method == fem_hho)
+    struct FiniteElementPolicy2<E, D, F>
     {
 
         static constexpr
@@ -1816,48 +1778,386 @@ namespace lolita::core::element
 
         };
 
-        struct Implementation : public FiniteElementBase<E, D, F, M, C>
+        struct Implementation : public FiniteElementUnknownMod<E, D, F>
         {
 
         };
 
     };
 
-
-    template<Element E, Domain D, auto M, auto C>
-    struct MixedElementPolicy2 : public decltype(M)::template Elements2<FiniteElementBase, E, D, M, C>
+    template<Element E, Domain D, auto F>
+    requires(Node<E, D> && F.method == fem_hho)
+    struct FiniteElementPolicy2<E, D, F>
     {
 
-        SharedPointer<Behaviour> behaviour;
+        static constexpr
+        auto
+        dimUnknowns()
+        {
+            return Intg(0);
+        }
+
+        struct Module
+        {
+
+        };
+
+        struct Implementation : public FiniteElementUnknownMod<E, D, F>
+        {
+
+        };
 
     };
 
+    /*
+     * Unknowns
+     */
+
     template<Element E, Domain D, auto C>
-    struct CoupledElementPolicy2 : public decltype(C)::template Elements2<MixedElementPolicy2, E, D, C>
+    using FiniteElementCollection = typename decltype(C)::template Type<FiniteElementUnknownMod, E, D>;
+
+    template<Domain D, auto C>
+    static
+    void
+    makee(
+            auto &
+            element_list,
+            auto &&
+            element_node_tags_arg1
+    )
     {
-
-    };
+        /*
+         *
+         */
+        auto set_components = [&] <Element E, auto K = 0, auto I = 0, auto J = 0> (
+                auto &
+                ptr_element_arg,
+                auto &
+                set_components_imp
+        )
+        mutable
+        {
+            if constexpr (I == 0 && J == 0) {
+                pointer::make(ptr_element_arg.get().template get<K>());
+            }
+            auto & elt = ptr_element_arg.get();
+            for (int i = 0; i < numComponents<E, I, J>(); ++i) {
+                auto & rhs = elt.components.template get<I>().template get<J>().get(i);
+                auto & lhs = elt.template get<K>().get().components.template get<I>().template get<J>().get(i);
+                lhs.ptr = rhs.ptr.get().template get<K>();
+                lhs.orientation = rhs.orientation;
+                print("hello", K, I, J, i);
+            }
+            if constexpr (J < numComponents<E, I>() - 1) {
+                set_components_imp.template operator()<K, I, J + 1>(ptr_element_arg, set_components_imp);
+            }
+            else if constexpr (I < numComponents<E>() - 1) {
+                set_components_imp.template operator()<K, I + 1, 0>(ptr_element_arg, set_components_imp);
+            }
+            else if constexpr (K < elt.size() - 1) {
+                set_components_imp.template operator()<K + 1, 0, 0>(ptr_element_arg, set_components_imp);
+            }
+        };
+        /*
+         *
+         */
+        auto set_element = [&] <Element E, auto I = 0, auto J = 0> (
+                auto &&
+                element_node_tags_arg,
+                auto &
+                ptr_element_arg,
+                auto &
+                set_element_imp
+        )
+        mutable
+        {
+            auto const constexpr cmp = component<E, I, J>();
+            auto const constexpr bd = cmp.dim;
+            auto const constexpr bt = elementIndex<cmp>();
+            auto const constexpr ed = E.dim;
+            auto const constexpr et = elementIndex<E>();
+            auto & components = element_list.template get<cmp.dim>().template get<bt>();
+            auto & elements = element_list.template get<E.dim>().template get<et>();
+            auto & element_component_array = ptr_element_arg.get().components.template get<I>().template get<J>();
+            auto element_hash = getElementHash<E>(element_node_tags_arg);
+            for (auto i = 0; i < numComponents<E, I, J>(); ++i) {
+                auto component_node_tags = getComponentNodeTags<E, I, J>(element_node_tags_arg, i);
+                auto component_hash = getElementHash<cmp>(component_node_tags);
+                if constexpr (cmp == pnt_00) {
+                    element_component_array.get(i) = {components.get(component_hash), 1};
+                }
+                else {
+                    if (components.data.contains(component_hash)) {
+                        element_component_array.get(i) = {components.get(component_hash), -1};
+                    }
+                    else {
+                        auto ptr_component = SharedPointer<FiniteElement<cmp, D, C>>(FiniteElement<cmp, D, C>());
+                        set_element_imp.template operator ()<cmp>(component_node_tags, ptr_component, set_element_imp);
+                        element_component_array.get(i) = {components.get(component_hash), 1};
+                    }
+                }
+                auto & component_neighbours = components.get(component_hash).get().neighbours;
+                if constexpr (cmp == element::pnt_00) {
+                    Indx const constexpr nd = ed - 1;
+                    component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg});
+                }
+                else {
+                    Indx const constexpr nd = ed - bd;
+                    component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg});
+                }
+            }
+            if constexpr (J < numComponents<E, I>() - 1) {
+                set_element_imp.template operator()<E, I, J + 1>(element_node_tags_arg, ptr_element_arg, set_element_imp);
+            }
+            else if constexpr (I < numComponents<E>() - 1) {
+                set_element_imp.template operator()<E, I + 1, 0>(element_node_tags_arg, ptr_element_arg, set_element_imp);
+            }
+            if constexpr (I == 0 && J == 0) {
+                ptr_element_arg.get().tag = elements.size();
+                set_components.template operator ()<E>(ptr_element_arg, set_components);
+                elements.data.insert({element_hash, ptr_element_arg});
+            }
+        };
+        /*
+         *
+         */
+        auto set_cell = [&] <Element E> (
+                auto &&
+                element_node_tags_arg
+        )
+        mutable
+        {
+            auto ptr_element = SharedPointer<FiniteElement<E, D, C>>(FiniteElement<E, D, C>());
+            set_element.template operator ()<E>(element_node_tags_arg1, ptr_element, set_element);
+        };
+    }
 
     template<Element E, Domain D, auto C>
-    struct FiniteElement : public FiniteElementGeometry<E, D, C>, public CoupledElementPolicy2<E, D, C>
+    struct FiniteElement : public FiniteElementCollection<E, D, C>, public FiniteElementGeometry<E, D, FiniteElement, C>
     {
 
         FiniteElement()
         :
-        FiniteElementGeometry<E, D, C>(),
-        CoupledElementPolicy2<E, D, C>()
+        FiniteElementCollection<E, D, C>(),
+        FiniteElementGeometry<E, D, FiniteElement, C>()
         {}
+
+        void
+        init()
+        {
+            auto set = [&] <auto K> ()
+            {
+                pointer::make(this->template get<K>());
+            };
+            auto set_loop = [&] <auto K> (auto & set_loop_impl)
+            constexpr mutable
+            {
+                set.template operator()<K>();
+                if constexpr (K < FiniteElement::size() - 1) {
+                    set_loop_impl.template operator()<K + 1>(set_loop_impl);
+                }
+            };
+            set_loop.template operator()<0>(set_loop);
+            //
+        }
 
         void
         initialize()
         {
-            this->template get<0>().template get<0>().initialize(* this);
+            auto set_compo = [&] <auto K, auto I, auto J> (auto index_arg)
+            mutable
+            {
+//                this->components.template get<I>().template get<J>().get(index_arg).orientation;
+//                this->components.template get<I>().template get<J>().get(index_arg).get();
+//                this->template get<K>().components.template get<0>().template get<0>().get(index_arg).orientation;
+//                auto & aa = this->components.template get<I>().template get<J>().get(index_arg).get().template get<K>();
+//                auto & bb = this->template get<K>().components.template get<I>().template get<J>().get(index_arg);
+                auto & aa = this->components.template get<0>().template get<0>().get(0).get().template get<0>();
+                auto & bb = this->template get<0>().components.template get<0>().template get<0>().get(0).get();
+                bb = aa;
+            };
+            auto set_compo2 = [&] <auto K, auto I, auto J> ()
+                    mutable
+            {
+                for (int i = 0; i < numComponents<E, I, J>(); ++i) {
+                    set_compo.template operator ()<K, I, J>(i);
+                }
+            };
+            auto test = [&] <auto... A> ()
+            constexpr mutable
+            {
+                print("fun :", A...);
+            };
+//            auto test1 = [&] <auto Ki, auto Ii, auto Ji> ()
+//            mutable
+//            {
+//                for (int i = 0; i < numComponents<E, Ii, Ji>(); ++i) {
+//                    test.template operator ()<Ki, Ii, Ji>(i);
+//                }
+//            };
+////            auto test2 = [&] <auto I, auto J> ()
+////            mutable
+////            {
+////                auto inner = [&] <auto Ii, auto Jj> (auto & ref)
+////                mutable
+////                {
+////                    if constexpr (Jj < 3) {
+////                        ref.template operator()<Ii, Jj + 1>(ref);
+////                    }
+////                    if constexpr (Ii < 3) {
+////                        ref.template operator()<Ii + 1, 0>(ref);
+////                    }
+////                };
+////                inner.template operator()<0, 0>(inner);
+////            };
+
+            auto inner = [&] <auto I, auto J> (auto & ref)
+            constexpr mutable
+            {
+                test.template operator()<I, J>();
+                if constexpr (J < 3) {
+                    ref.template operator()<I, J + 1>(ref);
+                }
+                if constexpr (I < 2 && J == 3) {
+                    ref.template operator()<I + 1, 0>(ref);
+                }
+            };
+            inner.template operator()<0, 0>(inner);
+
+            print("--");
+
+            auto inner2 = [&] <auto K, auto I, auto J> (auto & ref)
+                    constexpr mutable
+            {
+                test.template operator()<K, I, J>();
+                set_compo2.template operator()<K, I, J>();
+                auto const constexpr sj = numComponents<E, I>() - 1;
+                auto const constexpr si = numComponents<E>() - 1;
+                auto const constexpr sk = FiniteElement::size() - 1;
+                if constexpr (J < sj) {
+                    ref.template operator()<K, I, J + 1>(ref);
+                }
+                if constexpr (I < si && J == sj) {
+                    ref.template operator()<K, I + 1, 0>(ref);
+                }
+                if constexpr (K < sk && I == si && J == sj) {
+                    ref.template operator()<K + 1, 0, 0>(ref);
+                }
+            };
+            inner2.template operator()<0, 0, 0>(inner2);
+//
+//            auto inner2 = [&] (auto i, auto j, auto & ref)
+//            mutable
+//            {
+//                print(i, j);
+//                if (j < 2) {
+//                    ref(i, j + 1, ref);
+//                }
+//                if (i < 1) {
+//                    ref(i + 1, 0, ref);
+//                }
+//            };
+//            inner2(0, 0, inner2);
+
+//            const auto sum = [&] (int a, int b) {
+//                auto sum_impl=[&](int a,int b, auto & sum_ref) mutable {
+//                    print(a, b);
+//                    if (a < 2) {
+//                        sum_ref(a + 1, b, sum_ref);
+//                    }
+//                    if (b < 2) {
+//                        sum_ref(a, b + 1, sum_ref);
+//                    }
+////                    if(a > b){
+////                        return 0;
+////                    }
+////                    return a + sum_ref(a, b, sum_ref);
+//                };
+//                return sum_impl(a, b, sum_impl);
+//            };
+//            print(sum(1, 10));
+//            inner.template operator()<0, 0>(inner);
+
+//            auto set_compo2 = [&] <auto K, auto I, auto J> (auto index_arg)
+//            mutable
+//            {
+//                for (int i = 0; i < numComponents<E, I, J>(); ++i) {
+//                    set_compo.template operator ()<K, I, J>(i);
+//                }
+////                if constexpr (J < numComponents<E, I>() - 1) {
+////                    set_compo2.template operator ()<K, I, J + 1>();
+////                }
+//            };
+//            const auto selff = [&] <auto K> () constexpr {
+//                const auto selfl = [&] <auto I> (auto & self) constexpr {
+//                    self.template operator()<I>();
+//                    if constexpr (I < 3) {
+//
+//                    }
+//                };
+//            };
+//            selff.template operator()<0>();
+//            const auto sum = [&] <auto K, auto I, auto J> () constexpr {
+//                auto sum_impl = [&] (auto & sum_ref) constexpr mutable {
+//                    for (int i = 0; i < numComponents<E, I, J>(); ++i) {
+//                        test.template operator ()<K, I, J>(i);
+//                    }
+//                    if constexpr (J < numComponents<E, I>() - 1) {
+//                        sum_ref.template operator()<K, I, J + 1>();
+//                    }
+//                    if constexpr (I < numComponents<E>() - 1) {
+//                        sum_ref.template operator()<K, I + 1, 0>();
+//                    }
+//                };
+//                sum_impl(sum_impl);
+//            };
+//            sum.template operator ()<0, 0, 0>();
+//            auto term = [](int a)->int {
+//                return a*a;
+//            };
+//
+//            auto next = [](int a)->int {
+//                return ++a;
+//            };
+//            const auto sum = [&](int a, int b) {
+//                auto sum_impl=[&](int a,int b, auto & sum_ref) mutable {
+//                    if(a > b){
+//                        return 0;
+//                    }
+//                    return a + sum_ref(a, b, sum_ref);
+//                };
+//                return sum_impl(a,b,sum_impl);
+//            };
+//            print(sum(1, 10));
+//            set_compo2.template operator ()<0, 0, 0>();
+//            if constexpr (!Point<E>) {
+//                auto set_coords = [&] <auto K> ()
+//                constexpr mutable
+//                {
+//                    auto & nds_cmp = this->template get<K>().components.template get<E.dim - 1>().template get<0>();
+//                    auto & nds_elt = this->components.template get<E.dim - 1>().template get<0>();
+//                    for (int i = 0; i < nds_elt.size(); ++i) {
+//                        nds_cmp.get(i) = decltype(nds_cmp.get(i))();
+//                        nds_cmp.get(i).get().coordinates = nds_elt.get(i).get().coordinates;
+//                    }
+//                };
+//                collection::apply<FiniteElement::size()>(set_coords);
+//            }
+//            else {
+//                auto set_coords = [&] <auto K> ()
+//                constexpr mutable
+//                {
+//                    this->template get<K>().coordinates = this->coordinates;
+//                };
+//                collection::apply<FiniteElement::size()>(set_coords);
+//            }
+//            this->template get<0>().initialize();
         }
 
         void
         getGrads()
         {
-            this->template get<0>().template get<0>().getGrads(* this);
+            this->template get<0>().getGrads();
         }
 
         Bool
@@ -1880,7 +2180,102 @@ namespace lolita::core::element
             return !(other == * this);
         }
 
+        auto
+        hash()
+        const
+        {
+            StrgStream hash;
+            if constexpr(Point<E>) {
+                hash << tag + 1;
+            }
+            else {
+                auto const & nodes = this->components.template get<E.dim - 1>().template get<0>();
+                for (Indx i = 0; i < E.num_nodes; ++i) {
+                    hash << nodes.get(i).ptr.get().hash();
+                }
+            }
+            return hash.str();
+        }
+
+        Indx tag;
+
     };
+
+    template<auto I>
+    struct ATest
+    {
+
+        SharedPointer<ATest<I - 1>> ptr;
+
+        Indx j;
+
+    };
+
+    template<auto I>
+    requires(I == 0)
+    struct ATest<I>
+    {
+
+        SharedPointer<Indx> ptr;
+
+        Indx j;
+
+    };
+
+//    template<Element E, Domain D, auto F>
+//    struct FiniteElement : public FiniteElementUnknownMod<E, D, F>, public FiniteElementGeometry<E, D, FiniteElement, F>
+//    {
+//
+//        FiniteElement()
+//        :
+//        FiniteElementUnknownMod<E, D, F>(),
+//        tag()
+//        {}
+//
+//        Indx tag;
+//
+//        auto
+//        getHash()
+//        const
+//        {
+//            StrgStream ss;
+//            ss << tag + 1;
+//            return ss.str();
+//        }
+//
+//        void
+//        initialize()
+//        {
+//            this->template get<0>().initialize();
+//        }
+//
+//        void
+//        getGrads()
+//        {
+//            this->template get<0>().getGrads();
+//        }
+//
+//        Bool
+//        operator==(
+//                FiniteElement const &
+//                other
+//        )
+//        const
+//        {
+//            return this->tag == other.tag;
+//        }
+//
+//        Bool
+//        operator!=(
+//                FiniteElement const &
+//                other
+//        )
+//        const
+//        {
+//            return !(other == * this);
+//        }
+//
+//    };
 
 }
 

@@ -53,7 +53,7 @@ namespace lolita
                 arg
         )
         :
-        data(std::make_shared<T>(arg))
+        data(std::make_shared<T>(std::forward<T>(arg)))
         {}
 
         Bool
@@ -65,7 +65,6 @@ namespace lolita
         {
             return data == other.data;
         }
-//        = default;
 
         Bool
         operator!=(
@@ -76,7 +75,6 @@ namespace lolita
         {
             return !(* this == other);
         }
-//        = default;
 
         T &
         get()
@@ -101,6 +99,16 @@ namespace lolita
         template<typename U>
         static
         auto
+        make()
+        {
+            auto p = SharedPointer();
+            p.data = std::make_shared<U>(U());
+            return p;
+        }
+
+        template<typename U>
+        static
+        auto
         make(
                 U const &
                 arg
@@ -108,6 +116,19 @@ namespace lolita
         {
             auto p = SharedPointer();
             p.data = std::make_shared<U>(arg);
+            return p;
+        }
+
+        template<typename U>
+        static
+        auto
+        make(
+                U &&
+                arg
+        )
+        {
+            auto p = SharedPointer();
+            p.data = std::make_shared<U>(std::forward<T>(arg));
             return p;
         }
 
@@ -157,7 +178,7 @@ namespace lolita
                 arg
         )
         :
-        data(std::make_unique<T>(arg))
+        data(std::make_unique<T>(std::forward<T>(arg)))
         {}
 
         UniquePointer(
@@ -174,7 +195,7 @@ namespace lolita
                 other
         )
         :
-        data(setData(other))
+        data(setData(std::forward<UniquePointer>(other)))
         {}
 
         UniquePointer &
@@ -283,6 +304,82 @@ namespace lolita
         Data data;
 
     };
+
+    namespace pointer
+    {
+
+        template<typename T>
+        struct Traits
+        {
+
+            auto const static constexpr value = false;
+
+        };
+
+        template<typename T>
+        struct Traits<SharedPointer<T>>
+        {
+
+            auto const static constexpr value = true;
+
+        };
+
+        template<typename T>
+        struct Traits<UniquePointer<T>>
+        {
+
+            auto const static constexpr value = true;
+
+        };
+
+        template<typename T>
+        void
+        make(
+                SharedPointer<T> &
+                pointer_arg
+        )
+        {
+            pointer_arg.data = std::make_shared<T>(T());
+        }
+
+        template<typename T>
+        void
+        make(
+                SharedPointer<T> &
+                pointer_arg,
+                T &&
+                arg
+        )
+        {
+            pointer_arg.data = std::make_shared<T>(std::forward<T>(arg));
+        }
+
+        template<typename T>
+        void
+        make(
+                UniquePointer<T> &
+                pointer_arg
+        )
+        {
+            pointer_arg.data = std::make_unique<T>(T());
+        }
+
+        template<typename T>
+        void
+        make(
+                UniquePointer<T> &
+                pointer_arg,
+                T &&
+                arg
+        )
+        {
+            pointer_arg.data = std::make_unique<T>(std::forward<T>(arg));
+        }
+
+    }
+
+    template<typename T>
+    concept Pointer = pointer::Traits<T>::value;
 
 }
 
