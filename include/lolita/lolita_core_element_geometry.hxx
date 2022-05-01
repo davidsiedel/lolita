@@ -969,6 +969,33 @@ namespace lolita::core::element
         return L::size();
     }
 
+    template<Element E, auto D>
+    constexpr inline
+    auto
+    numNeighbours()
+    {
+        using L = ElementNeighbourArray<E, D, ElementGeometry>;
+        return L::size();
+    }
+
+    template<Element E, auto D, auto I>
+    constexpr inline
+    auto
+    numNeighbours()
+    {
+        using L = ElementNeighbourArray<E, D, ElementGeometry>;
+        return L::template Type<I>::size();
+    }
+
+//    template<Element E, auto D, auto I, auto J>
+//    constexpr inline
+//    auto
+//    numNeighbours()
+//    {
+//        using L = ElementNeighbourArray<E, D, ElementGeometry>;
+//        return L::template Type<I>::template Type<J>::size();
+//    }
+
     template<Element E, Quadrature Q>
     struct ElementQuadrature;
 

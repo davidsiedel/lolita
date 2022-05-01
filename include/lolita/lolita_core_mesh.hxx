@@ -3,6 +3,7 @@
 //
 
 #include <execution>
+#include <ostream>
 
 #include "lolita/lolita_core.hxx"
 //#include "lolita/lolita_unordered_map.hxx"
@@ -21,17 +22,29 @@ namespace lolita::core::mesh
     template<Element E, Domain D, auto Med>
     using FiniteElementE = core::element::FiniteElement<E, D, Med>;
 
-//    template<Element E, Domain D, auto Med>
-//    using ElementPointerMap = UnorderedMap<Strg, SharedPointer<FiniteElementE<E, D, Med>>>;
-
     template<MeshFormatType, Domain D, auto Med>
     struct MeshModule;
+
+    struct MeshModuleBase
+    {
+
+        MeshModuleBase(
+                file::File const &
+                mesh_file
+        )
+        :
+        file_(mesh_file)
+        {}
+
+        file::File const & file_;
+
+    };
 
     template<MeshFormatType Mft, Domain D, auto Med>
     struct MeshBase
     {
 
-    protected:
+    private:
 
         template<Element E>
         using ElementPointerMap = UnorderedMap<Strg, SharedPointer<FiniteElementE<E, D, Med>>>;
@@ -48,8 +61,6 @@ namespace lolita::core::mesh
 
         using DomainPointers = Array<SharedPointer<MeshInteriorDomain<Med>>>;
 
-        file::File const & file_;
-
         Module module_;
 
         ElementPointers elements_;
@@ -65,18 +76,14 @@ namespace lolita::core::mesh
                 domains
         )
         :
-        file_(mesh_file),
         module_(mesh_file)
         {
-            //Module const auxiliary_data(mesh_file);
-            this->setDomainPointers(domains);
-            this->makeNodes();
-            this->makeElementSets();
-            for (auto const & item : this->element_sets_.data) {
-                this->makeNodeSet(item.first);
-            }
-            this->makeCells();
-            this->makeNeighbourhood();
+            setDomainPointers(domains);
+            makeNodes();
+            makeElementSets();
+            makeNodeSets();
+            makeCells();
+            makeNeighbourhood();
         }
 
         void
@@ -86,11 +93,9 @@ namespace lolita::core::mesh
         }
 
         void
-        makeNodeSet(
-                Strg element_set_name
-        )
+        makeNodeSets()
         {
-            static_cast<Implementation *>(this)->makeNodeSet(element_set_name);
+            static_cast<Implementation *>(this)->makeNodeSets();
         }
 
         void
@@ -98,10 +103,6 @@ namespace lolita::core::mesh
         {
             static_cast<Implementation *>(this)->makeNodes();
         }
-
-        /*
-         *
-         */
 
         void
         setDomainPointers(
@@ -113,8 +114,6 @@ namespace lolita::core::mesh
                 mesh_domains_.data.push_back(SharedPointer<MeshInteriorDomain<Med>>(domain));
             }
         }
-
-    protected:
 
         void
         makeNode(
@@ -235,7 +234,6 @@ namespace lolita::core::mesh
                     auto & lhs = elt.template get<K>().get().components.template get<I>().template get<J>().get(i);
                     lhs.ptr = rhs.ptr.get().template get<K>();
                     lhs.orientation = rhs.orientation;
-                    //print("hello", K, I, J, i);
                 }
                 if constexpr (J < element::numComponents<E, I>() - 1) {
                     set_components_imp.template operator()<E, K, I, J + 1>(ptr_element_arg, set_components_imp);
@@ -270,7 +268,6 @@ namespace lolita::core::mesh
                 auto & element_component_array = ptr_element_arg.get().components.template get<I>().template get<J>();
                 auto element_hash = get_element_hash.template operator ()<E>(element_node_tags_arg);
                 for (auto i = 0; i < element::numComponents<E, I, J>(); ++i) {
-                    //auto component_node_tags = getComponentNodeTags<E, I, J>(element_node_tags_arg, i);
                     auto component_node_tags = get_component_node_tags.template operator ()<E, I, J>(element_node_tags_arg, i);
                     auto component_hash = get_element_hash.template operator ()<cmp>(component_node_tags);
                     if constexpr (cmp == element::pnt_00) {
@@ -305,6 +302,11 @@ namespace lolita::core::mesh
                 if constexpr (I == 0 && J == 0) {
                     ptr_element_arg.get().tag = elements.size();
                     set_components.template operator ()<E>(ptr_element_arg, set_components);
+                    auto domains = get_element_domains.template operator ()<E>(element_node_tags_arg);
+                    for (auto const & domain : domains.data) {
+                        auto & element_set = element_sets_.get(domain).template get<E.dim>().template get<et>();
+                        element_set.data.insert({element_hash, ptr_element_arg});
+                    }
                     elements.data.insert({element_hash, ptr_element_arg});
                 }
             };
@@ -388,6 +390,120 @@ namespace lolita::core::mesh
             make_neighbourhood(make_neighbourhood);
         }
 
+        friend
+        std::ostream &
+        operator<<(
+                std::ostream & os,
+                MeshBase const & base
+        )
+        {
+            /*
+             *
+             */
+            auto print_element_components = [&] <Element EE, auto I = 0, auto J = 0> (
+                    auto const & elem_arg,
+                    auto & self
+            )
+            mutable
+            {
+                if constexpr (!element::Point<EE>) {
+                    for (auto const & c_ : elem_arg.get().components.template get<I>().template get<J>().data) {
+                        os << "layer : " << I << " type : " << J << " <-- " << c_.ptr.get().hash() << std::endl;
+                    }
+                    if constexpr (J < element::numComponents<EE, I>() - 1) {
+                        self.template operator()<EE, I, J + 1>(elem_arg, self);
+                    }
+                    else if constexpr (I < element::numComponents<EE>() - 1) {
+                        self.template operator()<EE, I + 1, 0>(elem_arg, self);
+                    }
+                }
+            };
+            /*
+             *
+             */
+            auto print_element_neighbours = [&] <Element EE, auto I = 0, auto J = 0> (
+                    auto const & elem_arg,
+                    auto & self
+            )
+            mutable
+            {
+                for (auto const & c_ : elem_arg.get().neighbours.template get<I>().template get<J>().data) {
+                    if constexpr (!element::Point<EE> && I == 0) {
+                        os << "layer : " << I << " type : " << J << " <-> " << c_.ptr.get().hash() << std::endl;
+                    }
+                    else {
+                        os << "layer : " << I << " type : " << J << " --> " << c_.ptr.get().hash() << std::endl;
+                    }
+                }
+                if constexpr (J < element::numNeighbours<EE, D.dim, I>() - 1) {
+                    self.template operator()<EE, I, J + 1>(elem_arg, self);
+                }
+                else if constexpr (I < element::numNeighbours<EE, D.dim>() - 1) {
+                    self.template operator()<EE, I + 1, 0>(elem_arg, self);
+                }
+            };
+            /*
+             *
+             */
+            auto print_set = [&] <auto I = 0, auto J = 0> (
+                    auto const & set_arg,
+                    auto & self
+            )
+            mutable
+            {
+                for (auto const & item : set_arg.template get<I>().template get<J>().data) {
+                    os << "layer : " << I << " type : " << J << " <-- " << item.second.get().hash() << std::endl;
+                }
+                if constexpr (J < element::numElements<I>() - 1) {
+                    self.template operator()<I, J + 1>(set_arg, self);
+                }
+                else if constexpr (I < D.dim) {
+                    self.template operator()<I + 1, 0>(set_arg, self);
+                }
+            };
+            /*
+             *
+             */
+            auto print_sets = [&] ()
+            mutable
+            {
+                for (auto const & set : base.element_sets_.data) {
+                    os << "*** Domain : " << set.first << std::endl;
+                    print_set(set.second, print_set);
+                }
+            };
+            /*
+             *
+             */
+            auto print_elements = [&] <auto I = 0, auto J = 0> (
+                    auto & self
+            )
+            mutable
+            {
+                auto constexpr elt = element::element<I, J>();
+                if constexpr (I == 0 && J == 0) {
+                    os << "*** Elements : " << std::endl;
+                }
+                for (auto const & element : base.elements_.template get<I>().template get<J>().data) {
+                    os << "* Element : " << element.second.get().hash() << std::endl;
+                    print_element_components.template operator()<elt>(element.second, print_element_components);
+                    print_element_neighbours.template operator()<elt>(element.second, print_element_neighbours);
+                }
+                if constexpr (J < element::numElements<I>() - 1) {
+                    self.template operator()<I, J + 1>(self);
+                }
+                else if constexpr (I < D.dim) {
+                    self.template operator()<I + 1, 0>(self);
+                }
+            };
+            /*
+             *
+             */
+            print_elements(print_elements);
+            print_sets();
+            return os;
+        }
+
     };
 
     template<Domain D, auto Med>
@@ -425,7 +541,7 @@ namespace lolita::core::mesh
             }
         }
 
-        struct Module
+        struct Module : MeshModuleBase
         {
 
             explicit
@@ -434,7 +550,7 @@ namespace lolita::core::mesh
                     mesh_file
             )
             :
-            file_(mesh_file)
+            MeshModuleBase(mesh_file)
             {
                 setGeometricalEntities();
                 setPhysicalEntities();
@@ -530,8 +646,6 @@ namespace lolita::core::mesh
 
             };
 
-            file::File const & file_;
-
             using PhysicalGroups = Array<PhysicalGroup>;
 
             using GeometricalEntities = Array<Array<GeometricalEntity>, 4>;
@@ -543,10 +657,9 @@ namespace lolita::core::mesh
             void
             setGeometricalEntities()
             {
-                //GeometricalEntities _geometrical_entities;
-                Indx line_start = array::index(file_, "$Entities");
+                Indx line_start = array::index(this->file_, "$Entities");
                 Indx offset = 1;
-                StrgStream line_stream(file_.get(line_start + offset));
+                StrgStream line_stream(this->file_.get(line_start + offset));
                 Indx num_points;
                 Indx num_curves;
                 Indx num_surfaces;
@@ -556,7 +669,7 @@ namespace lolita::core::mesh
                 offset += 1;
                 for (Indx i = 0; i < 4; ++i) {
                     for (Indx j = 0; j < num_domains.get(i); ++j) {
-                        line_stream = StrgStream(file_.get(line_start + offset));
+                        line_stream = StrgStream(this->file_.get(line_start + offset));
                         Indx tag;
                         line_stream >> tag;
                         if (i == 0) {
@@ -597,21 +710,19 @@ namespace lolita::core::mesh
                         offset += 1;
                     }
                 }
-                //return geometrical_entities;
             }
 
             void
             setPhysicalEntities()
             {
-                //PhysicalEntities _physical_entities;
-                Indx line_start = array::index(file_, "$PhysicalNames");
+                Indx line_start = array::index(this->file_, "$PhysicalNames");
                 Indx offset = 1;
-                StrgStream line_stream(file_.get(line_start + offset));
+                StrgStream line_stream(this->file_.get(line_start + offset));
                 Indx num_physical_names;
                 line_stream >> num_physical_names;
                 offset += 1;
                 for (Indx i = 0; i < num_physical_names; ++i) {
-                    line_stream = StrgStream(file_.get(line_start + offset));
+                    line_stream = StrgStream(this->file_.get(line_start + offset));
                     Indx dim;
                     Indx tag;
                     Strg name;
@@ -620,13 +731,12 @@ namespace lolita::core::mesh
                     physical_entities.data.push_back(PhysicalEntity{tag, dim, name});
                     offset += 1;
                 }
-                //return physical_entities;
             }
 
             Array<UnorderedSet<Indx>, 4>
             getSubGeometricalEntities(
-                    Indx const & d,
-                    Indx const & t,
+                    Indx d,
+                    Indx t,
                     Array<UnorderedSet<Indx>, 4> & a
             )
             {
@@ -693,15 +803,15 @@ namespace lolita::core::mesh
         struct Implementation : public MeshBase<MeshFormatType::Gmsh, D, Med>
         {
 
-            using Base = MeshBase<MeshFormatType::Gmsh, D, Med>;
+            //using Base = MeshBase<MeshFormatType::Gmsh, D, Med>;
 
             void
             makeNodes()
             {
                 auto & nodes = this->elements_.template get<0>().template get<0>();
-                Indx line_start = array::index(this->file_, "$Nodes");
+                Indx line_start = array::index(this->module_.file_, "$Nodes");
                 Indx offset = 1;
-                StrgStream line_stream(this->file_.get(line_start + offset));
+                StrgStream line_stream(this->module_.file_.get(line_start + offset));
                 Indx num_entity_block;
                 Indx num_nodes;
                 Indx min_node_tag;
@@ -709,7 +819,7 @@ namespace lolita::core::mesh
                 line_stream >> num_entity_block >> num_nodes >> min_node_tag >> max_node_tag;
                 offset += 1;
                 for (Indx i = 0; i < num_entity_block; ++i) {
-                    line_stream = StrgStream(this->file_.get(line_start + offset));
+                    line_stream = StrgStream(this->module_.file_.get(line_start + offset));
                     Indx entity_dim;
                     Indx entity_tag;
                     Indx parametric;
@@ -717,10 +827,10 @@ namespace lolita::core::mesh
                     line_stream >> entity_dim >> entity_tag >> parametric >> num_nodes_in_block;
                     offset += 1;
                     for (Indx j = 0; j < num_nodes_in_block; ++j) {
-                        line_stream = StrgStream(this->file_.get(line_start + offset));
+                        line_stream = StrgStream(this->module_.file_.get(line_start + offset));
                         Indx node_tag;
                         line_stream >> node_tag;
-                        line_stream = StrgStream(this->file_.get(line_start + offset + num_nodes_in_block));
+                        line_stream = StrgStream(this->module_.file_.get(line_start + offset + num_nodes_in_block));
                         Vector<Real, D.dim> coordinates;
                         for (int k = 0; k < D.dim; ++k) {
                             line_stream >> coordinates(k);
@@ -743,52 +853,45 @@ namespace lolita::core::mesh
             }
 
             void
-            makeNodeSet(
-                    Strg
-                    element_set_name
-            )
+            makeNodeSets()
             {
                 auto const & physical_groups = this->module_.physical_groups;
-                Indx physical_index;
-                for (int i = 0; i < physical_groups.size(); ++i) {
-                    if (physical_groups.get(i).name == element_set_name) {
-                        physical_index = i;
-                    }
-                }
-                auto & element_set_hashes = this->element_sets_.get(element_set_name).template get<0>().template get<0>();
-                auto & nodes = this->elements_.template get<0>().template get<0>();
-                for (Indx i = 0; i < 4; ++i) {
-                    for (Indx j = 0; j < physical_groups.get(physical_index).geometrical_entities_tags.get(i).size(); ++j) {
-                        Indx tag = physical_groups.get(physical_index).geometrical_entities_tags.get(i).get(j);
-    //                    Indx line_start = mesh_file.getLineIndex("$Nodes");
-                        Indx line_start = array::index(this->file_, "$Nodes");
-                        Indx offset = 1;
-                        StrgStream line_stream(this->file_.get(line_start + offset));
-                        Indx num_entity_block;
-                        Indx num_nodes;
-                        Indx min_node_tag;
-                        Indx max_node_tag;
-                        line_stream >> num_entity_block >> num_nodes >> min_node_tag >> max_node_tag;
-                        offset += 1;
-                        for (Indx k = 0; k < num_entity_block; ++k) {
-                            line_stream = StrgStream(this->file_.get(line_start + offset));
-                            Indx entity_dim;
-                            Indx entity_tag;
-                            Indx parametric;
-                            Indx num_nodes_in_block;
-                            line_stream >> entity_dim >> entity_tag >> parametric >> num_nodes_in_block;
+                for (int m = 0; m < physical_groups.size(); ++m) {
+                    auto & node_set_name = physical_groups.get(m).name;
+                    auto & node_set = this->element_sets_.get(node_set_name).template get<0>().template get<0>();
+                    auto & nodes = this->elements_.template get<0>().template get<0>();
+                    for (Indx i = 0; i < 4; ++i) {
+                        for (Indx j = 0; j < physical_groups.get(m).geometrical_entities_tags.get(i).size(); ++j) {
+                            Indx tag = physical_groups.get(m).geometrical_entities_tags.get(i).get(j);
+                            Indx line_start = array::index(this->module_.file_, "$Nodes");
+                            Indx offset = 1;
+                            StrgStream line_stream(this->module_.file_.get(line_start + offset));
+                            Indx num_entity_block;
+                            Indx num_nodes;
+                            Indx min_node_tag;
+                            Indx max_node_tag;
+                            line_stream >> num_entity_block >> num_nodes >> min_node_tag >> max_node_tag;
                             offset += 1;
-                            if (entity_dim == i && entity_tag == tag) {
-                                for (Indx l = 0; l < num_nodes_in_block; ++l) {
-                                    line_stream = StrgStream(this->file_.get(line_start + offset));
-                                    Strg node_hash = line_stream.str();
-                                    element_set_hashes.data.insert({node_hash, nodes.get(node_hash)});
-                                    offset += 1;
+                            for (Indx k = 0; k < num_entity_block; ++k) {
+                                line_stream = StrgStream(this->module_.file_.get(line_start + offset));
+                                Indx entity_dim;
+                                Indx entity_tag;
+                                Indx parametric;
+                                Indx num_nodes_in_block;
+                                line_stream >> entity_dim >> entity_tag >> parametric >> num_nodes_in_block;
+                                offset += 1;
+                                if (entity_dim == i && entity_tag == tag) {
+                                    for (Indx l = 0; l < num_nodes_in_block; ++l) {
+                                        line_stream = StrgStream(this->module_.file_.get(line_start + offset));
+                                        Strg node_hash = line_stream.str();
+                                        node_set.data.insert({node_hash, nodes.get(node_hash)});
+                                        offset += 1;
+                                    }
+                                } else {
+                                    offset += num_nodes_in_block;
                                 }
-                            } else {
                                 offset += num_nodes_in_block;
                             }
-                            offset += num_nodes_in_block;
                         }
                     }
                 }
@@ -798,9 +901,9 @@ namespace lolita::core::mesh
             void
             makeCells()
             {
-                Indx line_start = array::index(this->file_, "$Elements");
+                Indx line_start = array::index(this->module_.file_, "$Elements");
                 Indx offset = 1;
-                StrgStream line_stream(this->file_.get(line_start + offset));
+                StrgStream line_stream(this->module_.file_.get(line_start + offset));
                 Indx num_entity_blocks;
                 Indx num_elements;
                 Indx min_element_tag;
@@ -808,7 +911,7 @@ namespace lolita::core::mesh
                 line_stream >> num_entity_blocks >> num_elements >> min_element_tag >> max_element_tag;
                 offset += 1;
                 for (Indx i = 0; i < num_entity_blocks; ++i) {
-                    line_stream = StrgStream(this->file_.get(line_start + offset));
+                    line_stream = StrgStream(this->module_.file_.get(line_start + offset));
                     Indx entity_dim = 0;
                     Indx entity_tag = 0;
                     Indx element_type_tag = 0;
@@ -818,7 +921,7 @@ namespace lolita::core::mesh
                     Element const element_type_arg = getElementType(element_type_tag);
                     if (entity_dim == D.dim and getElementType(element_type_tag) == EE) {
                         for (Indx j = 0; j < num_elements_in_block; ++j) {
-                            line_stream = StrgStream(this->file_.get(line_start + offset));
+                            line_stream = StrgStream(this->module_.file_.get(line_start + offset));
                             Indx tag;
                             line_stream >> tag;
                             Array<Indx, EE.num_nodes> node_tags;

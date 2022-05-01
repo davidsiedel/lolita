@@ -163,7 +163,8 @@ TEST(test_lolita, test_lolita_1)
 //    print(vec);
 //    print("vec.size() :", vec.size());
     print(sizeof(elem));
-    printMesh(msh);
+    print(msh);
+//    printMesh(msh);
 
 
 }
