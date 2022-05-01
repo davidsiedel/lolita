@@ -60,3 +60,17 @@ L'appel à la librairie ne marche qu'avec la version Realease, sinon on a une er
 -DGTEST_ROOT=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.10.0-zoanm2vm72yk4tnzyvm523bvjnlxz435
 -DTEST_MODE=test
 -DCMAKE_FIND_DEBUG_MODE=ON
+
+-DINTEL_MKL_HOME=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk
+
+spack load gcc@11.3.0
+spack load cmake@3.23.1
+spack load eigen@3.4.0
+spack load tfel@matser
+spack load mgis@master
+spack load googletest@1.11.0
+spack load intel-mkl@2020.4.304
+
+cmake ../ -DCMAKE_BUILD_TYPE=Debug -DINTEL_MKL_HOME=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk -DTEST_MODE=test
+
+make

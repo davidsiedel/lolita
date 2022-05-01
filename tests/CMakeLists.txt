@@ -36,7 +36,9 @@ find_package(GTest REQUIRED)
 add_executable(${PROJECT_NAME}_test
         main.cxx
         test_lolita.cxx
-        test_mgis.cxx)
+        test_mgis.cxx
+#        new_test.cxx
+)
 add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME}_test)
 #target_link_libraries(${PROJECT_NAME}_test
 #        PUBLIC ${PROJECT_NAME} gtest)

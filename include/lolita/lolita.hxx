@@ -34,7 +34,7 @@ namespace lolita
     /**
      * @brief
      */
-    using Long = unsigned long long;
+    using Long = unsigned long;
 
     /**
      * @brief

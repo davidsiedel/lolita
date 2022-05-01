@@ -5,9 +5,6 @@
 #include <execution>
 #include <ostream>
 
-#include "lolita/lolita_core.hxx"
-//#include "lolita/lolita_unordered_map.hxx"
-//#include "lolita/lolita_unordered_set.hxx"
 #include "lolita/lolita_core_finite_element.hxx"
 #include "lolita/lolita_file.hxx"
 
@@ -244,6 +241,7 @@ namespace lolita::core::mesh
                 else if constexpr (K < elt.size() - 1) {
                     set_components_imp.template operator()<E, K + 1, 0, 0>(ptr_element_arg, set_components_imp);
                 }
+                ptr_element_arg.get().template get<K>().get().initialize();
             };
             /*
              *
@@ -828,7 +826,7 @@ namespace lolita::core::mesh
                     offset += 1;
                     for (Indx j = 0; j < num_nodes_in_block; ++j) {
                         line_stream = StrgStream(this->module_.file_.get(line_start + offset));
-                        Indx node_tag;
+                        Long node_tag;
                         line_stream >> node_tag;
                         line_stream = StrgStream(this->module_.file_.get(line_start + offset + num_nodes_in_block));
                         Vector<Real, D.dim> coordinates;
@@ -940,110 +938,6 @@ namespace lolita::core::mesh
         };
 
     };
-
-    template<typename M>
-    static inline
-    void
-    printMesh(
-            M const &
-            mesh_arg
-    )
-    {
-        auto elsets = mesh_arg.element_sets_;
-        auto elems = mesh_arg.elements_;
-        print("START ELEMS");
-        print("NODES");
-        for (auto const & [key, val] : elems.template get<0>().template get<0>().data) {
-            print(key, val.get().tag);
-            for (auto const & ghj: val.get().neighbours.template get<0>().template get<0>().data) {
-                print(" --> ", ghj.ptr.get().hash());
-            }
-            for (auto const & ghj: val.get().neighbours.template get<1>().template get<0>().data) {
-                print(" ----> ", ghj.ptr.get().hash());
-            }
-//                for (auto const & dom_label: val.get().domain_names.data) {
-//                    print(" [-] ", dom_label);
-//                }
-        }
-        print("NODES DONE");
-
-        print("SEGS");
-        for (auto const & [key, val] : elems.template get<1>().template get<0>().data) {
-            print(key, val.get().tag);
-            for (int i = 0; i < val.get().components.template get<0>().template get<0>().size(); ++i) {
-                print("--> ", val.get().components.template get<0>().template get<0>().get(i).ptr.get().hash(), val.get().components.template get<0>().template get<0>().get(i).orientation);
-            }
-            for (auto const & ghj: val.get().neighbours.template get<1>().template get<0>().data) {
-                print(" ----> ", ghj.ptr.get().hash());
-            }
-            for (auto const & ghj: val.get().neighbours.template get<0>().template get<0>().data) {
-                print(" <-> ", ghj.ptr.get().hash());
-            }
-//                for (auto const & dom_label: val.get().domain_names.data) {
-//                    print(" [-] ", dom_label);
-//                }
-        }
-        print("SEGS DONE");
-
-        print("QUAS");
-        for (auto const & [key, val] : elems.template get<2>().template get<1>().data) {
-            print(key, val.get().tag);
-            for (int i = 0; i < val.get().components.template get<0>().template get<0>().size(); ++i) {
-                print("--> ", val.get().components.template get<0>().template get<0>().get(i).ptr.get().hash(), val.get().components.template get<0>().template get<0>().get(i).orientation);
-            }
-            for (int i = 0; i < val.get().components.template get<1>().template get<0>().size(); ++i) {
-                print("----> ", val.get().components.template get<1>().template get<0>().get(i).ptr.get().hash(), val.get().components.template get<1>().template get<0>().get(i).orientation);
-            }
-            for (auto const & ghj: val.get().neighbours.template get<0>().template get<0>().data) {
-                print(" <-> ", ghj.ptr.get().hash());
-            }
-//                for (auto const & dom_label: val.get().domain_names.data) {
-//                    print(" [-] ", dom_label);
-//                }
-        }
-        print("QUAS DONE");
-
-        print("TRIS");
-        for (auto const & [key, val] : elems.template get<2>().template get<0>().data) {
-            print(key, val.get().tag);
-            for (int i = 0; i < val.get().components.template get<0>().template get<0>().size(); ++i) {
-                print("--> ", val.get().components.template get<0>().template get<0>().get(i).ptr.get().hash(), val.get().components.template get<0>().template get<0>().get(i).orientation);
-            }
-            for (int i = 0; i < val.get().components.template get<1>().template get<0>().size(); ++i) {
-                print("----> ", val.get().components.template get<1>().template get<0>().get(i).ptr.get().hash(), val.get().components.template get<1>().template get<0>().get(i).orientation);
-            }
-            for (auto const & ghj: val.get().neighbours.template get<0>().template get<0>().data) {
-                print(" <-> ", ghj.ptr.get().hash());
-            }
-//                for (auto const & dom_label: val.get().domain_names.data) {
-//                    print(" [-] ", dom_label);
-//                }
-        }
-        print("TRIS DONE");
-
-        print("END ELEMS");
-
-        print("START ELSETS");
-        for (auto const & [key, val] : elsets.data) {
-            print(key);
-            for (auto const & [elhash, elptr] : val.template get<0>().template get<0>().data) {
-                print(elhash);
-            }
-        }
-        for (auto const & [key, val] : elsets.data) {
-            print(key);
-            for (auto const & [elhash, elptr] : val.template get<1>().template get<0>().data) {
-                print(elhash);
-            }
-        }
-        for (auto const & [key, val] : elsets.data) {
-            print(key);
-            for (auto const & [elhash, elptr] : val.template get<2>().template get<0>().data) {
-                print(elhash);
-            }
-        }
-        print("END ELSETS");
-    }
 
 }
 

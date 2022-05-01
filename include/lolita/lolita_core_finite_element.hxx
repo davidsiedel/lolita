@@ -8,103 +8,10 @@
 #include "lolita/lolita_pointers.hxx"
 #include "lolita/lolita_matrix.hxx"
 
-//#include "lolita/lolita_core_element_quadrature.hxx"
 #include "lolita/lolita_core_element_geometry.hxx"
-//#include "lolita/lolita_core_element_basis.hxx"
-//#include "lolita/lolita_core_element_degree_of_freedom.hxx"
 
 namespace lolita::core::element
 {
-
-    namespace sand_box
-    {
-
-        template<Indx D>
-        struct GenericFiniteElement
-        {
-
-            virtual
-            ~GenericFiniteElement() = default;
-
-            virtual
-            UniquePointer<GenericFiniteElement>
-            copy()
-            const = 0;
-
-//        virtual
-//        Matrix<Real>
-//        getCurrentCoordinates()
-//        const = 0;
-
-        };
-
-        template<Indx D, typename Derived>
-        struct FiniteElement2 : public GenericFiniteElement<D>
-        {
-
-        protected:
-
-            // We make clear Shape class needs to be inherited
-            FiniteElement2() = default;
-
-            FiniteElement2(FiniteElement2 const &) = default;
-
-            FiniteElement2(FiniteElement2 &&) = default;
-
-        public:
-
-            UniquePointer<GenericFiniteElement<D>>
-            copy()
-            const override
-            {
-                return UniquePointer<GenericFiniteElement<D>>::template make<Derived>(* static_cast<Derived const *>(this));
-            }
-
-//        Matrix<Real>
-//        getCurrentCoordinates()
-//        const override
-//        {
-//            Matrix<Real> a = static_cast<Derived const *>(this)->getCurrentCoordinates();
-//            return a;
-//        }
-
-        };
-
-        template<Indx D>
-        struct ShapeImpl : public FiniteElement2<D, ShapeImpl<D>>
-        {
-
-            ShapeImpl() = default;
-
-//        auto
-//        getCurrentCoordinates()
-//        const
-//        {
-//            return Matrix<Real, 2, 2>().setZero();
-//        }
-
-        };
-
-        template<Indx D>
-        struct ShapeImpl2 : public FiniteElement2<D, ShapeImpl2<D>>
-        {
-
-            ShapeImpl2() = default;
-
-//        auto
-//        getCurrentCoordinates()
-//        const
-//        {
-//            return Matrix<Real, 4, 4>().setZero();
-//        }
-
-        };
-
-    }
-
-    /*
-     * CONN
-     */
 
     template<Element E, Domain D, auto F>
     struct FiniteElementUnknownMod;
@@ -129,72 +36,46 @@ namespace lolita::core::element
 
     public:
 
-//        template<Element Eb>
-//        struct Component : public FiniteElementPointer<Eb>
-//        {
-//
-//        private:
-//
-//            using Base = FiniteElementPointer<Eb>;
-//
-//        public:
-//
-//            Component()
-//            :
-//            Base(),
-//            orientation()
-//            {}
-//
-//            Component(
-//                    Base const &
-//                    base_arg,
-//                    Intg
-//                    orientation_arg
-//            )
-//            :
-//            Base(base_arg),
-//            orientation(orientation_arg)
-//            {}
-//
-//            Component(
-//                    Base &&
-//                    base_arg,
-//                    Intg
-//                    orientation_arg
-//            )
-//            :
-//            Base(base_arg),
-//            orientation(orientation_arg)
-//            {}
-//
-////            Component(
-////                    typename Base::Type const &
-////                    element_arg,
-////                    Intg
-////                    orientation_arg
-////            )
-////            :
-////            Base(element_arg),
-////            orientation(orientation_arg)
-////            {}
-//
-//            Bool
-//            operator==(
-//                    Component const &
-//                    other
-//            )
-//            const = default;
-//
-//            Bool
-//            operator!=(
-//                    Component const &
-//                    other
-//            )
-//            const = default;
-//
-//            Intg orientation;
-//
-//        };
+        template<Element Eb>
+        struct Component
+        {
+
+            Component()
+                    :
+                    ptr(),
+                    orientation()
+            {}
+
+            Component(
+                    SharedPointer<T<Eb, D, A...>> const &
+                    ptr_arg,
+                    Intg
+                    orientation_arg
+            )
+                    :
+                    ptr(ptr_arg),
+                    orientation(orientation_arg)
+            {}
+
+            Bool
+            operator==(
+                    Component const &
+                    other
+            )
+            const = default;
+
+            Bool
+            operator!=(
+                    Component const &
+                    other
+            )
+            const = default;
+
+            SharedPointer<T<Eb, D, A...>> ptr;
+
+            Intg orientation;
+
+        };
 
         template<Element Eb>
         struct Neighbour
@@ -228,47 +109,6 @@ namespace lolita::core::element
             const = default;
 
             SharedPointer<T<Eb, D, A...>> ptr;
-
-        };
-
-        template<Element Eb>
-        struct Component
-        {
-
-            Component()
-            :
-            ptr(),
-            orientation()
-            {}
-
-            Component(
-                    SharedPointer<T<Eb, D, A...>> const &
-                    ptr_arg,
-                    Intg
-                    orientation_arg
-            )
-            :
-            ptr(ptr_arg),
-            orientation(orientation_arg)
-            {}
-
-            Bool
-            operator==(
-                    Component const &
-                    other
-            )
-            const = default;
-
-            Bool
-            operator!=(
-                    Component const &
-                    other
-            )
-            const = default;
-
-            SharedPointer<T<Eb, D, A...>> ptr;
-
-            Intg orientation;
 
         };
 
@@ -364,7 +204,6 @@ namespace lolita::core::element
 
     public:
 
-        //using Coordinates = Vector<Real, D.dim>;
         using Coordinates = SharedPointer<Vector<Real, D.dim>>;
 
         template<Element Eb>
@@ -1084,9 +923,9 @@ namespace lolita::core::element
                     index_arg
             )
             requires(StaticMatrixType<Coefficients>)
-                    :
-                    coefficients(Coefficients::Zero()),
-                    index(index_arg)
+            :
+            coefficients(Coefficients::Zero()),
+            index(index_arg)
             {
                 index_arg += dimUnknowns();
             }
@@ -1098,9 +937,9 @@ namespace lolita::core::element
                     index_arg
             )
             requires(DynamicMatrixType<Coefficients>)
-                    :
-                    coefficients(Coefficients::Zero(size_arg)),
-                    index(index_arg)
+            :
+            coefficients(Coefficients::Zero(size_arg)),
+            index(index_arg)
             {
                 index_arg += size_arg;
             }
@@ -1136,6 +975,22 @@ namespace lolita::core::element
         }
 
     public:
+
+        void
+        initialize()
+        {
+            if constexpr (numUnknowns() > 0) {
+                for (int i = 0; i < field.rows(); ++i) {
+                    for (int j = 0; j < field.cols(); ++j) {
+                        ns.get(i, j).resize(numUnknowns());
+                        ns.get(i, j).setZero();
+                    }
+                }
+            }
+        }
+
+        Array<Vector<Real>, field.rows(), field.cols()> ns;
+        Array<Vector<Real>, field.rows(), field.cols()> bs;
 
 //        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> unknowns;
 //
@@ -1243,14 +1098,19 @@ namespace lolita::core::element
         void
         initialize()
         {
+            reinterpret_cast<FiniteElementUnknown2<E, D, F> *>(this)->initialize();
             using Implementation = typename FiniteElementPolicy2<E, D, F>::Implementation;
             static_cast<Implementation *>(this)->setModule();
-            auto set_num_components = [&] <auto I> ()
-                    mutable
+            auto set_operator = [&] <auto I = 0> (auto & self)
+            mutable
             {
                 static_cast<Implementation *>(this)->template setOperator<F.mappings.get(I), I>();
+                if constexpr (I < F.mappings.size() - 1) {
+                    self.template operator()<I + 1>(self);
+                }
             };
-            collection::apply<F.mappings.size()>(set_num_components);
+            set_operator(set_operator);
+            //collection::apply<F.mappings.size()>(set_num_components);
         }
 
     };
@@ -1271,9 +1131,9 @@ namespace lolita::core::element
     public:
 
         FiniteElementUnknownMod()
-                :
-                Base(),
-                Base2()
+        :
+        Base(),
+        Base2()
         {}
 
         void
@@ -1400,11 +1260,7 @@ namespace lolita::core::element
             setOperator()
             requires(Map == MappingOperator::Gradient)
             {
-                auto const constexpr ord_max = numerics::max(
-                        F.discretization.ordMapping(Map),
-                        F.discretization.ord_cell,
-                        F.discretization.ord_face
-                );
+                auto const constexpr ord_max = numerics::max(F.discretization.ordMapping(Map), F.discretization.ord_cell, F.discretization.ord_face);
                 /*
                  * Defining constants
                  */
@@ -1420,7 +1276,7 @@ namespace lolita::core::element
                  * LHS
                  */
                 auto get_lhs = [&] ()
-                        mutable
+                mutable
                 {
                     auto lhs = Matrix<Real, dim_bas_grd, dim_bas_grd>().setZero();
                     for (int i = 0; i < dim_qad_grd; ++i) {
@@ -1441,7 +1297,7 @@ namespace lolita::core::element
                         auto
                         j_arg
                 )
-                        mutable
+                mutable
                 {
                     /*
                      * Initializing the RHS part of the gradient operator
@@ -1450,13 +1306,8 @@ namespace lolita::core::element
                     /*
                      * Setting the cell part of the gradient operator
                      */
-                    auto set_rhs_cell = [&] (
-                            auto
-                            i_arg,
-                            auto
-                            j_arg
-                    )
-                            mutable
+                    auto set_rhs_cell = [&] ()
+                    mutable
                     {
                         for (int i = 0; i < dim_qad_grd; ++i) {
                             auto pc = this->template getReferenceQuadraturePoint<qad_grd>(i);
@@ -1470,68 +1321,58 @@ namespace lolita::core::element
                     /*
                      * Defining the face offset
                      */
-                    auto get_faces_offset = [] <auto N> ()
-                            constexpr
+                    auto get_faces_offset2 = [] <auto K> ()
+                    constexpr
                     {
-                        auto in = FiniteElementUnknownMod<E, D, F>::numUnknowns();
-                        auto set_num_components = [&] <auto K> () constexpr mutable {
-                            auto nj = FiniteElementUnknownMod<component<E, 0, K - 1>(), D, F>::numUnknowns();
-                            auto num_c = numComponents<E, 0, K - 1>();
-                            in += num_c * nj;
+                        auto offset = FiniteElementUnknownMod<E, D, F>::numUnknowns();
+                        auto get_faces_offset22 = [&] <auto L> (auto & self)
+                        constexpr mutable
+                        {
+                            if constexpr (L > 0) {
+                                auto nj = FiniteElementUnknownMod<component<E, 0, L - 1>(), D, F>::numUnknowns();
+                                auto num_c = numComponents<E, 0, L - 1>();
+                                offset += num_c * nj;
+                            }
                         };
-                        if constexpr (N > 0) collection::apply<N>(set_num_components);
-                        return in;
+                        get_faces_offset22.template operator()<K>(get_faces_offset22);
+                        return offset;
                     };
                     /*
                      * Setting the jump part of the gradient operator, at a given face
                      */
-                    auto set_rhs_face = [&] <auto K> (
-                            auto
-                            i_arg,
-                            auto
-                            j_arg,
-                            auto
-                            num_f
+                    auto set_rhs_face = [&] <auto K = 0> (
+                            auto &
+                            self
                     )
-                            mutable
+                    mutable
                     {
                         auto const constexpr dim_bas_fce = dimBasis<component<E, 0, K>(), bas_fce>();
-                        auto const & face = this->template getComponentPointer<0, K>(num_f).get();
-                        auto const & n_dir = this->template getComponentPointer<0, K>(num_f).orientation;
-                        for (int i = 0; i < dim_qad_grd; ++i) {
-                            auto pf = face.template getReferenceQuadraturePoint<qad_grd>(i);
-                            auto pc = this->template getComponentReferenceQuadraturePoint<qad_grd, 0, K>(num_f, i);
-                            auto wf = face.template getCurrentQuadratureWeight<qad_grd>(i);
-                            auto n = face.getNormalVector(pf);
-                            auto vr = this->template getBasisEvaluation<bas_grd>(pc);
-                            auto vc = this->template getBasisEvaluation<bas_cel>(pc);
-                            auto vf = face.template getBasisEvaluation<bas_fce>(pf);
-                            auto offset = dim_bas_cel * i_arg;
-                            auto prt_cell = rhs.template block<dim_bas_grd, dim_bas_cel>(0, offset);
-                            prt_cell -= wf * vr * vc.transpose() * n(j_arg) * n_dir;
-                            offset = get_faces_offset.template operator()<K>();
-                            offset += dim_bas_fce * (num_f * field<D, F>().size() + i_arg);
-                            auto prt_face = rhs.template block<dim_bas_grd, dim_bas_fce>(0, offset);
-                            prt_face += wf * vr * vf.transpose() * n(j_arg) * n_dir;
+                        for (int num_f = 0; num_f < numComponents<E, 0, K>(); ++num_f) {
+                            auto const & face = this->template getComponentPointer<0, K>(num_f).ptr.get();
+                            auto const & n_dir = this->template getComponentPointer<0, K>(num_f).orientation;
+                            for (int i = 0; i < dim_qad_grd; ++i) {
+                                auto pf = face.template getReferenceQuadraturePoint<qad_grd>(i);
+                                auto pc = this->template getComponentReferenceQuadraturePoint<qad_grd, 0, K>(num_f, i);
+                                auto wf = face.template getCurrentQuadratureWeight<qad_grd>(i);
+                                auto n = face.getNormalVector(pf);
+                                auto vr = this->template getBasisEvaluation<bas_grd>(pc);
+                                auto vc = this->template getBasisEvaluation<bas_cel>(pc);
+                                auto vf = face.template getBasisEvaluation<bas_fce>(pf);
+                                auto offset = dim_bas_cel * i_arg;
+                                auto prt_cell = rhs.template block<dim_bas_grd, dim_bas_cel>(0, offset);
+                                prt_cell -= wf * vr * vc.transpose() * n(j_arg) * n_dir;
+                                //offset = get_faces_offset.template operator()<K>();
+                                offset = get_faces_offset2.template operator()<K>();
+                                offset += dim_bas_fce * (num_f * field<D, F>().size() + i_arg);
+                                auto prt_face = rhs.template block<dim_bas_grd, dim_bas_fce>(0, offset);
+                                prt_face += wf * vr * vf.transpose() * n(j_arg) * n_dir;
+                            }
+                        }
+                        if constexpr (K < numComponents<E, 0>() - 1) {
+                            self.template operator()<K + 1>(i_arg, j_arg, self);
                         }
                     };
-                    /*
-                     * Setting the jump parts of the gradient operator
-                     */
-                    auto set_rhs_faces = [&] <auto K> (
-                            auto
-                            i_arg,
-                            auto
-                            j_arg
-                    )
-                            mutable
-                    {
-                        for (int i = 0; i < numComponents<E, 0, K>(); ++i) {
-                            set_rhs_face.template operator()<K>(i_arg, j_arg, i);
-                        }
-                    };
-                    set_rhs_cell(i_arg, j_arg);
-                    collection::apply<numComponents<E, 0>()>(set_rhs_faces, i_arg, j_arg);
+                    set_rhs_face(set_rhs_face);
                     return rhs;
                 };
                 /*
@@ -1584,18 +1425,13 @@ namespace lolita::core::element
                     /*
                      * Setting the cell part of the identity operator
                      */
-                    auto set_rhs_cell = [&] (
-                            auto
-                            i_arg,
-                            auto
-                            j_arg
-                    )
+                    auto set_rhs_cell = [&] ()
                             mutable
                     {
                         auto prt = rhs.template block<dim_bas_ide, dim_bas_cel>(0, dim_bas_cel * i_arg);
                         prt = Matrix<Real, dim_bas_ide, dim_bas_cel>::Identity();
                     };
-                    set_rhs_cell(i_arg, j_arg);
+                    set_rhs_cell();
                     return rhs;
                 };
                 /*
@@ -1814,344 +1650,22 @@ namespace lolita::core::element
      */
 
     template<Element E, Domain D, auto C>
-    using FiniteElementCollection = typename decltype(C)::template Type<FiniteElementUnknownMod, E, D>;
-
-    template<Domain D, auto C>
-    static
-    void
-    makee(
-            auto &
-            element_list,
-            auto &&
-            element_node_tags_arg1
-    )
-    {
-        /*
-         *
-         */
-        auto set_components = [&] <Element E, auto K = 0, auto I = 0, auto J = 0> (
-                auto &
-                ptr_element_arg,
-                auto &
-                set_components_imp
-        )
-        mutable
-        {
-            if constexpr (I == 0 && J == 0) {
-                pointer::make(ptr_element_arg.get().template get<K>());
-            }
-            auto & elt = ptr_element_arg.get();
-            for (int i = 0; i < numComponents<E, I, J>(); ++i) {
-                auto & rhs = elt.components.template get<I>().template get<J>().get(i);
-                auto & lhs = elt.template get<K>().get().components.template get<I>().template get<J>().get(i);
-                lhs.ptr = rhs.ptr.get().template get<K>();
-                lhs.orientation = rhs.orientation;
-                print("hello", K, I, J, i);
-            }
-            if constexpr (J < numComponents<E, I>() - 1) {
-                set_components_imp.template operator()<K, I, J + 1>(ptr_element_arg, set_components_imp);
-            }
-            else if constexpr (I < numComponents<E>() - 1) {
-                set_components_imp.template operator()<K, I + 1, 0>(ptr_element_arg, set_components_imp);
-            }
-            else if constexpr (K < elt.size() - 1) {
-                set_components_imp.template operator()<K + 1, 0, 0>(ptr_element_arg, set_components_imp);
-            }
-        };
-        /*
-         *
-         */
-        auto set_element = [&] <Element E, auto I = 0, auto J = 0> (
-                auto &&
-                element_node_tags_arg,
-                auto &
-                ptr_element_arg,
-                auto &
-                set_element_imp
-        )
-        mutable
-        {
-            auto const constexpr cmp = component<E, I, J>();
-            auto const constexpr bd = cmp.dim;
-            auto const constexpr bt = elementIndex<cmp>();
-            auto const constexpr ed = E.dim;
-            auto const constexpr et = elementIndex<E>();
-            auto & components = element_list.template get<cmp.dim>().template get<bt>();
-            auto & elements = element_list.template get<E.dim>().template get<et>();
-            auto & element_component_array = ptr_element_arg.get().components.template get<I>().template get<J>();
-            auto element_hash = getElementHash<E>(element_node_tags_arg);
-            for (auto i = 0; i < numComponents<E, I, J>(); ++i) {
-                auto component_node_tags = getComponentNodeTags<E, I, J>(element_node_tags_arg, i);
-                auto component_hash = getElementHash<cmp>(component_node_tags);
-                if constexpr (cmp == pnt_00) {
-                    element_component_array.get(i) = {components.get(component_hash), 1};
-                }
-                else {
-                    if (components.data.contains(component_hash)) {
-                        element_component_array.get(i) = {components.get(component_hash), -1};
-                    }
-                    else {
-                        auto ptr_component = SharedPointer<FiniteElement<cmp, D, C>>(FiniteElement<cmp, D, C>());
-                        set_element_imp.template operator ()<cmp>(component_node_tags, ptr_component, set_element_imp);
-                        element_component_array.get(i) = {components.get(component_hash), 1};
-                    }
-                }
-                auto & component_neighbours = components.get(component_hash).get().neighbours;
-                if constexpr (cmp == element::pnt_00) {
-                    Indx const constexpr nd = ed - 1;
-                    component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg});
-                }
-                else {
-                    Indx const constexpr nd = ed - bd;
-                    component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg});
-                }
-            }
-            if constexpr (J < numComponents<E, I>() - 1) {
-                set_element_imp.template operator()<E, I, J + 1>(element_node_tags_arg, ptr_element_arg, set_element_imp);
-            }
-            else if constexpr (I < numComponents<E>() - 1) {
-                set_element_imp.template operator()<E, I + 1, 0>(element_node_tags_arg, ptr_element_arg, set_element_imp);
-            }
-            if constexpr (I == 0 && J == 0) {
-                ptr_element_arg.get().tag = elements.size();
-                set_components.template operator ()<E>(ptr_element_arg, set_components);
-                elements.data.insert({element_hash, ptr_element_arg});
-            }
-        };
-        /*
-         *
-         */
-        auto set_cell = [&] <Element E> (
-                auto &&
-                element_node_tags_arg
-        )
-        mutable
-        {
-            auto ptr_element = SharedPointer<FiniteElement<E, D, C>>(FiniteElement<E, D, C>());
-            set_element.template operator ()<E>(element_node_tags_arg1, ptr_element, set_element);
-        };
-    }
+    using MixedElement = typename decltype(C)::template Type<FiniteElementUnknownMod, E, D>;
 
     template<Element E, Domain D, auto C>
-    struct FiniteElement : public FiniteElementCollection<E, D, C>, public FiniteElementGeometry<E, D, FiniteElement, C>
+    struct FiniteElement : public MixedElement<E, D, C>, public FiniteElementGeometry<E, D, FiniteElement, C>
     {
 
         FiniteElement()
         :
-        FiniteElementCollection<E, D, C>(),
+        MixedElement<E, D, C>(),
         FiniteElementGeometry<E, D, FiniteElement, C>()
         {}
 
         void
-        init()
-        {
-            auto set = [&] <auto K> ()
-            {
-                pointer::make(this->template get<K>());
-            };
-            auto set_loop = [&] <auto K> (auto & set_loop_impl)
-            constexpr mutable
-            {
-                set.template operator()<K>();
-                if constexpr (K < FiniteElement::size() - 1) {
-                    set_loop_impl.template operator()<K + 1>(set_loop_impl);
-                }
-            };
-            set_loop.template operator()<0>(set_loop);
-            //
-        }
-
-        void
         initialize()
         {
-            auto set_compo = [&] <auto K, auto I, auto J> (auto index_arg)
-            mutable
-            {
-//                this->components.template get<I>().template get<J>().get(index_arg).orientation;
-//                this->components.template get<I>().template get<J>().get(index_arg).get();
-//                this->template get<K>().components.template get<0>().template get<0>().get(index_arg).orientation;
-//                auto & aa = this->components.template get<I>().template get<J>().get(index_arg).get().template get<K>();
-//                auto & bb = this->template get<K>().components.template get<I>().template get<J>().get(index_arg);
-                auto & aa = this->components.template get<0>().template get<0>().get(0).get().template get<0>();
-                auto & bb = this->template get<0>().components.template get<0>().template get<0>().get(0).get();
-                bb = aa;
-            };
-            auto set_compo2 = [&] <auto K, auto I, auto J> ()
-                    mutable
-            {
-                for (int i = 0; i < numComponents<E, I, J>(); ++i) {
-                    set_compo.template operator ()<K, I, J>(i);
-                }
-            };
-            auto test = [&] <auto... A> ()
-            constexpr mutable
-            {
-                print("fun :", A...);
-            };
-//            auto test1 = [&] <auto Ki, auto Ii, auto Ji> ()
-//            mutable
-//            {
-//                for (int i = 0; i < numComponents<E, Ii, Ji>(); ++i) {
-//                    test.template operator ()<Ki, Ii, Ji>(i);
-//                }
-//            };
-////            auto test2 = [&] <auto I, auto J> ()
-////            mutable
-////            {
-////                auto inner = [&] <auto Ii, auto Jj> (auto & ref)
-////                mutable
-////                {
-////                    if constexpr (Jj < 3) {
-////                        ref.template operator()<Ii, Jj + 1>(ref);
-////                    }
-////                    if constexpr (Ii < 3) {
-////                        ref.template operator()<Ii + 1, 0>(ref);
-////                    }
-////                };
-////                inner.template operator()<0, 0>(inner);
-////            };
 
-            auto inner = [&] <auto I, auto J> (auto & ref)
-            constexpr mutable
-            {
-                test.template operator()<I, J>();
-                if constexpr (J < 3) {
-                    ref.template operator()<I, J + 1>(ref);
-                }
-                if constexpr (I < 2 && J == 3) {
-                    ref.template operator()<I + 1, 0>(ref);
-                }
-            };
-            inner.template operator()<0, 0>(inner);
-
-            print("--");
-
-            auto inner2 = [&] <auto K, auto I, auto J> (auto & ref)
-                    constexpr mutable
-            {
-                test.template operator()<K, I, J>();
-                set_compo2.template operator()<K, I, J>();
-                auto const constexpr sj = numComponents<E, I>() - 1;
-                auto const constexpr si = numComponents<E>() - 1;
-                auto const constexpr sk = FiniteElement::size() - 1;
-                if constexpr (J < sj) {
-                    ref.template operator()<K, I, J + 1>(ref);
-                }
-                if constexpr (I < si && J == sj) {
-                    ref.template operator()<K, I + 1, 0>(ref);
-                }
-                if constexpr (K < sk && I == si && J == sj) {
-                    ref.template operator()<K + 1, 0, 0>(ref);
-                }
-            };
-            inner2.template operator()<0, 0, 0>(inner2);
-//
-//            auto inner2 = [&] (auto i, auto j, auto & ref)
-//            mutable
-//            {
-//                print(i, j);
-//                if (j < 2) {
-//                    ref(i, j + 1, ref);
-//                }
-//                if (i < 1) {
-//                    ref(i + 1, 0, ref);
-//                }
-//            };
-//            inner2(0, 0, inner2);
-
-//            const auto sum = [&] (int a, int b) {
-//                auto sum_impl=[&](int a,int b, auto & sum_ref) mutable {
-//                    print(a, b);
-//                    if (a < 2) {
-//                        sum_ref(a + 1, b, sum_ref);
-//                    }
-//                    if (b < 2) {
-//                        sum_ref(a, b + 1, sum_ref);
-//                    }
-////                    if(a > b){
-////                        return 0;
-////                    }
-////                    return a + sum_ref(a, b, sum_ref);
-//                };
-//                return sum_impl(a, b, sum_impl);
-//            };
-//            print(sum(1, 10));
-//            inner.template operator()<0, 0>(inner);
-
-//            auto set_compo2 = [&] <auto K, auto I, auto J> (auto index_arg)
-//            mutable
-//            {
-//                for (int i = 0; i < numComponents<E, I, J>(); ++i) {
-//                    set_compo.template operator ()<K, I, J>(i);
-//                }
-////                if constexpr (J < numComponents<E, I>() - 1) {
-////                    set_compo2.template operator ()<K, I, J + 1>();
-////                }
-//            };
-//            const auto selff = [&] <auto K> () constexpr {
-//                const auto selfl = [&] <auto I> (auto & self) constexpr {
-//                    self.template operator()<I>();
-//                    if constexpr (I < 3) {
-//
-//                    }
-//                };
-//            };
-//            selff.template operator()<0>();
-//            const auto sum = [&] <auto K, auto I, auto J> () constexpr {
-//                auto sum_impl = [&] (auto & sum_ref) constexpr mutable {
-//                    for (int i = 0; i < numComponents<E, I, J>(); ++i) {
-//                        test.template operator ()<K, I, J>(i);
-//                    }
-//                    if constexpr (J < numComponents<E, I>() - 1) {
-//                        sum_ref.template operator()<K, I, J + 1>();
-//                    }
-//                    if constexpr (I < numComponents<E>() - 1) {
-//                        sum_ref.template operator()<K, I + 1, 0>();
-//                    }
-//                };
-//                sum_impl(sum_impl);
-//            };
-//            sum.template operator ()<0, 0, 0>();
-//            auto term = [](int a)->int {
-//                return a*a;
-//            };
-//
-//            auto next = [](int a)->int {
-//                return ++a;
-//            };
-//            const auto sum = [&](int a, int b) {
-//                auto sum_impl=[&](int a,int b, auto & sum_ref) mutable {
-//                    if(a > b){
-//                        return 0;
-//                    }
-//                    return a + sum_ref(a, b, sum_ref);
-//                };
-//                return sum_impl(a,b,sum_impl);
-//            };
-//            print(sum(1, 10));
-//            set_compo2.template operator ()<0, 0, 0>();
-//            if constexpr (!Point<E>) {
-//                auto set_coords = [&] <auto K> ()
-//                constexpr mutable
-//                {
-//                    auto & nds_cmp = this->template get<K>().components.template get<E.dim - 1>().template get<0>();
-//                    auto & nds_elt = this->components.template get<E.dim - 1>().template get<0>();
-//                    for (int i = 0; i < nds_elt.size(); ++i) {
-//                        nds_cmp.get(i) = decltype(nds_cmp.get(i))();
-//                        nds_cmp.get(i).get().coordinates = nds_elt.get(i).get().coordinates;
-//                    }
-//                };
-//                collection::apply<FiniteElement::size()>(set_coords);
-//            }
-//            else {
-//                auto set_coords = [&] <auto K> ()
-//                constexpr mutable
-//                {
-//                    this->template get<K>().coordinates = this->coordinates;
-//                };
-//                collection::apply<FiniteElement::size()>(set_coords);
-//            }
-//            this->template get<0>().initialize();
         }
 
         void
@@ -2197,7 +1711,7 @@ namespace lolita::core::element
             return hash.str();
         }
 
-        Indx tag;
+        Long tag;
 
     };
 

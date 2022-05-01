@@ -1,13 +1,17 @@
 //
-// Created by dsiedel on 13/04/2022.
+// Created by dsiedel on 01/05/22.
 //
 
 #include <span>
 #include "gtest/gtest.h"
 
+#include "lolita/lolita.hxx"
+#include "lolita/lolita_core_element_geometry.hxx"
+#include "lolita/lolita_core.hxx"
+#include "lolita/lolita_core_finite_element.hxx"
 #include "lolita/lolita_core_mesh.hxx"
 
-TEST(test_lolita, test_lolita_1)
+TEST(test_lolita2, test_lolita_2)
 {
 
     using namespace lolita;
@@ -25,24 +29,8 @@ TEST(test_lolita, test_lolita_1)
     auto const constexpr ets = Elements<fet>();
     auto const constexpr cet = CoupledElement<met, met>(QuadratureRule::Gauss);
 
-
     auto msh = mesh::MeshBase<MeshFormatType::Gmsh, dom, ets>(msh_file, {});
-    auto & elem = msh.elements_.get<2>().get<0>().get("345").get();
-
-    print("ns :");
-    print(elem.get<0>().get().ns.get(0,0));
-
-    elem.get<0>().get().operators.get(0);
-    print(elem.get<0>().get().operators.get(0));
-
-    auto myvec = Vector<Real>();
-
-    myvec.resize(4);
-    myvec.setZero();
-    print(myvec);
-
 
     print(msh);
 
 }
-

@@ -6,7 +6,6 @@
 #define LOLITA_LOLITA_NUMERICS_HXX
 
 #include "lolita/lolita.hxx"
-#include "lolita/lolita.hxx"
 
 namespace lolita::numerics
 {

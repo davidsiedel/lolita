@@ -34,5 +34,7 @@
 # Perso
 **/old/
 **/.idea/
+**/.vscode/
 **/cmake-build**/
+**/**build**/
 tmp.*

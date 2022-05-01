@@ -12,7 +12,6 @@
 #include <MGIS/Behaviour/Integrate.hxx>
 #include <MGIS/Behaviour/Integrate.h>
 
-#include "lolita.hxx"
 #include "lolita_matrix.hxx"
 #include "lolita_pointers.hxx"
 
@@ -542,60 +541,6 @@ namespace lolita::core
         return Field(F.ord_field, D.dim);
     }
 
-//    template<Domain D, auto F>
-//    struct Load : public Array<LoadComponent<D>, field<D, F>().rows(), field<D, F>().cols()>
-//    {
-//
-//        using Base = Array<LoadComponent<D>, field<D, F>().rows(), field<D, F>().cols()>;
-//
-//        auto const static constexpr finite_element = F;
-//
-//        Load()
-////        :
-////        Base(setDefault())
-//        {}
-//
-//        Load(
-//                auto &&
-//                label_arg,
-//                auto &&...
-//                load_component_args
-//        )
-//        requires(sizeof...(load_component_args) == Base::size())
-//        :
-//        Base{load_component_args...},
-//        label(label_arg)
-//        {}
-//
-////        static
-////        auto
-////        setDefault()
-////        {
-////            auto base = Array<SharedPointer<LoadComponent<D>>, field<D, F>().rows(), field<D, F>().cols()>();
-////            for (int i = 0; i < field<D, F>().rows(); ++i) {
-////                for (int j = 0; j < field<D, F>().cols(); ++j) {
-////                    base.get(i, j) = SharedPointer<LoadComponent<D>>(LoadComponent<D>());
-////                }
-////            }
-////            return base;
-////        }
-//
-//        Strg label;
-//
-//    };
-
-//    template<Domain D, auto... F>
-//    struct MixedElementLoads : public Collection<Load<D, F>...>
-//    {
-//
-//    };
-//
-//    template<Domain D, auto... M>
-//    struct CoupledElementLoads : public Collection<Load<D, F>...>
-//    {
-//
-//    };
-
     template<FiniteElementMethod Fem, typename... OperatorType>
     struct FiniteElement
     {
@@ -612,6 +557,8 @@ namespace lolita::core
                 ord_field_arg,
                 Discretization<Fem>
                 discretization_arg,
+                Quadrature
+                quadrature_arg,
                 OperatorType...
                 operator_args
         )
@@ -619,6 +566,7 @@ namespace lolita::core
         tag(tag_arg),
         ord_field(ord_field_arg),
         discretization(discretization_arg),
+        quadrature(quadrature_arg),
         mappings({operator_args...})
         {}
 
@@ -647,7 +595,7 @@ namespace lolita::core
         const
         {
             auto ord_integration_arg = Indx(0);
-            auto set_ord_integration = [& ord_integration_arg, this](auto const & m) constexpr mutable {
+            auto set_ord_integration = [&](auto const & m) constexpr mutable {
                 ord_integration_arg = numerics::max(ord_integration_arg, discretization.ordMapping(m));
             };
             std::for_each(mappings.data.begin(), mappings.data.end(), set_ord_integration);
@@ -659,6 +607,8 @@ namespace lolita::core
         Indx ord_field;
 
         Discretization<Fem> discretization;
+
+        Quadrature quadrature;
 
         Array<MappingOperator, sizeof...(OperatorType)> mappings;
 
