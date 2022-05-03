@@ -28,6 +28,15 @@ namespace lolita::core::element
 
         FiniteElementNeighbour(
                 SharedPointer<T<E, D, A...>> const &
+                ptr_arg
+        )
+        :
+        ptr(ptr_arg),
+        index(0)
+        {}
+
+        FiniteElementNeighbour(
+                SharedPointer<T<E, D, A...>> const &
                 ptr_arg,
                 Indx
                 index_arg
@@ -53,7 +62,14 @@ namespace lolita::core::element
 
         SharedPointer<T<E, D, A...>>   ptr;
 
-        Indx const index;
+        Indx index;
+
+        Intg
+        orientation()
+        const
+        {
+            return index == 0 ? 1 : -1;
+        }
 
     };
 
@@ -198,17 +214,42 @@ namespace lolita::core::element
 
         };
 
-        using Components = ElementComponents<E, Component>;
+//        using Components = ElementComponents<E, Component>;
+//
+//        using Neighbours = ElementNeighbourArray<E, D.dim, Neighbour>;
 
-        using Neighbours = ElementNeighbourArray<E, D.dim, Neighbour>;
+        using Components = ElementComponents<E, Neighbourggg>;
 
-        using Adjacency = Collection<ElementComponents<E, Neighbourggg>, ElementNeighbourArray<E, D.dim, Neighbourggg>>;
+        using Neighbours = ElementNeighbourArray<E, D.dim, Neighbourggg>;
+
+        //using Adjacency = Collection<ElementComponents<E, Neighbourggg>, ElementNeighbourArray<E, D.dim, Neighbourggg>>;
 
         FiniteElementConnectivity()
         :
         components(),
-        neighbours()
+        neighbours(),
+        count(0)
         {}
+
+        template<auto I, auto J>
+        auto
+        getComponentIndex(
+                auto
+                index_arg
+        )
+        const
+        {
+            auto const & cts = components.template get<I>().template get<J>().get(index_arg).ptr.get();
+            auto const & klm = cts.neighbours.template get<I>().template get<J>();
+            auto cnt = Indx(0);
+            for (auto const & item : klm) {
+                if (item.ptr.get() == * this) {
+
+                }
+                cnt ++;
+            }
+            return cnt;
+        }
 
         template<auto I, auto J>
         auto
@@ -292,6 +333,9 @@ namespace lolita::core::element
         template<Element Eb>
         using FiniteElementPointer = SharedPointer<T<Eb, D, A...>>;
 
+        template<Element Eb>
+        using Neighbourggg = FiniteElementNeighbour<Eb, D, T, A...>;
+
     public:
 
         using Coordinates = SharedPointer<Vector<Real, D.dim>>;
@@ -301,16 +345,16 @@ namespace lolita::core::element
         {
 
             Neighbour()
-                    :
-                    ptr()
+            :
+            ptr()
             {}
 
             Neighbour(
                     SharedPointer<T<Eb, D, A...>> const &
                     ptr_arg
             )
-                    :
-                    ptr(ptr_arg)
+            :
+            ptr(ptr_arg)
             {}
 
             Bool
@@ -331,12 +375,15 @@ namespace lolita::core::element
 
         };
 
-        using Neighbours = ElementNeighbourArray<E, D.dim, Neighbour>;
+        //using Neighbours = ElementNeighbourArray<E, D.dim, Neighbour>;
+
+        using Neighbours = ElementNeighbourArray<E, D.dim, Neighbourggg>;
 
         FiniteElementConnectivity()
         :
         coordinates(),
-        neighbours()
+        neighbours(),
+        count(0)
         {}
 
         template<auto I, auto J>
@@ -385,6 +432,8 @@ namespace lolita::core::element
         Coordinates coordinates;
 
         Neighbours neighbours;
+
+        Indx count;
 
     };
 
@@ -1518,7 +1567,7 @@ namespace lolita::core::element
                         auto const constexpr dim_bas_fce = dimBasis<component<E, 0, K>(), bas_fce>();
                         for (int num_f = 0; num_f < numComponents<E, 0, K>(); ++num_f) {
                             auto const & face = this->template getComponentPointer<0, K>(num_f).ptr.get();
-                            auto const & n_dir = this->template getComponentPointer<0, K>(num_f).orientation;
+                            auto const & n_dir = this->template getComponentPointer<0, K>(num_f).orientation();
                             for (int i = 0; i < dim_qad_grd; ++i) {
                                 auto pf = face.template getReferenceQuadraturePoint<qad_grd>(i);
                                 auto pc = this->template getComponentReferenceQuadraturePoint<qad_grd, 0, K>(num_f, i);

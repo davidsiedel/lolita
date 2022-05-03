@@ -137,6 +137,33 @@ namespace lolita::core::element
     template<template<Element> typename T>
     using Solids = Collection<T<tet_04>>;
 
+    template<typename T>
+    struct test_struct : public std::false_type
+    {};
+
+    template<template<Element, Domain, auto...> typename T, Element E, Domain D, auto... A>
+    struct test_struct<T<E, D, A...>> : public std::true_type
+    {};
+
+    template<typename T>
+    concept FiniteElementType = test_struct<T>::value;
+
+    /*
+     *
+     */
+
+    template<Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+    using Points2 = Collection<T<pnt_00, Dmn, A...>>;
+
+    template<Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+    using Curves2 = Collection<T<seg_02, Dmn, A...>>;
+
+    template<Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+    using Facets2 = Collection<T<tri_03, Dmn, A...>, T<qua_04, Dmn, A...>>;
+
+    template<Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+    using Solids2 = Collection<T<tet_04, Dmn, A...>>;
+
     namespace detail
     {
 
@@ -280,7 +307,58 @@ namespace lolita::core::element
 
         };
 
+        template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
+        struct ElementNeighbourArrayPolicy2
+        {
+
+        private:
+
+            template<Element EE>
+            using NeighbourArray = Array<T<EE, D, A...>>;
+
+        public:
+
+            using Type = typename ElementNeighbourhoodPolicy<E.dim, D.dim, NeighbourArray>::Type;
+
+        };
+
+        template<Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+        struct ElementsPolicy2;
+
+        template<Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+        requires(Dmn.dim == 1)
+        struct ElementsPolicy2<Dmn, T, A...>
+        {
+
+            using Type = Collection<Points2<Dmn, T, A...>, Curves2<Dmn, T, A...>>;
+
+        };
+
+        template<Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+        requires(Dmn.dim == 2)
+        struct ElementsPolicy2<Dmn, T, A...>
+        {
+
+            using Type = Collection<Points2<Dmn, T, A...>, Curves2<Dmn, T, A...>, Facets2<Dmn, T, A...>>;
+
+        };
+
+        template<Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+        requires(Dmn.dim == 3)
+        struct ElementsPolicy2<Dmn, T, A...>
+        {
+
+            using Type = Collection<Points2<Dmn, T, A...>, Curves2<Dmn, T, A...>, Facets2<Dmn, T, A...>, Solids2<Dmn, T, A...>>;
+
+        };
+
     }
+
+    template<Element E, Indx D, template<Element, auto...> typename T, auto... A>
+    using ElementNeighbourArray = typename detail::ElementNeighbourArrayPolicy<E, D, T, A...>::Type;
+
+    template<Element E, Domain Dmn, template<Element, Domain, auto...> typename T, auto... A>
+    using ElementNeighbourArray2 = typename detail::ElementNeighbourArrayPolicy2<E, Dmn, T, A...>::Type;
 
     template<Element E>
     struct ElementGeometry;
@@ -396,6 +474,17 @@ namespace lolita::core::element
                         Array<T<pnt_00>, 2>
                 >
         >;
+
+        template<template<Element, auto...> typename T, auto... A>
+        requires(std::same_as<std::tuple_element_t<0, std::tuple<std::remove_cvref_t<decltype(A)>...>>, Domain>)
+        using Components2 = Collection<
+                Collection<
+                        Array<T<pnt_00, A...>, 2>
+                >
+        >;
+
+        template<Domain Dmn, template<Element, auto...> typename T, auto... A>
+        using Neighbours2 = Collection<Components2<T, Dmn, A...>, ElementNeighbourArray2<E, Dmn, T, A...>>;
 
         auto const static constexpr node_connectivity = Components<detail::ElementNodeConnectivity>{
                 {
@@ -906,8 +995,20 @@ namespace lolita::core::element
     template<Element E, Indx I, Indx J, template<Element, auto...> typename T, auto... A>
     using ElementComponent = typename detail::ElementComponentPolicy<T, I, J, E, A...>::Type;
 
-    template<Element E, Indx D, template<Element, auto...> typename T, auto... A>
-    using ElementNeighbourArray = typename detail::ElementNeighbourArrayPolicy<E, D, T, A...>::Type;
+    using ElementPosition = std::array<Indx, 3>;
+
+    template<Element E, Element B>
+    static constexpr
+    ElementPosition
+    elementIndex()
+    {
+        auto get_position = [] <auto I = 0, auto J = 0, auto K = 0> (auto & self)
+        constexpr
+        {
+        };
+        get_position(get_position);
+        return ElementPosition{0, 0, 0};
+    }
 
     template<Element E>
     static constexpr

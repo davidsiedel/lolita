@@ -276,7 +276,8 @@ namespace lolita::core::mesh
                     auto & rhs = elt.components.template get<I>().template get<J>().get(i);
                     auto & lhs = elt.template get<K>().get().components.template get<I>().template get<J>().get(i);
                     lhs.ptr = rhs.ptr.get().template get<K>();
-                    lhs.orientation = rhs.orientation;
+//                    lhs.orientation = rhs.orientation;
+                    lhs.index = rhs.index;
                 }
                 if constexpr (J < element::numComponents<E, I>() - 1) {
                     set_components_imp.template operator()<E, K, I, J + 1>(ptr_element_arg, set_components_imp);
@@ -430,27 +431,50 @@ namespace lolita::core::mesh
                 for (auto i = 0; i < element::numComponents<E, I, J>(); ++i) {
                     auto component_node_tags = get_component_node_tags.template operator ()<E, I, J>(element_node_tags_arg, i);
                     auto component_hash = get_element_hash(component_node_tags);
+                    //
+//                    if (!components.data.contains(component_hash)) {
+//                        auto ptr_component = SharedPointer<FiniteElementE<cmp, D, Med>>(FiniteElementE<cmp, D, Med>());
+//                        set_element_imp.template operator ()<cmp>(component_node_tags, ptr_component, set_element_imp);
+//                    }
+//                    element_component_array.get(i) = {components.get(component_hash), components.get(component_hash).get().count};
+//                    components.get(component_hash).get().count ++;
+//                    auto & component_neighbours = components.get(component_hash).get().neighbours;
+//                    if constexpr (cmp == element::pnt_00) {
+//                        Indx const constexpr nd = ed - 1;
+//                        component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg});
+//                    }
+//                    else {
+//                        Indx const constexpr nd = ed - bd;
+//                        component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg});
+//                    }
+                    //
                     if constexpr (cmp == element::pnt_00) {
-                        element_component_array.get(i) = {components.get(component_hash), 1};
+                        //element_component_array.get(i) = {components.get(component_hash), 1};
+                        element_component_array.get(i) = {components.get(component_hash), components.get(component_hash).get().count};
+                        components.get(component_hash).get().count ++;
                     }
                     else {
                         if (components.data.contains(component_hash)) {
-                            element_component_array.get(i) = {components.get(component_hash), -1};
+                            //element_component_array.get(i) = {components.get(component_hash), -1};
+                            element_component_array.get(i) = {components.get(component_hash), components.get(component_hash).get().count};
+                            components.get(component_hash).get().count ++;
                         }
                         else {
                             auto ptr_component = SharedPointer<FiniteElementE<cmp, D, Med>>(FiniteElementE<cmp, D, Med>());
                             set_element_imp.template operator ()<cmp>(component_node_tags, ptr_component, set_element_imp);
-                            element_component_array.get(i) = {components.get(component_hash), 1};
+                            //element_component_array.get(i) = {components.get(component_hash), 1};
+                            element_component_array.get(i) = {components.get(component_hash), components.get(component_hash).get().count};
+                            components.get(component_hash).get().count ++;
                         }
                     }
                     auto & component_neighbours = components.get(component_hash).get().neighbours;
                     if constexpr (cmp == element::pnt_00) {
                         Indx const constexpr nd = ed - 1;
-                        component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg});
+                        component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg, component_neighbours.template get<nd>().template get<et>().size()});
                     }
                     else {
                         Indx const constexpr nd = ed - bd;
-                        component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg});
+                        component_neighbours.template get<nd>().template get<et>().data.push_back({ptr_element_arg, component_neighbours.template get<nd>().template get<et>().size()});
                     }
                 }
                 if constexpr (J < element::numComponents<E, I>() - 1) {
