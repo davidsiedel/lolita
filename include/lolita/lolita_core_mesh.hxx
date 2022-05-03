@@ -16,6 +16,8 @@ namespace lolita::core::mesh
 
     using Element = core::element::Element;
 
+    //using DegreeOfFreedomIndex = core::element::DegreeOfFreedomIndex;
+
     template<Element E, Domain D, auto Med>
     using FiniteElementE = core::element::FiniteElement<E, D, Med>;
 
@@ -50,13 +52,49 @@ namespace lolita::core::mesh
 
         using Implementation = typename MeshModule<Mft, D, Med>::Implementation;
 
+        struct DegreeOfFreedomIndex
+        {
+
+            constexpr
+            DegreeOfFreedomIndex()
+            :
+            unknown_index(0),
+            binding_index(0)
+            {}
+
+            constexpr
+            DegreeOfFreedomIndex(
+                    auto
+                    unknown_index_arg,
+                    auto
+                    binding_index_arg
+            )
+            :
+            unknown_index(unknown_index_arg),
+            binding_index(binding_index_arg)
+            {}
+
+            Long unknown_index;
+
+            Long binding_index;
+
+        };
+
+        using DegreeOfFreedomIndices = Array<DegreeOfFreedomIndex, Med.size()>;
+
+        using Loads = Array<Load<D>>;
+
+        using Behaviours = Array<Behaviour>;
+
+        SharedPointer<LoadComponent<D>> const null_load_;
+
     public:
 
         using ElementPointers = element::Elements<D.dim, ElementPointerMap>;
 
         using ElementPointersSets = UnorderedMap<Strg, ElementPointers>;
 
-        using DomainPointers = Array<SharedPointer<MeshInteriorDomain<Med>>>;
+        DegreeOfFreedomIndices unknown_indices;
 
         Module module_;
 
@@ -64,18 +102,24 @@ namespace lolita::core::mesh
 
         ElementPointersSets element_sets_;
 
-        DomainPointers mesh_domains_;
+        Loads loads_;
+
+        Behaviours behaviours_;
 
         MeshBase(
                 file::File const &
                 mesh_file,
-                Array<MeshInteriorDomain<Med>> &&
-                domains
+                Loads const &
+                loads_arg,
+                Behaviours const &
+                behaviours_arg
         )
         :
-        module_(mesh_file)
+        module_(mesh_file),
+        null_load_(SharedPointer<LoadComponent<D>>(LoadComponent<D>())),
+        loads_(loads_arg),
+        behaviours_(behaviours_arg)
         {
-            setDomainPointers(domains);
             makeNodes();
             makeElementSets();
             makeNodeSets();
@@ -99,17 +143,6 @@ namespace lolita::core::mesh
         makeNodes()
         {
             static_cast<Implementation *>(this)->makeNodes();
-        }
-
-        void
-        setDomainPointers(
-                Array<MeshInteriorDomain<Med>> const &
-                domains
-        )
-        {
-            for (auto && domain: domains.data) {
-                mesh_domains_.data.push_back(SharedPointer<MeshInteriorDomain<Med>>(domain));
-            }
         }
 
         void
@@ -145,7 +178,7 @@ namespace lolita::core::mesh
 
         template<Element EE>
         void
-        makeCell(
+        makeElement(
                 auto const &
                 cell_node_tags_arg
         )
@@ -153,7 +186,7 @@ namespace lolita::core::mesh
             /*
              *
              */
-            auto get_element_domains = [&] <Element E> (
+            auto get_element_domains = [&] (
                     auto const &
                     node_tags_arg
             )
@@ -185,19 +218,19 @@ namespace lolita::core::mesh
                     index_arg
             )
             {
-                auto bound_node_tags = Array<Indx, element::component<E, I, J>().num_nodes>();
+                auto component_node_tags = Array<Indx, element::component<E, I, J>().num_nodes>();
                 for (Indx j = 0; j < element::component<E, I, J>().num_nodes; ++j) {
                     auto const & element_node_connectivity = FiniteElementE<E, D, Med>::node_connectivity;
                     auto const & bound_node_connectivity = element_node_connectivity.template get<I>().template get<J>();
                     auto const k = bound_node_connectivity.get(index_arg).get(j);
-                    bound_node_tags.get(j) = node_tags_arg.get(k);
+                    component_node_tags.get(j) = node_tags_arg.get(k);
                 }
-                return bound_node_tags;
+                return component_node_tags;
             };
             /*
              *
              */
-            auto get_element_hash = [] <Element E> (
+            auto get_element_hash = [] (
                     auto
                     node_tags_arg
             )
@@ -214,7 +247,23 @@ namespace lolita::core::mesh
             /*
              *
              */
-            auto set_components = [&] <Element E, auto K = 0, auto I = 0, auto J = 0> (
+            auto set_finite_elements = [&] <auto K = 0> (
+                    auto &
+                    ptr_element_arg,
+                    auto &
+                    self
+            )
+            mutable
+            {
+                pointer::make(ptr_element_arg.get().template get<K>());
+                if constexpr (K < Med.size() - 1) {
+                    self.template operator()<K + 1>(ptr_element_arg, self);
+                }
+            };
+            /*
+             *
+             */
+            auto set_finite_elements_components = [&] <Element E, auto K = 0, auto I = 0, auto J = 0> (
                     auto &
                     ptr_element_arg,
                     auto &
@@ -222,9 +271,6 @@ namespace lolita::core::mesh
             )
             mutable
             {
-                if constexpr (I == 0 && J == 0) {
-                    pointer::make(ptr_element_arg.get().template get<K>());
-                }
                 auto & elt = ptr_element_arg.get();
                 for (int i = 0; i < element::numComponents<E, I, J>(); ++i) {
                     auto & rhs = elt.components.template get<I>().template get<J>().get(i);
@@ -238,10 +284,126 @@ namespace lolita::core::mesh
                 else if constexpr (I < element::numComponents<E>() - 1) {
                     set_components_imp.template operator()<E, K, I + 1, 0>(ptr_element_arg, set_components_imp);
                 }
-                else if constexpr (K < elt.size() - 1) {
+                else if constexpr (K < Med.size() - 1) {
                     set_components_imp.template operator()<E, K + 1, 0, 0>(ptr_element_arg, set_components_imp);
                 }
+            };
+            /*
+             *
+             */
+            auto set_finite_element_unknowns = [&] <auto K = 0> (
+                    auto &
+                    ptr_element_arg,
+                    auto &
+                    self
+            )
+            mutable
+            {
+                auto & elt = ptr_element_arg.get();
+                elt.template get<K>().get().setUnknowns(unknown_indices.get(K).unknown_index);
+                if constexpr (K < Med.size() - 1) {
+                    self.template operator()<K + 1>(ptr_element_arg, self);
+                }
+            };
+            /*
+             *
+             */
+            auto set_finite_element_materials = [&] <auto K = 0> (
+                    auto &
+                    ptr_element_arg,
+                    auto const &
+                    element_domains_arg,
+                    auto &
+                    self
+            )
+            mutable
+            {
+                auto & elt = ptr_element_arg.get().template get<K>().get();
+                for (auto const & bhv : behaviours_.data)
+                {
+                    auto same_finite_element = Med.template get<K>().field().tag == bhv.finite_element_tag;
+                    if (same_finite_element) {
+                        auto found_domain = false;
+                        for (auto const & element_domain : element_domains_arg.data) {
+                            for (auto const & behaviour_domain : bhv.domains.data) {
+                                if (element_domain == behaviour_domain) {
+                                    found_domain = true;
+                                    print("setting material :", bhv.finite_element_tag, behaviour_domain);
+                                    elt.setMaterial(bhv.ptr_behaviour.get());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if constexpr (K < Med.size() - 1) {
+                    self.template operator()<K + 1>(ptr_element_arg, element_domains_arg, self);
+                }
+            };
+            /*
+             *
+             */
+            auto set_finite_element_loads = [&] <auto K = 0> (
+                    auto &
+                    ptr_element_arg,
+                    auto const &
+                    element_domains_arg,
+                    auto &
+                    self
+            )
+            mutable
+            {
+                auto constexpr field = Field(Med.template get<K>().field().ord_field, D.dim);
+                auto & elt = ptr_element_arg.get().template get<K>().get();
+                for (int i = 0; i < field.rows(); i++)
+                {
+                    for (int j = 0; j < field.cols(); j++)
+                    {
+                        auto found_load = false;
+                        for (auto const & load : loads_.data)
+                        {
+                            auto same_finite_element = Med.template get<K>().field().tag == load.finite_element_label;
+                            auto same_direction = load.components.i == i && load.components.j == j;
+                            if (same_direction && same_finite_element)
+                            {
+                                for (auto const & element_domain : element_domains_arg.data)
+                                {
+                                    if (element_domain == load.domain_label)
+                                    {
+                                        print("Adding load ! : ", i, j);
+                                        elt.setLoad(unknown_indices.get(K).binding_index, load.load, i, j);
+                                        found_load = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (!found_load)
+                        {
+                            print("Zero load ! : ", i, j);
+                            elt.setLoad(unknown_indices.get(K).binding_index, null_load_, i, j);
+                        }
+                    }
+                }
+                if constexpr (K < Med.size() - 1) {
+                    self.template operator()<K + 1>(ptr_element_arg, element_domains_arg, self);
+                }
+            };
+            /*
+             *
+             */
+            auto initialize_finite_elements = [&] <auto K = 0> (
+                    auto &
+                    ptr_element_arg,
+                    auto &
+                    self
+            )
+            mutable
+            {
                 ptr_element_arg.get().template get<K>().get().initialize();
+                if constexpr (K < Med.size() - 1) {
+                    self.template operator()<K + 1>(ptr_element_arg, self);
+                }
             };
             /*
              *
@@ -264,10 +426,10 @@ namespace lolita::core::mesh
                 auto & components = elements_.template get<cmp.dim>().template get<bt>();
                 auto & elements = elements_.template get<E.dim>().template get<et>();
                 auto & element_component_array = ptr_element_arg.get().components.template get<I>().template get<J>();
-                auto element_hash = get_element_hash.template operator ()<E>(element_node_tags_arg);
+                auto element_hash = get_element_hash(element_node_tags_arg);
                 for (auto i = 0; i < element::numComponents<E, I, J>(); ++i) {
                     auto component_node_tags = get_component_node_tags.template operator ()<E, I, J>(element_node_tags_arg, i);
-                    auto component_hash = get_element_hash.template operator ()<cmp>(component_node_tags);
+                    auto component_hash = get_element_hash(component_node_tags);
                     if constexpr (cmp == element::pnt_00) {
                         element_component_array.get(i) = {components.get(component_hash), 1};
                     }
@@ -299,12 +461,17 @@ namespace lolita::core::mesh
                 }
                 if constexpr (I == 0 && J == 0) {
                     ptr_element_arg.get().tag = elements.size();
-                    set_components.template operator ()<E>(ptr_element_arg, set_components);
-                    auto domains = get_element_domains.template operator ()<E>(element_node_tags_arg);
-                    for (auto const & domain : domains.data) {
-                        auto & element_set = element_sets_.get(domain).template get<E.dim>().template get<et>();
+                    auto element_domains = get_element_domains(element_node_tags_arg);
+                    for (auto const & element_domain : element_domains.data) {
+                        auto & element_set = element_sets_.get(element_domain).template get<E.dim>().template get<et>();
                         element_set.data.insert({element_hash, ptr_element_arg});
                     }
+                    set_finite_elements(ptr_element_arg, set_finite_elements);
+                    set_finite_elements_components.template operator ()<E>(ptr_element_arg, set_finite_elements_components);
+                    set_finite_element_unknowns(ptr_element_arg, set_finite_element_unknowns);
+                    set_finite_element_loads(ptr_element_arg, element_domains, set_finite_element_loads);
+                    set_finite_element_materials(ptr_element_arg, element_domains, set_finite_element_materials);
+                    initialize_finite_elements(ptr_element_arg, initialize_finite_elements);
                     elements.data.insert({element_hash, ptr_element_arg});
                 }
             };
@@ -316,7 +483,8 @@ namespace lolita::core::mesh
         }
 
         void
-        makeCells()
+        makeCells(
+        )
         {
             auto make_cells = [&] <auto I = 0> (
                     auto &
@@ -926,7 +1094,7 @@ namespace lolita::core::mesh
                             for (Indx k = 0; k < EE.num_nodes; ++k) {
                                 line_stream >> node_tags.get(k);
                             }
-                            this->template makeCell<EE>(node_tags);
+                            this->template makeElement<EE>(node_tags);
                             offset += 1;
                         }
                     } else {

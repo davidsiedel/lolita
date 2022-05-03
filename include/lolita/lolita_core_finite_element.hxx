@@ -17,6 +17,47 @@ namespace lolita::core::element
     struct FiniteElementUnknownMod;
 
     template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
+    struct FiniteElementNeighbour
+    {
+
+        FiniteElementNeighbour()
+        :
+        ptr(),
+        index()
+        {}
+
+        FiniteElementNeighbour(
+                SharedPointer<T<E, D, A...>> const &
+                ptr_arg,
+                Indx
+                index_arg
+        )
+        :
+        ptr(ptr_arg),
+        index(index_arg)
+        {}
+
+        Bool
+        operator==(
+                FiniteElementNeighbour const &
+                other
+        )
+        const = default;
+
+        Bool
+        operator!=(
+                FiniteElementNeighbour const &
+                other
+        )
+        const = default;
+
+        SharedPointer<T<E, D, A...>>   ptr;
+
+        Indx const index;
+
+    };
+
+    template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
     struct FiniteElementConnectivity;
 
     template<Element E, Domain D, template<Element, Domain, auto...> typename T, auto... A>
@@ -33,6 +74,9 @@ namespace lolita::core::element
 
         template<Element Eb>
         using FiniteElementPointer = SharedPointer<T<Eb, D, A...>>;
+
+        template<Element Eb>
+        using Neighbourggg = FiniteElementNeighbour<Eb, D, T, A...>;
 
     public:
 
@@ -108,13 +152,57 @@ namespace lolita::core::element
             )
             const = default;
 
-            SharedPointer<T<Eb, D, A...>> ptr;
+            SharedPointer<T<Eb, D, A...>>   ptr;
+            Indx                            index;
+
+        };
+
+        template<Element Eb>
+        struct Neighbour2
+        {
+
+            Neighbour2()
+            :
+            ptr(),
+            index()
+            {}
+
+            Neighbour2(
+                    SharedPointer<T<Eb, D, A...>> const &
+                    ptr_arg,
+                    Indx
+                    index_arg
+            )
+            :
+            ptr(ptr_arg),
+            index(index_arg)
+            {}
+
+            Bool
+            operator==(
+                    Neighbour2 const &
+                    other
+            )
+            const = default;
+
+            Bool
+            operator!=(
+                    Neighbour2 const &
+                    other
+            )
+            const = default;
+
+            SharedPointer<T<Eb, D, A...>>   ptr;
+
+            Indx const index;
 
         };
 
         using Components = ElementComponents<E, Component>;
 
         using Neighbours = ElementNeighbourArray<E, D.dim, Neighbour>;
+
+        using Adjacency = Collection<ElementComponents<E, Neighbourggg>, ElementNeighbourArray<E, D.dim, Neighbourggg>>;
 
         FiniteElementConnectivity()
         :
@@ -187,6 +275,8 @@ namespace lolita::core::element
         Components components;
 
         Neighbours neighbours;
+
+        Indx count;
 
     };
 
@@ -843,7 +933,6 @@ namespace lolita::core::element
         requires(Face<E, D>)
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-//            auto derivative_vector = Matrix<Real, 3, Self::dim_nodes>::Zero();
             auto derivative_vector = Matrix<Real, 3, E.dimPoint()>().setZero();
             for (Indx i = 0; i < D.dim; ++i) {
                 for (Indx j = 0; j < E.dimPoint(); ++j) {
@@ -879,10 +968,10 @@ namespace lolita::core::element
     struct FiniteElementPolicy2;
 
     template<Element E, Domain D, auto F>
-    struct FiniteElementUnknown2
+    struct FiniteElementUnknownF
     {
 
-        auto const static constexpr field = Field(F.ord_field, D.dim);
+        auto const static constexpr field = Field(F.field().ord_field, D.dim);
 
         static constexpr
         auto
@@ -901,100 +990,105 @@ namespace lolita::core::element
         struct DegreeOfFreedom
         {
 
-            using Coefficients = Vector<Real, dimUnknowns()>;
-
             DegreeOfFreedom()
-//            requires(StaticMatrixType<Coefficients>)
             :
             coefficients(),
-            index()
+            index(-1)
             {}
 
-//            DegreeOfFreedom()
-//            requires(DynamicMatrixType<Coefficients>)
-//                    :
-//                    coefficients(Coefficients::Zero(0)),
-//                    index(0)
-//            {}
-
-            explicit
-            DegreeOfFreedom(
-                    RealType auto &
-                    index_arg
-            )
-            requires(StaticMatrixType<Coefficients>)
-            :
-            coefficients(Coefficients::Zero()),
-            index(index_arg)
-            {
-                index_arg += dimUnknowns();
-            }
-
-            DegreeOfFreedom(
-                    RealType auto
-                    size_arg,
-                    RealType auto &
-                    index_arg
-            )
-            requires(DynamicMatrixType<Coefficients>)
-            :
-            coefficients(Coefficients::Zero(size_arg)),
-            index(index_arg)
-            {
-                index_arg += size_arg;
-            }
-
-            Coefficients coefficients;
-
-            Indx index;
+            Vector<Real> coefficients;
+            
+            Intg index;
 
         };
 
-        FiniteElementUnknown2()
+        FiniteElementUnknownF()
         :
-//        FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>(),
         unknowns(),
         bindings(),
-        loads(),
-        mat()
+        loads()
         {}
 
-    private:
-
-        static
-        auto
+        void
         setUnknowns()
         {
-            auto dof = Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()>();
-            for (int i = 0; i < field.rows(); ++i) {
-                for (int j = 0; j < field.cols(); ++j) {
-                    dof.get(i, j) = UniquePointer<DegreeOfFreedom>(DegreeOfFreedom());
-                }
-            }
-            return dof;
-        }
-
-    public:
-
-        void
-        initialize()
-        {
-            if constexpr (numUnknowns() > 0) {
+            if constexpr (dimUnknowns() > 0) {
                 for (int i = 0; i < field.rows(); ++i) {
                     for (int j = 0; j < field.cols(); ++j) {
-                        ns.get(i, j).resize(numUnknowns());
-                        ns.get(i, j).setZero();
+                        unknowns.get(i, j).coefficients.resize(dimUnknowns());
+                        unknowns.get(i, j).coefficients.setZero();
                     }
                 }
             }
         }
 
-        Array<Vector<Real>, field.rows(), field.cols()> ns;
-        Array<Vector<Real>, field.rows(), field.cols()> bs;
+        void
+        setUnknowns(
+                auto &
+                degree_of_freedom_index_arg
+        )
+        {
+            if constexpr (dimUnknowns() > 0) {
+                for (int i = 0; i < field.rows(); ++i) {
+                    for (int j = 0; j < field.cols(); ++j) {
+                        unknowns.get(i, j).coefficients.resize(dimUnknowns());
+                        unknowns.get(i, j).coefficients.setZero();
+                        unknowns.get(i, j).index = degree_of_freedom_index_arg;
+                        degree_of_freedom_index_arg += dimUnknowns();
+                    }
+                }
+            }
+        }
 
-//        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> unknowns;
-//
-//        Array<UniquePointer<DegreeOfFreedom>, field.rows(), field.cols()> bindings;
+        void
+        setLoad(
+                auto &
+                degree_of_freedom_index_arg,
+                auto const &
+                load_pointer_arg,
+                auto
+                row_arg,
+                auto
+                col_arg
+        )
+        {
+            if (load_pointer_arg.get().load_type == LoadType::Natural) {
+                loads.get(row_arg, col_arg) = load_pointer_arg;
+            }
+            else {
+                loads.get(row_arg, col_arg) = load_pointer_arg;
+                bindings.get(row_arg, col_arg).coefficients.resize(dimUnknowns());
+                bindings.get(row_arg, col_arg).coefficients.setZero();
+                bindings.get(row_arg, col_arg).index = degree_of_freedom_index_arg;
+                degree_of_freedom_index_arg += dimUnknowns();
+            }
+        }
+
+        template<Indx S>
+        auto
+        getUnknownCoefficients(
+                std::integral auto
+                row_arg,
+                std::integral auto
+                col_arg
+        )
+        const
+        {
+            return unknowns.get(row_arg, col_arg).coefficients.template segment<S>(0);
+        };
+
+        template<Indx S>
+        auto
+        getBindingCoefficients(
+                auto
+                row_arg,
+                auto
+                col_arg
+        )
+        const
+        {
+            return bindings.get(row_arg, col_arg).coefficients.template segment<S>(0);
+        };
 
         Array<DegreeOfFreedom, field.rows(), field.cols()> unknowns;
 
@@ -1002,20 +1096,16 @@ namespace lolita::core::element
 
         Array<SharedPointer<LoadComponent<D>>, field.rows(), field.cols()> loads;
 
-        SharedPointer<mgis::behaviour::MaterialDataManager> mat;
-
-        Indx itemp;
-
     };
 
     template<Element E, Domain D, auto F>
     requires(Cell<E, D>)
-    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknown2<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
+    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknownF<E, D, F>, public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
     {
 
     private:
 
-        using Base = FiniteElementUnknown2<E, D, F>;
+        using Base = FiniteElementUnknownF<E, D, F>;
 
         using Base2 = FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>;
 
@@ -1041,7 +1131,7 @@ namespace lolita::core::element
         )
         {
             auto value = Indx(0);
-            for (auto m : F.mappings.data) {
+            for (auto m : F.field().mappings.data) {
                 if (m == App) {
                     return value;
                 }
@@ -1055,8 +1145,8 @@ namespace lolita::core::element
         rowsOperator()
         {
             auto value = Indx(0);
-            for (int i = 0; i < F.mappings.size(); ++i) {
-                value += rowsOperator(F.mappings.get(i));
+            for (int i = 0; i < F.field().mappings.size(); ++i) {
+                value += rowsOperator(F.field().mappings.get(i));
             }
             return value;
         }
@@ -1072,15 +1162,13 @@ namespace lolita::core::element
 
         using Operators = Array<Matrix<Real, rowsOperator(), colsOperator()>, dimQuadrature<E, quadrature>()>;
 
+        using MaterialPoints = Array<SharedPointer<mgis::behaviour::BehaviourData>, dimQuadrature<E, quadrature>()>;
+
         FiniteElementUnknownMod()
         :
         Base(),
         Base2()
         {}
-
-        Operators operators;
-
-        Module module;
 
         void
         getGrads()
@@ -1096,33 +1184,60 @@ namespace lolita::core::element
         }
 
         void
+        setUnknowns(
+                auto &
+                degree_of_freedom_index_arg
+        )
+        {
+            reinterpret_cast<FiniteElementUnknownF<E, D, F> *>(this)->setUnknowns();
+        }
+
+        void
+        setMaterial(
+                auto const &
+                behaviour_arg
+        )
+        {
+            for (int i = 0; i < dimQuadrature<E, quadrature>(); ++i) {
+                material_points.get(i) = SharedPointer<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(behaviour_arg));
+            }
+        }
+
+        void
         initialize()
         {
-            reinterpret_cast<FiniteElementUnknown2<E, D, F> *>(this)->initialize();
             using Implementation = typename FiniteElementPolicy2<E, D, F>::Implementation;
             static_cast<Implementation *>(this)->setModule();
             auto set_operator = [&] <auto I = 0> (auto & self)
             mutable
             {
-                static_cast<Implementation *>(this)->template setOperator<F.mappings.get(I), I>();
-                if constexpr (I < F.mappings.size() - 1) {
+                static_cast<Implementation *>(this)->template setOperator<F.field().mappings.get(I), I>();
+                if constexpr (I < F.field().mappings.size() - 1) {
                     self.template operator()<I + 1>(self);
                 }
             };
             set_operator(set_operator);
-            //collection::apply<F.mappings.size()>(set_num_components);
         }
+
+        Operators operators;
+
+        Module module;
+
+        MaterialPoints material_points;
 
     };
 
     template<Element E, Domain D, auto F>
     requires(Face<E, D>)
-    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknown2<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
+    struct FiniteElementUnknownMod<E, D, F>
+    :
+    public FiniteElementUnknownF<E, D, F>,
+    public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
     {
 
     private:
 
-        using Base = FiniteElementUnknown2<E, D, F>;
+        using Base = FiniteElementUnknownF<E, D, F>;
 
         using Base2 = FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>;
 
@@ -1139,19 +1254,37 @@ namespace lolita::core::element
         void
         initialize()
         {
+            // this->setUnknowns(degree_of_freedom_index_arg, load_pointer_arg);
+        }
 
+        void
+        setMaterial(
+                auto const &
+                behaviour_arg
+        )
+        {
+
+        }
+
+        void
+        setUnknowns(
+                auto &
+                degree_of_freedom_index_arg
+        )
+        {
+            reinterpret_cast<FiniteElementUnknownF<E, D, F> *>(this)->setUnknowns(degree_of_freedom_index_arg);
         }
 
     };
 
     template<Element E, Domain D, auto F>
     requires(Edge<E, D>)
-    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknown2<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
+    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknownF<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
     {
 
     private:
 
-        using Base = FiniteElementUnknown2<E, D, F>;
+        using Base = FiniteElementUnknownF<E, D, F>;
 
         using Base2 = FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>;
 
@@ -1168,19 +1301,37 @@ namespace lolita::core::element
         void
         initialize()
         {
+            
+        }
 
+        void
+        setMaterial(
+                auto const &
+                behaviour_arg
+        )
+        {
+
+        }
+
+        void
+        setUnknowns(
+                auto &
+                degree_of_freedom_index_arg
+        )
+        {
+            
         }
 
     };
 
     template<Element E, Domain D, auto F>
     requires(Node<E, D>)
-    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknown2<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
+    struct FiniteElementUnknownMod<E, D, F> : public FiniteElementUnknownF<E, D, F>,  public FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>
     {
 
     private:
 
-        using Base = FiniteElementUnknown2<E, D, F>;
+        using Base = FiniteElementUnknownF<E, D, F>;
 
         using Base2 = FiniteElementGeometry<E, D, FiniteElementUnknownMod, F>;
 
@@ -1197,7 +1348,25 @@ namespace lolita::core::element
         void
         initialize()
         {
+            
+        }
 
+        void
+        setMaterial(
+                auto const &
+                behaviour_arg
+        )
+        {
+
+        }
+
+        void
+        setUnknowns(
+                auto &
+                degree_of_freedom_index_arg
+        )
+        {
+            
         }
 
     };
@@ -1217,7 +1386,7 @@ namespace lolita::core::element
         auto
         dimUnknowns()
         {
-            return Intg(FiniteElementBasis<E, Basis(BasisName::Monomial, F.discretization.ord_cell)>::dim_basis);
+            return Intg(FiniteElementBasis<E, Basis(BasisName::Monomial, F.discretization().ord_cell)>::dim_basis);
         }
 
         static constexpr
@@ -1260,16 +1429,16 @@ namespace lolita::core::element
             setOperator()
             requires(Map == MappingOperator::Gradient)
             {
-                auto const constexpr ord_max = numerics::max(F.discretization.ordMapping(Map), F.discretization.ord_cell, F.discretization.ord_face);
+                auto const constexpr ord_max = numerics::max(F.discretization().ordMapping(Map), F.discretization().ord_cell, F.discretization().ord_face);
                 /*
                  * Defining constants
                  */
                 auto const constexpr ord_qad_grd = D.ordIntegration(ord_max);
                 auto const constexpr qad_grd = Quadrature(QuadratureRule::Gauss, ord_qad_grd);
                 auto const constexpr dim_qad_grd = dimQuadrature<E, qad_grd>();
-                auto const constexpr bas_grd = Basis(BasisName::Monomial, F.discretization.ordMapping(Map));
-                auto const constexpr bas_cel = Basis(BasisName::Monomial, F.discretization.ord_cell);
-                auto const constexpr bas_fce = Basis(BasisName::Monomial, F.discretization.ord_face);
+                auto const constexpr bas_grd = Basis(BasisName::Monomial, F.discretization().ordMapping(Map));
+                auto const constexpr bas_cel = Basis(BasisName::Monomial, F.discretization().ord_cell);
+                auto const constexpr bas_fce = Basis(BasisName::Monomial, F.discretization().ord_face);
                 auto const constexpr dim_bas_grd = dimBasis<E, bas_grd>();
                 auto const constexpr dim_bas_cel = dimBasis<E, bas_cel>();
                 /*
@@ -1378,12 +1547,12 @@ namespace lolita::core::element
                 /*
                  *
                  */
-                auto const constexpr fld = Field(F.ord_field, D.dim);
+                auto const constexpr fld = Field(F.field().ord_field, D.dim);
                 auto const constexpr grd = Field::fromMapping(Base::field, Map);
                 auto row = Indx(0);
                 auto lhs = get_lhs();
-                for (int i = 0; i < grd.rows(); ++i) {
-                    for (int j = 0; j < grd.cols(); ++j) {
+                for (int i = 0; i < grd.cols(); ++i) {
+                    for (int j = 0; j < grd.rows(); ++j) {
                         auto rhs = get_rhs(i, j);
                         for (int k = 0; k < dimQuadrature<E, this->quadrature>(); ++k) {
                             auto pnt = this->template getReferenceQuadraturePoint<this->quadrature>(k);
@@ -1403,9 +1572,9 @@ namespace lolita::core::element
                 /*
                  *
                  */
-                auto const constexpr bas_ide = Basis(BasisName::Monomial, F.discretization.ordMapping(Map));
+                auto const constexpr bas_ide = Basis(BasisName::Monomial, F.discretization().ordMapping(Map));
                 auto const constexpr dim_bas_ide = dimBasis<E, bas_ide>();
-                auto const constexpr bas_cel = Basis(BasisName::Monomial, F.discretization.ord_cell);
+                auto const constexpr bas_cel = Basis(BasisName::Monomial, F.discretization().ord_cell);
                 auto const constexpr dim_bas_cel = dimBasis<E, bas_cel>();
                 /*
                  *
@@ -1582,7 +1751,7 @@ namespace lolita::core::element
         auto
         dimUnknowns()
         {
-            return Intg(FiniteElementBasis<E, Basis(BasisName::Monomial, F.discretization.ord_face)>::dim_basis);
+            return Intg(FiniteElementBasis<E, Basis(BasisName::Monomial, F.discretization().ord_face)>::dim_basis);
         }
 
         struct Module
@@ -1650,7 +1819,7 @@ namespace lolita::core::element
      */
 
     template<Element E, Domain D, auto C>
-    using MixedElement = typename decltype(C)::template Type<FiniteElementUnknownMod, E, D>;
+    using MixedElement = typename decltype(C)::template MixedElementType<FiniteElementUnknownMod, E, D>;
 
     template<Element E, Domain D, auto C>
     struct FiniteElement : public MixedElement<E, D, C>, public FiniteElementGeometry<E, D, FiniteElement, C>

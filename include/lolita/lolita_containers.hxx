@@ -497,7 +497,7 @@ namespace lolita
                     args
             )
             :
-            data(std::forward<T>(args)...)
+            data(args...)
             {}
 
             constexpr

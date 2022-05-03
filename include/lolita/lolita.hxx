@@ -49,6 +49,11 @@ namespace lolita
     /**
      * @brief
      */
+    using Strv = std::string_view;
+
+    /**
+     * @brief
+     */
     using Bool = bool;
 
     /**
@@ -74,8 +79,14 @@ namespace lolita
     template<typename T>
     using Raww = std::remove_cvref_t<T>;
 
-    template<typename T, typename... U>
-    concept IsSameAs = std::conjunction_v<std::is_same<T, U>...>;
+//    template<typename T, typename... U>
+//    concept IsSameAs = std::conjunction_v<std::is_same<T, U>...>;
+
+    template<typename T, typename ... U>
+    concept IsAnyOf = (std::same_as<T, U> || ...);
+
+    template<typename T, typename ... U>
+    concept IsSameAs = (std::same_as<T, U> && ...);
 
     template<typename T, typename... U>
     concept IsContainedIn = std::disjunction_v<std::is_same<T, U>...>;
