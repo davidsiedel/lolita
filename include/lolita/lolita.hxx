@@ -41,26 +41,13 @@ namespace lolita
 
         using Intg = int;
 
-        using Indx = std::size_t;
+        using Indx = unsigned short;
 
         using Long = unsigned long long;
 
         using Real = double;
 
         using Bool = bool;
-
-        using Strg = std::basic_string<Char>;
-
-        using Strv = std::basic_string_view<Char>;
-
-        namespace detail
-        {
-
-            Indx const static constexpr name_size = 150;
-
-        }
-
-        using Name = std::array<Char, detail::name_size>;
 
     }
 
@@ -69,29 +56,124 @@ namespace lolita
     namespace utility
     {
 
-        static constexpr
-        Name
-        setName(
-                Strv &&
-                strv
-        )
+        namespace detail
         {
-            auto name = Name();
-            for (auto i = 0; i < config::detail::name_size; ++i) {
-                i < strv.size() ? name[i] = strv[i] : name[i] = '#';
-            }
-            return name;
+
+            Indx const static constexpr name_size = 150;
+
         }
 
-        static constexpr
-        Strv
-        getName(
-                Name const &
-                name
-        )
+        template<typename T>
+        struct Labell2
         {
-            return Strv(name.data(), std::distance(std::begin(name), std::find(std::begin(name), std::end(name), '#')));
-        }
+
+            constexpr
+            Labell2(
+                    std::basic_string_view<T> &&
+                    str
+            )
+            noexcept
+            {
+                for (auto i = 0; i < detail::name_size; ++i) {
+                    i < str.size() ? this->operator ()[i] = str[i] : this->operator ()[i] = '#';
+                }
+            }
+
+            constexpr
+            Bool
+            operator==(
+                    Labell2 const &
+                    other
+            )
+            const = default;
+
+            constexpr
+            Bool
+            operator!=(
+                    Labell2 const &
+                    other
+            )
+            const = default;
+
+            constexpr
+            std::basic_string_view<T>
+            view()
+            const
+            {
+                return Strv(this->data(), std::distance(std::begin(* this), std::find(std::begin(* this), std::end(* this), '#')));
+            }
+
+            Char name_ [detail::name_size];
+
+        };
+
+        template<typename T>
+        struct Labell : public std::array<T, detail::name_size>
+        {
+
+            constexpr
+            Labell(
+                    std::basic_string_view<T> &&
+                    str
+            )
+            noexcept
+            {
+                for (auto i = 0; i < detail::name_size; ++i) {
+                    i < str.size() ? this->operator ()[i] = str[i] : this->operator ()[i] = '#';
+                }
+            }
+
+            constexpr
+            Bool
+            operator==(
+                    Labell const &
+                    other
+            )
+            const = default;
+
+            constexpr
+            Bool
+            operator!=(
+                    Labell const &
+                    other
+            )
+            const = default;
+
+            constexpr
+            std::basic_string_view<T>
+            view()
+            const
+            {
+                return Strv(this->data(), std::distance(std::begin(* this), std::find(std::begin(* this), std::end(* this), '#')));
+            }
+
+        };
+
+        using Label = Labell<Char>;
+
+//        static constexpr
+//        Name
+//        setName(
+//                Strv &&
+//                strv
+//        )
+//        {
+//            auto name = Name();
+//            for (auto i = 0; i < config::detail::name_size; ++i) {
+//                i < strv.size() ? name[i] = strv[i] : name[i] = '#';
+//            }
+//            return name;
+//        }
+//
+//        static constexpr
+//        Strv
+//        getName(
+//                Name const &
+//                name
+//        )
+//        {
+//            return Strv(name.data(), std::distance(std::begin(name), std::find(std::begin(name), std::end(name), '#')));
+//        }
 
         namespace detail
         {
@@ -147,7 +229,7 @@ namespace lolita::core
 
         constexpr
         Quadrature(
-                std::integral auto
+                Indx
                 dim,
                 Type
                 typ
@@ -194,7 +276,7 @@ namespace lolita::core
         Domain(
                 Strv &&
                 tag,
-                std::integral auto
+                Indx
                 dim,
                 Type
                 typ
@@ -224,7 +306,7 @@ namespace lolita::core
         constexpr
         Indx
         ordIntegration(
-                std::integral auto
+                Indx
                 ord
         )
         const
@@ -322,128 +404,6 @@ namespace lolita::core
         Name tag_;
 
         Indx dim_;
-
-        std::array<Mapping::Type, sizeof...(MappingT)> mappings_;
-
-    };
-
-    struct FieldBase
-    {
-
-        constexpr
-        FieldBase(
-                Char
-                tag,
-                Indx
-                dim
-        )
-        :
-        tag_(tag),
-        dim_(dim)
-        {}
-
-        constexpr
-        Bool
-        operator==(
-                FieldBase const &
-                other
-        )
-        const = default;
-
-        constexpr
-        Bool
-        operator!=(
-                FieldBase const &
-                other
-        )
-        const = default;
-
-        Char tag_;
-
-        Indx dim_;
-
-    };
-
-    struct Field : public FieldBase
-    {
-
-        enum struct Type
-        {
-
-            Material,
-            External,
-            Internal,
-
-        };
-
-        constexpr
-        Field(
-                Char
-                tag,
-                Indx
-                dim,
-                Type
-                typ
-        )
-        :
-        FieldBase(tag, dim),
-        typ_(typ)
-        {}
-
-        constexpr
-        Bool
-        operator==(
-                Field const &
-                other
-        )
-        const = default;
-
-        constexpr
-        Bool
-        operator!=(
-                Field const &
-                other
-        )
-        const = default;
-
-        Type typ_;
-
-    };
-
-    template<typename... MappingT>
-    requires(std::same_as<MappingT, Mapping::Type> && ...)
-    struct Unknown : public FieldBase
-    {
-
-        constexpr
-        Unknown(
-                Char
-                tag,
-                Indx
-                dim,
-                MappingT &&...
-                mappings
-        )
-        :
-        FieldBase(tag, dim),
-        mappings_({std::forward<Mapping::Type>(mappings)...})
-        {}
-
-        constexpr
-        Bool
-        operator==(
-                Unknown const &
-                other
-        )
-        const = default;
-
-        constexpr
-        Bool
-        operator!=(
-                Unknown const &
-                other
-        )
-        const = default;
 
         std::array<Mapping::Type, sizeof...(MappingT)> mappings_;
 
