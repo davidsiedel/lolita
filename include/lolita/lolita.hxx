@@ -37,17 +37,17 @@ namespace lolita
     namespace config
     {
 
-        using Char = char;
+        using character = char;
 
-        using Intg = int;
+        using integer = int;
 
-        using Indx = unsigned short;
+        using index = unsigned short;
 
-        using Long = unsigned long long;
+        using large = unsigned long long;
 
-        using Real = double;
+        using real = double;
 
-        using Bool = bool;
+        using boolean = bool;
 
     }
 
@@ -56,159 +56,185 @@ namespace lolita
     namespace utility
     {
 
-        namespace detail
+        template<typename T>
+        using Label = std::array<T, 150>;
+
+        template<typename T>
+        static constexpr
+        Label<T>
+        makeLabel(
+                std::basic_string_view<T> &&
+                str
+        )
         {
-
-            Indx const static constexpr name_size = 150;
-
+            auto label = Label<T>();
+            for (auto i = 0; i < label.size(); ++i) {
+                i < str.size() ? label[i] = str[i] : label[i] = '#';
+            }
+            return label;
         }
-
-        template<typename T>
-        struct Labell2
-        {
-
-            constexpr
-            Labell2(
-                    std::basic_string_view<T> &&
-                    str
-            )
-            noexcept
-            {
-                for (auto i = 0; i < detail::name_size; ++i) {
-                    i < str.size() ? this->operator ()[i] = str[i] : this->operator ()[i] = '#';
-                }
-            }
-
-            constexpr
-            Bool
-            operator==(
-                    Labell2 const &
-                    other
-            )
-            const = default;
-
-            constexpr
-            Bool
-            operator!=(
-                    Labell2 const &
-                    other
-            )
-            const = default;
-
-            constexpr
-            std::basic_string_view<T>
-            view()
-            const
-            {
-                return Strv(this->data(), std::distance(std::begin(* this), std::find(std::begin(* this), std::end(* this), '#')));
-            }
-
-            Char name_ [detail::name_size];
-
-        };
-
-        template<typename T>
-        struct Labell : public std::array<T, detail::name_size>
-        {
-
-            constexpr
-            Labell(
-                    std::basic_string_view<T> &&
-                    str
-            )
-            noexcept
-            {
-                for (auto i = 0; i < detail::name_size; ++i) {
-                    i < str.size() ? this->operator ()[i] = str[i] : this->operator ()[i] = '#';
-                }
-            }
-
-            constexpr
-            Bool
-            operator==(
-                    Labell const &
-                    other
-            )
-            const = default;
-
-            constexpr
-            Bool
-            operator!=(
-                    Labell const &
-                    other
-            )
-            const = default;
-
-            constexpr
-            std::basic_string_view<T>
-            view()
-            const
-            {
-                return Strv(this->data(), std::distance(std::begin(* this), std::find(std::begin(* this), std::end(* this), '#')));
-            }
-
-        };
-
-        using Label = Labell<Char>;
-
-//        static constexpr
-//        Name
-//        setName(
-//                Strv &&
-//                strv
-//        )
-//        {
-//            auto name = Name();
-//            for (auto i = 0; i < config::detail::name_size; ++i) {
-//                i < strv.size() ? name[i] = strv[i] : name[i] = '#';
-//            }
-//            return name;
-//        }
-//
-//        static constexpr
-//        Strv
-//        getName(
-//                Name const &
-//                name
-//        )
-//        {
-//            return Strv(name.data(), std::distance(std::begin(name), std::find(std::begin(name), std::end(name), '#')));
-//        }
 
         namespace detail
         {
 
-            template<typename T, auto... A>
-            struct ArrayPolicy;
-
-            template<typename T>
-            struct ArrayPolicy<T>
+            template<std::unsigned_integral auto I, typename T>
+            struct AggregateHead
             {
 
-                using type = std::vector<T>;
+                constexpr
+                lolita::boolean
+                operator==(
+                        AggregateHead const &
+                )
+                const = default;
+
+                constexpr
+                lolita::boolean
+                operator!=(
+                        AggregateHead const &
+                )
+                const = default;
+
+                T value_;
 
             };
 
-            template<typename T, std::integral auto M>
-            struct ArrayPolicy<T, M>
+            template<std::unsigned_integral auto I, typename... T>
+            struct AggregateTail;
+
+            template<std::unsigned_integral auto I>
+            struct AggregateTail<I>
             {
 
-                using type = std::array<T, M>;
+
+                constexpr
+                lolita::boolean
+                operator==(
+                        AggregateTail const &
+                )
+                const = default;
+
+                constexpr
+                lolita::boolean
+                operator!=(
+                        AggregateTail const &
+                )
+                const = default;
 
             };
 
-            template<typename T, std::integral auto M, std::integral auto N>
-            struct ArrayPolicy<T, M, N>
+            template<std::unsigned_integral auto I, typename T, typename... U>
+            struct AggregateTail<I, T, U...> : public AggregateHead<I, T>, public AggregateTail<I + 1, U...>
             {
 
-                using type = std::array<std::array<T, M>, N>;
+
+                constexpr
+                lolita::boolean
+                operator==(
+                        AggregateTail const &
+                )
+                const = default;
+
+                constexpr
+                lolita::boolean
+                operator!=(
+                        AggregateTail const &
+                )
+                const = default;
 
             };
+
+            template<std::unsigned_integral auto I, typename T, typename... U>
+            constexpr
+            auto &
+            get(
+                    AggregateTail<I, T, U...> &
+                    aggregate_tail
+            )
+            {
+                return aggregate_tail.AggregateHead<I, T>::value_;
+            }
+
+            template<std::unsigned_integral auto I, typename T, typename... U>
+            constexpr
+            auto const &
+            get(
+                    AggregateTail<I, T, U...> const &
+                    aggregate_tail
+            )
+            {
+                return aggregate_tail.AggregateHead<I, T>::value_;
+            }
 
         }
 
-        template<typename T, auto... A>
-        using Array = typename detail::ArrayPolicy<T, A...>::type;
+        template<typename... T>
+        struct Aggregate
+        {
+
+            using Data = detail::AggregateTail<0, T...>;
+
+            template<lolita::index I>
+            using Type = typename std::tuple_element<I, std::tuple<T...>>::type;
+
+            static constexpr
+            lolita::index
+            size()
+            {
+                return sizeof...(T);
+            }
+
+            constexpr
+            lolita::boolean
+            operator==(
+                    Aggregate const &
+                    other
+            )
+            const
+            {
+                return data_ == other.data;
+            }
+//            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                    Aggregate const &
+                    other
+            )
+            const
+            {
+                return !(* this == other);
+            }
+//            const = default;
+
+            template<std::unsigned_integral I>
+            constexpr
+            auto const &
+            get()
+            const
+            {
+                return detail::get<I>(data_);
+            }
+
+            template<std::unsigned_integral I>
+            constexpr
+            auto &
+            get()
+            {
+                return detail::get<I>(data_);
+            }
+
+            Data data_;
+
+        };
+
+    }
+
+    namespace matrix
+    {
+
+
 
     }
 
@@ -229,9 +255,9 @@ namespace lolita::core
 
         constexpr
         Quadrature(
-                Indx
+                lolita::index
                 dim,
-                Type
+                Quadrature::Type
                 typ
         )
         :
@@ -240,7 +266,7 @@ namespace lolita::core
         {}
 
         constexpr
-        Bool
+        lolita::boolean
         operator==(
                 Quadrature const &
                 other
@@ -248,16 +274,16 @@ namespace lolita::core
         const = default;
 
         constexpr
-        Bool
+        lolita::boolean
         operator!=(
                 Quadrature const &
                 other
         )
         const = default;
 
-        Indx dim_;
+        lolita::index dim_;
 
-        Type typ_;
+        Quadrature::Type typ_;
 
     };
 
@@ -274,21 +300,21 @@ namespace lolita::core
 
         constexpr
         Domain(
-                Strv &&
+                std::basic_string_view<lolita::character> &&
                 tag,
-                Indx
+                lolita::index
                 dim,
                 Type
                 typ
         )
         :
-        tag_(utility::setName(std::forward<Strv>(tag))),
+        tag_(utility::makeLabel(std::forward<std::basic_string_view<lolita::character>>(tag))),
         dim_(dim),
         typ_(typ)
         {}
 
         constexpr
-        Bool
+        lolita::boolean
         operator==(
                 Domain const &
                 other
@@ -296,7 +322,7 @@ namespace lolita::core
         const = default;
 
         constexpr
-        Bool
+        lolita::boolean
         operator!=(
                 Domain const &
                 other
@@ -304,21 +330,21 @@ namespace lolita::core
         const = default;
 
         constexpr
-        Indx
+        lolita::index
         ordIntegration(
-                Indx
+                lolita::index
                 ord
         )
         const
         {
-            return typ_ == Type::AxiSymmetric ? 2 * ord + 1 : 2 * ord;
+            return typ_ == Domain::AxiSymmetric ? 2 * ord + 1 : 2 * ord;
         }
 
-        Name tag_;
+        utility::Label<lolita::character> tag_;
 
-        Indx dim_;
+        lolita::index dim_;
 
-        Type typ_;
+        Domain::Type typ_;
 
     };
 
@@ -335,11 +361,11 @@ namespace lolita::core
 
         constexpr
         Mapping(
-                Type
+                Mapping::Type
                 typ,
-                std::integral auto
+                lolita::index
                 ord_field,
-                std::integral auto
+                lolita::index
                 dim_field
         )
         :
@@ -348,64 +374,237 @@ namespace lolita::core
         dim_field_(dim_field)
         {}
 
-        Type typ_;
+        Mapping::Type typ_;
 
-        Indx ord_field_;
+        lolita::index ord_field_;
 
-        Indx dim_field_;
+        lolita::index dim_field_;
 
     };
 
-    template<typename... MappingT>
-    requires(std::same_as<MappingT, Mapping::Type> && ...)
-    struct TensorField
+    namespace detail
     {
 
-        enum Type
+        struct FieldBase
         {
 
-            Material,
-            External,
-            Internal,
+            enum Type
+            {
+
+                Material,
+                External,
+                Internal,
+
+            };
+
+            constexpr
+            FieldBase(
+                    std::basic_string_view<lolita::character> &&
+                    tag,
+                    lolita::index
+                    dim
+            )
+            :
+            tag_(utility::makeLabel(std::forward<std::basic_string_view<lolita::character>>(tag))),
+            dim_(dim)
+            {}
+
+            constexpr
+            lolita::boolean
+            operator==(
+                    FieldBase const &
+                    other
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                    FieldBase const &
+                    other
+            )
+            const = default;
+
+            utility::Label<lolita::character> tag_;
+
+            lolita::index dim_;
 
         };
 
+    }
+
+    template<typename T>
+    concept FieldBaseDerivedType = std::is_base_of_v<detail::FieldBase, T>;
+
+    template<typename... MappingT>
+    requires((std::same_as<MappingT, Mapping::Type> && ...) && sizeof...(MappingT) > 0)
+    struct DegreeOfFreedom : public detail::FieldBase
+    {
+
         constexpr
-        TensorField(
-                Strv &&
+        DegreeOfFreedom(
+                std::basic_string_view<lolita::character> &&
                 tag,
-                Indx
+                lolita::index
                 dim,
                 MappingT &&...
                 mappings
         )
         :
-        tag_(utility::setName(std::forward<Strv>(tag))),
-        dim_(dim),
+        detail::FieldBase(std::forward<std::basic_string_view<lolita::character>>(tag), dim),
         mappings_({std::forward<Mapping::Type>(mappings)...})
         {}
 
         constexpr
-        Bool
+        lolita::boolean
         operator==(
-                TensorField const &
+                DegreeOfFreedom const &
                 other
         )
         const = default;
 
         constexpr
-        Bool
+        lolita::boolean
         operator!=(
-                TensorField const &
+                DegreeOfFreedom const &
                 other
         )
         const = default;
 
-        Name tag_;
-
-        Indx dim_;
-
         std::array<Mapping::Type, sizeof...(MappingT)> mappings_;
+
+    };
+
+    struct MaterialProperty : public detail::FieldBase
+    {
+
+        constexpr
+        MaterialProperty(
+                std::basic_string_view<lolita::character> &&
+                tag
+        )
+        :
+        detail::FieldBase(std::forward<std::basic_string_view<lolita::character>>(tag), 0)
+        {}
+
+        constexpr
+        lolita::boolean
+        operator==(
+                MaterialProperty const &
+                other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                MaterialProperty const &
+                other
+        )
+        const = default;
+
+    };
+
+    struct SomeField : public detail::FieldBase
+    {
+
+        constexpr
+        SomeField(
+                std::basic_string_view<lolita::character> &&
+                tag,
+                lolita::index
+                dim
+        )
+        :
+        detail::FieldBase(std::forward<std::basic_string_view<lolita::character>>(tag), dim)
+        {}
+
+        constexpr
+        lolita::boolean
+        operator==(
+                SomeField const &
+                other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                SomeField const &
+                other
+        )
+        const = default;
+
+    };
+
+    template<typename... FieldT>
+    requires((std::derived_from<FieldT, detail::FieldBase> && ...) && sizeof...(FieldT) > 0)
+    struct BehaviourData
+    {
+
+        constexpr
+        BehaviourData(
+                std::basic_string_view<lolita::character> &&
+                tag,
+                lolita::index
+                dim
+        )
+        :
+        tag_(utility::makeLabel(std::forward<std::basic_string_view<lolita::character>>(tag)))
+        {}
+
+        utility::Label<lolita::character> tag_;
+
+    };
+
+    template<auto A>
+    struct S {};
+
+    template<template<auto> typename T, auto... H>
+    static constexpr
+    std::tuple<T<H>...>
+    expand(
+//            auto...
+//            items
+    )
+    {
+        return std::tuple<T<H>...>();
+    }
+
+    template<typename... T>
+    struct Holder;
+
+    template<typename Ta, typename Tb>
+    struct Holder<Ta, Tb>
+    {
+
+        Ta a;
+        Tb b;
+
+        template<std::unsigned_integral auto I>
+        constexpr
+        auto
+        get()
+        {
+            if constexpr (I == 0) {
+                return a;
+            }
+//            else if constexpr (I == 1) {
+//                return b;
+//            }
+            else {
+                return b;
+            }
+        }
+
+
+    };
+
+    template<template<auto> typename T, auto H>
+    struct Expander
+    {
+
+
 
     };
 
