@@ -6,7 +6,7 @@
 #include <ranges>
 #include "gtest/gtest.h"
 
-#include "lolita/00_lolita.hxx"
+#include "lolita/lolita.hxx"
 
 TEST(test_lolita_2, test_lolita_2)
 {

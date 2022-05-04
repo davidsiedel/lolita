@@ -2,8 +2,8 @@
 // Created by dsiedel on 04/05/22.
 //
 
-#ifndef LOLITA_00_LOLITA_HXX
-#define LOLITA_00_LOLITA_HXX
+#ifndef LOLITA_LOLITA_HXX
+#define LOLITA_LOLITA_HXX
 
 #include <MGIS/Behaviour/Behaviour.hxx>
 #include <MGIS/Behaviour/Behaviour.h>
@@ -451,4 +451,4 @@ namespace lolita::core
 
 }
 
-#endif //LOLITA_00_LOLITA_HXX
+#endif //LOLITA_LOLITA_HXX
