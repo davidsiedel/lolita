@@ -12,12 +12,20 @@ TEST(test_lolita_2, test_lolita_2)
 {
 
 //    using namespace lolita;
-    using namespace lolita::core;
+//    using namespace lolita::core;
 
     auto constexpr domain = lolita::geometry::Domain("Middle", 3, lolita::geometry::Frame::Cartesian);
-    auto constexpr displacement = lolita::field::DegreeOfFreedom("Displacement", 4, lolita::field::Mapping::Gradient);
+//    auto constexpr displacement = lolita::field::DegreeOfFreedom("Displacement", 4, lolita::field::Mapping::Gradient);
+    auto constexpr displacement_field = lolita::field::Tensor("Displacement", 1);
+    auto constexpr displacement = lolita::field::Unknown(displacement_field, lolita::field::Mapping::Gradient);
 
-    std::cout << displacement.cardinality(domain).rows_ << displacement.cardinality(domain).cols_ << std::endl;
+    std::cout << displacement.tensor_.cardinality(domain).rows_ << displacement.tensor_.cardinality(domain).cols_ << std::endl;
+
+    auto constexpr newlabel = lolita::utility::makeLabel<lolita::character>(lolita::utility::readLabel(displacement.tensor_.tag_), lolita::utility::readLabel(displacement.tensor_.tag_));
+
+    std::cout << lolita::utility::readLabel(newlabel) << std::endl;
+
+    std::cout << std::string(lolita::utility::readLabel(displacement.tensor_.tag_)).append("HJU") << std::endl;
 
 //    lolita::geometry::Frame::Cartesian;
 //    lolita::geometry::Domain::Cartesian;
