@@ -872,8 +872,7 @@ namespace lolita
             struct MappingPolicy<tensor, domain, mapping>
             {
 
-                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(tensor, mapping), tensor.ord_);
-
+                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(tensor, mapping), tensor.ord_);;;;;;;;;;
             };
 
         }
