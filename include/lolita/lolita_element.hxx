@@ -163,288 +163,53 @@ namespace lolita::core::element
         template<Element E>
         using ElementNodeConnectivity = std::array<lolita::index, E.num_nodes>;
 
-//        template<lolita::index D, template<Element> typename T>
-        template<lolita::index D, template<Element, auto...> typename T>
-        struct ElementsPolicy;
+        template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
+        using ElementCollection = std::tuple<Points2<domain, T, A...>, Curves2<domain, T, A...>, Facets2<domain, T, A...>, Solids2<domain, T, A...>>;
 
-//        template<template<Element> typename T>
-        template<template<Element, auto...> typename T>
-        struct ElementsPolicy<1, T>
-        {
-
-            using Type = std::tuple<Points<T>, Curves<T>>;
-
-        };
-
-        template<template<Element, auto...> typename T>
-        struct ElementsPolicy<2, T>
-        {
-
-            using Type = std::tuple<Points<T>, Curves<T>, Facets<T>>;
-
-        };
-
-        template<template<Element, auto...> typename T>
-        struct ElementsPolicy<3, T>
-        {
-
-            using Type = std::tuple<Points<T>, Curves<T>, Facets<T>, Solids<T>>;
-
-        };
-
-        template<lolita::index I, lolita::index D, template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy;
-
-        /*
-         * OD
-         */
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<0, 3, T>
-        {
-
-            using Type = std::tuple<Curves<T>, Facets<T>, Solids<T>>;
-
-        };
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<0, 2, T>
-        {
-
-            using Type = std::tuple<Curves<T>, Facets<T>>;
-
-        };
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<0, 1, T>
-        {
-
-            using Type = std::tuple<Curves<T>>;
-
-        };
-
-        /*
-         * 1D
-         */
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<1, 3, T>
-        {
-
-            using Type = std::tuple<Curves<T>, Facets<T>, Solids<T>>;
-
-        };
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<1, 2, T>
-        {
-
-            using Type = std::tuple<Curves<T>, Facets<T>>;
-
-        };
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<1, 1, T>
-        {
-
-            using Type = std::tuple<Curves<T>>;
-
-        };
-
-        /*
-         * 2D
-         */
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<2, 3, T>
-        {
-
-            using Type = std::tuple<Facets<T>, Solids<T>>;
-
-        };
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<2, 2, T>
-        {
-
-            using Type = std::tuple<Facets<T>>;
-
-        };
-
-        /*
-         * 3D
-         */
-
-        template<template<Element, auto...> typename T>
-        struct ElementNeighbourhoodPolicy<3, 3, T>
-        {
-
-            using Type = std::tuple<Solids<T>>;
-
-        };
-
-        template<Element E, lolita::index D, template<Element, auto...> typename T, auto... A>
-        struct ElementNeighbourArrayPolicy
+        template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
+        struct ElementUps
         {
 
         private:
 
-            lolita::index const static constexpr I = E.dim;
+            template<Element _element, lolita::geometry::Domain _domain, auto... _A>
+            using ElementStdVector = std::vector<T<_element, _domain, _A...>>;
 
-            template<Element EE>
-            using NeighbourArray = std::vector<T<EE, A...>>;
+            template<Element element>
+            struct TypePolicy;
+
+            template<Element element>
+            requires(Point<element>)
+            struct TypePolicy<element>
+            {
+
+                using Type = decltype(lolita::utility::tupleSlice<1, domain.dim_>(ElementCollection<domain, ElementStdVector, A...>{}));
+
+            };
+
+            template<Element element>
+            requires(!Point<element>)
+            struct TypePolicy<element>
+            {
+
+                using Type = decltype(lolita::utility::tupleSlice<element.dim, domain.dim_>(ElementCollection<domain, ElementStdVector, A...>{}));
+
+            };
 
         public:
 
-            using Type = typename ElementNeighbourhoodPolicy<I, D, NeighbourArray>::Type;
+            template<Element element>
+            using Type = typename TypePolicy<element>::Type;
 
         };
-
-        template<Element E, lolita::geometry::Domain D, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-        struct ElementNeighbourArrayPolicy2
-        {
-
-        private:
-
-            template<Element EE>
-            using NeighbourArray = std::vector<T<EE, D, A...>>;
-
-        public:
-
-            using Type = typename ElementNeighbourhoodPolicy<E.dim, D.dim_, NeighbourArray>::Type;
-
-        };
-
-//        template<lolita::geometry::Domain Dmn, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-//        struct ElementsPolicy2;
-//
-//        template<lolita::geometry::Domain Dmn, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-//        requires(Dmn.dim_ == 1)
-//        struct ElementsPolicy2<Dmn, T, A...>
-//        {
-//
-//            using Type = std::tuple<Points2<Dmn, T, A...>, Curves2<Dmn, T, A...>>;
-//
-//        };
-//
-//        template<lolita::geometry::Domain Dmn, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-//        requires(Dmn.dim_ == 2)
-//        struct ElementsPolicy2<Dmn, T, A...>
-//        {
-//
-//            using Type = std::tuple<Points2<Dmn, T, A...>, Curves2<Dmn, T, A...>, Facets2<Dmn, T, A...>>;
-//
-//        };
-//
-//        template<lolita::geometry::Domain Dmn, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-//        requires(Dmn.dim_ == 3)
-//        struct ElementsPolicy2<Dmn, T, A...>
-//        {
-//
-//            using Type = std::tuple<Points2<Dmn, T, A...>, Curves2<Dmn, T, A...>, Facets2<Dmn, T, A...>, Solids2<Dmn, T, A...>>;
-//
-//        };
-//
-////        template<lolita::index I, lolita::index D, template<Element, auto...> typename T>
-//        template<Element E, lolita::geometry::Domain Dmn, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-//        struct ElementNeighbourhoodPolicy2;
-//
-//        /*
-//         * OD
-//         */
-//
-//        template<Element E, lolita::geometry::Domain Dmn, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-//        requires(Point<E>)
-//        struct ElementNeighbourhoodPolicy2<E, Dmn, T, A...>
-//        {
-//
-//            using Type = std::tuple<Curves2<Dmn, T, A...>, Facets2<Dmn, T, A...>, Solids2<Dmn, T, A...>>;
-//
-//        };
-//
-//        template<template<Element, auto...> typename T>
-//        struct ElementNeighbourhoodPolicy2<0, 2, T>
-//        {
-//
-//            using Type = std::tuple<Curves<T>, Facets<T>>;
-//
-//        };
-//
-//        template<template<Element, auto...> typename T>
-//        struct ElementNeighbourhoodPolicy2<0, 1, T>
-//        {
-//
-//            using Type = std::tuple<Curves<T>>;
-//
-//        };
-//
-//        /*
-//         * 1D
-//         */
-//
-//        template<template<Element, auto...> typename T>
-//        struct ElementNeighbourhoodPolicy2<1, 3, T>
-//        {
-//
-//            using Type = std::tuple<Curves<T>, Facets<T>, Solids<T>>;
-//
-//        };
-//
-//        template<template<Element, auto...> typename T>
-//        struct ElementNeighbourhoodPolicy2<1, 2, T>
-//        {
-//
-//            using Type = std::tuple<Curves<T>, Facets<T>>;
-//
-//        };
-//
-//        template<template<Element, auto...> typename T>
-//        struct ElementNeighbourhoodPolicy2<1, 1, T>
-//        {
-//
-//            using Type = std::tuple<Curves<T>>;
-//
-//        };
-//
-//        /*
-//         * 2D
-//         */
-//
-//        template<template<Element, auto...> typename T>
-//        struct ElementNeighbourhoodPolicy2<2, 3, T>
-//        {
-//
-//            using Type = std::tuple<Facets<T>, Solids<T>>;
-//
-//        };
-//
-//        template<template<Element, auto...> typename T>
-//        struct ElementNeighbourhoodPolicy2<2, 2, T>
-//        {
-//
-//            using Type = std::tuple<Facets<T>>;
-//
-//        };
-//
-//        /*
-//         * 3D
-//         */
-//
-//        template<template<Element, auto...> typename T>
-//        struct ElementNeighbourhoodPolicy2<3, 3, T>
-//        {
-//
-//            using Type = std::tuple<Solids<T>>;
-//
-//        };
 
     }
 
-    template<Element E, lolita::index D, template<Element, auto...> typename T, auto... A>
-    using ElementNeighbourArray = typename detail::ElementNeighbourArrayPolicy<E, D, T, A...>::Type;
+    template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
+    using Elements = decltype(lolita::utility::tupleSlice<0, domain.dim_>(detail::ElementCollection<domain, T, A...>{}));
 
-    template<Element E, lolita::geometry::Domain Dmn, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-    using ElementNeighbourArray2 = typename detail::ElementNeighbourArrayPolicy2<E, Dmn, T, A...>::Type;
+    template<Element element, lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
+    using ElementNeighbourArray = typename detail::ElementUps<domain, T, A...>::template Type<element>;
 
     template<Element E>
     struct ElementGeometry;
@@ -478,6 +243,9 @@ namespace lolita::core::element
         std::array<std::array<lolita::real, 3>, 1> const static constexpr reference_nodes = {
             +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
         };
+
+        template<lolita::geometry::Domain domain, template<Element, auto...> typename T, auto... A>
+        using Neighbours = std::tuple<ElementNeighbourArray<E, domain, T, A...>>;
 
         /**
          * @brief
@@ -559,15 +327,14 @@ namespace lolita::core::element
         >;
 
         template<template<Element, auto...> typename T, auto... A>
-        requires(std::same_as<std::tuple_element_t<0, std::tuple<std::remove_cvref_t<decltype(A)>...>>, lolita::geometry::Domain>)
         using Components2 = std::tuple<
                 std::tuple<
                         std::array<T<pnt_00, A...>, 2>
                 >
         >;
 
-        template<lolita::geometry::Domain Dmn, template<Element, auto...> typename T, auto... A>
-        using Neighbours2 = std::tuple<Components2<T, Dmn, A...>, ElementNeighbourArray2<E, Dmn, T, A...>>;
+        template<lolita::geometry::Domain domain, template<Element, auto...> typename T, auto... A>
+        using Neighbours = std::tuple<Components2<T, A...>, ElementNeighbourArray<element, domain, T, A...>>;
 
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity = {
                 {
@@ -975,9 +742,6 @@ namespace lolita::core::element
 
     };
 
-    template<lolita::index D, template<Element> typename T>
-    using Elements = typename detail::ElementsPolicy<D, T>::Type;
-
     namespace detail
     {
 
@@ -1071,107 +835,98 @@ namespace lolita::core::element
 
     using ElementPosition = std::array<lolita::index, 3>;
 
-    template<Element E, Element B>
-    static constexpr
-    ElementPosition
-    elementIndex()
-    {
-        auto get_position = [] <lolita::index I = 0, lolita::index J = 0, lolita::index K = 0> (auto & self)
-                constexpr
-        {
-        };
-        get_position(get_position);
-        return ElementPosition{0, 0, 0};
-    }
-
-    template<Element E>
-    static constexpr
-    auto
-    elementIndex()
-    {
-        return 1;
-//        return collection::index<typename Elements<3, ElementGeometry>::template Type<E.dim>, ElementGeometry<E>>();
-    }
-
-    template<lolita::index I, lolita::index J>
-    static constexpr
-    Element
-    element()
-    {
-        return lolita::core::element::seg_02;
-//        return Elements<3, ElementGeometry>::template Type<I>::template Type<J>::element;
-    }
-
-    template<lolita::index I>
-    constexpr inline
-    lolita::index
-    numElements()
-    {
-        return 1;
-//        return Elements<3, ElementGeometry>::template Type<I>::size();
-    }
-
-    template<Element E, lolita::index I, lolita::index J>
-    constexpr inline
-    lolita::index
-    component()
-    {
-        using L = typename ElementGeometry<E>::template Components<ElementGeometry>;
-        return L::template Type<I>::template Type<J>::Type::element;
-    }
-
-    template<Element E, lolita::index I, lolita::index J>
-    constexpr inline
-    lolita::index
-    numComponents()
-    {
-        using L = typename ElementGeometry<E>::template Components<ElementGeometry>;
-        return L::template Type<I>::template Type<J>::size();
-    }
-
-    template<Element E, lolita::index I>
-    constexpr inline
-    lolita::index
-    numComponents()
-    {
-        using L = typename ElementGeometry<E>::template Components<ElementGeometry>;
-        return L::template Type<I>::size();
-    }
-
-    template<Element E>
-    constexpr inline
-    lolita::index
-    numComponents()
-    {
-        using L = typename ElementGeometry<E>::template Components<ElementGeometry>;
-        return L::size();
-    }
-
-    template<Element E, auto D>
-    constexpr inline
-    lolita::index
-    numNeighbours()
-    {
-        using L = ElementNeighbourArray<E, D, ElementGeometry>;
-        return L::size();
-    }
-
-    template<Element E, auto D, lolita::index I>
-    constexpr inline
-    lolita::index
-    numNeighbours()
-    {
-        using L = ElementNeighbourArray<E, D, ElementGeometry>;
-        return L::template Type<I>::size();
-    }
-
-//    template<Element E, auto D, auto I, auto J>
-//    constexpr inline
+//    template<Element E, Element B>
+//    static constexpr
+//    ElementPosition
+//    elementIndex()
+//    {
+//        auto get_position = [] <lolita::index I = 0, lolita::index J = 0, lolita::index K = 0> (auto & self)
+//                constexpr
+//        {
+//        };
+//        get_position(get_position);
+//        return ElementPosition{0, 0, 0};
+//    }
+//
+//    template<Element E>
+//    static constexpr
 //    auto
+//    elementIndex()
+//    {
+//        return 1;
+////        return collection::index<typename Elements<3, ElementGeometry>::template Type<E.dim>, ElementGeometry<E>>();
+//    }
+//
+//    template<lolita::index I, lolita::index J>
+//    static constexpr
+//    Element
+//    element()
+//    {
+//        return lolita::core::element::seg_02;
+////        return Elements<3, ElementGeometry>::template Type<I>::template Type<J>::element;
+//    }
+//
+//    template<lolita::index I>
+//    constexpr inline
+//    lolita::index
+//    numElements()
+//    {
+//        return 1;
+////        return Elements<3, ElementGeometry>::template Type<I>::size();
+//    }
+//
+//    template<Element E, lolita::index I, lolita::index J>
+//    constexpr inline
+//    lolita::index
+//    component()
+//    {
+//        using L = typename ElementGeometry<E>::template Components<ElementGeometry>;
+//        return L::template Type<I>::template Type<J>::Type::element;
+//    }
+//
+//    template<Element E, lolita::index I, lolita::index J>
+//    constexpr inline
+//    lolita::index
+//    numComponents()
+//    {
+//        using L = typename ElementGeometry<E>::template Components<ElementGeometry>;
+//        return L::template Type<I>::template Type<J>::size();
+//    }
+//
+//    template<Element E, lolita::index I>
+//    constexpr inline
+//    lolita::index
+//    numComponents()
+//    {
+//        using L = typename ElementGeometry<E>::template Components<ElementGeometry>;
+//        return L::template Type<I>::size();
+//    }
+//
+//    template<Element E>
+//    constexpr inline
+//    lolita::index
+//    numComponents()
+//    {
+//        using L = typename ElementGeometry<E>::template Components<ElementGeometry>;
+//        return L::size();
+//    }
+//
+//    template<Element E, auto D>
+//    constexpr inline
+//    lolita::index
 //    numNeighbours()
 //    {
-//        using L = ElementNeighbourstd::array<E, D, ElementGeometry>;
-//        return L::template Type<I>::template Type<J>::size();
+//        using L = ElementNeighbourArray<E, D, ElementGeometry>;
+//        return L::size();
+//    }
+//
+//    template<Element E, auto D, lolita::index I>
+//    constexpr inline
+//    lolita::index
+//    numNeighbours()
+//    {
+//        using L = ElementNeighbourArray<E, D, ElementGeometry>;
+//        return L::template Type<I>::size();
 //    }
 
     template<Element element, lolita::finite_element::Quadrature quadrature, lolita::index ord_quadrature>

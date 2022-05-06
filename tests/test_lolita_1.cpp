@@ -37,7 +37,10 @@ TEST(test_lolita_2, test_lolita_2)
 
     std::cout << "index : " << lolita::behaviour::MgisBehaviour2(u_unknown).getUnknownIndex<u_unknown>() << std::endl;
 
-    auto constexpr newlabel = lolita::utility::makeLabel<lolita::character>(lolita::utility::readLabel(u_unknown.tensor_.tag_), lolita::utility::readLabel(u_unknown.tensor_.tag_));
+    auto constexpr newlabel = lolita::utility::label<lolita::character>(
+            std::forward<std::basic_string_view<lolita::character>>(lolita::utility::readLabel(u_unknown.tensor_.tag_)),
+            std::forward<std::basic_string_view<lolita::character>>(lolita::utility::readLabel(u_unknown.tensor_.tag_))
+    );
 
     std::cout << lolita::utility::readLabel(newlabel) << std::endl;
 
@@ -45,7 +48,7 @@ TEST(test_lolita_2, test_lolita_2)
 
     auto constexpr agg = lolita::utility::Aggregate<long, double, int>{1, 2, 3};
 
-    std::cout << lolita::utility::get<0u>(agg) << std::endl;
+//    std::cout << lolita::utility::get<0u>(agg) << std::endl;
 
 //    lolita::utility::Mult<1, 2, 3>();
 
@@ -57,10 +60,10 @@ TEST(test_lolita_2, test_lolita_2)
 //    auto constexpr outp2 = lolita::utility::expandD(inpt);
 //    auto constexpr outp2 = lolita::utility::expandTuple<1>(inpt);
 
-//    auto constexpr enfin = lolita::utility::tuple_slice<1, 2>(inpt);
+    auto constexpr enfin = lolita::utility::tupleSlice<1, 2>(inpt);
 
 //    std::apply(([&](auto x) {std::cout << x <<std::endl;}; ...), outp);
-//    std::apply([&](auto&&... args) {((std::cout << args << std::endl), ...);}, enfin);
+    std::apply([&](auto&&... args) {((std::cout << args << std::endl), ...);}, enfin);
 
 //    lolita::geometry::Frame::Cartesian;
 //    lolita::geometry::Domain::Cartesian;

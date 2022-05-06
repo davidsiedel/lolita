@@ -190,7 +190,7 @@ namespace lolita
                     frame
             )
             :
-            tag_(lolita::utility::makeLabel(std::forward<std::basic_string_view<lolita::character>>(tag))),
+            tag_(lolita::utility::label(std::forward<std::basic_string_view<lolita::character>>(tag))),
             dim_(dim),
             frame_(frame)
             {}
@@ -281,7 +281,7 @@ namespace lolita
                     dim
             )
             :
-            tag_(lolita::utility::makeLabel(std::forward<std::basic_string_view<lolita::character>>(tag))),
+            tag_(lolita::utility::label(std::forward<std::basic_string_view<lolita::character>>(tag))),
             ord_(dim)
             {}
 
@@ -344,7 +344,7 @@ namespace lolita
                     mapping
             )
             {
-                return lolita::utility::makeLabel(lolita::utility::readLabel(tensor.tag_), lolita::field::readMapping(mapping));
+                return lolita::utility::label(lolita::utility::readLabel(tensor.tag_), lolita::field::readMapping(mapping));
             }
 
             template<lolita::field::Tensor tensor, lolita::geometry::Domain domain, lolita::field::Mapping mapping>
@@ -540,56 +540,6 @@ namespace lolita
             :
             Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
             {}
-
-        };
-
-        enum struct Loading
-        {
-
-            Natural,
-            Constraint,
-
-        };
-
-        using LoadFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
-
-        struct LoadComponent
-        {
-
-            auto const static constexpr zero = [] (auto const &, auto const &) constexpr { return lolita::real(0); };
-
-            LoadComponent()
-            :
-            function_(zero),
-            loading_(lolita::field::Loading::Natural)
-            {}
-
-            LoadComponent(
-                    lolita::field::LoadFunction &&
-                    function,
-                    lolita::field::Loading
-                    loading
-            )
-            :
-            function_(function),
-            loading_(loading)
-            {}
-
-            lolita::real
-            getImposedValue(
-                    lolita::geometry::Point const &
-                    point,
-                    lolita::real const &
-                    time
-            )
-            const
-            {
-                return function_(point, time);
-            }
-
-            lolita::field::Loading loading_;
-
-            lolita::field::LoadFunction function_;
 
         };
 
@@ -866,35 +816,85 @@ namespace lolita
         template<typename T>
         concept FiniteElementType = detail::IsFiniteElementType<T>::value;
 
+        enum struct Loading
+        {
+
+            Natural,
+            Constraint,
+
+        };
+
+        using LoadFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
+
+        struct LoadComponent
+        {
+
+            auto const static constexpr zero = [] (auto const &, auto const &) constexpr { return lolita::real(0); };
+
+            LoadComponent()
+            :
+            function_(zero),
+            loading_(lolita::finite_element::Loading::Natural)
+            {}
+
+            LoadComponent(
+                    lolita::finite_element::LoadFunction &&
+                    function,
+                    lolita::finite_element::Loading
+                    loading
+            )
+            :
+            function_(function),
+            loading_(loading)
+            {}
+
+            lolita::real
+            getImposedValue(
+                    lolita::geometry::Point const &
+                    point,
+                    lolita::real const &
+                    time
+            )
+            const
+            {
+                return function_(point, time);
+            }
+
+            lolita::finite_element::Loading loading_;
+
+            lolita::finite_element::LoadFunction function_;
+
+        };
+
         struct Load
         {
 
             Load(
                     std::basic_string_view<lolita::character> &&
-                    finite_element_label,
+                    unknown_tag,
                     std::basic_string_view<lolita::character> &&
-                    domain_label,
+                    domain_tag,
                     lolita::index
                     i,
                     lolita::index
                     j,
-                    lolita::field::LoadComponent &&
+                    lolita::finite_element::LoadComponent &&
                     fun
             )
             :
-            unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(finite_element_label)),
-            domain_label(std::forward<std::basic_string_view<lolita::character>>(domain_label)),
-            components_(lolita::matrix::Coordinates(i, j)),
-            load_(std::make_shared<lolita::field::LoadComponent>(fun))
+                    unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
+                    domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
+                    components_(lolita::matrix::Coordinates(i, j)),
+                    load_(std::make_shared<lolita::finite_element::LoadComponent>(fun))
             {}
 
             std::basic_string_view<lolita::character> unknown_tag_;
 
-            std::basic_string_view<lolita::character> domain_label;
+            std::basic_string_view<lolita::character> domain_tag_;
 
             lolita::matrix::Coordinates components_;
 
-            std::shared_ptr<lolita::field::LoadComponent> load_;
+            std::shared_ptr<lolita::finite_element::LoadComponent> load_;
 
         };
 

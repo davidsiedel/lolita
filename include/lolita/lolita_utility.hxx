@@ -13,26 +13,11 @@ namespace lolita::utility
 
     using Label = std::array<lolita::character, 150>;
 
-    static constexpr
-    lolita::utility::Label
-    makeLabel(
-            std::basic_string_view<lolita::character> &&
-            str
-    )
-    {
-        auto label = lolita::utility::Label();
-        for (auto i = 0; i < label.size(); ++i) {
-            i < str.size() ? label[i] = str[i] : label[i] = '#';
-        }
-        return label;
-    }
-
     template<typename... U>
     static constexpr
     lolita::utility::Label
-    makeLabel(
-//                std::basic_string_view<U> &&...
-            std::basic_string_view<U>...
+    label(
+            std::basic_string_view<U> &&...
             str
     )
     requires(std::same_as<lolita::character, U> && ...)
@@ -45,8 +30,7 @@ namespace lolita::utility
             }
             j += s.size();
         };
-//            (make(std::forward<U>(str)), ...);
-        (make(str), ...);
+        (make(std::forward<std::basic_string_view<U>>(str)), ...);
         for (auto i = j; i < label.size(); ++i) {
             label[i] = '#';
         }
@@ -61,6 +45,35 @@ namespace lolita::utility
     )
     {
         return std::basic_string_view<lolita::character>(label.data(), std::distance(label.begin(), std::find(label.begin(), label.end(), '#')));
+    }
+
+    namespace detail
+    {
+
+        template<lolita::index offset, typename... T, lolita::index... I>
+        constexpr
+        auto
+        tupleSlice(
+                std::tuple<T...> const &
+                tuple,
+                std::integer_sequence<lolita::index, I...>
+        )
+        {
+            return std::make_tuple(std::get<I + offset>(tuple)...);
+        }
+
+    }
+
+    template<lolita::index begin, lolita::index end, typename... T>
+    constexpr
+    auto
+    tupleSlice(
+            std::tuple<T...> const &
+            tuple
+    )
+    requires(end >= begin && sizeof...(T) >= end)
+    {
+        return detail::tupleSlice<begin>(tuple, std::make_integer_sequence<lolita::index, end - begin>{});
     }
 
     /*
@@ -234,27 +247,7 @@ namespace lolita::utility
     template<auto A>
     struct S{};
 
-    namespace detail
-    {
-        template <std::size_t Ofst, class Tuple, std::size_t... I>
-        constexpr auto slice_impl(Tuple const & t, std::index_sequence<I...>)
-        {
-            return std::forward_as_tuple(
-//                        std::get<I + Ofst>(std::forward<Tuple>(t))...);
-            std::get<I + Ofst>(t)...);
-        }
-    }
 
-    template <std::size_t I1, std::size_t I2, class Cont>
-    constexpr auto tuple_slice(Cont const & t)
-    {
-        static_assert(I2 >= I1, "invalid slice");
-        static_assert(std::tuple_size<std::decay_t<Cont>>::value >= I2,
-                      "slice index out of bounds");
-
-//            return detail::slice_impl<I1>(std::forward<Cont>(t), std::make_index_sequence<I2 - I1>{});
-        return detail::slice_impl<I1>(t, std::make_index_sequence<I2 - I1>{});
-    }
 
     template<typename T, lolita::index... I>
     using TupleParts = std::tuple<std::tuple_element_t<I, T>...>;

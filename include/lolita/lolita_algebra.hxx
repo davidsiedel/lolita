@@ -351,7 +351,7 @@ namespace lolita::numerics
         //                (     k+k < n  )?                        // recursive:
         //                (binomial(n - 1, k - 1) * n) / k :       //  path to k=1   is faster
         //                (binomial(n - 1, k) * n) / (n - k);      //  path to k=n-1 is faster
-        return (k > n) ? 0 : (k == 0 || k == n ) ? 1 : (k == 1 || k == n-1) ? n : (k + k < n) ? (binomial(n - 1, k - 1) * n) / k : (binomial(n - 1, k) * n) / (n - k);      //  path to k=n-1 is faster
+        return (k > n) ? 0 : (k == 0 || k == n ) ? 1 : (k == 1 || k == n-1) ? n : (k + k < n) ? (binomial(n - 1, k - 1) * n) / k : (binomial(n - 1, k) * n) / (n - k);
     }
 
 }
