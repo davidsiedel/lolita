@@ -6,7 +6,8 @@
 #include <ranges>
 #include "gtest/gtest.h"
 
-#include "lolita/lolita.hxx"
+#include "lolita/lolita_user.hxx"
+#include "lolita/lolita_element.hxx"
 
 TEST(test_lolita_2, test_lolita_2)
 {
@@ -16,16 +17,50 @@ TEST(test_lolita_2, test_lolita_2)
 
     auto constexpr domain = lolita::geometry::Domain("Middle", 3, lolita::geometry::Frame::Cartesian);
 //    auto constexpr displacement = lolita::field::DegreeOfFreedom("Displacement", 4, lolita::field::Mapping::Gradient);
-    auto constexpr displacement_field = lolita::field::Tensor("Displacement", 1);
-    auto constexpr displacement = lolita::field::Unknown(displacement_field, lolita::field::Mapping::Gradient);
+//    auto constexpr displacement_field = lolita::field::Tensor("Displacement", 1);
+    auto constexpr u_unknown = lolita::field::Unknown("Displacement", 1, lolita::field::Mapping::Gradient);
+    auto constexpr p_unknown = lolita::field::Unknown("Pressure", 1, lolita::field::Mapping::Identity);
+    auto constexpr d_unknown = lolita::field::Unknown("Damage", 0, lolita::field::Mapping::Gradient, lolita::field::Mapping::Identity);
+    auto constexpr u_discretization = lolita::finite_element::HybridHighOrder(1, 1);
+    auto constexpr d_discretization = lolita::finite_element::HybridHighOrder(1, 1);
+    auto constexpr u_voce = lolita::behaviour::MgisBehaviour2(u_unknown, p_unknown);
+    auto constexpr u_elasticity = lolita::behaviour::MgisBehaviour2(u_unknown);
+    auto constexpr d_phase_field = lolita::behaviour::MgisBehaviour2(d_unknown);
+    auto constexpr hho_u0 = lolita::finite_element::FiniteElement(u_unknown, u_voce, u_discretization, lolita::finite_element::Quadrature::Gauss, 2);
+    auto constexpr hho_p = lolita::finite_element::FiniteElement(p_unknown, u_voce, u_discretization, lolita::finite_element::Quadrature::Gauss, 2);
+    auto constexpr hho_u1 = lolita::finite_element::FiniteElement(u_unknown, u_elasticity, u_discretization, lolita::finite_element::Quadrature::Gauss, 2);
+    auto constexpr hho_d = lolita::finite_element::FiniteElement(d_unknown, d_phase_field, d_discretization, lolita::finite_element::Quadrature::Gauss, 2);
 
-    std::cout << displacement.tensor_.cardinality(domain).rows_ << displacement.tensor_.cardinality(domain).cols_ << std::endl;
+    lolita::core::element::FiniteElement<lolita::core::element::seg_02, domain, 1>();
 
-    auto constexpr newlabel = lolita::utility::makeLabel<lolita::character>(lolita::utility::readLabel(displacement.tensor_.tag_), lolita::utility::readLabel(displacement.tensor_.tag_));
+    std::cout << u_unknown.tensor_.cardinality(domain).rows_ << u_unknown.tensor_.cardinality(domain).cols_ << std::endl;
+
+    std::cout << "index : " << lolita::behaviour::MgisBehaviour2(u_unknown).getUnknownIndex<u_unknown>() << std::endl;
+
+    auto constexpr newlabel = lolita::utility::makeLabel<lolita::character>(lolita::utility::readLabel(u_unknown.tensor_.tag_), lolita::utility::readLabel(u_unknown.tensor_.tag_));
 
     std::cout << lolita::utility::readLabel(newlabel) << std::endl;
 
-    std::cout << std::string(lolita::utility::readLabel(displacement.tensor_.tag_)).append("HJU") << std::endl;
+    std::cout << std::string(lolita::utility::readLabel(u_unknown.tensor_.tag_)).append("HJU") << std::endl;
+
+    auto constexpr agg = lolita::utility::Aggregate<long, double, int>{1, 2, 3};
+
+    std::cout << lolita::utility::get<0u>(agg) << std::endl;
+
+//    lolita::utility::Mult<1, 2, 3>();
+
+    auto constexpr inpt = std::tuple<int, long, unsigned, long , char>(1, 2, 3, 4, 'A');
+
+//    auto constexpr outp = lolita::utility::subtuple<1>(inpt);
+
+//    auto constexpr outp = lolita::utility::subtuple2(inpt);
+//    auto constexpr outp2 = lolita::utility::expandD(inpt);
+//    auto constexpr outp2 = lolita::utility::expandTuple<1>(inpt);
+
+//    auto constexpr enfin = lolita::utility::tuple_slice<1, 2>(inpt);
+
+//    std::apply(([&](auto x) {std::cout << x <<std::endl;}; ...), outp);
+//    std::apply([&](auto&&... args) {((std::cout << args << std::endl), ...);}, enfin);
 
 //    lolita::geometry::Frame::Cartesian;
 //    lolita::geometry::Domain::Cartesian;
