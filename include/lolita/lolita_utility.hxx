@@ -5,6 +5,10 @@
 #ifndef LOLITA_LOLITA_UTILITY_HXX
 #define LOLITA_LOLITA_UTILITY_HXX
 
+#include <iostream>
+#include <fstream>
+#include <unordered_set>
+#include <unordered_map>
 #include "lolita/lolita.hxx"
 #include "lolita/lolita_algebra.hxx"
 
@@ -13,25 +17,30 @@ namespace lolita::utility
 
     using Label = std::array<lolita::character, 150>;
 
-    template<typename... U>
+    template<typename... _U>
     static constexpr
     lolita::utility::Label
     label(
-            std::basic_string_view<U> &&...
+            std::basic_string_view<_U> &&...
             str
     )
-    requires(std::same_as<lolita::character, U> && ...)
+    requires(std::same_as<lolita::character, _U> && ...)
     {
         auto label = lolita::utility::Label();
-        auto j = lolita::index(0);
+        auto count = lolita::index(0);
         auto make = [&] (auto && s) constexpr mutable {
+//            auto i = lolita::index(0);
+//            for (auto c : s) {
+//                label[i + count] = c;
+//                i ++;
+//            }
             for (auto i = 0; i < s.size(); ++i) {
-                label[i + j] = s[i];
+                label[i + count] = s[i];
             }
-            j += s.size();
+            count += s.size();
         };
-        (make(std::forward<std::basic_string_view<U>>(str)), ...);
-        for (auto i = j; i < label.size(); ++i) {
+        (make(std::forward<std::basic_string_view<_U>>(str)), ...);
+        for (auto i = count; i < label.size(); ++i) {
             label[i] = '#';
         }
         return label;
@@ -50,31 +59,96 @@ namespace lolita::utility
     namespace detail
     {
 
-        template<lolita::index offset, typename... T, lolita::index... I>
+        template<lolita::index _offset, typename... _T, lolita::index... _i>
         constexpr
         auto
         tupleSlice(
-                std::tuple<T...> const &
+                std::tuple<_T...> const &
                 tuple,
-                std::integer_sequence<lolita::index, I...>
+                std::integer_sequence<lolita::index, _i...>
         )
         {
-            return std::make_tuple(std::get<I + offset>(tuple)...);
+            return std::make_tuple(std::get<_i + _offset>(tuple)...);
         }
 
     }
 
-    template<lolita::index begin, lolita::index end, typename... T>
+    template<lolita::index _begin, lolita::index _end, typename... _T>
     constexpr
     auto
     tupleSlice(
-            std::tuple<T...> const &
+            std::tuple<_T...> const &
             tuple
     )
-    requires(end >= begin && sizeof...(T) >= end)
+    requires(_end >= _begin && sizeof...(_T) >= _end)
     {
-        return detail::tupleSlice<begin>(tuple, std::make_integer_sequence<lolita::index, end - begin>{});
+        return detail::tupleSlice<_begin>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
     }
+
+    static void inline
+    removeCharacter(
+            std::basic_string<lolita::character> &
+            line,
+            lolita::character
+            c
+    )
+    {
+        line.erase(std::remove(line.begin(), line.end(), c), line.end());
+    }
+
+    struct File
+    {
+
+        File() = default;
+
+        explicit
+        File(
+                std::basic_string<lolita::character> const &
+                file_path_arg
+        )
+        :
+        lines_(readLines(file_path_arg))
+        {}
+
+        lolita::boolean
+        operator==(
+                File const &
+                other
+        )
+        const = default;
+
+        lolita::boolean
+        operator!=(
+                File const &
+                other
+        )
+        const = default;
+
+        std::vector<std::basic_string<lolita::character>> lines_;
+
+    private:
+
+        static inline
+        std::vector<std::basic_string<lolita::character>>
+        readLines(
+                std::basic_string<lolita::character> const &
+                f
+        )
+        {
+            std::basic_ifstream<lolita::character> file(f);
+            if (!file) {
+                throw std::runtime_error("Could not open file");
+            }
+            std::vector<std::basic_string<lolita::character>> lines;
+            for (std::basic_string<lolita::character> line; std::getline(file, line); ) {
+                lines.push_back(line);
+            }
+            return lines;
+        }
+
+    };
+
+//    using File = file::File;
 
     /*
      *

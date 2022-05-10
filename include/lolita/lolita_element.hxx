@@ -6,6 +6,9 @@
 #define LOLITA_LOLITA_ELEMENT_HXX
 
 #include "lolita/lolita.hxx"
+#include "lolita/lolita_utility.hxx"
+#include "lolita/lolita_algebra.hxx"
+#include "lolita/lolita_user.hxx"
 
 namespace lolita::core::element
 {
@@ -37,20 +40,20 @@ namespace lolita::core::element
             return dim == 0 ? 1 : dim;
         }
 
-        lolita::index tag;
+        lolita::integer tag;
 
-        lolita::index dim;
+        lolita::integer dim;
 
-        lolita::index ord;
+        lolita::integer ord;
 
-        lolita::index num_nodes;
+        lolita::integer num_nodes;
 
     };
 
-    template<Element element, lolita::geometry::Domain domain, auto C>
+    template<Element _element, lolita::geometry::Domain _domain, auto C>
     struct FiniteElement;
 
-    template<Element element, lolita::geometry::Domain domain, auto C>
+    template<Element _element, lolita::geometry::Domain _domain, auto C>
     struct FiniteElement{};
 
     Element const static constexpr pnt_00 = Element{0, 0, 0, 1};
@@ -72,154 +75,195 @@ namespace lolita::core::element
      *
      */
 
-    template<Element element, lolita::geometry::Domain domain>
-    concept Cell = domain.dim_ - element.dim == 0;
+    template<Element _element, lolita::geometry::Domain _domain>
+    concept CellConcept = _domain.dim_ - _element.dim == 0;
 
-    template<Element element, lolita::geometry::Domain domain>
-    concept Face = domain.dim_ - element.dim == 1;
+    template<Element _element, lolita::geometry::Domain _domain>
+    concept FaceConcept = _domain.dim_ - _element.dim == 1;
 
-    template<Element element, lolita::geometry::Domain domain>
-    concept Edge = domain.dim_ - element.dim == 2;
+    template<Element _element, lolita::geometry::Domain _domain>
+    concept EdgeConcept = _domain.dim_ - _element.dim == 2;
 
-    template<Element element, lolita::geometry::Domain domain>
-    concept Node = domain.dim_ - element.dim == 3;
-
-    /*
-     *
-     */
-
-    template<Element element>
-    concept Point = element == pnt_00;
-
-    template<Element element>
-    concept Segment = element == seg_02 || element == seg_03;
-
-    template<Element element>
-    concept Triangle = element == tri_03 || element == tri_06;
-
-    template<Element element>
-    concept Quadrangle = element == qua_04 || element == qua_08;
-
-    template<Element element>
-    concept Tetrahedron = element == tet_04 || element == tet_12;
+    template<Element _element, lolita::geometry::Domain _domain>
+    concept NodeConcept = _domain.dim_ - _element.dim == 3;
 
     /*
      *
      */
 
-    template<Element element>
-    concept Curve = Segment<element>;
+    template<Element _element>
+    concept PointConcept = _element == pnt_00;
 
-    template<Element element>
-    concept Surface = Triangle<element> || Quadrangle<element>;
+    template<Element _element>
+    concept SegmentConcept = _element == seg_02 || _element == seg_03;
 
-    template<Element element>
-    concept Volume = Tetrahedron<element>;
+    template<Element _element>
+    concept TriangleConcept = _element == tri_03 || _element == tri_06;
 
-    /*
-     *
-     */
+    template<Element _element>
+    concept QuadrangleConcept = _element == qua_04 || _element == qua_08;
 
-    template<template<Element> typename T>
-    using Points = std::tuple<T<pnt_00>>;
-
-    template<template<Element> typename T>
-    using Curves = std::tuple<T<seg_02>>;
-
-    template<template<Element> typename T>
-    using Facets = std::tuple<T<tri_03>, T<qua_04>>;
-
-    template<template<Element> typename T>
-    using Solids = std::tuple<T<tet_04>>;
-
-    template<typename T>
-    struct test_struct : public std::false_type {};
-
-    template<template<Element, lolita::geometry::Domain, auto...> typename T, Element E, lolita::geometry::Domain D, auto... A>
-    struct test_struct<T<E, D, A...>> : public std::true_type {};
-
-    template<typename T>
-    concept FiniteElementType = test_struct<T>::value;
+    template<Element _element>
+    concept TetrahedronConcept = _element == tet_04 || _element == tet_12;
 
     /*
      *
      */
 
-    template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-    using Points2 = std::tuple<T<pnt_00, domain, A...>>;
+    template<Element _element>
+    concept CurveConcept = SegmentConcept<_element>;
 
-    template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-    using Curves2 = std::tuple<T<seg_02, domain, A...>>;
+    template<Element _element>
+    concept SurfaceConcept = TriangleConcept<_element> || QuadrangleConcept<_element>;
 
-    template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-    using Facets2 = std::tuple<T<tri_03, domain, A...>, T<qua_04, domain, A...>>;
+    template<Element _element>
+    concept VolumeConcept = TetrahedronConcept<_element>;
 
-    template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-    using Solids2 = std::tuple<T<tet_04, domain, A...>>;
+    /*
+     *
+     */
+
+//    template<typename T>
+//    struct test_struct : public std::false_type {};
+//
+//    template<template<Element, lolita::geometry::Domain, auto...> typename T, Element E, lolita::geometry::Domain D, auto... A>
+//    struct test_struct<T<E, D, A...>> : public std::true_type {};
+//
+//    template<typename T>
+//    concept FiniteElementType = test_struct<T>::value;
+
+    /*
+     *
+     */
+
+    template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+    using Points = std::tuple<
+            _T<pnt_00, _domain, _arg...>
+    >;
+
+    template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+    using Curves = std::tuple<
+            _T<seg_02, _domain, _arg...>
+    >;
+
+    template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+    using Facets = std::tuple<
+            _T<tri_03, _domain, _arg...>,
+            _T<qua_04, _domain, _arg...>
+    >;
+
+    template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+    using Solids = std::tuple<
+            _T<tet_04, _domain, _arg...>
+    >;
 
     namespace detail
     {
 
-        template<Element E>
-        using ElementNodeConnectivity = std::array<lolita::index, E.num_nodes>;
+        lolita::geometry::Domain const static constexpr domain__ = lolita::geometry::Domain("", 3, lolita::geometry::Frame::Cartesian);
 
-        template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-        using ElementCollection = std::tuple<Points2<domain, T, A...>, Curves2<domain, T, A...>, Facets2<domain, T, A...>, Solids2<domain, T, A...>>;
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+        using Elements = std::tuple<
+                Points<_T, _domain, _arg...>,
+                Curves<_T, _domain, _arg...>,
+                Facets<_T, _domain, _arg...>,
+                Solids<_T, _domain, _arg...>
+        >;
 
-        template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-        struct ElementUps
+    }
+
+    template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+    struct ElementCollection
+    {
+
+    private:
+
+        template<template<Element, lolita::geometry::Domain, auto...> typename __T, lolita::geometry::Domain __domain, auto... __arg>
+        using _Elements = decltype(lolita::utility::tupleSlice<0, _domain.dim_ + 1>(std::declval<detail::Elements<__T, __domain, __arg...>>()));
+
+    public:
+
+        ElementCollection()
+        :
+        elements_()
+        {}
+
+        template<lolita::index _i, lolita::index _j>
+        std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements<_T, _domain, _arg...>>> const &
+        getElements()
+        const
+        {
+            return std::get<_j>(std::get<_i>(elements_));
+        }
+
+        template<lolita::index _i, lolita::index _j>
+        std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements<_T, _domain, _arg...>>> &
+        getElements()
+        {
+            return std::get<_j>(std::get<_i>(elements_));
+        }
+
+        _Elements<_T, _domain, _arg...> elements_;
+
+    };
+
+    namespace detail
+    {
+
+        template<Element _element, auto...>
+        using ElementNodeConnectivity = std::array<lolita::index, _element.num_nodes>;
+
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+        struct ElementNeighbourArrayTraits
         {
 
         private:
 
-            template<Element _element, lolita::geometry::Domain _domain, auto... _A>
-            using ElementStdVector = std::vector<T<_element, _domain, _A...>>;
+            template<Element __element, lolita::geometry::Domain __domain, auto... __arg>
+            using Neighbours = std::vector<_T<__element, __domain, __arg...>>;
 
-            template<Element element>
-            struct TypePolicy;
+            template<Element _element>
+            struct NeighboursTraits;
 
-            template<Element element>
-            requires(Point<element>)
-            struct TypePolicy<element>
+            template<Element _element>
+            requires(PointConcept<_element>)
+            struct NeighboursTraits<_element>
             {
 
-                using Type = decltype(lolita::utility::tupleSlice<1, domain.dim_>(ElementCollection<domain, ElementStdVector, A...>{}));
+                using Type = decltype(lolita::utility::tupleSlice<1, _domain.dim_ + 1>(std::declval<Elements<Neighbours, _domain, _arg...>>()));
 
             };
 
-            template<Element element>
-            requires(!Point<element>)
-            struct TypePolicy<element>
+            template<Element _element>
+            requires(!PointConcept<_element>)
+            struct NeighboursTraits<_element>
             {
 
-                using Type = decltype(lolita::utility::tupleSlice<element.dim, domain.dim_>(ElementCollection<domain, ElementStdVector, A...>{}));
+                using Type = decltype(lolita::utility::tupleSlice<_element.dim, _domain.dim_ + 1>(std::declval<Elements<Neighbours, _domain, _arg...>>()));
 
             };
 
         public:
 
-            template<Element element>
-            using Type = typename TypePolicy<element>::Type;
+            template<Element _element>
+            using Type = typename NeighboursTraits<_element>::Type;
 
         };
 
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, Element _element, lolita::geometry::Domain _domain, auto... _arg>
+        using ElementNeighbourArray = typename detail::ElementNeighbourArrayTraits<_T, _domain, _arg...>::template Type<_element>;
+
     }
 
-    template<lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-    using Elements = decltype(lolita::utility::tupleSlice<0, domain.dim_>(detail::ElementCollection<domain, T, A...>{}));
-
-    template<Element element, lolita::geometry::Domain domain, template<Element, lolita::geometry::Domain, auto...> typename T, auto... A>
-    using ElementNeighbourArray = typename detail::ElementUps<domain, T, A...>::template Type<element>;
-
-    template<Element E>
+    template<Element, auto...>
     struct ElementGeometry;
 
-    template<Element E>
-    requires(E == pnt_00)
-    struct ElementGeometry<E>
+    template<Element _element, auto... _arg>
+    requires(_element == pnt_00)
+    struct ElementGeometry<_element, _arg...>
     {
 
-        Element const static constexpr element = E;
+        Element const static constexpr element = _element;
 
         constexpr
         lolita::boolean
@@ -244,8 +288,8 @@ namespace lolita::core::element
             +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
         };
 
-        template<lolita::geometry::Domain domain, template<Element, auto...> typename T, auto... A>
-        using Neighbours = std::tuple<ElementNeighbourArray<E, domain, T, A...>>;
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
+        using Neighbours = std::tuple<detail::ElementNeighbourArray<_T, element, _domain, __arg...>>;
 
         /**
          * @brief
@@ -288,12 +332,12 @@ namespace lolita::core::element
 
     };
 
-    template<Element E>
-    requires(E == seg_02)
-    struct ElementGeometry<E>
+    template<Element _element, auto... _arg>
+    requires(_element == seg_02)
+    struct ElementGeometry<_element, _arg...>
     {
 
-        Element const static constexpr element = E;
+        Element const static constexpr element = _element;
 
         constexpr
         lolita::boolean
@@ -311,30 +355,20 @@ namespace lolita::core::element
         )
         const = default;
 
-        auto const static constexpr lowers = std::array<Element, 0>{};
-        auto const static constexpr higher = std::array<Element, 1>{seg_03};
-
         std::array<std::array<lolita::real, 3>, 2> const static constexpr reference_nodes = {
                 -1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
                 +1.0000000000000000, +0.0000000000000000, +0.0000000000000000
         };
 
-        template<template<Element, auto...> typename T>
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, auto... __arg>
         using Components = std::tuple<
                 std::tuple<
-                        std::array<T<pnt_00>, 2>
+                        std::array<_T<pnt_00, __arg...>, 2>
                 >
         >;
 
-        template<template<Element, auto...> typename T, auto... A>
-        using Components2 = std::tuple<
-                std::tuple<
-                        std::array<T<pnt_00, A...>, 2>
-                >
-        >;
-
-        template<lolita::geometry::Domain domain, template<Element, auto...> typename T, auto... A>
-        using Neighbours = std::tuple<Components2<T, A...>, ElementNeighbourArray<element, domain, T, A...>>;
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
+        using Neighbours = std::tuple<Components<_T, _domain, __arg...>, detail::ElementNeighbourArray<_T, element, _domain, __arg...>>;
 
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity = {
                 {
@@ -393,12 +427,12 @@ namespace lolita::core::element
 
     };
 
-    template<Element E>
-    requires(E == tri_03)
-    struct ElementGeometry<E>
+    template<Element _element, auto... _arg>
+    requires(_element == tri_03)
+    struct ElementGeometry<_element, _arg...>
     {
 
-        Element const static constexpr element = E;
+        Element const static constexpr element = _element;
 
         constexpr
         lolita::boolean
@@ -422,15 +456,18 @@ namespace lolita::core::element
                 +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
         };
 
-        template<template<Element, auto...> typename T>
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, auto... __arg>
         using Components = std::tuple<
-        std::tuple<
-                std::array<T<seg_02>, 3>
+                std::tuple<
+                        std::array<_T<seg_02, __arg...>, 3>
                 >,
                 std::tuple<
-                std::array<T<pnt_00>, 3>
+                        std::array<_T<pnt_00, __arg...>, 3>
                 >
         >;
+
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
+        using Neighbours = std::tuple<Components<_T, _domain, __arg...>, detail::ElementNeighbourArray<_T, element, _domain, __arg...>>;
 
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity = {
                 {
@@ -443,7 +480,7 @@ namespace lolita::core::element
                 {
                         {
                                 0,
-                                   1,
+                                1,
                                 2,
                         }
                 }
@@ -505,12 +542,12 @@ namespace lolita::core::element
 
     };
 
-    template<Element E>
-    requires(E == qua_04)
-    struct ElementGeometry<E>
+    template<Element _element, auto... _arg>
+    requires(_element == qua_04)
+    struct ElementGeometry<_element, _arg...>
     {
 
-        auto const static constexpr element = E;
+        auto const static constexpr element = _element;
 
         constexpr
         lolita::boolean
@@ -535,17 +572,20 @@ namespace lolita::core::element
                 -1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
         };
 
-        template<template<Element, auto...> typename T>
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, auto... __arg>
         using Components = std::tuple<
-        std::tuple<
-                std::array<T<seg_02>, 4>
-        >,
-        std::tuple<
-        std::array<T<pnt_00>, 4>
-        >
+                std::tuple<
+                        std::array<_T<seg_02, __arg...>, 4>
+                >,
+                std::tuple<
+                        std::array<_T<pnt_00, __arg...>, 4>
+                >
         >;
 
-        auto const static constexpr node_connectivity = Components<detail::ElementNodeConnectivity>{
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
+        using Neighbours = std::tuple<Components<_T, _domain, __arg...>, detail::ElementNeighbourArray<_T, element, _domain, __arg...>>;
+
+        Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity = {
                 {
                         {
                                 0, 1,
@@ -557,9 +597,9 @@ namespace lolita::core::element
                 {
                         {
                                 0,
-                                   1,
+                                1,
                                 2,
-                                   3,
+                                3,
                         }
                 }
         };
@@ -623,12 +663,12 @@ namespace lolita::core::element
 
     };
 
-    template<Element E>
-    requires(E == tet_04)
-    struct ElementGeometry<E>
+    template<Element _element, auto... _arg>
+    requires(_element == tet_04)
+    struct ElementGeometry<_element, _arg...>
     {
 
-        auto const static constexpr element = E;
+        auto const static constexpr element = _element;
 
         constexpr
         lolita::boolean
@@ -653,44 +693,47 @@ namespace lolita::core::element
                 +0.0000000000000000, +0.0000000000000000, +1.0000000000000000,
         };
 
-        template<template<Element, auto...> typename T>
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, auto... __arg>
         using Components = std::tuple<
-        std::tuple<
-                std::array<T<tri_03>, 4>
-        >,
-        std::tuple<
-        std::array<T<seg_02>, 6>
-        >,
-        std::tuple<
-        std::array<T<pnt_00>, 4>
-        >
+                std::tuple<
+                        std::array<_T<tri_03, __arg...>, 4>
+                >,
+                std::tuple<
+                        std::array<_T<seg_02, __arg...>, 6>
+                >,
+                std::tuple<
+                        std::array<_T<pnt_00, __arg...>, 4>
+                >
         >;
+
+        template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
+        using Neighbours = std::tuple<Components<_T, _domain, __arg...>, detail::ElementNeighbourArray<_T, element, _domain, __arg...>>;
 
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity = {
                 {
                         {
                                 0, 1, 3,
-                                         0, 3, 2,
+                                0, 3, 2,
                                 0, 2, 1,
-                                         1, 2, 3,
+                                1, 2, 3,
                         }
                 },
                 {
                         {
                                 0, 1,
-                                      1, 2,
-                                            2, 0,
+                                1, 2,
+                                2, 0,
                                 0, 3,
-                                      3, 2,
-                                            1, 3,
+                                3, 2,
+                                1, 3,
                         }
                 },
                 {
                         {
                                 0,
-                                   1,
-                                      2,
-                                         3,
+                                1,
+                                2,
+                                3,
                         }
                 }
         };
@@ -742,98 +785,262 @@ namespace lolita::core::element
 
     };
 
-    namespace detail
+    /*
+     *
+     */
+
+    using NeighbourPosition = std::array<lolita::integer , 3>;
+
+    template<Element _element, Element _neighbour>
+    static constexpr
+    NeighbourPosition
+    neighbourPosition()
     {
-
-        template<template<Element, auto...> typename T, Element E, auto... A>
-        struct ElementComponentsPolicy
+        using NeighbourArray = typename ElementGeometry<_element>::template Neighbours<ElementGeometry, detail::domain__>;
+        auto constexpr layer = _element.dim - _neighbour.dim > 0 || PointConcept<_element> ? 0 : 1;
+        auto position = NeighbourPosition{-1, -1, -1};
+        auto f0 = [&] <lolita::index _I = 0u, lolita::index _J = 0u> (
+                auto & self
+        )
+        constexpr mutable
         {
-
-        private:
-
-            template<Element B>
-            using ElementType = T<B, A...>;
-
-        public:
-
-            using Type = typename ElementGeometry<E>::template Components<ElementType>;
-
+            using Neighbour = typename std::tuple_element_t<_J, std::tuple_element_t<_I, std::tuple_element_t<layer, NeighbourArray>>>::value_type;
+            if (Neighbour::element == _neighbour) {
+                position[0] = layer;
+                position[1] = _I;
+                position[2] = _J;
+            }
+            if constexpr (_J < std::tuple_size_v<std::tuple_element_t<_I, std::tuple_element_t<layer, NeighbourArray>>> - 1) {
+                self.template operator()<_I, _J + 1u>(self);
+            }
+            else if constexpr (_I < std::tuple_size_v<std::tuple_element_t<layer, NeighbourArray>> - 1) {
+                self.template operator()<_I + 1u, 0u>(self);
+            }
         };
-
-        template<template<Element, auto...> typename T, lolita::index I, lolita::index J, Element E, auto... A>
-        struct ElementComponentPolicy
-        {
-
-        private:
-
-            using ElementComponents = typename ElementComponentsPolicy<T, E, A...>::Type;
-
-        public:
-
-            using Type = typename ElementComponents::template Type<I>::template Type<J>::Type;
-
-        };
-
+        f0(f0);
+        return position;
     }
 
-    template<Element E, template<Element, auto...> typename T, auto... A>
-    struct ElemCom
+    template<Element _element, lolita::index _I, lolita::index _J, lolita::index _K>
+    static constexpr
+    lolita::core::element::Element
+    neighbour()
+    {
+        using NeighbourArray = typename ElementGeometry<_element>::template Neighbours<ElementGeometry, detail::domain__>;
+        return std::tuple_element_t<_K, std::tuple_element_t<_J, std::tuple_element_t<_I, NeighbourArray>>>::value_type::element;
+    }
+
+    template<Element _element, lolita::index _I, lolita::index _J, lolita::index _K>
+    static constexpr
+    lolita::integer
+    numNeighbours()
+    requires(!PointConcept<_element> && _I < 1)
+    {
+        using NeighbourArray = typename ElementGeometry<_element>::template Neighbours<ElementGeometry, detail::domain__>;
+        return std::tuple_size_v<std::tuple_element_t<_K, std::tuple_element_t<_J, std::tuple_element_t<_I, NeighbourArray>>>>;
+    }
+
+    template<Element _element, lolita::index _I, lolita::index _J>
+    static constexpr
+    lolita::integer
+    numNeighbours()
+    {
+        using NeighbourArray = typename ElementGeometry<_element>::template Neighbours<ElementGeometry, detail::domain__>;
+        return std::tuple_size_v<std::tuple_element_t<_J, std::tuple_element_t<_I, NeighbourArray>>>;
+    }
+
+    template<Element _element, lolita::index _I>
+    static constexpr
+    lolita::integer
+    numNeighbours()
+    {
+        using NeighbourArray = typename ElementGeometry<_element>::template Neighbours<ElementGeometry, detail::domain__>;
+        return std::tuple_size_v<std::tuple_element_t<_I, NeighbourArray>>;
+    }
+
+    /*
+     *
+     */
+
+    using ElementPosition = std::array<lolita::integer, 2>;
+
+    template<Element _element>
+    static constexpr
+    ElementPosition
+    elementPosition()
+    {
+        using NeighbourArray = detail::Elements<ElementGeometry, detail::domain__>;
+        auto position = ElementPosition{_element.dim, -1};
+        auto f0 = [&] <lolita::index _i = 0u> (auto & self) constexpr mutable {
+            using Neighbour = std::tuple_element_t<_i, std::tuple_element_t<_element.dim, NeighbourArray>>;
+            if (Neighbour::element == _element) {
+                position[1] = _i;
+            }
+            if constexpr (_i < std::tuple_size_v<std::tuple_element_t<_element.dim, NeighbourArray>> - 1) {
+                self.template operator()<_i + 1u>(self);
+            }
+        };
+        f0(f0);
+        return position;
+    }
+
+    template<lolita::index I, lolita::index J>
+    static constexpr
+    Element
+    element()
+    {
+        return std::tuple_element_t<J, std::tuple_element_t<I, detail::Elements<ElementGeometry, detail::domain__>>>::element;
+    }
+
+    template<lolita::index I>
+    constexpr inline
+    lolita::index
+    numElements()
+    {
+        return std::tuple_size_v<std::tuple_element_t<I, detail::Elements<ElementGeometry, detail::domain__>>>;
+    }
+
+    /*
+     *
+     */
+
+    template<Element, lolita::finite_element::Quadrature, lolita::index>
+    struct ElementQuadrature;
+
+    template<Element _element, lolita::finite_element::Quadrature _Quadrature, lolita::index _OrdQuadrature>
+    requires(PointConcept<_element>)
+    struct ElementQuadrature<_element, _Quadrature, _OrdQuadrature>
     {
 
-    private:
+        lolita::index const static constexpr dim_quadrature = 1;
 
-        template<Element B>
-        using ElementType = T<B, A...>;
-
-        using Type = typename ElementGeometry<E>::template Components<ElementType>;
-
-        template<lolita::index... K>
-        auto const static constexpr layers = std::array<lolita::index, sizeof...(K)>{static_cast<lolita::index>(K)...};
-
-        template<lolita::index... K>
-        struct Pol;
-
-        template<lolita::index... K>
-        requires(sizeof...(K) == 0)
-        struct Pol<K...>
-        {
-
-            using Type = ElemCom::Type;
-
+        std::array<std::array<lolita::real, 3>, dim_quadrature> const static constexpr reference_points = {
+                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
         };
 
-        template<lolita::index... K>
-        requires(sizeof...(K) == 1)
-        struct Pol<K...>
-        {
-
-            using Type = typename ElemCom::Type::template Type<layers<K...>[0]>;
-
+        std::array<lolita::real, dim_quadrature> const static constexpr reference_weights = {
+                +1.0000000000000000
         };
-
-        template<lolita::index... K>
-        requires(sizeof...(K) == 2)
-        struct Pol<K...>
-        {
-
-            using Type = typename ElemCom::Type::template Type<layers<K...>[0]>::template Type<layers<K...>[1]>::Type;
-
-        };
-
-    public:
-
-        template<lolita::index... K>
-        using Lay = typename Pol<K...>::Type;
 
     };
 
-    template<Element E, template<Element, auto...> typename T, auto... A>
-    using ElementComponents = typename detail::ElementComponentsPolicy<T, E, A...>::Type;
+    template<Element _element, lolita::finite_element::Quadrature _Quadrature, lolita::index _OrdQuadrature>
+    requires(!PointConcept<_element>)
+    struct ElementQuadrature<_element, _Quadrature, _OrdQuadrature>
+    {
 
-    template<Element E, lolita::index I, lolita::index J, template<Element, auto...> typename T, auto... A>
-    using ElementComponent = typename detail::ElementComponentPolicy<T, I, J, E, A...>::Type;
+        lolita::index const static constexpr dim_quadrature = 1;
 
-    using ElementPosition = std::array<lolita::index, 3>;
+        std::array<std::array<lolita::real, 3>, dim_quadrature> const static constexpr reference_points = {
+                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
+        };
+
+        std::array<lolita::real, dim_quadrature> const static constexpr reference_weights = {
+                +1.0000000000000000
+        };
+
+    };
+
+    template<Element element, lolita::finite_element::Quadrature quadrature, lolita::index ord_quadrature>
+    constexpr inline
+    lolita::index
+    dimQuadrature()
+    {
+        return ElementQuadrature<element, quadrature, ord_quadrature>::dim_quadrature;
+    }
+
+//    namespace detail
+//    {
+//
+//        template<template<Element, auto...> typename T, Element E, auto... A>
+//        struct ElementComponentsPolicy
+//        {
+//
+//        private:
+//
+//            template<Element B>
+//            using ElementType = T<B, A...>;
+//
+//        public:
+//
+//            using Type = typename ElementGeometry<E>::template Components<ElementType>;
+//
+//        };
+//
+//        template<template<Element, auto...> typename T, lolita::index I, lolita::index J, Element E, auto... A>
+//        struct ElementComponentPolicy
+//        {
+//
+//        private:
+//
+//            using ElementComponents = typename ElementComponentsPolicy<T, E, A...>::Type;
+//
+//        public:
+//
+//            using Type = typename ElementComponents::template Type<I>::template Type<J>::Type;
+//
+//        };
+//
+//    }
+//
+//    template<Element E, template<Element, auto...> typename T, auto... A>
+//    struct ElemCom
+//    {
+//
+//    private:
+//
+//        template<Element B>
+//        using ElementType = T<B, A...>;
+//
+//        using Type = typename ElementGeometry<E>::template Components<ElementType>;
+//
+//        template<lolita::index... K>
+//        auto const static constexpr layers = std::array<lolita::index, sizeof...(K)>{static_cast<lolita::index>(K)...};
+//
+//        template<lolita::index... K>
+//        struct Pol;
+//
+//        template<lolita::index... K>
+//        requires(sizeof...(K) == 0)
+//        struct Pol<K...>
+//        {
+//
+//            using Type = ElemCom::Type;
+//
+//        };
+//
+//        template<lolita::index... K>
+//        requires(sizeof...(K) == 1)
+//        struct Pol<K...>
+//        {
+//
+//            using Type = typename ElemCom::Type::template Type<layers<K...>[0]>;
+//
+//        };
+//
+//        template<lolita::index... K>
+//        requires(sizeof...(K) == 2)
+//        struct Pol<K...>
+//        {
+//
+//            using Type = typename ElemCom::Type::template Type<layers<K...>[0]>::template Type<layers<K...>[1]>::Type;
+//
+//        };
+//
+//    public:
+//
+//        template<lolita::index... K>
+//        using Lay = typename Pol<K...>::Type;
+//
+//    };
+//
+//    template<Element E, template<Element, auto...> typename T, auto... A>
+//    using ElementComponents = typename detail::ElementComponentsPolicy<T, E, A...>::Type;
+//
+//    template<Element E, lolita::index I, lolita::index J, template<Element, auto...> typename T, auto... A>
+//    using ElementComponent = typename detail::ElementComponentPolicy<T, I, J, E, A...>::Type;
+
+
 
 //    template<Element E, Element B>
 //    static constexpr
@@ -928,34 +1135,6 @@ namespace lolita::core::element
 //        using L = ElementNeighbourArray<E, D, ElementGeometry>;
 //        return L::template Type<I>::size();
 //    }
-
-    template<Element element, lolita::finite_element::Quadrature quadrature, lolita::index ord_quadrature>
-    struct ElementQuadrature;
-
-    template<Element element, lolita::finite_element::Quadrature quadrature, lolita::index ord_quadrature>
-    requires(Point<element>)
-    struct ElementQuadrature<element, quadrature, ord_quadrature>
-    {
-
-        lolita::index const static constexpr dim_quadrature = 1;
-
-        std::array<std::array<lolita::real, 3>, dim_quadrature> const static constexpr reference_points = {
-            +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
-        };
-
-        std::array<lolita::real, dim_quadrature> const static constexpr reference_weights = {
-            +1.0000000000000000
-        };
-
-    };
-
-    template<Element element, lolita::finite_element::Quadrature quadrature, lolita::index ord_quadrature>
-    constexpr inline
-    lolita::index
-    dimQuadrature()
-    {
-        return ElementQuadrature<element, quadrature, ord_quadrature>::dim_quadrature;
-    }
 
 }
 

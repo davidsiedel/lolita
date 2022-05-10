@@ -8,6 +8,8 @@
 
 #include "lolita/lolita_user.hxx"
 #include "lolita/lolita_element.hxx"
+#include "lolita/lolita_core_finite_element.hxx"
+#include "lolita/lolita_core_mesh.hxx"
 
 TEST(test_lolita_2, test_lolita_2)
 {
@@ -15,7 +17,7 @@ TEST(test_lolita_2, test_lolita_2)
 //    using namespace lolita;
 //    using namespace lolita::core;
 
-    auto constexpr domain = lolita::geometry::Domain("Middle", 3, lolita::geometry::Frame::Cartesian);
+    auto constexpr domain = lolita::geometry::Domain("Middle", 2, lolita::geometry::Frame::Cartesian);
 //    auto constexpr displacement = lolita::field::DegreeOfFreedom("Displacement", 4, lolita::field::Mapping::Gradient);
 //    auto constexpr displacement_field = lolita::field::Tensor("Displacement", 1);
     auto constexpr u_unknown = lolita::field::Unknown("Displacement", 1, lolita::field::Mapping::Gradient);
@@ -23,47 +25,65 @@ TEST(test_lolita_2, test_lolita_2)
     auto constexpr d_unknown = lolita::field::Unknown("Damage", 0, lolita::field::Mapping::Gradient, lolita::field::Mapping::Identity);
     auto constexpr u_discretization = lolita::finite_element::HybridHighOrder(1, 1);
     auto constexpr d_discretization = lolita::finite_element::HybridHighOrder(1, 1);
-    auto constexpr u_voce = lolita::behaviour::MgisBehaviour2(u_unknown, p_unknown);
-    auto constexpr u_elasticity = lolita::behaviour::MgisBehaviour2(u_unknown);
-    auto constexpr d_phase_field = lolita::behaviour::MgisBehaviour2(d_unknown);
-    auto constexpr hho_u0 = lolita::finite_element::FiniteElement(u_unknown, u_voce, u_discretization, lolita::finite_element::Quadrature::Gauss, 2);
-    auto constexpr hho_p = lolita::finite_element::FiniteElement(p_unknown, u_voce, u_discretization, lolita::finite_element::Quadrature::Gauss, 2);
-    auto constexpr hho_u1 = lolita::finite_element::FiniteElement(u_unknown, u_elasticity, u_discretization, lolita::finite_element::Quadrature::Gauss, 2);
-    auto constexpr hho_d = lolita::finite_element::FiniteElement(d_unknown, d_phase_field, d_discretization, lolita::finite_element::Quadrature::Gauss, 2);
+    auto constexpr u_voce = lolita::behaviour::MgisBehaviour3<u_unknown, p_unknown>();
+    auto constexpr u_elasticity = lolita::behaviour::MgisBehaviour3<u_unknown>();
+    auto constexpr d_phase_field = lolita::behaviour::MgisBehaviour3<d_unknown>();
+    auto constexpr hho_u0 = lolita::finite_element::FiniteElement<u_unknown, u_voce, u_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
+    auto constexpr hho_p = lolita::finite_element::FiniteElement<p_unknown, u_voce, u_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
+    auto constexpr hho_u1 = lolita::finite_element::FiniteElement<u_unknown, u_elasticity, u_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
+    auto constexpr hho_d = lolita::finite_element::FiniteElement<d_unknown, d_phase_field, d_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
 
-    lolita::core::element::FiniteElement<lolita::core::element::seg_02, domain, 1>();
+    std::cout << lolita::core::element::numNeighbours<lolita::core::element::tri_03, 0>() << std::endl;
+    std::cout << lolita::core::element::numNeighbours<lolita::core::element::tri_03, 0, 0>() << std::endl;
+    std::cout << lolita::core::element::numNeighbours<lolita::core::element::tri_03, 0, 0, 0>() << std::endl;
 
-    std::cout << u_unknown.tensor_.cardinality(domain).rows_ << u_unknown.tensor_.cardinality(domain).cols_ << std::endl;
+    auto file_path = "";
+//    file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/perforated_strip_huge.msh";
+    file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
+    auto msh_file = lolita::utility::File(file_path);
+    auto msh = lolita::core::mesh::MeshBase<lolita::mesh::MeshFormatType::Gmsh, domain, std::array<int, 2>{}>(msh_file, {}, {});
+    auto & elem = * msh.elements_.getElements<2, 0>()["345"];
+//    auto & elem = * std::get<0>(std::get<2>(msh.elements_))["345"];
+    std::cout << elem.getCurrentCoordinates() << std::endl;
+    std::cout << elem.getReferenceCoordinates() << std::endl;
+//
+    for (auto const & [n_hash, n] : msh.elements_.getElements<0, 0>()) {
+//    for (auto const & [n_hash, n] : std::get<0>(std::get<0>(msh.elements_))) {
+        std::cout << "--" << n_hash << std::endl;
+        std::cout << n->getCurrentCoordinates() << std::endl;
+    }
 
-    std::cout << "index : " << lolita::behaviour::MgisBehaviour2(u_unknown).getUnknownIndex<u_unknown>() << std::endl;
+//    std::cout << u_unknown.tensor_.cardinality(domain).rows_ << u_unknown.tensor_.cardinality(domain).cols_ << std::endl;
+//
+//    std::cout << "index : " << lolita::behaviour::MgisBehaviour2(u_unknown).getUnknownIndex<u_unknown>() << std::endl;
+//
+//    auto constexpr newlabel = lolita::utility::label<lolita::character>(
+//            std::forward<std::basic_string_view<lolita::character>>(lolita::utility::readLabel(u_unknown.tensor_.tag_)),
+//            std::forward<std::basic_string_view<lolita::character>>(lolita::utility::readLabel(u_unknown.tensor_.tag_))
+//    );
+//
+//    std::cout << lolita::utility::readLabel(newlabel) << std::endl;
+//
+//    std::cout << std::string(lolita::utility::readLabel(u_unknown.tensor_.tag_)).append("HJU") << std::endl;
 
-    auto constexpr newlabel = lolita::utility::label<lolita::character>(
-            std::forward<std::basic_string_view<lolita::character>>(lolita::utility::readLabel(u_unknown.tensor_.tag_)),
-            std::forward<std::basic_string_view<lolita::character>>(lolita::utility::readLabel(u_unknown.tensor_.tag_))
-    );
-
-    std::cout << lolita::utility::readLabel(newlabel) << std::endl;
-
-    std::cout << std::string(lolita::utility::readLabel(u_unknown.tensor_.tag_)).append("HJU") << std::endl;
-
-    auto constexpr agg = lolita::utility::Aggregate<long, double, int>{1, 2, 3};
-
-//    std::cout << lolita::utility::get<0u>(agg) << std::endl;
-
-//    lolita::utility::Mult<1, 2, 3>();
-
-    auto constexpr inpt = std::tuple<int, long, unsigned, long , char>(1, 2, 3, 4, 'A');
-
-//    auto constexpr outp = lolita::utility::subtuple<1>(inpt);
-
-//    auto constexpr outp = lolita::utility::subtuple2(inpt);
-//    auto constexpr outp2 = lolita::utility::expandD(inpt);
-//    auto constexpr outp2 = lolita::utility::expandTuple<1>(inpt);
-
-    auto constexpr enfin = lolita::utility::tupleSlice<1, 2>(inpt);
-
-//    std::apply(([&](auto x) {std::cout << x <<std::endl;}; ...), outp);
-    std::apply([&](auto&&... args) {((std::cout << args << std::endl), ...);}, enfin);
+//    auto constexpr agg = lolita::utility::Aggregate<long, double, int>{1, 2, 3};
+//
+////    std::cout << lolita::utility::get<0u>(agg) << std::endl;
+//
+////    lolita::utility::Mult<1, 2, 3>();
+//
+//    auto constexpr inpt = std::tuple<int, long, unsigned, long , char>(1, 2, 3, 4, 'A');
+//
+////    auto constexpr outp = lolita::utility::subtuple<1>(inpt);
+//
+////    auto constexpr outp = lolita::utility::subtuple2(inpt);
+////    auto constexpr outp2 = lolita::utility::expandD(inpt);
+////    auto constexpr outp2 = lolita::utility::expandTuple<1>(inpt);
+//
+//    auto constexpr enfin = lolita::utility::tupleSlice<1, 2>(inpt);
+//
+////    std::apply(([&](auto x) {std::cout << x <<std::endl;}; ...), outp);
+//    std::apply([&](auto&&... args) {((std::cout << args << std::endl), ...);}, enfin);
 
 //    lolita::geometry::Frame::Cartesian;
 //    lolita::geometry::Domain::Cartesian;

@@ -27,7 +27,7 @@ namespace lolita::numerics
     {
 
         template<typename T>
-        struct IsNaturalType
+        struct IsNaturalConcept
         {
 
             static constexpr
@@ -63,7 +63,7 @@ namespace lolita::numerics
         };
 
         template<typename T>
-        struct IsIntegerType
+        struct IsIntegerConcept
         {
 
             static constexpr
@@ -94,12 +94,12 @@ namespace lolita::numerics
                 return std::is_same_v<std::remove_cvref_t<T>, long long int>;
             }
 
-            lolita::boolean static const constexpr value = IsNaturalType<T>::value || isShortInt() || isInt() || isLongInt() || isLongLongInt();
+            lolita::boolean static const constexpr value = IsNaturalConcept<T>::value || isShortInt() || isInt() || isLongInt() || isLongLongInt();
 
         };
 
         template<typename T>
-        struct IsRealType
+        struct IsRealConcept
         {
 
             static constexpr
@@ -123,43 +123,43 @@ namespace lolita::numerics
                 return std::is_same_v<std::remove_cvref_t<T>, long double>;
             }
 
-            lolita::boolean static const constexpr value = IsIntegerType<T>::value || isFloat() || isDouble() || isLongDouble();
+            lolita::boolean static const constexpr value = IsIntegerConcept<T>::value || isFloat() || isDouble() || isLongDouble();
 
         };
 
     }
 
     template<typename T>
-    concept NaturalType = detail::IsNaturalType<T>::value;
+    concept NaturalConcept = detail::IsNaturalConcept<T>::value;
 
     template<typename T>
-    concept IntegerType = detail::IsIntegerType<T>::value;
+    concept IntegerConcept = detail::IsIntegerConcept<T>::value;
 
     template<typename T>
-    concept RealType = detail::IsRealType<T>::value;
+    concept RealConcept = detail::IsRealConcept<T>::value;
 
 //        template<typename T>
-//        concept NaturalType =   std::same_as<std::remove_cvref_t<T>, unsigned short int>
+//        concept NaturalConcept =   std::same_as<std::remove_cvref_t<T>, unsigned short int>
 //                                || std::same_as<std::remove_cvref_t<T>, unsigned int>
 //                                || std::same_as<std::remove_cvref_t<T>, unsigned long int>
 //                                || std::same_as<std::remove_cvref_t<T>, unsigned long long int>;
 //
 //        template<typename T>
-//        concept IntegerType =   NaturalType<T>
+//        concept IntegerConcept =   NaturalConcept<T>
 //                                || std::same_as<std::remove_cvref_t<T>, short int>
 //                                || std::same_as<std::remove_cvref_t<T>, int>
 //                                || std::same_as<std::remove_cvref_t<T>, long int>
 //                                || std::same_as<std::remove_cvref_t<T>, long long int>;
 //
 //        template<typename T>
-//        concept RealType =      IntegerType<T>
+//        concept RealConcept =      IntegerConcept<T>
 //                                || std::same_as<std::remove_cvref_t<T>, float>
 //                                || std::same_as<std::remove_cvref_t<T>, double>
 //                                || std::same_as<std::remove_cvref_t<T>, long double>;
 
     lolita::real const static constexpr pi = 3.14;
 
-    template<lolita::numerics::RealType T, lolita::numerics::IntegerType U>
+    template<lolita::numerics::RealConcept T, lolita::numerics::IntegerConcept U>
     static constexpr
     T
     pow(
@@ -201,7 +201,7 @@ namespace lolita::numerics
 
     }
 
-    template<lolita::numerics::RealType T>
+    template<lolita::numerics::RealConcept T>
     static constexpr
     auto
     sqrt(
@@ -212,7 +212,7 @@ namespace lolita::numerics
         return detail::sqrt<T>(x, T(0), x / T(2) + T(1));
     }
 
-    template<lolita::numerics::RealType T>
+    template<lolita::numerics::RealConcept T>
     static constexpr
     T
     abs(
@@ -223,7 +223,7 @@ namespace lolita::numerics
         return x < T(0) ? -x : x;
     }
 
-    template<lolita::numerics::RealType T>
+    template<lolita::numerics::RealConcept T>
     static constexpr
     T
     max(
@@ -234,7 +234,7 @@ namespace lolita::numerics
         return x;
     }
 
-    template<lolita::numerics::RealType T>
+    template<lolita::numerics::RealConcept T>
     static constexpr
     T
     max(
@@ -247,7 +247,7 @@ namespace lolita::numerics
         return x < y ? y : x;
     }
 
-    template <lolita::numerics::RealType T, lolita::numerics::RealType... U>
+    template <lolita::numerics::RealConcept T, lolita::numerics::RealConcept... U>
     static constexpr
     T
     max(
@@ -260,7 +260,7 @@ namespace lolita::numerics
         return max(x, max(static_cast<T>(y)...));
     }
 
-    template<lolita::numerics::RealType T>
+    template<lolita::numerics::RealConcept T>
     static constexpr
     T
     prod(
@@ -271,7 +271,7 @@ namespace lolita::numerics
         return x;
     }
 
-    template<lolita::numerics::RealType T>
+    template<lolita::numerics::RealConcept T>
     static constexpr
     T
     prod(
@@ -284,7 +284,7 @@ namespace lolita::numerics
         return x * y;
     }
 
-    template<lolita::numerics::RealType T, lolita::numerics::RealType... U>
+    template<lolita::numerics::RealConcept T, lolita::numerics::RealConcept... U>
     static constexpr
     T
     prod(
@@ -297,7 +297,7 @@ namespace lolita::numerics
         return prod(x, prod(static_cast<T>(y)...));
     }
 
-    template<lolita::numerics::RealType T>
+    template<lolita::numerics::RealConcept T>
     static constexpr
     T
     sum(
@@ -308,7 +308,7 @@ namespace lolita::numerics
         return x;
     }
 
-    template<lolita::numerics::RealType T>
+    template<lolita::numerics::RealConcept T>
     static constexpr
     T
     sum(
@@ -321,7 +321,7 @@ namespace lolita::numerics
         return x + y;
     }
 
-    template<lolita::numerics::RealType T, lolita::numerics::RealType... U>
+    template<lolita::numerics::RealConcept T, lolita::numerics::RealConcept... U>
     static constexpr
     T
     sum(
@@ -334,7 +334,7 @@ namespace lolita::numerics
         return sum(x, sum(static_cast<T>(y)...));
     }
 
-    template<lolita::numerics::NaturalType T>
+    template<lolita::numerics::NaturalConcept T>
     static constexpr
     T
     binomial(
@@ -412,7 +412,7 @@ namespace lolita::matrix
     };
 
     template<typename T>
-    concept MatrixType = std::derived_from<std::remove_cvref_t<T>, Eigen::DenseBase<std::remove_cvref_t<T>>>;
+    concept MatrixConcept = std::derived_from<std::remove_cvref_t<T>, Eigen::DenseBase<std::remove_cvref_t<T>>>;
 
     using StorageOption = Eigen::StorageOptions;
 
@@ -423,9 +423,9 @@ namespace lolita::matrix
     static constexpr
     lolita::matrix::StorageOption
     storageOption(
-            lolita::numerics::IntegerType auto
+            lolita::numerics::IntegerConcept auto
             num_rows,
-            lolita::numerics::IntegerType auto
+            lolita::numerics::IntegerConcept auto
             num_cols
     )
     {
@@ -437,9 +437,9 @@ namespace lolita::matrix
     storageOption(
             lolita::matrix::StorageOption
             storage_option,
-            lolita::numerics::IntegerType auto
+            lolita::numerics::IntegerConcept auto
             num_rows,
-            lolita::numerics::IntegerType auto
+            lolita::numerics::IntegerConcept auto
             num_cols
     )
     {
@@ -449,13 +449,13 @@ namespace lolita::matrix
     namespace detail
     {
 
-        template<lolita::numerics::RealType T, auto... A>
+        template<lolita::numerics::RealConcept T, auto... A>
         struct VectorPolicy;
 
-        template<lolita::numerics::RealType T, auto... A>
+        template<lolita::numerics::RealConcept T, auto... A>
         struct MatrixPolicy;
 
-        template<lolita::numerics::RealType T>
+        template<lolita::numerics::RealConcept T>
         struct VectorPolicy<T>
         {
 
@@ -463,7 +463,7 @@ namespace lolita::matrix
 
         };
 
-        template<lolita::numerics::RealType T, auto R>
+        template<lolita::numerics::RealConcept T, auto R>
         struct VectorPolicy<T, R>
         {
 
@@ -471,7 +471,7 @@ namespace lolita::matrix
 
         };
 
-        template<lolita::numerics::RealType T>
+        template<lolita::numerics::RealConcept T>
         struct MatrixPolicy<T>
         {
 
@@ -479,7 +479,7 @@ namespace lolita::matrix
 
         };
 
-        template<lolita::numerics::RealType T, StorageOption O>
+        template<lolita::numerics::RealConcept T, StorageOption O>
         struct MatrixPolicy<T, O>
         {
 
@@ -487,7 +487,7 @@ namespace lolita::matrix
 
         };
 
-        template<lolita::numerics::RealType T, auto R, auto C>
+        template<lolita::numerics::RealConcept T, auto R, auto C>
         struct MatrixPolicy<T, R, C>
         {
 
@@ -495,7 +495,7 @@ namespace lolita::matrix
 
         };
 
-        template<lolita::numerics::RealType T, auto R, auto C, StorageOption O>
+        template<lolita::numerics::RealConcept T, auto R, auto C, StorageOption O>
         struct MatrixPolicy<T, R, C, O>
         {
 
@@ -505,16 +505,16 @@ namespace lolita::matrix
 
     }
 
-    template<lolita::numerics::RealType T, auto... A>
+    template<lolita::numerics::RealConcept T, auto... A>
     using Vector = typename detail::VectorPolicy<T, A...>::type;
 
-    template<lolita::numerics::RealType T, auto... A>
+    template<lolita::numerics::RealConcept T, auto... A>
     using Matrix = typename detail::MatrixPolicy<T, A...>::type;
 
-    template<lolita::matrix::MatrixType T>
+    template<lolita::matrix::MatrixConcept T>
     using Span = Eigen::Map<T>;
 
-    template<lolita::matrix::MatrixType T>
+    template<lolita::matrix::MatrixConcept T>
     static constexpr
     lolita::integer
     rows()
@@ -522,7 +522,7 @@ namespace lolita::matrix
         return T::CompileTimeTraits::RowsAtCompileTime;
     }
 
-    template<lolita::matrix::MatrixType T>
+    template<lolita::matrix::MatrixConcept T>
     static constexpr
     lolita::integer
     cols()
@@ -530,7 +530,7 @@ namespace lolita::matrix
         return T::CompileTimeTraits::ColsAtCompileTime;
     }
 
-    template<lolita::matrix::MatrixType T>
+    template<lolita::matrix::MatrixConcept T>
     static constexpr
     lolita::integer
     size()

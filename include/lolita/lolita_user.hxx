@@ -26,64 +26,64 @@ namespace lolita
 
         using Point = lolita::matrix::Vector<lolita::real, 3>;
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
-        auto
+        lolita::matrix::Vector<typename _Matrix::Scalar, lolita::matrix::rows<_Matrix>()>
         getBarycenter(
-                M const &
+                _Matrix const &
                 point_args
         )
-        requires(lolita::matrix::rows<M>() > 0)
+        requires(lolita::matrix::rows<_Matrix>() > 0)
         {
-            auto barycenter = lolita::matrix::Vector<typename M::Scalar , lolita::matrix::rows<M>()>();
-            for (auto i = 0; i < lolita::matrix::cols<M>(); ++i) {
+            auto barycenter = lolita::matrix::Vector<typename _Matrix::Scalar, lolita::matrix::rows<_Matrix>()>();
+            for (auto i = 0; i < lolita::matrix::cols<_Matrix>(); ++i) {
                 barycenter += point_args.col(i);
             }
-            barycenter /= lolita::real(lolita::matrix::cols<M>());
+            barycenter /= lolita::real(lolita::matrix::cols<_Matrix>());
             return barycenter;
         }
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         auto
         getNormalVector(
-                M const &
+                _Matrix const &
                 vector_args
         );
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         auto
         getNormalVector(
-                M const &
+                _Matrix const &
                 vector_args
         )
-        requires(lolita::matrix::rows<M>() == 1 && lolita::matrix::cols<M>() == 1)
+        requires(lolita::matrix::rows<_Matrix>() == 1 && lolita::matrix::cols<_Matrix>() == 1)
         {
             return vector_args;
         }
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         auto
         getNormalVector(
-                M const &
+                _Matrix const &
                 vector_args
         )
-        requires(lolita::matrix::rows<M>() == 2 && lolita::matrix::cols<M>() == 1)
+        requires(lolita::matrix::rows<_Matrix>() == 2 && lolita::matrix::cols<_Matrix>() == 1)
         {
             auto norm = vector_args.norm();
-            return lolita::matrix::Vector<typename M::Scalar, 2>{vector_args(1)/norm, -vector_args(0)/norm};
+            return lolita::matrix::Vector<typename _Matrix::Scalar, 2>{vector_args(1)/norm, -vector_args(0)/norm};
         }
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         auto
         getNormalVector(
-                M const &
+                _Matrix const &
                 vector_args
         )
-        requires(lolita::matrix::rows<M>() == 3 && lolita::matrix::cols<M>() == 2)
+        requires(lolita::matrix::rows<_Matrix>() == 3 && lolita::matrix::cols<_Matrix>() == 2)
         {
             auto v0 = vector_args.col(0);
             auto v1 = vector_args.col(1);
@@ -92,36 +92,36 @@ namespace lolita
             return v0.cross(v1);
         }
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         auto
         getRotationMatrix(
-                M const &
+                _Matrix const &
                 point_args
         );
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         auto
         getRotationMatrix(
-                M const &
+                _Matrix const &
                 point_args
         )
-        requires(lolita::matrix::rows<M>() == 1 && lolita::matrix::cols<M>() == 1)
+        requires(lolita::matrix::rows<_Matrix>() == 1 && lolita::matrix::cols<_Matrix>() == 1)
         {
             return point_args;
         }
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         auto
         getRotationMatrix(
-                M const &
+                _Matrix const &
                 point_args
         )
-        requires(lolita::matrix::rows<M>() == 2 && lolita::matrix::cols<M>() == 2)
+        requires(lolita::matrix::rows<_Matrix>() == 2 && lolita::matrix::cols<_Matrix>() == 2)
         {
-            auto rotation_matrix = lolita::matrix::Matrix<typename M::Scalar, 2, 2>();
+            auto rotation_matrix = lolita::matrix::Matrix<typename _Matrix::Scalar, 2, 2>();
             auto edge = point_args.col(1) - point_args.col(0);
             edge /= edge.norm();
             rotation_matrix(0, 0) = edge(0);
@@ -131,16 +131,16 @@ namespace lolita
             return rotation_matrix;
         }
 
-        template<lolita::matrix::MatrixType M>
+        template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         auto
         getRotationMatrix(
-                M const &
+                _Matrix const &
                 point_args
         )
-        requires(lolita::matrix::rows<M>() == 3 && lolita::matrix::cols<M>() == 3)
+        requires(lolita::matrix::rows<_Matrix>() == 3 && lolita::matrix::cols<_Matrix>() == 3)
         {
-            auto rotation_matrix = lolita::matrix::Matrix<typename M::Scalar, 3, 3>();
+            auto rotation_matrix = lolita::matrix::Matrix<typename _Matrix::Scalar, 3, 3>();
             auto x_axis = point_args.col(2) - point_args.col(0);
             auto vector = point_args.col(1) - point_args.col(0);
             auto z_axis = x_axis.cross(vector);
@@ -370,8 +370,8 @@ namespace lolita
 
         }
 
-        template<typename... MappingT>
-        requires((std::same_as<MappingT, lolita::field::Mapping> && ...) && sizeof...(MappingT) > 0)
+        template<typename... _Mapping>
+        requires((std::same_as<_Mapping, lolita::field::Mapping> && ...) && sizeof...(_Mapping) > 0)
         struct Unknown
         {
 
@@ -379,7 +379,7 @@ namespace lolita
             Unknown(
                     lolita::field::Tensor const &
                     tensor,
-                    MappingT &&...
+                    _Mapping &&...
                     mappings
             )
             :
@@ -391,7 +391,7 @@ namespace lolita
             Unknown(
                     lolita::field::Tensor &&
                     tensor,
-                    MappingT &&...
+                    _Mapping &&...
                     mappings
             )
             :
@@ -405,7 +405,7 @@ namespace lolita
                     tag,
                     lolita::index
                     dim,
-                    MappingT &&...
+                    _Mapping &&...
                     mappings
             )
             :
@@ -431,7 +431,7 @@ namespace lolita
 
             lolita::field::Tensor tensor_;
 
-            std::array<lolita::field::Mapping, sizeof...(MappingT)> mappings_;
+            std::array<lolita::field::Mapping, sizeof...(_Mapping)> mappings_;
 
         };
 
@@ -462,24 +462,24 @@ namespace lolita
         {
 
             template<typename T>
-            struct IsDegreeOfFreedomType : public std::false_type {};
+            struct IsDegreeOfFreedomConcept : public std::false_type {};
 
             template<typename... MappingT>
-            struct IsDegreeOfFreedomType<DegreeOfFreedom<MappingT...>> : public std::true_type {};
+            struct IsDegreeOfFreedomConcept<DegreeOfFreedom<MappingT...>> : public std::true_type {};
 
             template<typename T>
-            struct IsUnknownType : public std::false_type {};
+            struct IsUnknownConcept : public std::false_type {};
 
             template<typename... MappingT>
-            struct IsUnknownType<Unknown<MappingT...>> : public std::true_type {};
+            struct IsUnknownConcept<Unknown<MappingT...>> : public std::true_type {};
 
         }
 
         template<typename T>
-        concept DegreeOfFreedomType = detail::IsDegreeOfFreedomType<T>::value;
+        concept DegreeOfFreedomConcept = detail::IsDegreeOfFreedomConcept<T>::value;
 
         template<typename T>
-        concept UnknownType = detail::IsUnknownType<T>::value;
+        concept UnknownConcept = detail::IsUnknownConcept<T>::value;
 
         struct MaterialProperty : public Tensor
         {
@@ -548,7 +548,7 @@ namespace lolita
     namespace behaviour
     {
 
-        template<lolita::field::UnknownType... UnknownT>
+        template<lolita::field::UnknownConcept... UnknownT>
         struct BHVData
         {
 
@@ -566,35 +566,6 @@ namespace lolita
 
         };
 
-        template<lolita::geometry::Domain domain, lolita::field::UnknownType auto... unknowns>
-        struct Behaviour
-        {
-
-            Behaviour()
-            :
-            behaviour_(),
-            domains_()
-            {}
-
-            Behaviour(
-                    mgis::behaviour::Behaviour const &
-                    behaviour,
-                    auto &&...
-                    domains_args
-            )
-            :
-            behaviour_(behaviour),
-            domains_({std::forward<std::basic_string<lolita::character>>(domains_args)...})
-            {}
-
-            //std::tuple<lolita::field::UnknownType decltype(auto)...> const static constexpr unknowns_ = {unknowns...};
-
-            mgis::behaviour::Behaviour behaviour_;
-
-            std::vector<std::basic_string<lolita::character>> domains_;
-
-        };
-
         struct MgisBehaviour
         {
 
@@ -602,7 +573,7 @@ namespace lolita
 
         };
 
-        template<lolita::field::UnknownType... UnknownT>
+        template<lolita::field::UnknownConcept... UnknownT>
         struct MgisBehaviour2
         {
 
@@ -617,7 +588,7 @@ namespace lolita
             unknowns_({unknowns...})
             {}
 
-            template<lolita::field::UnknownType auto unknown>
+            template<lolita::field::UnknownConcept auto unknown>
             constexpr
             lolita::index
             getUnknownIndex()
@@ -649,6 +620,60 @@ namespace lolita
 //            std::tuple<UnknownT...> unknowns_;
 
         };
+
+        template<lolita::field::UnknownConcept auto... _unknown>
+        struct MgisBehaviour3
+        {
+
+            using MaterialPoint = mgis::behaviour::BehaviourData;
+
+            constexpr
+            MgisBehaviour3()
+            {}
+
+            template<lolita::field::UnknownConcept auto __unknown>
+            constexpr
+            lolita::index
+            getUnknownIndex()
+            const
+            {
+                auto idx = lolita::index(sizeof...(_unknown));
+                auto set_index = [&] <lolita::index _i = 0> (
+                        auto & self
+                )
+                        constexpr mutable
+                {
+                    using Unknowns = std::tuple<std::remove_cvref_t<decltype(_unknown)>...>;
+                    auto constexpr unknowns = Unknowns();
+                    if constexpr (std::is_same_v<std::tuple_element_t<_i, Unknowns>, std::remove_cvref_t<decltype(__unknown)>>) {
+                        if (lolita::utility::template get<_i>(unknowns) == __unknown) {
+                            idx = _i;
+                        }
+                    }
+                    if constexpr (_i < sizeof...(_unknown) - 1) {
+                        self.template operator()<_i + 1>(self);
+                    }
+                };
+                set_index(set_index);
+                return idx;
+            }
+
+        };
+
+        namespace detail
+        {
+
+            template<typename _T>
+            struct IsMgisBehaviour3 : std::false_type {};
+
+
+            template<lolita::field::UnknownConcept auto... _unknown>
+            struct IsMgisBehaviour3<MgisBehaviour3<_unknown...>> : std::true_type {};
+
+        }
+
+        template<typename _T>
+        concept MgisBehaviour3Concept = detail::IsMgisBehaviour3<_T>::value;
 
     }
 
@@ -734,9 +759,9 @@ namespace lolita
 
         };
 
-        template<typename T>
-        concept FiniteElementMethodType = std::derived_from<T, lolita::finite_element::FiniteElementMethod> && requires(
-                std::remove_reference_t<T> const
+        template<typename _T>
+        concept FiniteElementMethodConcept = std::derived_from<_T, lolita::finite_element::FiniteElementMethod> && requires(
+                std::remove_reference_t<_T> const
                 arg,
                 lolita::field::Mapping
                 mapping
@@ -746,55 +771,49 @@ namespace lolita
             { arg.ordMapping(mapping) } -> std::convertible_to<lolita::index>;
         };
 
-        template<lolita::field::UnknownType UnknownT, typename BehaviourT, lolita::finite_element::FiniteElementMethodType FiniteElementMethodT>
+        template<lolita::field::UnknownConcept auto _unknown, lolita::behaviour::MgisBehaviour3Concept auto _behaviour, lolita::finite_element::FiniteElementMethodConcept auto _finite_element_method>
         struct FiniteElement
         {
 
+            using UnknownType = std::remove_cvref_t<decltype(_unknown)>;
+
+            using BehaviourType = std::remove_cvref_t<decltype(_behaviour)>;
+
+            using FiniteElementMethodType = std::remove_cvref_t<decltype(_finite_element_method)>;
+
             constexpr
             FiniteElement(
-                    UnknownT const &
-                    unknown,
-                    BehaviourT const &
-                    behaviour,
-                    FiniteElementMethodT const &
-                    finite_element_method,
                     lolita::finite_element::Quadrature
                     quadrature,
                     lolita::index
                     ord_quadrature
             )
             :
-            behaviour_(behaviour),
-            unknown_(unknown),
-            finite_element_method_(finite_element_method),
+            unknown_(_unknown),
+            behaviour_(_behaviour),
+            finite_element_method_(_finite_element_method),
             quadrature_(quadrature),
             ord_quadrature_(ord_quadrature)
             {}
 
             constexpr
             FiniteElement(
-                    UnknownT const &
-                    unknown,
-                    BehaviourT const &
-                    behaviour,
-                    FiniteElementMethodT const &
-                    finite_element_method,
                     lolita::finite_element::Quadrature
                     quadrature
             )
             :
-            behaviour_(behaviour),
-            unknown_(unknown),
-            finite_element_method_(finite_element_method),
+            unknown_(_unknown),
+            behaviour_(_behaviour),
+            finite_element_method_(_finite_element_method),
             quadrature_(quadrature),
             ord_quadrature_()
             {}
 
-            BehaviourT behaviour_;
+            UnknownType unknown_;
 
-            UnknownT unknown_;
+            BehaviourType behaviour_;
 
-            FiniteElementMethodT finite_element_method_;
+            FiniteElementMethodType finite_element_method_;
 
             lolita::finite_element::Quadrature quadrature_;
 
@@ -806,15 +825,15 @@ namespace lolita
         {
 
             template<typename T>
-            struct IsFiniteElementType : std::false_type {};
+            struct IsFiniteElementConcept : std::false_type {};
 
-            template<typename BehaviourT, lolita::field::UnknownType UnknownT, lolita::finite_element::FiniteElementMethodType FiniteElementMethodT>
-            struct IsFiniteElementType<FiniteElement<BehaviourT, UnknownT, FiniteElementMethodT>> : std::true_type {};
+            template<lolita::field::UnknownConcept auto _unknown, auto _behaviour, lolita::finite_element::FiniteElementMethodConcept auto _finite_element_method>
+            struct IsFiniteElementConcept<FiniteElement<_unknown, _behaviour, _finite_element_method>> : std::true_type {};
 
         }
 
-        template<typename T>
-        concept FiniteElementType = detail::IsFiniteElementType<T>::value;
+        template<typename _T>
+        concept FiniteElementConcept = detail::IsFiniteElementConcept<_T>::value;
 
         enum struct Loading
         {
@@ -898,7 +917,7 @@ namespace lolita
 
         };
 
-        template<lolita::finite_element::FiniteElementType... FiniteElementT>
+        template<lolita::finite_element::FiniteElementConcept... FiniteElementT>
         struct MixedElement
         {
 
@@ -911,7 +930,14 @@ namespace lolita
     namespace mesh
     {
 
-        template<lolita::geometry::Domain domain, lolita::field::UnknownType auto... unknowns>
+        enum struct MeshFormatType
+        {
+
+            Gmsh,
+
+        };
+
+        template<lolita::geometry::Domain domain, lolita::field::UnknownConcept auto... unknowns>
         struct Mesh
         {
 
