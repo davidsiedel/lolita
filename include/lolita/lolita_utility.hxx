@@ -90,10 +90,10 @@ namespace lolita::utility
             std::basic_string<lolita::character> &
             line,
             lolita::character
-            c
+            character
     )
     {
-        line.erase(std::remove(line.begin(), line.end(), c), line.end());
+        line.erase(std::remove(line.begin(), line.end(), character), line.end());
     }
 
     struct File
@@ -107,8 +107,21 @@ namespace lolita::utility
                 file_path_arg
         )
         :
-        lines_(readLines(file_path_arg))
-        {}
+        file_path_(file_path_arg)
+        {
+            readLines();
+        }
+
+        explicit
+        File(
+                std::basic_string<lolita::character> &&
+                file_path_arg
+        )
+        :
+        file_path_(std::forward<std::basic_string<lolita::character>>(file_path_arg))
+        {
+            readLines();
+        }
 
         lolita::boolean
         operator==(
@@ -126,29 +139,24 @@ namespace lolita::utility
 
         std::vector<std::basic_string<lolita::character>> lines_;
 
+        std::basic_string<lolita::character> file_path_;
+
     private:
 
-        static inline
-        std::vector<std::basic_string<lolita::character>>
-        readLines(
-                std::basic_string<lolita::character> const &
-                f
-        )
+        inline
+        void
+        readLines()
         {
-            std::basic_ifstream<lolita::character> file(f);
+            std::basic_ifstream<lolita::character> file(file_path_);
             if (!file) {
                 throw std::runtime_error("Could not open file");
             }
-            std::vector<std::basic_string<lolita::character>> lines;
             for (std::basic_string<lolita::character> line; std::getline(file, line); ) {
-                lines.push_back(line);
+                lines_.push_back(line);
             }
-            return lines;
         }
 
     };
-
-//    using File = file::File;
 
     /*
      *

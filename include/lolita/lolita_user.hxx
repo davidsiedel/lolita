@@ -26,6 +26,10 @@ namespace lolita
 
         using Point = lolita::matrix::Vector<lolita::real, 3>;
 
+        /*
+         *
+         */
+
         template<lolita::matrix::MatrixConcept _Matrix>
         static inline
         lolita::matrix::Vector<typename _Matrix::Scalar, lolita::matrix::rows<_Matrix>()>
@@ -35,13 +39,56 @@ namespace lolita
         )
         requires(lolita::matrix::rows<_Matrix>() > 0)
         {
-            auto barycenter = lolita::matrix::Vector<typename _Matrix::Scalar, lolita::matrix::rows<_Matrix>()>();
+            auto barycenter = lolita::matrix::Vector<typename _Matrix::Scalar, lolita::matrix::rows<_Matrix>()>().setZero();
             for (auto i = 0; i < lolita::matrix::cols<_Matrix>(); ++i) {
                 barycenter += point_args.col(i);
             }
             barycenter /= lolita::real(lolita::matrix::cols<_Matrix>());
             return barycenter;
         }
+
+        /*
+         *
+         */
+
+        template<lolita::matrix::MatrixConcept _Matrix>
+        static inline
+        auto
+        getNormalVector2(
+                _Matrix const &
+                vector_args
+        );
+
+        template<lolita::matrix::MatrixConcept _Matrix>
+        static inline
+        auto
+        getNormalVector2(
+                _Matrix const &
+                vector_args
+        )
+        requires(lolita::matrix::rows<_Matrix>() == 1 && lolita::matrix::cols<_Matrix>() == 3)
+        {
+            auto norm = vector_args.norm();
+            return lolita::matrix::Vector<typename _Matrix::Scalar, 3>{vector_args(1)/norm, -vector_args(0)/norm, 0};
+        }
+
+        template<lolita::matrix::MatrixConcept _Matrix>
+        static inline
+        auto
+        getNormalVector2(
+                _Matrix const &
+                vector_args
+        )
+        requires(lolita::matrix::rows<_Matrix>() == 3 && lolita::matrix::cols<_Matrix>() == 3)
+        {
+            auto v0 = vector_args.col(0) / vector_args.col(0).norm();
+            auto v1 = vector_args.col(1) / vector_args.col(1).norm();
+            return v0.cross(v1);
+        }
+
+        /*
+         *
+         */
 
         template<lolita::matrix::MatrixConcept _Matrix>
         static inline
@@ -91,6 +138,10 @@ namespace lolita
             v1 /= v1.norm();
             return v0.cross(v1);
         }
+
+        /*
+         *
+         */
 
         template<lolita::matrix::MatrixConcept _Matrix>
         static inline
@@ -302,27 +353,52 @@ namespace lolita
             const = default;
 
             constexpr
-            lolita::matrix::Cardinality
-            cardinality(
+            lolita::matrix::Shape
+            shape(
                     lolita::geometry::Domain const &
                     domain
             )
             const
             {
                 if (ord_ == 0) {
-                    return lolita::matrix::Cardinality(lolita::numerics::pow(domain.dim_, 0), lolita::numerics::pow(domain.dim_, 0));
+                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 0), lolita::numerics::pow(domain.dim_, 0));
                 }
                 else if (ord_ == 1) {
-                    return lolita::matrix::Cardinality(lolita::numerics::pow(domain.dim_, 1), lolita::numerics::pow(domain.dim_, 0));
+                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 1), lolita::numerics::pow(domain.dim_, 0));
                 }
                 else if (ord_ == 2) {
-                    return lolita::matrix::Cardinality(lolita::numerics::pow(domain.dim_, 1), lolita::numerics::pow(domain.dim_, 1));
+                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 1), lolita::numerics::pow(domain.dim_, 1));
                 }
                 else if (ord_ == 3) {
-                    return lolita::matrix::Cardinality(lolita::numerics::pow(domain.dim_, 2), lolita::numerics::pow(domain.dim_, 1));
+                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 2), lolita::numerics::pow(domain.dim_, 1));
                 }
                 else {
-                    return lolita::matrix::Cardinality(lolita::numerics::pow(domain.dim_, 2), lolita::numerics::pow(domain.dim_, 2));
+                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 2), lolita::numerics::pow(domain.dim_, 2));
+                }
+            }
+
+            constexpr
+            lolita::matrix::Shape
+            shape(
+                    lolita::index
+                    dim_euclidean
+            )
+            const
+            {
+                if (ord_ == 0) {
+                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 0), lolita::numerics::pow(dim_euclidean, 0));
+                }
+                else if (ord_ == 1) {
+                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 1), lolita::numerics::pow(dim_euclidean, 0));
+                }
+                else if (ord_ == 2) {
+                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 1), lolita::numerics::pow(dim_euclidean, 1));
+                }
+                else if (ord_ == 3) {
+                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 2), lolita::numerics::pow(dim_euclidean, 1));
+                }
+                else {
+                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 2), lolita::numerics::pow(dim_euclidean, 2));
                 }
             }
 
@@ -332,8 +408,7 @@ namespace lolita
 
         };
 
-        namespace detail
-        {
+        namespace detail {
 
             static constexpr
             lolita::utility::Label
@@ -347,28 +422,189 @@ namespace lolita
                 return lolita::utility::label(lolita::utility::readLabel(tensor.tag_), lolita::field::readMapping(mapping));
             }
 
-            template<lolita::field::Tensor tensor, lolita::geometry::Domain domain, lolita::field::Mapping mapping>
-            struct MappingPolicy;
-
-            template<lolita::field::Tensor tensor, lolita::geometry::Domain domain, lolita::field::Mapping mapping>
-            requires(mapping == lolita::field::Mapping::Identity)
-            struct MappingPolicy<tensor, domain, mapping>
-            {
-
-                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(tensor, mapping), tensor.ord_);
-
-            };
-
-            template<lolita::field::Tensor tensor, lolita::geometry::Domain domain, lolita::field::Mapping mapping>
-            requires(mapping == lolita::field::Mapping::Gradient)
-            struct MappingPolicy<tensor, domain, mapping>
-            {
-
-                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(tensor, mapping), tensor.ord_ + 1);
-
-            };
-
         }
+
+        struct MappingValues
+        {
+
+            lolita::index row_;
+
+            lolita::index col_;
+
+            lolita::index position_;
+
+            lolita::real coefficient_;
+
+        };
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        struct MappingPolicy;
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        requires(_tensor.ord_ == 0 && _mapping == lolita::field::Mapping::Identity)
+        struct MappingPolicy<_tensor, _domain, _mapping>
+        {
+
+            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{1, 1};
+
+            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
+                    MappingValues{0, 0, 0, 1},
+            };
+
+        };
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        requires(_tensor.ord_ == 0 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient)
+        struct MappingPolicy<_tensor, _domain, _mapping>
+        {
+
+            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{2, 1};
+
+            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
+                    MappingValues{0, 0, 0, 1},
+                    MappingValues{0, 1, 1, 1},
+            };
+
+        };
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        requires(_tensor.ord_ == 0 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient)
+        struct MappingPolicy<_tensor, _domain, _mapping>
+        {
+
+            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{3, 1};
+
+            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
+                    MappingValues{0, 0, 0, 1},
+                    MappingValues{0, 1, 1, 1},
+                    MappingValues{0, 2, 2, 1},
+            };
+
+        };
+
+        /*
+         * VECTOR
+         */
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Identity)
+        struct MappingPolicy<_tensor, _domain, _mapping>
+        {
+
+            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{2, 1};
+
+            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
+                    MappingValues{0, 0, 0, 1},
+                    MappingValues{0, 1, 1, 1},
+            };
+
+        };
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Identity)
+        struct MappingPolicy<_tensor, _domain, _mapping>
+        {
+
+            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{3, 1};
+
+            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
+                    MappingValues{0, 0, 0, 1},
+                    MappingValues{0, 1, 1, 1},
+                    MappingValues{0, 2, 2, 1},
+            };
+
+        };
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient)
+        struct MappingPolicy<_tensor, _domain, _mapping>
+        {
+
+            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{2, 2};
+
+            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
+                    MappingValues{0, 0, 0, 1},
+                    MappingValues{0, 1, 1, 1},
+                    MappingValues{1, 0, 2, 1},
+                    MappingValues{1, 1, 3, 1},
+            };
+
+        };
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient)
+        struct MappingPolicy<_tensor, _domain, _mapping>
+        {
+
+            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{3, 3};
+
+            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
+                    MappingValues{0, 0, 0, 1},
+                    MappingValues{0, 1, 1, 1},
+                    MappingValues{0, 2, 2, 1},
+                    MappingValues{1, 0, 3, 1},
+                    MappingValues{1, 1, 4, 1},
+                    MappingValues{1, 2, 5, 1},
+                    MappingValues{2, 0, 6, 1},
+                    MappingValues{2, 1, 7, 1},
+                    MappingValues{2, 2, 8, 1},
+            };
+
+        };
+
+        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+        requires(_tensor.ord_ == 1 && _mapping == lolita::field::Mapping::SmallStrain)
+        struct MappingPolicy<_tensor, _domain, _mapping>
+        {
+
+            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{3, 3};
+
+            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
+                    MappingValues{0, 0, 0, 1},
+                    MappingValues{0, 1, 1, 1},
+                    MappingValues{0, 2, 2, 1},
+                    MappingValues{1, 0, 3, 1},
+                    MappingValues{1, 1, 4, 1},
+                    MappingValues{1, 2, 5, 1},
+                    MappingValues{2, 0, 6, 1},
+                    MappingValues{2, 1, 7, 1},
+                    MappingValues{2, 2, 8, 1},
+            };
+
+        };
+
+//            template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+//            requires(_mapping == lolita::field::Mapping::Gradient)
+//            struct MappingPolicy<_tensor, _domain, _mapping>
+//            {
+//
+//                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(_tensor, _mapping), _tensor.ord_ + 1);
+//
+//                lolita::matrix::Cardinality const static constexpr c_ = _tensor.cardinality(_domain.dim_);
+//
+//            };
+//
+//            template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+//            requires(_mapping == lolita::field::Mapping::SmallStrain)
+//            struct MappingPolicy<_tensor, _domain, _mapping>
+//            {
+//
+//                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(_tensor, _mapping), _tensor.ord_ + 1);
+//
+//                lolita::matrix::Cardinality const static constexpr c_ = _tensor.cardinality(3);
+//
+//            };
+//
+//            template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+//            requires(_mapping == lolita::field::Mapping::LargeStrain)
+//            struct MappingPolicy<_tensor, _domain, _mapping>
+//            {
+//
+//                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(_tensor, _mapping), _tensor.ord_ + 1);
+//
+//                lolita::matrix::Cardinality const static constexpr c_ = _tensor.cardinality(3);
+//
+//            };
 
         template<typename... _Mapping>
         requires((std::same_as<_Mapping, lolita::field::Mapping> && ...) && sizeof...(_Mapping) > 0)
@@ -679,6 +915,14 @@ namespace lolita
 
     namespace finite_element
     {
+
+        enum struct Basis
+        {
+
+            Monomial,
+            Lagrange,
+
+        };
 
         enum struct Quadrature
         {

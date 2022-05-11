@@ -334,13 +334,13 @@ namespace lolita::numerics
         return sum(x, sum(static_cast<T>(y)...));
     }
 
-    template<lolita::numerics::NaturalConcept T>
+    template<lolita::numerics::IntegerConcept T, lolita::numerics::IntegerConcept U>
     static constexpr
     T
     binomial(
             T
             n,
-            T
+            U
             k
     )
     {
@@ -387,11 +387,11 @@ namespace lolita::matrix
 
     };
 
-    struct Cardinality
+    struct Shape
     {
 
         constexpr
-        Cardinality(
+        Shape(
                 lolita::index
                 rows,
                 lolita::index

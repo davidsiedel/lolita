@@ -33,25 +33,43 @@ TEST(test_lolita_2, test_lolita_2)
     auto constexpr hho_u1 = lolita::finite_element::FiniteElement<u_unknown, u_elasticity, u_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
     auto constexpr hho_d = lolita::finite_element::FiniteElement<d_unknown, d_phase_field, d_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
 
-    std::cout << lolita::core::element::numNeighbours<lolita::core::element::tri_03, 0>() << std::endl;
-    std::cout << lolita::core::element::numNeighbours<lolita::core::element::tri_03, 0, 0>() << std::endl;
-    std::cout << lolita::core::element::numNeighbours<lolita::core::element::tri_03, 0, 0, 0>() << std::endl;
+//    std::cout << lolita::core::element::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::seg_02>()[2] << std::endl;
+//    std::cout << lolita::core::element::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::tri_03>()[2] << std::endl;
+//    std::cout << lolita::core::element::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::tet_04>()[2] << std::endl;
 
     auto file_path = "";
 //    file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/perforated_strip_huge.msh";
     file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
     auto msh_file = lolita::utility::File(file_path);
-    auto msh = lolita::core::mesh::MeshBase<lolita::mesh::MeshFormatType::Gmsh, domain, std::array<int, 2>{}>(msh_file, {}, {});
+    auto msh = lolita::core::mesh::MeshBase<lolita::mesh::MeshFormatType::Gmsh, domain, hho_u0, hho_d>(msh_file, {}, {});
     auto & elem = * msh.elements_.getElements<2, 0>()["345"];
 //    auto & elem = * std::get<0>(std::get<2>(msh.elements_))["345"];
-    std::cout << elem.getCurrentCoordinates() << std::endl;
-    std::cout << elem.getReferenceCoordinates() << std::endl;
+//    std::cout << elem.getCurrentCoordinates() << std::endl;
+//    std::cout << elem.getReferenceCoordinates() << std::endl;
+////
+//    for (auto const & [n_hash, n] : msh.elements_.getElements<0, 0>()) {
+////    for (auto const & [n_hash, n] : std::get<0>(std::get<0>(msh.elements_))) {
+//        std::cout << "--" << n_hash << std::endl;
+//        std::cout << n->getCurrentCoordinates() << std::endl;
+//    }
 //
-    for (auto const & [n_hash, n] : msh.elements_.getElements<0, 0>()) {
-//    for (auto const & [n_hash, n] : std::get<0>(std::get<0>(msh.elements_))) {
-        std::cout << "--" << n_hash << std::endl;
-        std::cout << n->getCurrentCoordinates() << std::endl;
-    }
+//    std::cout << "std::tuple_size_v<std::tuple<>> : " << std::tuple_size_v<std::tuple<>> << std::endl;
+//
+//    if constexpr(lolita::index(0) < -1) {
+//        std::cout << "hello" << std::endl;
+//    }
+
+    std::cout << elem.getCurrentCoordinates() << std::endl;
+    std::cout << elem.getCurrentCentroid() << std::endl;
+    std::cout << elem.getCurrentDiameters() << std::endl;
+    std::cout << elem.getCurrentQuadraturePoint<lolita::finite_element::Quadrature::Gauss, 2>(0) << std::endl;
+
+//    std::get<0>(std::tuple<>());
+//    static_assert(lolita::index(0) < -1);
+
+//    std::cout << lolita::core::element::numNeighbours<lolita::core::element::pnt_00, 1, 2>() << std::endl;
+
+    std::cout << msh << std::endl;
 
 //    std::cout << u_unknown.tensor_.cardinality(domain).rows_ << u_unknown.tensor_.cardinality(domain).cols_ << std::endl;
 //
