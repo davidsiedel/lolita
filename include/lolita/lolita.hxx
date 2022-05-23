@@ -6,9 +6,6 @@
 #define LOLITA_LOLITA_HXX
 #include <ostream>
 
-//#include "lolita_matrix.hxx"
-//#include "lolita_pointers.hxx"
-
 namespace lolita
 {
 

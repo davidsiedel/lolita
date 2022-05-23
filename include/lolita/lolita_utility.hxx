@@ -29,11 +29,6 @@ namespace lolita::utility
         auto label = lolita::utility::Label();
         auto count = lolita::index(0);
         auto make = [&] (auto && s) constexpr mutable {
-//            auto i = lolita::index(0);
-//            for (auto c : s) {
-//                label[i + count] = c;
-//                i ++;
-//            }
             for (auto i = 0; i < s.size(); ++i) {
                 label[i + count] = s[i];
             }
@@ -103,7 +98,7 @@ namespace lolita::utility
 
         explicit
         File(
-                std::basic_string<lolita::character> const &
+                std::basic_string_view<lolita::character> const &
                 file_path_arg
         )
         :
@@ -114,11 +109,11 @@ namespace lolita::utility
 
         explicit
         File(
-                std::basic_string<lolita::character> &&
+                std::basic_string_view<lolita::character> &&
                 file_path_arg
         )
         :
-        file_path_(std::forward<std::basic_string<lolita::character>>(file_path_arg))
+        file_path_(std::forward<std::basic_string_view<lolita::character>>(file_path_arg))
         {
             readLines();
         }
@@ -137,10 +132,6 @@ namespace lolita::utility
         )
         const = default;
 
-        std::vector<std::basic_string<lolita::character>> lines_;
-
-        std::basic_string<lolita::character> file_path_;
-
     private:
 
         inline
@@ -155,6 +146,12 @@ namespace lolita::utility
                 lines_.push_back(line);
             }
         }
+
+    public:
+
+        std::vector<std::basic_string<lolita::character>> lines_;
+
+        std::basic_string<lolita::character> file_path_;
 
     };
 

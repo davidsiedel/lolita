@@ -293,7 +293,11 @@ namespace lolita
             Identity,
             Divergence,
             LargeStrain,
-            SmallStrain
+            SmallStrain,
+            LargeStrainPlane,
+            SmallStrainPlane,
+            LargeStrainSolid,
+            SmallStrainSolid
 
         };
 
@@ -352,56 +356,6 @@ namespace lolita
             )
             const = default;
 
-            constexpr
-            lolita::matrix::Shape
-            shape(
-                    lolita::geometry::Domain const &
-                    domain
-            )
-            const
-            {
-                if (ord_ == 0) {
-                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 0), lolita::numerics::pow(domain.dim_, 0));
-                }
-                else if (ord_ == 1) {
-                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 1), lolita::numerics::pow(domain.dim_, 0));
-                }
-                else if (ord_ == 2) {
-                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 1), lolita::numerics::pow(domain.dim_, 1));
-                }
-                else if (ord_ == 3) {
-                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 2), lolita::numerics::pow(domain.dim_, 1));
-                }
-                else {
-                    return lolita::matrix::Shape(lolita::numerics::pow(domain.dim_, 2), lolita::numerics::pow(domain.dim_, 2));
-                }
-            }
-
-            constexpr
-            lolita::matrix::Shape
-            shape(
-                    lolita::index
-                    dim_euclidean
-            )
-            const
-            {
-                if (ord_ == 0) {
-                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 0), lolita::numerics::pow(dim_euclidean, 0));
-                }
-                else if (ord_ == 1) {
-                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 1), lolita::numerics::pow(dim_euclidean, 0));
-                }
-                else if (ord_ == 2) {
-                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 1), lolita::numerics::pow(dim_euclidean, 1));
-                }
-                else if (ord_ == 3) {
-                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 2), lolita::numerics::pow(dim_euclidean, 1));
-                }
-                else {
-                    return lolita::matrix::Shape(lolita::numerics::pow(dim_euclidean, 2), lolita::numerics::pow(dim_euclidean, 2));
-                }
-            }
-
             lolita::utility::Label tag_;
 
             lolita::index ord_;
@@ -423,188 +377,6 @@ namespace lolita
             }
 
         }
-
-        struct MappingValues
-        {
-
-            lolita::index row_;
-
-            lolita::index col_;
-
-            lolita::index position_;
-
-            lolita::real coefficient_;
-
-        };
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        struct MappingPolicy;
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        requires(_tensor.ord_ == 0 && _mapping == lolita::field::Mapping::Identity)
-        struct MappingPolicy<_tensor, _domain, _mapping>
-        {
-
-            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{1, 1};
-
-            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
-                    MappingValues{0, 0, 0, 1},
-            };
-
-        };
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        requires(_tensor.ord_ == 0 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient)
-        struct MappingPolicy<_tensor, _domain, _mapping>
-        {
-
-            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{2, 1};
-
-            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
-                    MappingValues{0, 0, 0, 1},
-                    MappingValues{0, 1, 1, 1},
-            };
-
-        };
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        requires(_tensor.ord_ == 0 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient)
-        struct MappingPolicy<_tensor, _domain, _mapping>
-        {
-
-            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{3, 1};
-
-            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
-                    MappingValues{0, 0, 0, 1},
-                    MappingValues{0, 1, 1, 1},
-                    MappingValues{0, 2, 2, 1},
-            };
-
-        };
-
-        /*
-         * VECTOR
-         */
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Identity)
-        struct MappingPolicy<_tensor, _domain, _mapping>
-        {
-
-            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{2, 1};
-
-            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
-                    MappingValues{0, 0, 0, 1},
-                    MappingValues{0, 1, 1, 1},
-            };
-
-        };
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Identity)
-        struct MappingPolicy<_tensor, _domain, _mapping>
-        {
-
-            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{3, 1};
-
-            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
-                    MappingValues{0, 0, 0, 1},
-                    MappingValues{0, 1, 1, 1},
-                    MappingValues{0, 2, 2, 1},
-            };
-
-        };
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient)
-        struct MappingPolicy<_tensor, _domain, _mapping>
-        {
-
-            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{2, 2};
-
-            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
-                    MappingValues{0, 0, 0, 1},
-                    MappingValues{0, 1, 1, 1},
-                    MappingValues{1, 0, 2, 1},
-                    MappingValues{1, 1, 3, 1},
-            };
-
-        };
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient)
-        struct MappingPolicy<_tensor, _domain, _mapping>
-        {
-
-            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{3, 3};
-
-            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
-                    MappingValues{0, 0, 0, 1},
-                    MappingValues{0, 1, 1, 1},
-                    MappingValues{0, 2, 2, 1},
-                    MappingValues{1, 0, 3, 1},
-                    MappingValues{1, 1, 4, 1},
-                    MappingValues{1, 2, 5, 1},
-                    MappingValues{2, 0, 6, 1},
-                    MappingValues{2, 1, 7, 1},
-                    MappingValues{2, 2, 8, 1},
-            };
-
-        };
-
-        template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-        requires(_tensor.ord_ == 1 && _mapping == lolita::field::Mapping::SmallStrain)
-        struct MappingPolicy<_tensor, _domain, _mapping>
-        {
-
-            lolita::matrix::Shape const static constexpr cardinality_ = lolita::matrix::Shape{3, 3};
-
-            std::array<MappingValues, cardinality_.size_> const static constexpr vals_ = {
-                    MappingValues{0, 0, 0, 1},
-                    MappingValues{0, 1, 1, 1},
-                    MappingValues{0, 2, 2, 1},
-                    MappingValues{1, 0, 3, 1},
-                    MappingValues{1, 1, 4, 1},
-                    MappingValues{1, 2, 5, 1},
-                    MappingValues{2, 0, 6, 1},
-                    MappingValues{2, 1, 7, 1},
-                    MappingValues{2, 2, 8, 1},
-            };
-
-        };
-
-//            template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-//            requires(_mapping == lolita::field::Mapping::Gradient)
-//            struct MappingPolicy<_tensor, _domain, _mapping>
-//            {
-//
-//                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(_tensor, _mapping), _tensor.ord_ + 1);
-//
-//                lolita::matrix::Cardinality const static constexpr c_ = _tensor.cardinality(_domain.dim_);
-//
-//            };
-//
-//            template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-//            requires(_mapping == lolita::field::Mapping::SmallStrain)
-//            struct MappingPolicy<_tensor, _domain, _mapping>
-//            {
-//
-//                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(_tensor, _mapping), _tensor.ord_ + 1);
-//
-//                lolita::matrix::Cardinality const static constexpr c_ = _tensor.cardinality(3);
-//
-//            };
-//
-//            template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-//            requires(_mapping == lolita::field::Mapping::LargeStrain)
-//            struct MappingPolicy<_tensor, _domain, _mapping>
-//            {
-//
-//                lolita::field::Tensor const static constexpr tensor_output_ = lolita::field::Tensor(getOutputFieldLabel(_tensor, _mapping), _tensor.ord_ + 1);
-//
-//                lolita::matrix::Cardinality const static constexpr c_ = _tensor.cardinality(3);
-//
-//            };
 
         template<typename... _Mapping>
         requires((std::same_as<_Mapping, lolita::field::Mapping> && ...) && sizeof...(_Mapping) > 0)
@@ -671,37 +443,8 @@ namespace lolita
 
         };
 
-        template<typename... MappingT>
-        requires((std::same_as<MappingT, lolita::field::Mapping> && ...) && sizeof...(MappingT) > 0)
-        struct DegreeOfFreedom : public Tensor
-        {
-
-            constexpr
-            DegreeOfFreedom(
-                    std::basic_string_view<lolita::character> &&
-                    tag,
-                    lolita::index
-                    dim,
-                    MappingT &&...
-                    mappings
-            )
-            :
-            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), dim),
-            mappings_({std::forward<lolita::field::Mapping>(mappings)...})
-            {}
-
-            std::array<lolita::field::Mapping, sizeof...(MappingT)> mappings_;
-
-        };
-
         namespace detail
         {
-
-            template<typename T>
-            struct IsDegreeOfFreedomConcept : public std::false_type {};
-
-            template<typename... MappingT>
-            struct IsDegreeOfFreedomConcept<DegreeOfFreedom<MappingT...>> : public std::true_type {};
 
             template<typename T>
             struct IsUnknownConcept : public std::false_type {};
@@ -710,9 +453,6 @@ namespace lolita
             struct IsUnknownConcept<Unknown<MappingT...>> : public std::true_type {};
 
         }
-
-        template<typename T>
-        concept DegreeOfFreedomConcept = detail::IsDegreeOfFreedomConcept<T>::value;
 
         template<typename T>
         concept UnknownConcept = detail::IsUnknownConcept<T>::value;
@@ -784,88 +524,29 @@ namespace lolita
     namespace behaviour
     {
 
-        template<lolita::field::UnknownConcept... UnknownT>
-        struct BHVData
-        {
-
-            BHVData(
-                    UnknownT const &...
-                    unknowns
-            )
-            :
-            unknowns_({unknowns...})
-            {}
-
-            std::array<lolita::field::Tensor, 2> auxiliary_fields_;
-
-            lolita::utility::Aggregate<UnknownT...> unknowns_;
-
-        };
-
-        struct MgisBehaviour
-        {
-
-
-
-        };
-
-        template<lolita::field::UnknownConcept... UnknownT>
-        struct MgisBehaviour2
-        {
-
-            using MaterialPoint = mgis::behaviour::BehaviourData;
-
-            constexpr
-            MgisBehaviour2(
-                    UnknownT const &...
-                    unknowns
-            )
-            :
-            unknowns_({unknowns...})
-            {}
-
-            template<lolita::field::UnknownConcept auto unknown>
-            constexpr
-            lolita::index
-            getUnknownIndex()
-            const
-            {
-                auto idx = lolita::index(sizeof...(UnknownT));
-                auto set_index = [&] <lolita::index I = 0> (
-                        auto & self
-                )
-                constexpr mutable
-                {
-                    if constexpr (std::is_same_v<std::tuple_element_t<I, std::tuple<UnknownT...>>, std::remove_cvref_t<decltype(unknown)>>) {
-                        if (lolita::utility::template get<I>(unknowns_) == unknown) {
-                            idx = I;
-                        }
-//                        if (std::template get<I>(unknowns_) == unknown) {
-//                            idx = I;
-//                        }
-                    }
-                    if constexpr (I < sizeof...(UnknownT) - 1) {
-                        self.template operator()<I + 1>(self);
-                    }
-                };
-                set_index(set_index);
-                return idx;
-            }
-
-            lolita::utility::Aggregate<UnknownT...> unknowns_;
-//            std::tuple<UnknownT...> unknowns_;
-
-        };
-
         template<lolita::field::UnknownConcept auto... _unknown>
         struct MgisBehaviour3
         {
 
-            using MaterialPoint = mgis::behaviour::BehaviourData;
+//            using MaterialPoint = mgis::behaviour::BehaviourData;
 
             constexpr
             MgisBehaviour3()
             {}
+
+            constexpr
+            lolita::boolean
+            operator==(
+                    MgisBehaviour3 const & other
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                    MgisBehaviour3 const & other
+            )
+            const = default;
 
             template<lolita::field::UnknownConcept auto __unknown>
             constexpr
@@ -880,7 +561,7 @@ namespace lolita
                         constexpr mutable
                 {
                     using Unknowns = std::tuple<std::remove_cvref_t<decltype(_unknown)>...>;
-                    auto constexpr unknowns = Unknowns();
+                    auto constexpr unknowns = Unknowns{_unknown...};
                     if constexpr (std::is_same_v<std::tuple_element_t<_i, Unknowns>, std::remove_cvref_t<decltype(__unknown)>>) {
                         if (lolita::utility::template get<_i>(unknowns) == __unknown) {
                             idx = _i;
@@ -911,10 +592,220 @@ namespace lolita
         template<typename _T>
         concept MgisBehaviour3Concept = detail::IsMgisBehaviour3<_T>::value;
 
+        template<lolita::behaviour::MgisBehaviour3Concept auto _behaviour>
+        struct Behaviour
+        {
+
+            lolita::behaviour::MgisBehaviour3Concept auto const static constexpr b = _behaviour;
+
+            Behaviour()
+            {}
+
+            mgis::behaviour::Behaviour behaviour_;
+
+        };
+
+        template<lolita::behaviour::MgisBehaviour3Concept auto... _behaviour>
+        struct BehaviourHolder
+        {
+
+            using _Behaviours = std::tuple<lolita::behaviour::Behaviour<_behaviour>...>;
+
+            BehaviourHolder(
+                    lolita::behaviour::Behaviour<_behaviour> const &...
+                    behaviours
+            )
+            :
+            behaviours_(behaviours...)
+            {}
+
+            constexpr
+            lolita::boolean
+            operator==(
+                    BehaviourHolder const & other
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                    BehaviourHolder const & other
+            )
+            const = default;
+
+        private:
+
+            template<lolita::behaviour::MgisBehaviour3Concept auto __behaviour>
+            static constexpr
+            lolita::index
+            getBehaviourIndex()
+            {
+                auto index = std::tuple_size_v<_Behaviours>;
+                auto set_index = [&] <lolita::index _i = 0> (auto & self)
+                constexpr mutable
+                {
+                    if constexpr (std::is_same_v<lolita::behaviour::Behaviour<__behaviour>, std::tuple_element_t<_i, _Behaviours>>) {
+                        index = _i;
+                    }
+                    if constexpr (_i < std::tuple_size_v<_Behaviours> - 1) {
+                        self.template operator()<_i + 1>(self);
+                    }
+                };
+                set_index(set_index);
+                return index;
+            }
+
+        public:
+
+            template<lolita::behaviour::MgisBehaviour3Concept auto __behaviour>
+            std::tuple_element_t<getBehaviourIndex<__behaviour>(), _Behaviours> const &
+            getBehaviour()
+            const
+            {
+                return std::get<getBehaviourIndex<__behaviour>()>(behaviours_);
+            }
+
+            template<lolita::behaviour::MgisBehaviour3Concept auto __behaviour>
+            std::tuple_element_t<getBehaviourIndex<__behaviour>(), _Behaviours> &
+            getBehaviour()
+            {
+                return std::get<getBehaviourIndex<__behaviour>()>(behaviours_);
+            }
+
+            _Behaviours behaviours_;
+
+        };
+
+        using ParameterFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
+
+        struct MgisParameter
+        {
+
+            MgisParameter(
+                    std::basic_string<lolita::character> &&
+                    parameter_tag,
+                    lolita::behaviour::ParameterFunction &&
+                    function
+            )
+            :
+            parameter_tag_(std::forward<std::basic_string<lolita::character>>(parameter_tag)),
+            function_(std::forward<lolita::behaviour::ParameterFunction>(function))
+            {}
+
+            constexpr
+            lolita::boolean
+            operator==(
+                    MgisParameter const & other
+            )
+            const
+            {
+                return other.parameter_tag_ == this->parameter_tag_;
+            }
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                    MgisParameter const & other
+            )
+            const
+            {
+                return !(* this == other);
+            }
+
+            std::basic_string<lolita::character> parameter_tag_;
+
+            lolita::behaviour::ParameterFunction function_;
+
+        };
+
+        struct MgisBehaviourData
+        {
+
+            mgis::behaviour::Behaviour behaviour_;
+
+            std::vector<lolita::behaviour::MgisParameter> parameters_;
+
+        };
+
+        struct MgisBehaviour
+        {
+
+            MgisBehaviour(
+                    std::basic_string<lolita::character> &&
+                    unknown_tag,
+                    std::basic_string<lolita::character> &&
+                    domain_tag,
+                    std::string const &
+                    path,
+                    std::string const &
+                    name,
+                    mgis::behaviour::Hypothesis
+                    hypothesis,
+                    std::vector<lolita::behaviour::MgisParameter> &&
+                    parameters
+            )
+            :
+            unknown_tag_(std::forward<std::basic_string<lolita::character>>(unknown_tag)),
+            domain_tag_(std::forward<std::basic_string<lolita::character>>(domain_tag)),
+            behaviour_data_(std::make_shared<lolita::behaviour::MgisBehaviourData>(lolita::behaviour::MgisBehaviourData{
+                mgis::behaviour::load(path, name, hypothesis),
+                std::forward<std::vector<lolita::behaviour::MgisParameter>>(parameters)
+            }))
+            {}
+
+            MgisBehaviour(
+                    std::basic_string<lolita::character> &&
+                    unknown_tag,
+                    std::basic_string<lolita::character> &&
+                    domain_tag,
+                    std::string const &
+                    path,
+                    std::string const &
+                    name,
+                    mgis::behaviour::Hypothesis
+                    hypothesis,
+                    mgis::behaviour::FiniteStrainBehaviourOptions
+                    finite_strain_behaviour_options,
+                    std::vector<lolita::behaviour::MgisParameter> &&
+                    parameters
+            )
+            :
+            unknown_tag_(std::forward<std::basic_string<lolita::character>>(unknown_tag)),
+            domain_tag_(std::forward<std::basic_string<lolita::character>>(domain_tag)),
+            behaviour_data_(std::make_shared<lolita::behaviour::MgisBehaviourData>(lolita::behaviour::MgisBehaviourData{
+                mgis::behaviour::load(finite_strain_behaviour_options, path, name, hypothesis),
+                std::forward<std::vector<lolita::behaviour::MgisParameter>>(parameters)
+            }))
+            {}
+
+            std::basic_string<lolita::character> unknown_tag_;
+
+            std::basic_string<lolita::character> domain_tag_;
+
+            std::shared_ptr<lolita::behaviour::MgisBehaviourData> behaviour_data_;
+
+        };
+
     }
 
     namespace finite_element
     {
+
+        enum struct Method
+        {
+
+            HHO,
+            Lagrange
+
+        };
+
+        enum struct Loading
+        {
+
+            Natural,
+            Constraint,
+
+        };
 
         enum struct Basis
         {
@@ -946,11 +837,145 @@ namespace lolita
             }
         }
 
-        enum struct Method
+        struct Element
         {
 
-            HHO,
-            Lagrange
+            constexpr
+            lolita::boolean
+            operator==(
+                    Element const & other
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                    Element const & other
+            )
+            const = default;
+
+            lolita::index tag_;
+
+            lolita::index dim_;
+
+            lolita::index ord_;
+
+            lolita::index num_nodes_;
+
+        };
+
+        lolita::finite_element::Element const static constexpr pnt_00 = lolita::finite_element::Element{0, 0, 0, 1};
+        //
+        lolita::finite_element::Element const static constexpr seg_02 = lolita::finite_element::Element{1, 1, 1, 2};
+        lolita::finite_element::Element const static constexpr seg_03 = lolita::finite_element::Element{5, 1, 2, 3};
+        //
+        lolita::finite_element::Element const static constexpr tri_03 = lolita::finite_element::Element{2, 2, 1, 3};
+        lolita::finite_element::Element const static constexpr tri_06 = lolita::finite_element::Element{6, 2, 2, 6};
+        lolita::finite_element::Element const static constexpr qua_04 = lolita::finite_element::Element{3, 2, 1, 4};
+        lolita::finite_element::Element const static constexpr qua_08 = lolita::finite_element::Element{7, 2, 2, 8};
+        //
+        lolita::finite_element::Element const static constexpr tet_04 = lolita::finite_element::Element{4, 3, 1, 4};
+        lolita::finite_element::Element const static constexpr tet_12 = lolita::finite_element::Element{8, 3, 2, 12};
+
+        using LoadFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
+
+        struct LoadComponent
+        {
+
+            auto const static constexpr zero = [] (auto const &, auto const &) constexpr { return lolita::real(0); };
+
+            LoadComponent()
+            :
+            function_(zero),
+            loading_(lolita::finite_element::Loading::Natural)
+            {}
+
+            LoadComponent(
+                    lolita::finite_element::LoadFunction &&
+                    function,
+                    lolita::finite_element::Loading
+                    loading
+            )
+            :
+            function_(std::forward<lolita::finite_element::LoadFunction>(function)),
+            loading_(loading)
+            {}
+
+            LoadComponent(
+                    lolita::finite_element::LoadFunction const &
+                    function,
+                    lolita::finite_element::Loading
+                    loading
+            )
+            :
+            function_(function),
+            loading_(loading)
+            {}
+
+            lolita::real
+            getImposedValue(
+                    lolita::geometry::Point const &
+                    point,
+                    lolita::real const &
+                    time
+            )
+            const
+            {
+                return function_(point, time);
+            }
+
+            lolita::finite_element::Loading loading_;
+
+            lolita::finite_element::LoadFunction function_;
+
+        };
+
+        struct Load
+        {
+
+            Load(
+                    std::basic_string_view<lolita::character> &&
+                    unknown_tag,
+                    std::basic_string_view<lolita::character> &&
+                    domain_tag,
+                    lolita::index
+                    row,
+                    lolita::index
+                    col,
+                    lolita::finite_element::LoadFunction &&
+                    function,
+                    lolita::finite_element::Loading
+                    loading
+            )
+            :
+            unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
+            domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
+            components_(lolita::matrix::Coordinates{row, col}),
+            load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(std::forward<lolita::finite_element::LoadFunction>(function), loading)))
+            {}
+
+            Load(
+                    std::basic_string_view<lolita::character> && unknown_tag,
+                    std::basic_string_view<lolita::character> && domain_tag,
+                    lolita::index row,
+                    lolita::index col,
+                    lolita::finite_element::LoadFunction const & function,
+                    lolita::finite_element::Loading loading
+            )
+            :
+            unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
+            domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
+            components_(lolita::matrix::Coordinates{row, col}),
+            load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(function, loading)))
+            {}
+
+            std::basic_string_view<lolita::character> unknown_tag_;
+
+            std::basic_string_view<lolita::character> domain_tag_;
+
+            lolita::matrix::Coordinates components_;
+
+            std::shared_ptr<lolita::finite_element::LoadComponent> load_;
 
         };
 
@@ -965,6 +990,20 @@ namespace lolita
             :
             method_(method)
             {}
+
+            constexpr
+            lolita::boolean
+            operator==(
+                    FiniteElementMethod const & other
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                    FiniteElementMethod const & other
+            )
+            const = default;
 
             lolita::finite_element::Method method_;
 
@@ -1053,6 +1092,20 @@ namespace lolita
             ord_quadrature_()
             {}
 
+            constexpr
+            lolita::boolean
+            operator==(
+                    FiniteElement const & other
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                    FiniteElement const & other
+            )
+            const = default;
+
             UnknownType unknown_;
 
             BehaviourType behaviour_;
@@ -1079,88 +1132,6 @@ namespace lolita
         template<typename _T>
         concept FiniteElementConcept = detail::IsFiniteElementConcept<_T>::value;
 
-        enum struct Loading
-        {
-
-            Natural,
-            Constraint,
-
-        };
-
-        using LoadFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
-
-        struct LoadComponent
-        {
-
-            auto const static constexpr zero = [] (auto const &, auto const &) constexpr { return lolita::real(0); };
-
-            LoadComponent()
-            :
-            function_(zero),
-            loading_(lolita::finite_element::Loading::Natural)
-            {}
-
-            LoadComponent(
-                    lolita::finite_element::LoadFunction &&
-                    function,
-                    lolita::finite_element::Loading
-                    loading
-            )
-            :
-            function_(function),
-            loading_(loading)
-            {}
-
-            lolita::real
-            getImposedValue(
-                    lolita::geometry::Point const &
-                    point,
-                    lolita::real const &
-                    time
-            )
-            const
-            {
-                return function_(point, time);
-            }
-
-            lolita::finite_element::Loading loading_;
-
-            lolita::finite_element::LoadFunction function_;
-
-        };
-
-        struct Load
-        {
-
-            Load(
-                    std::basic_string_view<lolita::character> &&
-                    unknown_tag,
-                    std::basic_string_view<lolita::character> &&
-                    domain_tag,
-                    lolita::index
-                    i,
-                    lolita::index
-                    j,
-                    lolita::finite_element::LoadComponent &&
-                    fun
-            )
-            :
-                    unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
-                    domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
-                    components_(lolita::matrix::Coordinates(i, j)),
-                    load_(std::make_shared<lolita::finite_element::LoadComponent>(fun))
-            {}
-
-            std::basic_string_view<lolita::character> unknown_tag_;
-
-            std::basic_string_view<lolita::character> domain_tag_;
-
-            lolita::matrix::Coordinates components_;
-
-            std::shared_ptr<lolita::finite_element::LoadComponent> load_;
-
-        };
-
         template<lolita::finite_element::FiniteElementConcept... FiniteElementT>
         struct MixedElement
         {
@@ -1174,7 +1145,7 @@ namespace lolita
     namespace mesh
     {
 
-        enum struct MeshFormatType
+        enum struct Format
         {
 
             Gmsh,

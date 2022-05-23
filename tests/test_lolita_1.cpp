@@ -10,6 +10,7 @@
 #include "lolita/lolita_element.hxx"
 #include "lolita/lolita_core_finite_element.hxx"
 #include "lolita/lolita_core_mesh.hxx"
+#include "lolita/lolita_core_mesh2.hxx"
 
 TEST(test_lolita_2, test_lolita_2)
 {
@@ -33,6 +34,80 @@ TEST(test_lolita_2, test_lolita_2)
     auto constexpr hho_u1 = lolita::finite_element::FiniteElement<u_unknown, u_elasticity, u_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
     auto constexpr hho_d = lolita::finite_element::FiniteElement<d_unknown, d_phase_field, d_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
 
+    auto path = "";
+    path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/behaviour/src/libBehaviour.so";
+    path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic/src/libBehaviour.so";
+    auto name = "";
+    name = "Voce";
+    name = "MicromorphicDamageII";
+    auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
+    auto opt = mgis::behaviour::FiniteStrainBehaviourOptions{
+            mgis::behaviour::FiniteStrainBehaviourOptions::StressMeasure::PK1,
+            mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF
+    };
+
+    std::cout << "sizeof(Middle)" << sizeof(std::basic_string_view<lolita::character>("MiddleMiddleMiddleMiddleMiddleMiddleMiddleMiddleMiddleMiddle")) << std::endl;
+    std::cout << "sizeof(Middle)" << sizeof(std::basic_string<lolita::character>("MiddleMiddleMiddleMiddleMiddleMiddleMiddleMiddleMiddleMiddle")) << std::endl;
+//    opt.stress_measure = mgis::behaviour::FiniteStrainBehaviourOptions::PK1;
+//    opt.tangent_operator = mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF;
+
+//    auto bhv = mgis::behaviour::load(opt, path, name, hyp);
+    auto mgipara = lolita::behaviour::MgisParameter("Temperature", [] (lolita::geometry::Point const & p, lolita::real const & t) {return 1.0;});
+//    auto bhvs = lolita::behaviour::MgisBehaviours{
+//            {"Middle", lolita::behaviour::MgisBehaviour("Displacement", path, name, hyp, {mgipara})}
+//    };
+    auto bhv = lolita::behaviour::MgisBehaviour("Displacement", "SQUARE", path, name, hyp, {mgipara});
+
+    auto load = lolita::finite_element::Load("Displacement", "SQUARE", 0, 0, [] (lolita::geometry::Point const & p, lolita::real const & t) {return 1.0;}, lolita::finite_element::Loading::Natural);
+
+//    auto loads = lolita::finite_element::Loads{
+//            {"Middle", lolita::finite_element::Load2("Displacement", 0, 0, [] (lolita::geometry::Point const & p, lolita::real const & t) {return 1.0;}, lolita::finite_element::Loading::Natural)}
+//    };
+
+//    std::map<lolita::mesh::Domain, lolita::real> mymap = {
+//            {lolita::mesh::Domain(1, "SQUARE"), 1.0}
+//    };
+
+    auto bhvvv = lolita::behaviour::Behaviour<u_voce>();
+
+    auto bhvholder = lolita::behaviour::BehaviourHolder(bhvvv);
+
+    lolita::matrix::Vector<lolita::real> vector(200);
+    vector.setZero();
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+
+    vector.segment<20>(40) * vector.segment<20>(50).transpose();
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto dt = std::chrono::duration<lolita::real>(t1 - t0);
+
+    std::cout << "duration : " << dt.count() << " s" << std::endl;
+
+    lolita::matrix::Vector<lolita::real, 20> vector2;
+    vector2.setZero();
+    t0 = std::chrono::high_resolution_clock::now();
+
+    vector2 * vector2.transpose();
+
+    t1 = std::chrono::high_resolution_clock::now();
+    dt = std::chrono::duration<lolita::real>(t1 - t0);
+
+    std::cout << "duration : " << dt.count() << " s" << std::endl;
+
+    t0 = std::chrono::high_resolution_clock::now();
+
+    vector.segment(20, 40) * vector.segment(20, 40).transpose();
+
+    t1 = std::chrono::high_resolution_clock::now();
+    dt = std::chrono::duration<lolita::real>(t1 - t0);
+
+    std::cout << "duration : " << dt.count() << " s" << std::endl;
+
+//    lolita::finite_element::LoadFunction f;
+//    std::cout << "fun res : " << f(lolita::geometry::Point::Ones(), 1.0) << std::endl;
+
+
 //    std::cout << lolita::core::element::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::seg_02>()[2] << std::endl;
 //    std::cout << lolita::core::element::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::tri_03>()[2] << std::endl;
 //    std::cout << lolita::core::element::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::tet_04>()[2] << std::endl;
@@ -40,8 +115,9 @@ TEST(test_lolita_2, test_lolita_2)
     auto file_path = "";
 //    file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/perforated_strip_huge.msh";
     file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
+    auto msh2 = lolita::core::mesh2::MeshParser<lolita::mesh::Format::Gmsh, domain>("/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh");
     auto msh_file = lolita::utility::File(file_path);
-    auto msh = lolita::core::mesh::MeshBase<lolita::mesh::MeshFormatType::Gmsh, domain, hho_u0, hho_d>(msh_file, {}, {});
+    auto msh = lolita::core::mesh::MeshBase<lolita::mesh::Format::Gmsh, domain, hho_u0, hho_d>(msh_file, {load}, {bhv});
     auto & elem = * msh.elements_.getElements<2, 0>()["345"];
 //    auto & elem = * std::get<0>(std::get<2>(msh.elements_))["345"];
 //    std::cout << elem.getCurrentCoordinates() << std::endl;
@@ -59,6 +135,10 @@ TEST(test_lolita_2, test_lolita_2)
 //        std::cout << "hello" << std::endl;
 //    }
 
+    std::cout << " msh.unknown_indices[0].unknown_index_ : " << msh.unknown_indices[0].unknown_index_ << std::endl;
+    std::cout << " msh.unknown_indices[0].binding_index_ : " << msh.unknown_indices[0].binding_index_ << std::endl;
+
+    std::cout << elem.getElement<0>()->getCurrentCoordinates() << std::endl;
     std::cout << elem.getCurrentCoordinates() << std::endl;
     std::cout << elem.getCurrentCentroid() << std::endl;
     std::cout << elem.getCurrentDiameters() << std::endl;

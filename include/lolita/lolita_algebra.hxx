@@ -23,6 +23,8 @@
 namespace lolita::numerics
 {
 
+    lolita::real const static constexpr sqrt_2 = 1.41421356237;
+
     namespace detail
     {
 
@@ -362,25 +364,6 @@ namespace lolita::matrix
     struct Coordinates
     {
 
-        constexpr
-        Coordinates()
-                :
-                row_(),
-                col_()
-        {}
-
-        constexpr
-        Coordinates(
-                lolita::index
-                row,
-                lolita::index
-                col
-        )
-                :
-                row_(row),
-                col_(col)
-        {}
-
         lolita::index row_;
 
         lolita::index col_;
@@ -392,15 +375,13 @@ namespace lolita::matrix
 
         constexpr
         Shape(
-                lolita::index
-                rows,
-                lolita::index
-                cols
+                lolita::index rows,
+                lolita::index cols
         )
-                :
-                rows_(rows),
-                cols_(cols),
-                size_(rows * cols)
+        :
+        rows_(rows),
+        cols_(cols),
+        size_(rows * cols)
         {}
 
         lolita::index rows_;
