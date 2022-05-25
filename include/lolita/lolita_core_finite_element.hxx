@@ -121,6 +121,13 @@ namespace lolita::core::field
                 lolita::core::field::MappingValues{0, 0, 0, 1},
         };
 
+        static
+        void
+        non_linear(
+                lolita::matrix::Vector<lolita::real, shape_.size_> & gradient
+        )
+        {}
+
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
@@ -134,6 +141,13 @@ namespace lolita::core::field
                 lolita::core::field::MappingValues{0, 0, 0, 1},
                 lolita::core::field::MappingValues{0, 1, 1, 1},
         };
+
+        static
+        void
+        non_linear(
+                lolita::matrix::Vector<lolita::real, shape_.size_> & gradient
+        )
+        {}
 
     };
 
@@ -149,6 +163,13 @@ namespace lolita::core::field
                 lolita::core::field::MappingValues{0, 1, 1, 1},
                 lolita::core::field::MappingValues{0, 2, 2, 1},
         };
+
+        static
+        void
+        non_linear(
+                lolita::matrix::Vector<lolita::real, shape_.size_> & gradient
+        )
+        {}
 
     };
 
@@ -344,7 +365,8 @@ namespace lolita::core::field
         static
         void
         non_linear(
-                lolita::matrix::Vector<lolita::real, shape_.size_> & gradient
+//                lolita::matrix::VectorConcept2<shape_.size_> auto & gradient
+                auto gradient
         )
         {
             gradient(0) += 1.0;
@@ -390,6 +412,197 @@ namespace lolita::core::field
 
 namespace lolita::core::element
 {
+
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+    struct UnknownPolicy2
+    {
+
+        lolita::field::Tensor const static constexpr field_ = _finite_element.unknown_.tensor_;
+
+        std::array<lolita::field::Mapping, _finite_element.unknown_.mappings_.size()> const static constexpr mappings_ = _finite_element.unknown_.mappings_;
+
+        lolita::finite_element::Method const static constexpr method_ = _finite_element.discretization_.method_;
+
+        lolita::finite_element::FiniteElementMethodConcept auto const static constexpr discretization_ = _finite_element.discretization_;
+
+        using Quadrature = lolita::core::element::ElementQuadrature<_element, _finite_element.quadrature_, _finite_element.ord_quadrature_>;
+
+        using Field = lolita::core::field::TensorPolicy<field_, _domain.dim_>;
+
+    };
+
+    template<lolita::geometry::Domain _domain, lolita::field::Tensor _field, lolita::integer _dim_unknown>
+    struct FiniteElementDiscreteField2
+    {
+
+    private:
+
+        lolita::matrix::Shape const static constexpr field_shape_ = lolita::core::field::TensorPolicy<_field, _domain.dim_>::shape_;
+
+        using _CoefficientsType = lolita::matrix::Vector<lolita::real, _dim_unknown>;
+
+    public:
+
+        struct DegreeOfFreedom
+        {
+
+            inline
+            lolita::boolean
+            isUnknownLocal()
+            const
+            {
+                return unknown_index_ == -1 ? true : false;
+            }
+
+            inline
+            lolita::boolean
+            isUnknownActive()
+            const
+            {
+                return ! unknown_coefficients_ == nullptr;
+            }
+
+            inline
+            lolita::boolean
+            isBindingLocal()
+            const
+            {
+                return binding_index_ == -1 ? true : false;
+            }
+
+            inline
+            lolita::boolean
+            isBindingActive()
+            const
+            {
+                return ! binding_coefficients_ == nullptr;
+            }
+
+            std::unique_ptr<_CoefficientsType> unknown_coefficients_;
+
+            std::unique_ptr<_CoefficientsType> binding_coefficients_;
+
+            lolita::integer unknown_index_ = -1;
+
+            lolita::integer binding_index_ = -1;
+
+        };
+
+        void
+        setUnknown(
+                lolita::index i,
+                lolita::index j
+        )
+        requires(_dim_unknown > -1)
+        {
+            degrees_of_freedom_[i][j].unknown_coefficients_ = std::make_unique<_CoefficientsType>(_CoefficientsType::Zero());
+        }
+
+        template<lolita::finite_element::FiniteElementConcept auto _finite_element, lolita::finite_element::FiniteElementConcept auto... __finite_element>
+        void
+        setUnknown(
+                lolita::index i,
+                lolita::index j,
+                lolita::core::mesh::MeshData2<_domain, __finite_element...> & mesh
+        )
+        requires(_dim_unknown > -1)
+        {
+            auto const constexpr _finite_element_index = lolita::core::element::MixedElementPolicy<__finite_element...>::template index<_finite_element>();
+            setUnknown(i, j);
+            if constexpr(_dim_unknown > 0) {
+                degrees_of_freedom_[i][j].unknown_index_ = mesh.dof_indices_[_finite_element_index].num_unknowns_;
+                mesh.dof_indices_[_finite_element_index].num_unknowns_ += _dim_unknown;
+            }
+        }
+
+        void
+        setUnknown(
+                lolita::index i,
+                lolita::index j,
+                lolita::index dim_unknown
+        )
+        requires(_dim_unknown == -1)
+        {
+            degrees_of_freedom_[i][j].unknown_coefficients_ = std::make_unique<_CoefficientsType>(_CoefficientsType::Zero(dim_unknown));
+        }
+
+        template<lolita::finite_element::FiniteElementConcept auto _finite_element, lolita::finite_element::FiniteElementConcept auto... __finite_element>
+        void
+        setUnknown(
+                lolita::index i,
+                lolita::index j,
+                lolita::index dim_unknown,
+                lolita::core::mesh::MeshData2<_domain, __finite_element...> & mesh
+        )
+        requires(_dim_unknown == -1)
+        {
+            auto const constexpr _finite_element_index = lolita::core::element::MixedElementPolicy<__finite_element...>::template index<_finite_element>();
+            setUnknown(i, j, dim_unknown);
+            if (dim_unknown > 0) {
+                degrees_of_freedom_[i][j].unknown_index_ = mesh.dof_indices_[_finite_element_index].num_unknowns_;
+                mesh.dof_indices_[_finite_element_index].num_unknowns_ += dim_unknown;
+            }
+        }
+
+        void
+        setBinding(
+                lolita::index i,
+                lolita::index j
+        )
+        requires(_dim_unknown > -1)
+        {
+            degrees_of_freedom_[i][j].binding_coefficients_ = std::make_unique<_CoefficientsType>(_CoefficientsType::Zero());
+        }
+
+        template<lolita::finite_element::FiniteElementConcept auto _finite_element, lolita::finite_element::FiniteElementConcept auto... __finite_element>
+        void
+        setBinding(
+                lolita::index i,
+                lolita::index j,
+                lolita::core::mesh::MeshData2<_domain, __finite_element...> & mesh
+        )
+        requires(_dim_unknown > -1)
+        {
+            auto const constexpr _finite_element_index = lolita::core::element::MixedElementPolicy<__finite_element...>::template index<_finite_element>();
+            setBinding(i, j);
+            if constexpr(_dim_unknown > 0) {
+                degrees_of_freedom_[i][j].binding_index_ = mesh.dof_indices_[_finite_element_index].num_bindings_;
+                mesh.dof_indices_[_finite_element_index].num_bindings_ += _dim_unknown;
+            }
+        }
+
+        void
+        setBinding(
+                lolita::index i,
+                lolita::index j,
+                lolita::index dim_unknown
+        )
+        requires(_dim_unknown == -1)
+        {
+            degrees_of_freedom_[i][j].binding_coefficients_ = std::make_unique<_CoefficientsType>(_CoefficientsType::Zero(dim_unknown));
+        }
+
+        template<lolita::finite_element::FiniteElementConcept auto _finite_element, lolita::finite_element::FiniteElementConcept auto... __finite_element>
+        void
+        setBinding(
+                lolita::index i,
+                lolita::index j,
+                lolita::index dim_unknowns,
+                lolita::core::mesh::MeshData2<_domain, __finite_element...> & mesh
+        )
+        requires(_dim_unknown == -1)
+        {
+            auto const constexpr _finite_element_index = lolita::core::element::MixedElementPolicy<__finite_element...>::template index<_finite_element>();
+            setBinding(i, j, dim_unknowns);
+            if (dim_unknowns > 0) {
+                degrees_of_freedom_[i][j].binding_index_ = mesh.dof_indices_[_finite_element_index].num_bindings_;
+                mesh.dof_indices_[_finite_element_index].num_bindings_ += dim_unknowns;
+            }
+        }
+
+        std::array<std::array<DegreeOfFreedom, field_shape_.rows_>, field_shape_.cols_> degrees_of_freedom_;
+
+    };
 
     template<lolita::core::element::Element, lolita::geometry::Domain, lolita::finite_element::FiniteElementConcept auto>
     struct FiniteElementPolicy;
@@ -1105,11 +1318,46 @@ namespace lolita::core::element
 
     };
 
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+    struct UnknownPolicy : public std::false_type
+    {
+
+        struct Unknown
+        {};
+
+    };
+
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+    requires(_finite_element.discretization_.method_ == lolita::finite_element::Method::HHO && _domain.dim_ - _element.dim_ == 0)
+    struct UnknownPolicy<_element, _domain, _finite_element> : public std::true_type
+    {
+
+        using Unknown = FiniteElementDiscreteField2<_domain,_finite_element.unknown_.tensor_,
+                FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.discretization.ord_cell_>::dim_
+        >;
+
+    };
+
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+    requires(_finite_element.discretization_.method_ == lolita::finite_element::Method::HHO && _domain.dim_ - _element.dim_ == 1)
+    struct UnknownPolicy<_element, _domain, _finite_element> : public std::true_type
+    {
+
+        using Unknown = FiniteElementDiscreteField2<_domain, _finite_element.unknown_.tensor_,
+                FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.discretization.ord_face_>::dim_
+        >;
+
+    };
+
     std::shared_ptr<lolita::finite_element::LoadComponent> const static null_load_ptr = std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent());
 
     template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
     struct FiniteElementPolicy
     {
+
+        using Unknown = FiniteElementDiscreteField2<_domain,_finite_element.unknown_.tensor_,
+                FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.discretization.ord_cell_>::dim_
+        >;
 
         static constexpr
         lolita::integer
@@ -1143,10 +1391,6 @@ namespace lolita::core::element
 
         using _Policy = FiniteElementPolicy<_element, _domain, _finite_element>;
 
-        using _Module = typename _Policy::Module;
-
-        using _Implementation = typename _Policy::Implementation;
-
     public:
 
         template<lolita::finite_element::FiniteElementConcept auto... __finite_element>
@@ -1157,7 +1401,6 @@ namespace lolita::core::element
         {
             this->setLoads(mesh);
             this->setBehaviour(mesh);
-            static_cast<_Implementation *>(this)->setUnknowns(mesh);
         }
 
     };
@@ -1256,8 +1499,8 @@ namespace lolita::core::element
             auto const constexpr _finite_element_index = lolita::core::element::MixedElementPolicy<__finite_element...>::template index<_finite_element>();
             setUnknown(i, j);
             if constexpr(_Policy::dimUnknown() > 0) {
-                degrees_of_freedom_[i][j].unknown_index_ = mesh.dof_indices_[_finite_element_index].unknown_index_;
-                mesh.dof_indices_[_finite_element_index].unknown_index_ += _Policy::dimUnknown();
+                degrees_of_freedom_[i][j].unknown_index_ = mesh.dof_indices_[_finite_element_index].num_unknowns_;
+                mesh.dof_indices_[_finite_element_index].num_unknowns_ += _Policy::dimUnknown();
             }
         }
 
@@ -1285,8 +1528,8 @@ namespace lolita::core::element
             auto const constexpr _finite_element_index = lolita::core::element::MixedElementPolicy<__finite_element...>::template index<_finite_element>();
             setUnknown(i, j, dim_unknowns);
             if (dim_unknowns > 0) {
-                degrees_of_freedom_[i][j].unknown_index_ = mesh.dof_indices_[_finite_element_index].unknown_index_;
-                mesh.dof_indices_[_finite_element_index].unknown_index_ += dim_unknowns;
+                degrees_of_freedom_[i][j].unknown_index_ = mesh.dof_indices_[_finite_element_index].num_unknowns_;
+                mesh.dof_indices_[_finite_element_index].num_unknowns_ += dim_unknowns;
             }
         }
 
@@ -1312,8 +1555,8 @@ namespace lolita::core::element
             auto const constexpr _finite_element_index = lolita::core::element::MixedElementPolicy<__finite_element...>::template index<_finite_element>();
             setBinding(i, j);
             if constexpr(_Policy::dimUnknown() > 0) {
-                degrees_of_freedom_[i][j].binding_index_ = mesh.dof_indices_[_finite_element_index].binding_index_;
-                mesh.dof_indices_[_finite_element_index].binding_index_ += _Policy::dimUnknown();
+                degrees_of_freedom_[i][j].binding_index_ = mesh.dof_indices_[_finite_element_index].num_bindings_;
+                mesh.dof_indices_[_finite_element_index].num_bindings_ += _Policy::dimUnknown();
             }
         }
 
@@ -1341,8 +1584,8 @@ namespace lolita::core::element
             auto const constexpr _finite_element_index = lolita::core::element::MixedElementPolicy<__finite_element...>::template index<_finite_element>();
             setBinding(i, j, dim_unknowns);
             if (dim_unknowns > 0) {
-                degrees_of_freedom_[i][j].binding_index_ = mesh.dof_indices_[_finite_element_index].binding_index_;
-                mesh.dof_indices_[_finite_element_index].binding_index_ += dim_unknowns;
+                degrees_of_freedom_[i][j].binding_index_ = mesh.dof_indices_[_finite_element_index].num_bindings_;
+                mesh.dof_indices_[_finite_element_index].num_bindings_ += dim_unknowns;
             }
         }
 
@@ -1402,6 +1645,8 @@ namespace lolita::core::element
 
         std::array<std::array<DegreeOfFreedom, shp_field_.rows_>, shp_field_.cols_> degrees_of_freedom_;
 
+        std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, shp_field_.rows_>, shp_field_.cols_> loads__;
+
         std::shared_ptr<lolita::behaviour::MgisBehaviourData> behaviour_;
 
     };
@@ -1411,7 +1656,7 @@ namespace lolita::core::element
      */
 
     template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
-    requires(lolita::core::element::CellConcept<_element, _domain> && _finite_element.finite_element_method_.method_ == lolita::finite_element::Method::HHO)
+    requires(lolita::core::element::CellConcept<_element, _domain> && _finite_element.discretization_.method_ == lolita::finite_element::Method::HHO)
     struct FiniteElementPolicy<_element, _domain, _finite_element>
     {
 
@@ -1423,7 +1668,7 @@ namespace lolita::core::element
         lolita::integer
         dimUnknown()
         {
-            return lolita::core::element::FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.finite_element_method_.ord_cell_>::dim_;
+            return lolita::core::element::FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.discretization_.ord_cell_>::dim_;
         }
 
         /**
@@ -1445,7 +1690,7 @@ namespace lolita::core::element
         lolita::integer
         dimElementUnknown()
         {
-            using _CellBasis = FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.finite_element_method_.ord_cell_>;
+            using _CellBasis = FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.discretization_.ord_cell_>;
             auto dim_cell_element_unknown = _CellBasis::dim_;
             auto set_dim_field_mapping = [&] <lolita::index _k = 0> (
                     auto & self
@@ -1454,7 +1699,7 @@ namespace lolita::core::element
             {
                 auto const constexpr _component = lolita::core::element::component<_element, _domain, 0, _k>();
                 auto const constexpr _num_components = lolita::core::element::numComponents<_element, _domain, 0, _k>();
-                using _FaceBasis = FiniteElementBasis<_component, lolita::finite_element::Basis::Monomial, _finite_element.finite_element_method_.ord_face_>;
+                using _FaceBasis = FiniteElementBasis<_component, lolita::finite_element::Basis::Monomial, _finite_element.discretization_.ord_face_>;
                 dim_cell_element_unknown += _FaceBasis::dim_ * _num_components;
                 if constexpr (_k < element::numComponents<_element, _domain, 0>() - 1) {
                     self.template operator ()<_k + 1>(self);
@@ -1489,9 +1734,9 @@ namespace lolita::core::element
             struct GradientOperatorFactory
             {
 
-                auto const static constexpr ord_cell_ = _finite_element.finite_element_method_.ord_cell_;
-                auto const static constexpr ord_face_ = _finite_element.finite_element_method_.ord_face_;
-                auto const static constexpr ord_grad_ = _finite_element.finite_element_method_.ordMapping(_mapping);
+                auto const static constexpr ord_cell_ = _finite_element.discretization_.ord_cell_;
+                auto const static constexpr ord_face_ = _finite_element.discretization_.ord_face_;
+                auto const static constexpr ord_grad_ = _finite_element.discretization_.ordMapping(_mapping);
                 auto const static constexpr ord_max_ = lolita::numerics::max(ord_cell_, ord_face_, ord_grad_);
                 auto const static constexpr ord_qad_ = _domain.ordIntegration(ord_max_);
                 using _Quadrature = lolita::core::element::ElementQuadrature<_element, _finite_element.quadrature_, ord_qad_>;
@@ -1521,7 +1766,7 @@ namespace lolita::core::element
                 auto count = lolita::index(0);
                 for (int i = 0; i < this->shp_field_.rows_; ++i) {
                     for (int j = 0; j < this->shp_field_.cols_; ++j) {
-                        element_unknown.template segement<dimUnknown()>(count) = this->degrees_of_freedom_[i][j].unknown_coefficients_;
+                        element_unknown.template segment<dimUnknown()>(count) = this->degrees_of_freedom_[i][j].unknown_coefficients_;
                         count += dimUnknown();
                     }
                 }
@@ -1535,26 +1780,17 @@ namespace lolita::core::element
                     for (auto const & face : this->template getComponents<0, _i>()) {
                         for (int i = 0; i < this->shp_field_.rows_; ++i) {
                             for (int j = 0; j < this->shp_field_.cols_; ++j) {
-                                element_unknown.template segement<_FacePolicy::dimUnknown()>(count) = face->degrees_of_freedom_[i][j].unknown_coefficients_;
+                                element_unknown.template segment<_FacePolicy::dimUnknown()>(count) = face->degrees_of_freedom_[i][j].unknown_coefficients_;
                                 count += _FacePolicy::dimUnknown();
                             }
                         }
-                        if constexpr (_i < lolita::core::element::numComponents<_element, _domain, 0, _i>() - 1) {
+                        if constexpr (_i < lolita::core::element::numComponents<_element, _domain, 0>() - 1) {
                             self.template operator()<_i + 1u>(self);
                         }
                     }
                 };
                 set_faces_unknowns(set_faces_unknowns);
                 return element_unknown;
-            }
-
-            lolita::matrix::Vector<lolita::real, FiniteElementModule<_element, _domain, _finite_element>::dimOperator()>
-            getGradient(
-                    lolita::index i
-            )
-            const
-            {
-                return this->operators_[i] * getElementUnknown();
             }
 
             void
@@ -1582,9 +1818,9 @@ namespace lolita::core::element
                 /*
                  * Defining constants
                  */
-                auto const constexpr ord_cell = _finite_element.finite_element_method_.ord_cell_;
-                auto const constexpr ord_face = _finite_element.finite_element_method_.ord_face_;
-                auto const constexpr ord_grad = _finite_element.finite_element_method_.ordMapping(_mapping);
+                auto const constexpr ord_cell = _finite_element.discretization_.ord_cell_;
+                auto const constexpr ord_face = _finite_element.discretization_.ord_face_;
+                auto const constexpr ord_grad = _finite_element.discretization_.ordMapping(_mapping);
                 auto const constexpr ord_max = lolita::numerics::max(ord_cell, ord_face, ord_grad);
                 auto const constexpr ord_qad = _domain.ordIntegration(ord_max);
                 using _Quadrature = lolita::core::element::ElementQuadrature<_element, _finite_element.quadrature_, ord_qad>;
@@ -1733,9 +1969,9 @@ namespace lolita::core::element
                 /*
                  * Defining constants
                  */
-                auto const constexpr ord_cell = _finite_element.finite_element_method_.ord_cell_;
-                auto const constexpr ord_face = _finite_element.finite_element_method_.ord_face_;
-                auto const constexpr ord_grad = _finite_element.finite_element_method_.ordMapping(_mapping);
+                auto const constexpr ord_cell = _finite_element.discretization_.ord_cell_;
+                auto const constexpr ord_face = _finite_element.discretization_.ord_face_;
+                auto const constexpr ord_grad = _finite_element.discretization_.ordMapping(_mapping);
                 auto const constexpr ord_max = lolita::numerics::max(ord_cell, ord_face, ord_grad);
                 auto const constexpr ord_qad = _domain.ordIntegration(ord_max);
                 using _Quadrature = lolita::core::element::ElementQuadrature<_element, _finite_element.quadrature_, ord_qad>;
@@ -1939,6 +2175,25 @@ namespace lolita::core::element
 
         using Operator = lolita::matrix::Matrix<lolita::real, dimOperator(), _Policy::numElementUnknown()>;
 
+        using BilinearFormOperator = lolita::matrix::Matrix<lolita::real, dimOperator(), _Policy::numElementUnknown()>;
+
+        using LinearFormOperator = lolita::matrix::Vector<lolita::real, _Policy::numElementUnknown()>;
+
+        struct MaterialPoint
+        {
+
+            BilinearFormOperator bilinear_form_operator_;
+
+            LinearFormOperator linear_form_operator_;
+
+            lolita::geometry::Point point_;
+
+            lolita::real weight_;
+
+            std::unique_ptr<mgis::behaviour::BehaviourData> material_point_;
+
+        };
+
         template<lolita::finite_element::FiniteElementConcept auto... __finite_element>
         void
         initialize(
@@ -1960,15 +2215,75 @@ namespace lolita::core::element
                 }
             };
             set_operator(set_operator);
+            for (int i = 0; i < Quadrature::dim_; ++i) {
+                material_points_[i] = std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(this->behaviour_->behaviour_));
+                material_points_[i]->K[0] = 4;
+            }
+        }
+
+        lolita::matrix::Vector<lolita::real, _Policy::numElementUnknown()>
+        getElementUnknown()
+        const
+        {
+            return static_cast<_Implementation const *>(this)->getElementUnknown();
+        }
+
+        static
+        void
+        ttest(
+                lolita::matrix::MatrixConceptE<lolita::real, 2, 2> auto matrix
+        )
+        {
+
+        }
+
+        void
+        integrateBehaviour()
+        {
+            auto u_vec = getElementUnknown();
+            for (int i = 0; i < Quadrature::dim_; ++i) {
+                auto grad_vec = lolita::matrix::Vector<lolita::real, dimOperator()>();
+                grad_vec = operators_[i] * u_vec;
+                std::cout << "grad_vec : " << std::endl;
+                std::cout << grad_vec << std::endl;
+                auto comp_grad = [&] <lolita::index _i = 0u> (
+                        auto & self
+                )
+                mutable
+                {
+                    auto const constexpr _mapping = _finite_element.unknown_.mappings_[_i];
+                    using _MappingPolicy = lolita::core::field::MappingPolicy<_finite_element.unknown_.tensor_, _domain, _mapping>;
+                    ttest(lolita::matrix::Matrix<lolita::real, 2, 2>::Zero());
+//                    static_assert(lolita::matrix::MatrixConcept<decltype(grad_vec)>);
+//                    static_assert(lolita::matrix::MatrixConcept<decltype(grad_vec.template segment<_MappingPolicy::shape_.size_>(rowMapping<_mapping>()))>);
+//                    static_assert(lolita::matrix::MatrixConceptE<decltype(grad_vec.template segment<_MappingPolicy::shape_.size_>(rowMapping<_mapping>())), lolita::real, _MappingPolicy::shape_.size_, 1>);
+//                    static_assert(lolita::matrix::size(grad_vec.template segment<_MappingPolicy::shape_.size_>(rowMapping<_mapping>())) == _MappingPolicy::shape_.size_);
+                    _MappingPolicy::non_linear(grad_vec.template segment<_MappingPolicy::shape_.size_>(rowMapping<_mapping>()));
+//                    _MappingPolicy::non_linear(lolita::matrix::Span<lolita::matrix::Vector<lolita::real, _MappingPolicy::shape_.size_>>(grad_vec.data() + rowMapping<_mapping>()));
+                    std::cout << "grad_vec : " << std::endl;
+                    std::cout << grad_vec << std::endl;
+                    if constexpr (_i < _finite_element.unknown_.mappings_.size() - 1) {
+                        self.template operator()<_i + 1>(self);
+                    }
+                };
+                comp_grad(comp_grad);
+                auto grad_view = lolita::matrix::Span<lolita::matrix::Vector<lolita::real, dimOperator()>>(material_points_[i]->s1.gradients.data());
+                grad_view = grad_vec;
+                auto behaviour_view = mgis::behaviour::make_view(* material_points_[i]);
+                this->template getCurrentQuadraturePoint<Quadrature::quadrature_, Quadrature::dim_>(i);
+                auto result = mgis::behaviour::integrate(behaviour_view, this->behaviour_->behaviour_);
+            }
         }
 
         _Module module_;
 
-        std::array<Operator, Quadrature::dim_> operators_;
+        std::array<BilinearFormOperator, Quadrature::dim_> operators_;
 
-        std::array<mgis::behaviour::BehaviourData, Quadrature::dim_> material_points_;
+        std::array<LinearFormOperator, Quadrature::dim_> linear_form_operators_;
 
-        std::shared_ptr<lolita::behaviour::MgisBehaviour> behaviour_;
+        std::array<MaterialPoint, Quadrature::dim_> mats_;
+
+        std::array<std::unique_ptr<mgis::behaviour::BehaviourData>, Quadrature::dim_> material_points_;
 
     };
 
@@ -1977,7 +2292,7 @@ namespace lolita::core::element
      */
 
     template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
-    requires(lolita::core::element::FaceConcept<_element, _domain> && _finite_element.finite_element_method_.method_ == lolita::finite_element::Method::HHO)
+    requires(lolita::core::element::FaceConcept<_element, _domain> && _finite_element.discretization_.method_ == lolita::finite_element::Method::HHO)
     struct FiniteElementPolicy<_element, _domain, _finite_element>
     {
 
@@ -1989,7 +2304,7 @@ namespace lolita::core::element
         lolita::integer
         dimUnknown()
         {
-            return FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.finite_element_method_.ord_face_>::dim_;
+            return FiniteElementBasis<_element, lolita::finite_element::Basis::Monomial, _finite_element.discretization_.ord_face_>::dim_;
         }
 
         /**
@@ -2060,7 +2375,7 @@ namespace lolita::core::element
      */
 
     template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
-    requires(lolita::core::element::EdgeConcept<_element, _domain> && _finite_element.finite_element_method_.method_ == lolita::finite_element::Method::HHO)
+    requires(lolita::core::element::EdgeConcept<_element, _domain> && _finite_element.discretization_.method_ == lolita::finite_element::Method::HHO)
     struct FiniteElementPolicy<_element, _domain, _finite_element>
     {
 
@@ -2125,7 +2440,7 @@ namespace lolita::core::element
      */
 
     template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
-    requires(lolita::core::element::NodeConcept<_element, _domain> && _finite_element.finite_element_method_.method_ == lolita::finite_element::Method::HHO)
+    requires(lolita::core::element::NodeConcept<_element, _domain> && _finite_element.discretization_.method_ == lolita::finite_element::Method::HHO)
     struct FiniteElementPolicy<_element, _domain, _finite_element>
     {
 

@@ -11,6 +11,13 @@
 #include "lolita/lolita_user.hxx"
 #include "lolita/lolita_element.hxx"
 
+namespace lolita::core::element
+{
+
+
+
+}
+
 namespace lolita::core::mesh
 {
 
@@ -28,9 +35,9 @@ namespace lolita::core::mesh
     struct DegreeOfFreedomIndex
     {
 
-        lolita::natural unknown_index_ = 0;
+        lolita::natural num_unknowns_ = 0;
 
-        lolita::natural binding_index_ = 0;
+        lolita::natural num_bindings_ = 0;
 
     };
 

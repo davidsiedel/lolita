@@ -272,20 +272,6 @@ namespace lolita::core::element
 
         lolita::core::element::Element const static constexpr element_ = _element;
 
-//        constexpr
-//        lolita::boolean
-//        operator==(
-//                ElementGeometry const & other
-//        )
-//        const = default;
-//
-//        constexpr
-//        lolita::boolean
-//        operator!=(
-//                ElementGeometry const & other
-//        )
-//        const = default;
-
         /**
          * @brief
          */
@@ -344,20 +330,6 @@ namespace lolita::core::element
 
         lolita::core::element::Element const static constexpr element_ = _element;
 
-//        constexpr
-//        lolita::boolean
-//        operator==(
-//                ElementGeometry const & other
-//        )
-//        const = default;
-//
-//        constexpr
-//        lolita::boolean
-//        operator!=(
-//                ElementGeometry const & other
-//        )
-//        const = default;
-
         std::array<std::array<lolita::real, 3>, 2> const static constexpr reference_nodes_ = {
                 -1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
                 +1.0000000000000000, +0.0000000000000000, +0.0000000000000000
@@ -372,9 +344,6 @@ namespace lolita::core::element
 
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
         using Neighbours = detail::ElementNeighbours<_T, _element, _domain, __arg...>;
-
-//        template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
-//        using Neighbours = std::tuple<Components<_T, _domain, __arg...>, detail::ElementNeighbourArray<_T, element, _domain, __arg...>>;
 
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity_ = {
                 {
@@ -439,22 +408,6 @@ namespace lolita::core::element
     {
 
         lolita::core::element::Element const static constexpr element_ = _element;
-
-//        constexpr
-//        lolita::boolean
-//        operator==(
-//                ElementGeometry const &
-//                other
-//        )
-//        const = default;
-//
-//        constexpr
-//        lolita::boolean
-//        operator!=(
-//                ElementGeometry const &
-//                other
-//        )
-//        const = default;
 
         std::array<std::array<lolita::real, 3>, 3> const static constexpr reference_nodes_ = {
                 +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
@@ -554,22 +507,6 @@ namespace lolita::core::element
     {
 
         lolita::core::element::Element const static constexpr element_ = _element;
-
-//        constexpr
-//        lolita::boolean
-//        operator==(
-//                ElementGeometry const &
-//                other
-//        )
-//        const = default;
-//
-//        constexpr
-//        lolita::boolean
-//        operator!=(
-//                ElementGeometry const &
-//                other
-//        )
-//        const = default;
 
         std::array<std::array<lolita::real, 3>, 4> const static constexpr reference_nodes_ = {
                 -1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
@@ -675,22 +612,6 @@ namespace lolita::core::element
     {
 
         lolita::core::element::Element const static constexpr element_ = _element;
-
-//        constexpr
-//        lolita::boolean
-//        operator==(
-//                ElementGeometry const &
-//                other
-//        )
-//        const = default;
-//
-//        constexpr
-//        lolita::boolean
-//        operator!=(
-//                ElementGeometry const &
-//                other
-//        )
-//        const = default;
 
         std::array<std::array<lolita::real, 3>, 4> const static constexpr reference_nodes_ = {
                 +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,

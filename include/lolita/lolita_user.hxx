@@ -301,29 +301,29 @@ namespace lolita
 
         };
 
-        static constexpr
-        std::basic_string_view<lolita::character>
-        readMapping(
-                lolita::field::Mapping
-                mapping
-        )
-        {
-            if (mapping == lolita::field::Mapping::Gradient) {
-                return std::basic_string_view<lolita::character>("Gradient");
-            }
-            else if (mapping == lolita::field::Mapping::Identity) {
-                return std::basic_string_view<lolita::character>("Identity");
-            }
-            else if (mapping == lolita::field::Mapping::Divergence) {
-                return std::basic_string_view<lolita::character>("Divergence");
-            }
-            else if (mapping == lolita::field::Mapping::LargeStrain) {
-                return std::basic_string_view<lolita::character>("LargeStrain");
-            }
-            else {
-                return std::basic_string_view<lolita::character>("SmallStrain");
-            }
-        }
+//        static constexpr
+//        std::basic_string_view<lolita::character>
+//        readMapping(
+//                lolita::field::Mapping
+//                mapping
+//        )
+//        {
+//            if (mapping == lolita::field::Mapping::Gradient) {
+//                return std::basic_string_view<lolita::character>("Gradient");
+//            }
+//            else if (mapping == lolita::field::Mapping::Identity) {
+//                return std::basic_string_view<lolita::character>("Identity");
+//            }
+//            else if (mapping == lolita::field::Mapping::Divergence) {
+//                return std::basic_string_view<lolita::character>("Divergence");
+//            }
+//            else if (mapping == lolita::field::Mapping::LargeStrain) {
+//                return std::basic_string_view<lolita::character>("LargeStrain");
+//            }
+//            else {
+//                return std::basic_string_view<lolita::character>("SmallStrain");
+//            }
+//        }
 
         struct Tensor
         {
@@ -362,21 +362,21 @@ namespace lolita
 
         };
 
-        namespace detail {
-
-            static constexpr
-            lolita::utility::Label
-            getOutputFieldLabel(
-                    lolita::field::Tensor const &
-                    tensor,
-                    lolita::field::Mapping
-                    mapping
-            )
-            {
-                return lolita::utility::label(lolita::utility::readLabel(tensor.tag_), lolita::field::readMapping(mapping));
-            }
-
-        }
+//        namespace detail {
+//
+//            static constexpr
+//            lolita::utility::Label
+//            getOutputFieldLabel(
+//                    lolita::field::Tensor const &
+//                    tensor,
+//                    lolita::field::Mapping
+//                    mapping
+//            )
+//            {
+//                return lolita::utility::label(lolita::utility::readLabel(tensor.tag_), lolita::field::readMapping(mapping));
+//            }
+//
+//        }
 
         template<typename... _Mapping>
         requires((std::same_as<_Mapping, lolita::field::Mapping> && ...) && sizeof...(_Mapping) > 0)
@@ -457,67 +457,67 @@ namespace lolita
         template<typename T>
         concept UnknownConcept = detail::IsUnknownConcept<T>::value;
 
-        struct MaterialProperty : public Tensor
-        {
-
-            constexpr
-            MaterialProperty(
-                    std::basic_string_view<lolita::character> &&
-                    tag
-            )
-            :
-            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), 0)
-            {}
-
-        };
-
-        struct InternalVariable : public Tensor
-        {
-
-            constexpr
-            InternalVariable(
-                    std::basic_string_view<lolita::character> &&
-                    tag,
-                    lolita::index
-                    ord
-            )
-            :
-            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
-            {}
-
-        };
-
-        struct ExternalVariable : public Tensor
-        {
-
-            constexpr
-            ExternalVariable(
-                    std::basic_string_view<lolita::character> &&
-                    tag,
-                    lolita::index
-                    ord
-            )
-            :
-            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
-            {}
-
-        };
-
-        struct SomeField : public Tensor
-        {
-
-            constexpr
-            SomeField(
-                    std::basic_string_view<lolita::character> &&
-                    tag,
-                    lolita::index
-                    ord
-            )
-            :
-            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
-            {}
-
-        };
+//        struct MaterialProperty : public Tensor
+//        {
+//
+//            constexpr
+//            MaterialProperty(
+//                    std::basic_string_view<lolita::character> &&
+//                    tag
+//            )
+//            :
+//            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), 0)
+//            {}
+//
+//        };
+//
+//        struct InternalVariable : public Tensor
+//        {
+//
+//            constexpr
+//            InternalVariable(
+//                    std::basic_string_view<lolita::character> &&
+//                    tag,
+//                    lolita::index
+//                    ord
+//            )
+//            :
+//            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
+//            {}
+//
+//        };
+//
+//        struct ExternalVariable : public Tensor
+//        {
+//
+//            constexpr
+//            ExternalVariable(
+//                    std::basic_string_view<lolita::character> &&
+//                    tag,
+//                    lolita::index
+//                    ord
+//            )
+//            :
+//            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
+//            {}
+//
+//        };
+//
+//        struct SomeField : public Tensor
+//        {
+//
+//            constexpr
+//            SomeField(
+//                    std::basic_string_view<lolita::character> &&
+//                    tag,
+//                    lolita::index
+//                    ord
+//            )
+//            :
+//            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
+//            {}
+//
+//        };
 
     }
 
@@ -822,61 +822,6 @@ namespace lolita
 
         };
 
-        static constexpr
-        std::basic_string_view<lolita::character>
-        readQuadrature(
-                lolita::finite_element::Quadrature
-                quadrature
-        )
-        {
-            if (quadrature == lolita::finite_element::Quadrature::Gauss) {
-                return std::basic_string_view<lolita::character>("Gauss");
-            }
-            else {
-                return std::basic_string_view<lolita::character>("SmallStrain");
-            }
-        }
-
-        struct Element
-        {
-
-            constexpr
-            lolita::boolean
-            operator==(
-                    Element const & other
-            )
-            const = default;
-
-            constexpr
-            lolita::boolean
-            operator!=(
-                    Element const & other
-            )
-            const = default;
-
-            lolita::index tag_;
-
-            lolita::index dim_;
-
-            lolita::index ord_;
-
-            lolita::index num_nodes_;
-
-        };
-
-        lolita::finite_element::Element const static constexpr pnt_00 = lolita::finite_element::Element{0, 0, 0, 1};
-        //
-        lolita::finite_element::Element const static constexpr seg_02 = lolita::finite_element::Element{1, 1, 1, 2};
-        lolita::finite_element::Element const static constexpr seg_03 = lolita::finite_element::Element{5, 1, 2, 3};
-        //
-        lolita::finite_element::Element const static constexpr tri_03 = lolita::finite_element::Element{2, 2, 1, 3};
-        lolita::finite_element::Element const static constexpr tri_06 = lolita::finite_element::Element{6, 2, 2, 6};
-        lolita::finite_element::Element const static constexpr qua_04 = lolita::finite_element::Element{3, 2, 1, 4};
-        lolita::finite_element::Element const static constexpr qua_08 = lolita::finite_element::Element{7, 2, 2, 8};
-        //
-        lolita::finite_element::Element const static constexpr tet_04 = lolita::finite_element::Element{4, 3, 1, 4};
-        lolita::finite_element::Element const static constexpr tet_12 = lolita::finite_element::Element{8, 3, 2, 12};
-
         using LoadFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
 
         struct LoadComponent
@@ -984,8 +929,7 @@ namespace lolita
 
             constexpr
             FiniteElementMethod(
-                    lolita::finite_element::Method
-                    method
+                    lolita::finite_element::Method method
             )
             :
             method_(method)
@@ -1014,10 +958,8 @@ namespace lolita
 
             constexpr
             HybridHighOrder(
-                    lolita::index
-                    ord_cell,
-                    lolita::index
-                    ord_face
+                    lolita::index ord_cell,
+                    lolita::index ord_face
             )
             :
             FiniteElementMethod(lolita::finite_element::Method::HHO),
@@ -1028,8 +970,7 @@ namespace lolita
             constexpr
             lolita::index
             ordMapping(
-                    lolita::field::Mapping
-                    mapping
+                    lolita::field::Mapping mapping
             )
             const
             {
@@ -1044,10 +985,8 @@ namespace lolita
 
         template<typename _T>
         concept FiniteElementMethodConcept = std::derived_from<_T, lolita::finite_element::FiniteElementMethod> && requires(
-                std::remove_reference_t<_T> const
-                arg,
-                lolita::field::Mapping
-                mapping
+                std::remove_reference_t<_T> const arg,
+                lolita::field::Mapping mapping
         )
         {
             { arg.ord_cell_ } -> std::convertible_to<lolita::index>;
@@ -1066,28 +1005,25 @@ namespace lolita
 
             constexpr
             FiniteElement(
-                    lolita::finite_element::Quadrature
-                    quadrature,
-                    lolita::index
-                    ord_quadrature
+                    lolita::finite_element::Quadrature quadrature,
+                    lolita::index ord_quadrature
             )
             :
             unknown_(_unknown),
             behaviour_(_behaviour),
-            finite_element_method_(_finite_element_method),
+            discretization_(_finite_element_method),
             quadrature_(quadrature),
             ord_quadrature_(ord_quadrature)
             {}
 
             constexpr
             FiniteElement(
-                    lolita::finite_element::Quadrature
-                    quadrature
+                    lolita::finite_element::Quadrature quadrature
             )
             :
             unknown_(_unknown),
             behaviour_(_behaviour),
-            finite_element_method_(_finite_element_method),
+            discretization_(_finite_element_method),
             quadrature_(quadrature),
             ord_quadrature_()
             {}
@@ -1110,7 +1046,7 @@ namespace lolita
 
             BehaviourType behaviour_;
 
-            FiniteElementMethodType finite_element_method_;
+            FiniteElementMethodType discretization_;
 
             lolita::finite_element::Quadrature quadrature_;
 

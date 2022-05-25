@@ -44,6 +44,7 @@ TEST(test_lolita_2, test_lolita_2)
             mgis::behaviour::FiniteStrainBehaviourOptions::StressMeasure::PK1,
             mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF
     };
+
 //    opt.stress_measure = mgis::behaviour::FiniteStrainBehaviourOptions::PK1;
 //    opt.tangent_operator = mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF;
 
@@ -52,7 +53,8 @@ TEST(test_lolita_2, test_lolita_2)
 //    auto bhvs = lolita::behaviour::MgisBehaviours{
 //            {"Middle", lolita::behaviour::MgisBehaviour("Displacement", path, name, hyp, {mgipara})}
 //    };
-    auto bhv = lolita::behaviour::MgisBehaviour("Displacement", "SQUARE", path, name, hyp, {mgipara});
+    auto bhv_u = lolita::behaviour::MgisBehaviour("Displacement", "SQUARE", path, name, hyp, {mgipara});
+    auto bhv_d = lolita::behaviour::MgisBehaviour("Damage", "SQUARE", path, name, hyp, {mgipara});
 
     auto load = lolita::finite_element::Load("Displacement", "SQUARE", 0, 0, [] (lolita::geometry::Point const & p, lolita::real const & t) {return 1.0;}, lolita::finite_element::Loading::Natural);
     auto load_top_x = lolita::finite_element::Load("Displacement", "TOP", 0, 0, [] (lolita::geometry::Point const & p, lolita::real const & t) {return 1.0;}, lolita::finite_element::Loading::Constraint);
@@ -74,7 +76,7 @@ TEST(test_lolita_2, test_lolita_2)
     file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
 //    file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/perforated_strip_huge.msh";
 
-    auto msh2 = lolita::core::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, hho_u0, hho_d>(file_path, {load, load_top_x, load_top_y}, {bhv});
+    auto msh2 = lolita::core::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, hho_u0, hho_d>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
 
 //    std::cout << msh2.mesh_data_.elements_.getElements<2, 0>()["345"]->getElement<0>()->operators_[0] << std::endl;
 //    std::cout << msh2.mesh_data_.elements_.getElements<2, 0>()["345"]->getComponentIndex<0, 0>(2) << std::endl;
@@ -84,6 +86,7 @@ TEST(test_lolita_2, test_lolita_2)
     if (file_path == "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh") {
         auto & element = msh2.mesh_data_.elements_.getElements<2, 0>()["345"];
         std::cout << element->getElement<0>()->operators_[0] << std::endl;
+        element->getElement<0>()->integrateBehaviour();
         auto & seg = msh2.mesh_data_.elements_.getElements<1, 0>()["35"];
         seg->getElement<0>()->getCurrentDiameters();
         seg->getElement<0>()->getNeighbours<0, 0>()[0]->getCurrentDiameters();
@@ -106,8 +109,8 @@ TEST(test_lolita_2, test_lolita_2)
 
     std::cout << msh2 << std::endl;
 
-    std::cout << msh2.mesh_data_.dof_indices_[0].unknown_index_ << std::endl;
-    std::cout << msh2.mesh_data_.dof_indices_[0].binding_index_ << std::endl;
+    std::cout << msh2.mesh_data_.dof_indices_[0].num_unknowns_ << std::endl;
+    std::cout << msh2.mesh_data_.dof_indices_[0].num_bindings_ << std::endl;
 
 
 

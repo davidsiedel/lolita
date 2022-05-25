@@ -15,14 +15,33 @@
 namespace lolita::utility
 {
 
+    enum struct Output
+    {
+
+        Success,
+        Failure
+
+    };
+
+    template<typename _T>
+    struct OutputA
+    {
+
+        using ReturnType = _T;
+
+        lolita::utility::Output result_;
+
+        _T value_;
+
+    };
+
     using Label = std::array<lolita::character, 150>;
 
     template<typename... _U>
     static constexpr
     lolita::utility::Label
     label(
-            std::basic_string_view<_U> &&...
-            str
+            std::basic_string_view<_U> &&... str
     )
     requires(std::same_as<lolita::character, _U> && ...)
     {
@@ -44,8 +63,7 @@ namespace lolita::utility
     static constexpr
     std::basic_string_view<lolita::character>
     readLabel(
-            lolita::utility::Label const &
-            label
+            lolita::utility::Label const & label
     )
     {
         return std::basic_string_view<lolita::character>(label.data(), std::distance(label.begin(), std::find(label.begin(), label.end(), '#')));
@@ -58,8 +76,7 @@ namespace lolita::utility
         constexpr
         auto
         tupleSlice(
-                std::tuple<_T...> const &
-                tuple,
+                std::tuple<_T...> const & tuple,
                 std::integer_sequence<lolita::index, _i...>
         )
         {
@@ -72,8 +89,7 @@ namespace lolita::utility
     constexpr
     auto
     tupleSlice(
-            std::tuple<_T...> const &
-            tuple
+            std::tuple<_T...> const & tuple
     )
     requires(_end >= _begin && sizeof...(_T) >= _end)
     {
@@ -82,10 +98,8 @@ namespace lolita::utility
 
     static void inline
     removeCharacter(
-            std::basic_string<lolita::character> &
-            line,
-            lolita::character
-            character
+            std::basic_string<lolita::character> & line,
+            lolita::character character
     )
     {
         line.erase(std::remove(line.begin(), line.end(), character), line.end());
@@ -98,8 +112,7 @@ namespace lolita::utility
 
         explicit
         File(
-                std::basic_string_view<lolita::character> const &
-                file_path_arg
+                std::basic_string_view<lolita::character> const & file_path_arg
         )
         :
         file_path_(file_path_arg)
@@ -109,8 +122,7 @@ namespace lolita::utility
 
         explicit
         File(
-                std::basic_string_view<lolita::character> &&
-                file_path_arg
+                std::basic_string_view<lolita::character> && file_path_arg
         )
         :
         file_path_(std::forward<std::basic_string_view<lolita::character>>(file_path_arg))

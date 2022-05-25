@@ -392,8 +392,36 @@ namespace lolita::matrix
 
     };
 
+    template<typename _T, typename _U, lolita::integer _rows = -1, lolita::integer _cols = -1>
+    concept StaticMatrixObject = requires
+    {
+        requires _T::CompileTimeTraits::RowsAtCompileTime == _rows;
+        requires _T::CompileTimeTraits::ColsAtCompileTime == _cols;
+        requires std::same_as<_U, typename _T::Scalar>;
+        requires std::convertible_to<std::remove_reference_t<_T>, Eigen::Matrix<_U, _rows, _cols>>;
+    };
+
     template<typename T>
-    concept MatrixConcept = std::derived_from<std::remove_cvref_t<T>, Eigen::DenseBase<std::remove_cvref_t<T>>>;
+    concept MatrixConceptO = std::derived_from<std::remove_cvref_t<T>, Eigen::DenseBase<std::remove_cvref_t<T>>>;
+
+    template<typename _T, typename _U, lolita::integer _rows = -1, lolita::integer _cols = -1>
+    concept MatrixConceptE = requires
+    {
+        requires _T::CompileTimeTraits::RowsAtCompileTime == _rows;
+        requires _T::CompileTimeTraits::ColsAtCompileTime == _cols;
+        requires std::same_as<_U, typename _T::Scalar>;
+        requires std::convertible_to<std::remove_reference_t<_T>, Eigen::Matrix<_U, _rows, _cols>>;
+    };
+
+    template<typename T>
+    concept MatrixConcept = std::convertible_to<
+            std::remove_cvref_t<T>,
+            Eigen::Matrix<
+                    typename std::remove_cvref_t<T>::Scalar,
+                    std::remove_cvref_t<T>::CompileTimeTraits::RowsAtCompileTime,
+                    std::remove_cvref_t<T>::CompileTimeTraits::ColsAtCompileTime
+            >
+    >;
 
     using StorageOption = Eigen::StorageOptions;
 
@@ -518,6 +546,42 @@ namespace lolita::matrix
     {
         return T::CompileTimeTraits::SizeAtCompileTime;
     }
+
+    template<lolita::matrix::MatrixConcept T>
+    static constexpr
+    lolita::integer
+    rows(
+            T const & matrix
+    )
+    {
+        return T::CompileTimeTraits::RowsAtCompileTime;
+    }
+
+    template<lolita::matrix::MatrixConcept T>
+    static constexpr
+    lolita::integer
+    cols(
+            T const & matrix
+    )
+    {
+        return T::CompileTimeTraits::ColsAtCompileTime;
+    }
+
+    template<lolita::matrix::MatrixConcept T>
+    static constexpr
+    lolita::integer
+    size(
+            T const & matrix
+    )
+    {
+        return T::CompileTimeTraits::SizeAtCompileTime;
+    }
+
+    template<typename T, lolita::index _rows, lolita::index _cols>
+    concept MatrixConcept2 = MatrixConcept<T> && rows<T>() == _rows && cols<T>() == _cols;
+
+    template<typename T, lolita::index _rows>
+    concept VectorConcept2 = MatrixConcept<T> && rows<T>() == _rows && cols<T>() == 1;
 
 }
 
