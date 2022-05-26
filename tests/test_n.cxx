@@ -17,6 +17,11 @@ TEST(test_lolita_2, test_lolita_2)
 //    using namespace lolita;
 //    using namespace lolita::core;
 
+    std::cout << "dynamic matrix size : " << sizeof(lolita::matrix::Vector<lolita::real>) << std::endl;
+    std::cout << "empty matrix size : " << sizeof(lolita::matrix::Vector<lolita::real, 0>) << std::endl;
+    std::cout << "2x2 array of empty matrix size : " << sizeof(std::array<std::array<lolita::matrix::Vector<lolita::real, 0>, 2>, 2>) << std::endl;
+//    std::cout << "empty unknowns : " << sizeof(lolita::core::element::Unknowns<0, 0, 0>) << std::endl;
+
     auto constexpr domain = lolita::geometry::Domain("Middle", 2, lolita::geometry::Frame::Cartesian);
 //    auto constexpr displacement = lolita::field::DegreeOfFreedom("Displacement", 4, lolita::field::Mapping::Gradient);
 //    auto constexpr displacement_field = lolita::field::Tensor("Displacement", 1);

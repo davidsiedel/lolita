@@ -957,9 +957,17 @@ namespace lolita
         {
 
             constexpr
+            HybridHighOrder()
+            :
+            FiniteElementMethod(lolita::finite_element::Method::HHO),
+            ord_cell_(-1),
+            ord_face_(-1)
+            {}
+
+            constexpr
             HybridHighOrder(
-                    lolita::index ord_cell,
-                    lolita::index ord_face
+                    lolita::integer ord_cell,
+                    lolita::integer ord_face
             )
             :
             FiniteElementMethod(lolita::finite_element::Method::HHO),
@@ -968,7 +976,7 @@ namespace lolita
             {}
 
             constexpr
-            lolita::index
+            lolita::integer
             ordMapping(
                     lolita::field::Mapping mapping
             )
@@ -977,9 +985,9 @@ namespace lolita
                 return mapping == lolita::field::Mapping::Identity ? ord_cell_ : ord_face_;
             }
 
-            lolita::index ord_cell_;
+            lolita::integer ord_cell_;
 
-            lolita::index ord_face_;
+            lolita::integer ord_face_;
 
         };
 

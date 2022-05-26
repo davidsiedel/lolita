@@ -11,13 +11,6 @@
 #include "lolita/lolita_user.hxx"
 #include "lolita/lolita_element.hxx"
 
-namespace lolita::core::element
-{
-
-
-
-}
-
 namespace lolita::core::mesh
 {
 
@@ -29,8 +22,35 @@ namespace lolita::core::mesh
 
     }
 
-    template<lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto... _finite_element>
-    using ElementCollection = lolita::core::element::ElementCollection<lolita::core::mesh::detail::_ElementPtrMap, _domain, _finite_element...>;
+    template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+    struct ElementCollection
+    {
+
+    private:
+
+        template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename __T, lolita::geometry::Domain __domain, auto... __arg>
+        using _Elements = decltype(lolita::utility::tupleSlice<0, _domain.dim_ + 1>(std::declval<lolita::core::element::Elements<__T, __domain, __arg...>>()));
+
+    public:
+
+        template<lolita::index _i, lolita::index _j>
+        std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements<_T, _domain, _arg...>>> const &
+        getElements()
+        const
+        {
+            return std::get<_j>(std::get<_i>(elements_));
+        }
+
+        template<lolita::index _i, lolita::index _j>
+        std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements<_T, _domain, _arg...>>> &
+        getElements()
+        {
+            return std::get<_j>(std::get<_i>(elements_));
+        }
+
+        _Elements<_T, _domain, _arg...> elements_;
+
+    };
 
     struct DegreeOfFreedomIndex
     {
@@ -45,6 +65,16 @@ namespace lolita::core::mesh
     struct MeshData2
     {
 
+    private:
+
+        template<lolita::core::element::Element _element, lolita::geometry::Domain __domain, lolita::finite_element::FiniteElementConcept auto... __finite_element>
+        using _ElementPtrMap = std::unordered_map<
+                std::basic_string<lolita::character>,
+                std::shared_ptr<lolita::core::element::FiniteElementFinal<_element, __domain, __finite_element...>>
+        >;
+
+    public:
+
         struct Options
         {
 
@@ -52,7 +82,7 @@ namespace lolita::core::mesh
 
         };
 
-        lolita::core::mesh::ElementCollection<_domain, _finite_element...> elements_;
+        lolita::core::mesh::ElementCollection<_ElementPtrMap, _domain, _finite_element...> elements_;
 
         std::vector<std::shared_ptr<std::basic_string<lolita::character>>> domains_;
 

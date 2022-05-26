@@ -10,6 +10,301 @@
 #include "lolita/lolita_algebra.hxx"
 #include "lolita/lolita_user.hxx"
 
+namespace lolita::core::base
+{
+
+    /**
+     * @brief Basic structure to define an element
+     */
+    struct Element
+    {
+
+        /**
+         * @brief Basic equality comparison operator
+         * @param other
+         * @return
+         */
+        constexpr
+        lolita::boolean
+        operator==(
+                Element const & other
+        )
+        const = default;
+
+        /**
+         * @brief Basic equality comparison operator
+         * @param other
+         * @return
+         */
+        constexpr
+        lolita::boolean
+        operator!=(
+                Element const & other
+        )
+        const = default;
+
+        /**
+         * @brief The element tag, that fully defines it. Two elements cannot have the same tag
+         */
+        lolita::index tag_;
+
+        /**
+         * @brief The euclidean element dimension
+         */
+        lolita::index dim_;
+
+        /**
+         * @brief The element polynomial order
+         */
+        lolita::index ord_;
+
+        /**
+         * @brief The element number of nodes
+         */
+        lolita::index num_nodes_;
+
+    };
+
+    /**
+     * @brief
+     * @tparam _finite_element
+     */
+    template<lolita::finite_element::FiniteElementConcept auto... _finite_element>
+    struct MixedElementPolicy
+    {
+
+        /**
+         * @brief
+         */
+        template<
+                template<lolita::core::base::Element, lolita::geometry::Domain, lolita::finite_element::FiniteElementConcept auto> typename _T,
+                lolita::core::base::Element _element,
+                lolita::geometry::Domain _domain
+        >
+        using MixedElement = std::tuple<_T<_element, _domain, _finite_element>...>;
+
+        /**
+         * @brief Fetch the finite element index within the _finite_element list
+         * @tparam __finite_element
+         * @return the finite_element index if found, and the size of the _finite_element list otherwise
+         */
+        template<lolita::finite_element::FiniteElementConcept auto __finite_element>
+        static constexpr
+        lolita::index
+        index()
+        {
+            auto index = sizeof...(_finite_element);
+            using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_element)>...>;
+            auto const constexpr elements = _Elements{_finite_element...};
+            auto set_index = [&] <lolita::index _i = 0u> (auto & self)
+                    constexpr mutable
+            {
+                if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
+                    if (__finite_element == std::get<_i>(elements)) {
+                        index = _i;
+                    }
+                }
+                if constexpr(_i < sizeof...(_finite_element) - 1) {
+                    self.template operator()<_i + 1u>(self);
+                }
+            };
+            set_index(set_index);
+            return index;
+        }
+
+    };
+
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr pnt_00 = lolita::core::base::Element{0, 0, 0, 1};
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr seg_02 = lolita::core::base::Element{1, 1, 1, 2};
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr seg_03 = lolita::core::base::Element{5, 1, 2, 3};
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr tri_03 = lolita::core::base::Element{2, 2, 1, 3};
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr tri_06 = lolita::core::base::Element{6, 2, 2, 6};
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr qua_04 = lolita::core::base::Element{3, 2, 1, 4};
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr qua_08 = lolita::core::base::Element{7, 2, 2, 8};
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr tet_04 = lolita::core::base::Element{4, 3, 1, 4};
+    /**
+     * @brief
+     */
+    lolita::core::base::Element const static constexpr tet_12 = lolita::core::base::Element{8, 3, 2, 12};
+
+
+    /*
+     *
+     */
+
+    /**
+     * @brief
+     * @tparam _element
+     * @tparam _domain
+     */
+    template<lolita::core::base::Element _element, lolita::geometry::Domain _domain>
+    concept CellConcept = _domain.dim_ - _element.dim_ == 0;
+
+    /**
+     * @brief
+     * @tparam _element
+     * @tparam _domain
+     */
+    template<lolita::core::base::Element _element, lolita::geometry::Domain _domain>
+    concept FaceConcept = _domain.dim_ - _element.dim_ == 1;
+
+    /*
+     *
+     */
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept PointConcept = _element.dim_ == 0;
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept CurveConcept = _element.dim_ == 1;
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept FacetConcept = _element.dim_ == 2;
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept SolidConcept = _element.dim_ == 3;
+
+    /*
+     *
+     */
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept NodeConcept = _element == pnt_00;
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept SegmentConcept = _element == seg_02 || _element == seg_03;
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept TriangleConcept = _element == tri_03 || _element == tri_06;
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept QuadrangleConcept = _element == qua_04 || _element == qua_08;
+
+    /**
+     * @brief
+     * @tparam _element
+     */
+    template<lolita::core::base::Element _element>
+    concept TetrahedronConcept = _element == tet_04 || _element == tet_12;
+
+    /*
+     *
+     */
+
+    namespace detail
+    {
+
+        /**
+         * @brief
+         */
+        template<template<lolita::core::base::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+        using Points = std::tuple<
+                _T<pnt_00, _domain, _arg...>
+        >;
+
+        /**
+         * @brief
+         */
+        template<template<lolita::core::base::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+        using Curves = std::tuple<
+                _T<seg_02, _domain, _arg...>
+        >;
+
+        /**
+         * @brief
+         */
+        template<template<lolita::core::base::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+        using Facets = std::tuple<
+                _T<tri_03, _domain, _arg...>,
+                _T<qua_04, _domain, _arg...>
+        >;
+
+        /**
+         * @brief
+         */
+        template<template<lolita::core::base::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+        using Solids = std::tuple<
+                _T<tet_04, _domain, _arg...>
+        >;
+
+        /**
+         * @brief
+         */
+        template<template<lolita::core::base::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+        using Elements = std::tuple<
+                Points<_T, _domain, _arg...>,
+                Curves<_T, _domain, _arg...>,
+                Facets<_T, _domain, _arg...>,
+                Solids<_T, _domain, _arg...>
+        >;
+
+    }
+
+    /**
+     * @brief
+     */
+    template<template<lolita::core::base::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+    using Elements = decltype(lolita::utility::tupleSlice<0, _domain.dim_ + 1>(std::declval<detail::Elements<_T, _domain, _arg...>>()));
+
+
+}
+
 namespace lolita::core::element
 {
 
@@ -184,36 +479,6 @@ namespace lolita::core::element
     template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
     using Elements = decltype(lolita::utility::tupleSlice<0, _domain.dim_ + 1>(std::declval<detail::Elements<_T, _domain, _arg...>>()));
 
-    template<template<Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
-    struct ElementCollection
-    {
-
-    private:
-
-        template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename __T, lolita::geometry::Domain __domain, auto... __arg>
-        using _Elements = decltype(lolita::utility::tupleSlice<0, _domain.dim_ + 1>(std::declval<lolita::core::element::Elements<__T, __domain, __arg...>>()));
-
-    public:
-
-        template<lolita::index _i, lolita::index _j>
-        std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements<_T, _domain, _arg...>>> const &
-        getElements()
-        const
-        {
-            return std::get<_j>(std::get<_i>(elements_));
-        }
-
-        template<lolita::index _i, lolita::index _j>
-        std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements<_T, _domain, _arg...>>> &
-        getElements()
-        {
-            return std::get<_j>(std::get<_i>(elements_));
-        }
-
-        _Elements<_T, _domain, _arg...> elements_;
-
-    };
-
     namespace detail
     {
 
@@ -221,13 +486,13 @@ namespace lolita::core::element
         using ElementNodeConnectivity = std::array<lolita::index, _element.num_nodes_>;
 
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
-        struct ElementNeighboursTraits
+        struct ElementNeighboursPolicy
         {
 
         private:
 
             template<lolita::core::element::Element __element, lolita::geometry::Domain __domain, auto... __arg>
-            using _Neighbours = std::vector<_T<__element, __domain, __arg...>>;
+            using __Neighbours = std::vector<_T<__element, __domain, __arg...>>;
 
             template<lolita::core::element::Element _element>
             struct _NeighboursTraits;
@@ -237,7 +502,9 @@ namespace lolita::core::element
             struct _NeighboursTraits<_element>
             {
 
-                using Type = decltype(lolita::utility::tupleSlice<1, _domain.dim_ + 1>(std::declval<lolita::core::element::Elements<_Neighbours, _domain, _arg...>>()));
+                using HHH = lolita::core::element::Elements<__Neighbours, _domain, _arg...>;
+
+                using Neighbours = decltype(lolita::utility::tupleSlice<1, _domain.dim_ + 1>(std::declval<HHH>()));
 
             };
 
@@ -246,44 +513,83 @@ namespace lolita::core::element
             struct _NeighboursTraits<_element>
             {
 
-                using Type = decltype(lolita::utility::tupleSlice<_element.dim_, _domain.dim_ + 1>(std::declval<lolita::core::element::Elements<_Neighbours, _domain, _arg...>>()));
+                using HHH = lolita::core::element::Elements<__Neighbours, _domain, _arg...>;
+
+                using Neighbours = decltype(lolita::utility::tupleSlice<_element.dim_, _domain.dim_ + 1>(std::declval<HHH>()));
 
             };
 
         public:
 
             template<lolita::core::element::Element _element>
-            using Type = typename _NeighboursTraits<_element>::Type;
+            using Neighbours = typename _NeighboursTraits<_element>::Neighbours;
 
         };
 
-        template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::core::element::Element _element, lolita::geometry::Domain _domain, auto... _arg>
-        using ElementNeighbours = typename detail::ElementNeighboursTraits<_T, _domain, _arg...>::template Type<_element>;
+        template<
+                template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T,
+                lolita::core::element::Element _element,
+                lolita::geometry::Domain _domain,
+                auto... _arg
+        >
+        using ElementNeighbours = typename detail::ElementNeighboursPolicy<_T, _domain, _arg...>::template Neighbours<_element>;
 
     }
 
+    /**
+     * @brief
+     * @tparam ...
+     */
+    template<
+            template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename,
+            lolita::core::element::Element,
+            lolita::geometry::Domain,
+            auto...
+    >
+    struct FiniteElementGeometry;
+
+    /**
+     * @brief
+     * @tparam ...
+     */
     template<lolita::core::element::Element, auto...>
     struct ElementGeometry;
 
+    /**
+     * @brief Element description of the point
+     * @tparam _element
+     * @tparam _arg
+     */
     template<lolita::core::element::Element _element, auto... _arg>
     requires(_element == pnt_00)
     struct ElementGeometry<_element, _arg...>
     {
 
+        /**
+         * @brief The element object
+         */
         lolita::core::element::Element const static constexpr element_ = _element;
 
         /**
-         * @brief
+         * @brief Reference nodes for the reference element
          */
         std::array<std::array<lolita::real, 3>, 1> const static constexpr reference_nodes_ = {
             +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
         };
 
-        template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
-        using Neighbours = detail::ElementNeighbours<_T, _element, _domain, __arg...>;
+        /**
+         * @brief Sub-elements composition
+         */
+        using Components = lolita::geometry::Point;
 
         /**
-         * @brief
+         * @brief Sup-elements composition
+         */
+        template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
+        using Neighbours = lolita::core::element::detail::ElementNeighbours<_T, _element, _domain, __arg...>;
+
+        /**
+         * @brief Shape function evaluation given some scalar nodal values
          * @param nodal_field_values
          * @param reference_point
          * @return
@@ -291,17 +597,15 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingEvaluation(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point
         )
         {
             return nodal_field_values(0);
         }
 
         /**
-         * @brief
+         * @brief Shape function derivative given some scalar nodal values
          * @param nodal_field_values
          * @param reference_point
          * @param derivative_direction
@@ -310,12 +614,9 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingDerivative(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point,
-                lolita::index
-                derivative_direction
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point,
+                lolita::index derivative_direction
         )
         {
             return lolita::real(0);
@@ -323,18 +624,32 @@ namespace lolita::core::element
 
     };
 
+    /**
+     * @brief
+     * @tparam _element
+     * @tparam _arg
+     */
     template<lolita::core::element::Element _element, auto... _arg>
     requires(_element == seg_02)
     struct ElementGeometry<_element, _arg...>
     {
 
+        /**
+         * @brief The element object
+         */
         lolita::core::element::Element const static constexpr element_ = _element;
 
+        /**
+         * @brief Reference nodes for the reference element
+         */
         std::array<std::array<lolita::real, 3>, 2> const static constexpr reference_nodes_ = {
                 -1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
                 +1.0000000000000000, +0.0000000000000000, +0.0000000000000000
         };
 
+        /**
+         * @brief Sub-elements composition
+         */
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, auto... __arg>
         using Components = std::tuple<
                 std::tuple<
@@ -342,9 +657,15 @@ namespace lolita::core::element
                 >
         >;
 
+        /**
+         * @brief Sup-elements composition
+         */
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
-        using Neighbours = detail::ElementNeighbours<_T, _element, _domain, __arg...>;
+        using Neighbours = lolita::core::element::detail::ElementNeighbours<_T, _element, _domain, __arg...>;
 
+        /**
+         * @brief Node connexions with sub-elements
+         */
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity_ = {
                 {
                         {
@@ -355,7 +676,7 @@ namespace lolita::core::element
         };
 
         /**
-         * @brief
+         * @brief Shape function evaluation given some scalar nodal values
          * @param nodal_field_values
          * @param reference_point
          * @return
@@ -363,10 +684,8 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingEvaluation(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point
         )
         {
             auto value = lolita::real(0);
@@ -376,7 +695,7 @@ namespace lolita::core::element
         }
 
         /**
-         * @brief
+         * @brief Shape function derivative given some scalar nodal values
          * @param nodal_field_values
          * @param reference_point
          * @param derivative_direction
@@ -385,12 +704,9 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingDerivative(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point,
-                lolita::index
-                derivative_direction
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point,
+                lolita::index derivative_direction
         )
         {
             assert(derivative_direction == 0);
@@ -402,19 +718,33 @@ namespace lolita::core::element
 
     };
 
+    /**
+     * @brief
+     * @tparam _element
+     * @tparam _arg
+     */
     template<lolita::core::element::Element _element, auto... _arg>
     requires(_element == tri_03)
     struct ElementGeometry<_element, _arg...>
     {
 
+        /**
+         * @brief The element object
+         */
         lolita::core::element::Element const static constexpr element_ = _element;
 
+        /**
+         * @brief Reference nodes for the reference element
+         */
         std::array<std::array<lolita::real, 3>, 3> const static constexpr reference_nodes_ = {
                 +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
                 +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
                 +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
         };
 
+        /**
+         * @brief Sub-elements composition
+         */
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, auto... __arg>
         using Components = std::tuple<
                 std::tuple<
@@ -425,9 +755,15 @@ namespace lolita::core::element
                 >
         >;
 
+        /**
+         * @brief Sup-elements composition
+         */
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
-        using Neighbours = detail::ElementNeighbours<_T, _element, _domain, __arg...>;
+        using Neighbours = lolita::core::element::detail::ElementNeighbours<_T, _element, _domain, __arg...>;
 
+        /**
+         * @brief Node connexions with sub-elements
+         */
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity_ = {
                 {
                         {
@@ -446,7 +782,7 @@ namespace lolita::core::element
         };
 
         /**
-         * @brief
+         * @brief Shape function evaluation given some scalar nodal values
          * @param nodal_field_values
          * @param reference_point
          * @return
@@ -454,10 +790,8 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingEvaluation(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point
         )
         {
             auto value = lolita::real(0);
@@ -468,7 +802,7 @@ namespace lolita::core::element
         }
 
         /**
-         * @brief
+         * @brief Shape function derivative given some scalar nodal values
          * @param nodal_field_values
          * @param reference_point
          * @param derivative_direction
@@ -477,12 +811,9 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingDerivative(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point,
-                lolita::index
-                derivative_direction
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point,
+                lolita::index derivative_direction
         )
         {
             assert(0 <= derivative_direction <= 1);
@@ -501,13 +832,24 @@ namespace lolita::core::element
 
     };
 
+    /**
+     * @brief
+     * @tparam _element
+     * @tparam _arg
+     */
     template<lolita::core::element::Element _element, auto... _arg>
     requires(_element == qua_04)
     struct ElementGeometry<_element, _arg...>
     {
 
+        /**
+         * @brief The element object
+         */
         lolita::core::element::Element const static constexpr element_ = _element;
 
+        /**
+         * @brief Reference nodes for the reference element
+         */
         std::array<std::array<lolita::real, 3>, 4> const static constexpr reference_nodes_ = {
                 -1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
                 +1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
@@ -515,6 +857,9 @@ namespace lolita::core::element
                 -1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
         };
 
+        /**
+         * @brief Sub-elements composition
+         */
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, auto... __arg>
         using Components = std::tuple<
                 std::tuple<
@@ -525,9 +870,15 @@ namespace lolita::core::element
                 >
         >;
 
+        /**
+         * @brief Sup-elements composition
+         */
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
-        using Neighbours = detail::ElementNeighbours<_T, _element, _domain, __arg...>;
+        using Neighbours = lolita::core::element::detail::ElementNeighbours<_T, _element, _domain, __arg...>;
 
+        /**
+         * @brief Node connexions with sub-elements
+         */
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity_ = {
                 {
                         {
@@ -556,10 +907,8 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingEvaluation(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point
         )
         {
             auto value = lolita::real(0);
@@ -580,12 +929,9 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingDerivative(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point,
-                lolita::index
-                derivative_direction
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point,
+                lolita::index derivative_direction
         )
         {
             assert(0 <= derivative_direction <= 1);
@@ -606,13 +952,24 @@ namespace lolita::core::element
 
     };
 
+    /**
+     * @brief
+     * @tparam _element
+     * @tparam _arg
+     */
     template<lolita::core::element::Element _element, auto... _arg>
     requires(_element == tet_04)
     struct ElementGeometry<_element, _arg...>
     {
 
+        /**
+         * @brief
+         */
         lolita::core::element::Element const static constexpr element_ = _element;
 
+        /**
+         * @brief
+         */
         std::array<std::array<lolita::real, 3>, 4> const static constexpr reference_nodes_ = {
                 +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
                 +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
@@ -620,6 +977,9 @@ namespace lolita::core::element
                 +0.0000000000000000, +0.0000000000000000, +1.0000000000000000,
         };
 
+        /**
+         * @brief
+         */
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, auto... __arg>
         using Components = std::tuple<
                 std::tuple<
@@ -633,9 +993,15 @@ namespace lolita::core::element
                 >
         >;
 
+        /**
+         * @brief
+         */
         template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... __arg>
-        using Neighbours = detail::ElementNeighbours<_T, _element, _domain, __arg...>;
+        using Neighbours = lolita::core::element::detail::ElementNeighbours<_T, _element, _domain, __arg...>;
 
+        /**
+         * @brief
+         */
         Components<detail::ElementNodeConnectivity> const static constexpr node_connectivity_ = {
                 {
                         {
@@ -674,10 +1040,8 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingEvaluation(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point
         )
         {
             auto value = lolita::real(0);
@@ -694,12 +1058,9 @@ namespace lolita::core::element
         static
         lolita::real
         getShapeMappingDerivative(
-                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const &
-                nodal_field_values,
-                lolita::geometry::Point const &
-                reference_point,
-                lolita::index
-                derivative_direction
+                lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
+                lolita::geometry::Point const & reference_point,
+                lolita::index derivative_direction
         )
         {
             assert(0 <= derivative_direction <= 2);
@@ -747,20 +1108,20 @@ namespace lolita::core::element
         return position;
     }
 
-    template<lolita::geometry::Domain _domain, lolita::index I, lolita::index J>
+    template<lolita::geometry::Domain _domain, lolita::index _i, lolita::index _j>
     static constexpr
     Element
     element()
     {
-        return std::tuple_element_t<J, std::tuple_element_t<I, lolita::core::element::Elements<lolita::core::element::ElementGeometry, _domain>>>::element_;
+        return std::tuple_element_t<_j, std::tuple_element_t<_i, lolita::core::element::Elements<lolita::core::element::ElementGeometry, _domain>>>::element_;
     }
 
-    template<lolita::geometry::Domain _domain, lolita::index I>
+    template<lolita::geometry::Domain _domain, lolita::index _i>
     static constexpr
     lolita::index
     numElements()
     {
-        return std::tuple_size_v<std::tuple_element_t<I, lolita::core::element::Elements<lolita::core::element::ElementGeometry, _domain>>>;
+        return std::tuple_size_v<std::tuple_element_t<_i, lolita::core::element::Elements<lolita::core::element::ElementGeometry, _domain>>>;
     }
 
     template<lolita::geometry::Domain _domain>
@@ -781,53 +1142,60 @@ namespace lolita::core::element
     componentPosition()
     {
         using _Components = typename lolita::core::element::ElementGeometry<_element>::template Components<lolita::core::element::ElementGeometry, _domain>;
+//        using _Components = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Components;
         auto position = lolita::core::element::ElementPosition{-1, -1};
-        auto f0 = [&] <lolita::index _I = 0u, lolita::index _J = 0u> (
+        auto f0 = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (
                 auto & self
         )
         constexpr mutable
         {
-            using _Component = typename std::tuple_element_t<_J, std::tuple_element_t<_I, _Components>>::value_type;
+            using _Component = typename std::tuple_element_t<_j, std::tuple_element_t<_i, _Components>>::value_type;
+//            using _Component = typename std::tuple_element_t<_j, std::tuple_element_t<_i, _Components>>::value_type::element_type;
             if (_Component::element_ == _component) {
-                position[0] = _I;
-                position[1] = _J;
+                position[0] = _i;
+                position[1] = _j;
             }
-            if constexpr (_J < std::tuple_size_v<std::tuple_element_t<_I, _Components>> - 1) {
-                self.template operator()<_I, _J + 1u>(self);
+            if constexpr (_j < std::tuple_size_v<std::tuple_element_t<_i, _Components>> - 1) {
+                self.template operator()<_i, _j + 1u>(self);
             }
-            else if constexpr (_I < std::tuple_size_v<_Components> - 1) {
-                self.template operator()<_I + 1u, 0u>(self);
+            else if constexpr (_i < std::tuple_size_v<_Components> - 1) {
+                self.template operator()<_i + 1u, 0u>(self);
             }
         };
         f0(f0);
         return position;
     }
 
-    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _I, lolita::index _J>
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _i, lolita::index _j>
     static constexpr
     lolita::core::element::Element
     component()
     {
         using _Components = typename lolita::core::element::ElementGeometry<_element>::template Components<lolita::core::element::ElementGeometry, _domain>;
-        return std::tuple_element_t<_J, std::tuple_element_t<_I, _Components>>::value_type::element_;
+        return std::tuple_element_t<_j, std::tuple_element_t<_i, _Components>>::value_type::element_;
+//        using _Components = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Components;
+//        return std::tuple_element_t<_j, std::tuple_element_t<_i, _Components>>::value_type::element_type::element_;
     }
 
-    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _I, lolita::index _J>
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _i, lolita::index _j>
     static constexpr
     lolita::index
     numComponents()
     {
         using _Components = typename lolita::core::element::ElementGeometry<_element>::template Components<lolita::core::element::ElementGeometry, _domain>;
-        return std::tuple_size_v<std::tuple_element_t<_J, std::tuple_element_t<_I, _Components>>>;
+        return std::tuple_size_v<std::tuple_element_t<_j, std::tuple_element_t<_i, _Components>>>;
+//        using _Components = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Components;
+//        return std::tuple_size_v<std::tuple_element_t<_j, std::tuple_element_t<_i, _Components>>>;
     }
 
-    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _I>
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _i>
     static constexpr
     lolita::index
     numComponents()
     {
         using _Components = typename lolita::core::element::ElementGeometry<_element>::template Components<lolita::core::element::ElementGeometry, _domain>;
-        return std::tuple_size_v<std::tuple_element_t<_I, _Components>>;
+//        using _Components = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Components;
+        return std::tuple_size_v<std::tuple_element_t<_i, _Components>>;
     }
 
     template<lolita::core::element::Element _element, lolita::geometry::Domain _domain>
@@ -836,6 +1204,7 @@ namespace lolita::core::element
     numComponents()
     {
         using _Components = typename lolita::core::element::ElementGeometry<_element>::template Components<lolita::core::element::ElementGeometry, _domain>;
+//        using _Components = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Components;
         return std::tuple_size_v<_Components>;
     }
 
@@ -849,44 +1218,49 @@ namespace lolita::core::element
     neighbourPosition()
     {
         using _Neighbours = typename lolita::core::element::ElementGeometry<_element>::template Neighbours<lolita::core::element::ElementGeometry, _domain>;
+//        using _Neighbours = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Neighbours;
         auto position = lolita::core::element::ElementPosition{-1, -1};
-        auto f0 = [&] <lolita::index _I = 0u, lolita::index _J = 0u> (
+        auto f0 = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (
                 auto & self
         )
         constexpr mutable
         {
-            using _Neighbour = typename std::tuple_element_t<_J, std::tuple_element_t<_I, _Neighbours>>::value_type;
+            using _Neighbour = typename std::tuple_element_t<_j, std::tuple_element_t<_i, _Neighbours>>::value_type;
+//            using _Neighbour = typename std::tuple_element_t<_j, std::tuple_element_t<_i, _Neighbours>>::value_type::element_type;
             if (_Neighbour::element_ == _neighbour) {
-                position[0] = _I;
-                position[1] = _J;
+                position[0] = _i;
+                position[1] = _j;
             }
-            if constexpr (_J < std::tuple_size_v<std::tuple_element_t<_I, _Neighbours>> - 1) {
-                self.template operator()<_I, _J + 1u>(self);
+            if constexpr (_j < std::tuple_size_v<std::tuple_element_t<_i, _Neighbours>> - 1) {
+                self.template operator()<_i, _j + 1u>(self);
             }
-            else if constexpr (_I < std::tuple_size_v<_Neighbours> - 1) {
-                self.template operator()<_I + 1u, 0u>(self);
+            else if constexpr (_i < std::tuple_size_v<_Neighbours> - 1) {
+                self.template operator()<_i + 1u, 0u>(self);
             }
         };
         f0(f0);
         return position;
     }
 
-    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _I, lolita::index _J>
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _i, lolita::index _j>
     static constexpr
     lolita::core::element::Element
     neighbour()
     {
         using _Neighbours = typename lolita::core::element::ElementGeometry<_element>::template Neighbours<lolita::core::element::ElementGeometry, _domain>;
-        return std::tuple_element_t<_J, std::tuple_element_t<_I, _Neighbours>>::value_type::element_;
+        return std::tuple_element_t<_j, std::tuple_element_t<_i, _Neighbours>>::value_type::element_;
+//        using _Neighbours = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Neighbours;
+//        return std::tuple_element_t<_j, std::tuple_element_t<_i, _Neighbours>>::value_type::element_type::element_;
     }
 
-    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _I>
+    template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::index _i>
     static constexpr
     lolita::index
     numNeighbours()
     {
         using _Neighbours = typename lolita::core::element::ElementGeometry<_element>::template Neighbours<lolita::core::element::ElementGeometry, _domain>;
-        return std::tuple_size_v<std::tuple_element_t<_I, _Neighbours>>;
+//        using _Neighbours = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Neighbours;
+        return std::tuple_size_v<std::tuple_element_t<_i, _Neighbours>>;
     }
 
     template<lolita::core::element::Element _element, lolita::geometry::Domain _domain>
@@ -895,6 +1269,7 @@ namespace lolita::core::element
     numNeighbours()
     {
         using _Neighbours = typename lolita::core::element::ElementGeometry<_element>::template Neighbours<lolita::core::element::ElementGeometry, _domain>;
+//        using _Neighbours = typename lolita::core::element::FiniteElementGeometry<lolita::core::element::ElementGeometry, _element, _domain>::Neighbours;
         return std::tuple_size_v<_Neighbours>;
     }
 
