@@ -11,25 +11,25 @@
 #include "lolita/lolita_user.hxx"
 #include "lolita/lolita_element.hxx"
 
+namespace lolita::core::element
+{
+
+    template<lolita::core::base::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto... _finite_element>
+    struct FiniteElementFinal;
+
+}
+
 namespace lolita::core::mesh
 {
 
-    namespace detail
-    {
-
-        template<lolita::core::element::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto... _finite_element>
-        using _ElementPtrMap = std::unordered_map<std::basic_string<lolita::character>, std::shared_ptr<lolita::core::element::FiniteElementFinal<_element, _domain, _finite_element...>>>;
-
-    }
-
-    template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+    template<template<lolita::core::base::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
     struct ElementCollection
     {
 
     private:
 
-        template<template<lolita::core::element::Element, lolita::geometry::Domain, auto...> typename __T, lolita::geometry::Domain __domain, auto... __arg>
-        using _Elements = decltype(lolita::utility::tupleSlice<0, _domain.dim_ + 1>(std::declval<lolita::core::element::Elements<__T, __domain, __arg...>>()));
+        template<template<lolita::core::base::Element, lolita::geometry::Domain, auto...> typename __T, lolita::geometry::Domain __domain, auto... __arg>
+        using _Elements = decltype(lolita::utility::tupleSlice<0, _domain.dim_ + 1>(std::declval<lolita::core::base::Elements<__T, __domain, __arg...>>()));
 
     public:
 
@@ -67,7 +67,7 @@ namespace lolita::core::mesh
 
     private:
 
-        template<lolita::core::element::Element _element, lolita::geometry::Domain __domain, lolita::finite_element::FiniteElementConcept auto... __finite_element>
+        template<lolita::core::base::Element _element, lolita::geometry::Domain __domain, lolita::finite_element::FiniteElementConcept auto... __finite_element>
         using _ElementPtrMap = std::unordered_map<
                 std::basic_string<lolita::character>,
                 std::shared_ptr<lolita::core::element::FiniteElementFinal<_element, __domain, __finite_element...>>
@@ -96,11 +96,11 @@ namespace lolita::core::mesh
 
     };
 
-    template<lolita::core::element::Element _element>
+    template<lolita::core::base::Element _element>
     struct ElementInitializationData;
 
-    template<lolita::core::element::Element _element>
-    requires(lolita::core::element::PointConcept<_element>)
+    template<lolita::core::base::Element _element>
+    requires(lolita::core::base::PointConcept<_element>)
     struct ElementInitializationData<_element>
     {
 
@@ -112,8 +112,8 @@ namespace lolita::core::mesh
 
     };
 
-    template<lolita::core::element::Element _element>
-    requires(!lolita::core::element::PointConcept<_element>)
+    template<lolita::core::base::Element _element>
+    requires(!lolita::core::base::PointConcept<_element>)
     struct ElementInitializationData<_element>
     {
 
@@ -147,24 +147,24 @@ namespace lolita::core::mesh
             auto set_elements = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (auto & set_elements_imp)
             mutable
             {
-                auto const constexpr _element = lolita::core::element::element<_domain, _i, _j>();
+                auto const constexpr _element = lolita::core::base::element<_domain, _i, _j>();
                 makeElement<_element>(module);
-                if constexpr (_j < lolita::core::element::numElements<_domain, _i>() - 1) {
+                if constexpr (_j < lolita::core::base::numElements<_domain, _i>() - 1) {
                     set_elements_imp.template operator()<_i, _j + 1u>(set_elements_imp);
                 }
-                else if constexpr (_i < lolita::core::element::numElements<_domain>() - 1) {
+                else if constexpr (_i < lolita::core::base::numElements<_domain>() - 1) {
                     set_elements_imp.template operator()<_i + 1u, 0u>(set_elements_imp);
                 }
             };
             auto make_elements = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (auto & self)
                     mutable
             {
-                auto const constexpr _element = lolita::core::element::element<_domain, _i, _j>();
+                auto const constexpr _element = lolita::core::base::element<_domain, _i, _j>();
                 buildElement<_element>();
-                if constexpr (_j < lolita::core::element::numElements<_domain, _i>() - 1) {
+                if constexpr (_j < lolita::core::base::numElements<_domain, _i>() - 1) {
                     self.template operator()<_i, _j + 1u>(self);
                 }
-                else if constexpr (_i < lolita::core::element::numElements<_domain>() - 1) {
+                else if constexpr (_i < lolita::core::base::numElements<_domain>() - 1) {
                     self.template operator()<_i + 1u, 0u>(self);
                 }
             };
@@ -183,7 +183,7 @@ namespace lolita::core::mesh
             static_cast<_Implementation *>(this)->makeDomains(module);
         }
 
-        template<lolita::core::element::Element _element>
+        template<lolita::core::base::Element _element>
         void
         makeElement(
                 _Module const & module
@@ -192,12 +192,12 @@ namespace lolita::core::mesh
             static_cast<_Implementation *>(this)->template makeElement<_element>(module);
         }
 
-        template<lolita::core::element::Element _element>
+        template<lolita::core::base::Element _element>
         void
         buildElement()
         {
-            auto const constexpr poss = lolita::core::element::elementPosition<_domain, _element>();
-            auto & element_map = mesh_data_.elements_.template getElements<poss[0], poss[1]>();
+            auto const constexpr poss = lolita::core::base::elementPosition<_domain, _element>();
+            auto & element_map = mesh_data_.elements_.template getElements<poss.dim_, poss.tag_>();
             for (auto & element_map_item : element_map) {
                 auto & element = element_map_item.second;
                 auto make_element_neighbourhood_ng = [&] <lolita::index _k = 0u> (
@@ -205,13 +205,13 @@ namespace lolita::core::mesh
                 )
                 mutable
                 {
-                    if constexpr (!lolita::core::element::PointConcept<_element>) {
-                        auto const & element_nds = element->template getComponents<poss[0] - 1, 0>();
+                    if constexpr (!lolita::core::base::PointConcept<_element>) {
+                        auto const & element_nds = element->template getComponents<poss.dim_ - 1, 0>();
                         for (int i = 0; i < element_nds.size(); ++i) {
                             auto const & nde = element_nds[i];
-                            auto const & ngs = nde->template getNeighbours<poss[0] - 1, _k>();
+                            auto const & ngs = nde->template getNeighbours<poss.dim_ - 1, _k>();
                             for (auto const & neighbour : ngs) {
-                                if (((neighbour->tag_ != element->tag_) && _k == poss[1]) || (_k != poss[1])) {
+                                if (((neighbour->tag_ != element->tag_) && _k == poss.tag_) || (_k != poss.tag_)) {
                                     auto & element_ngs = element->template getNeighbours<0, _k>();
                                     auto found = false;
                                     for (auto const & ngb: element_ngs) {
@@ -226,7 +226,7 @@ namespace lolita::core::mesh
                                 }
                             }
                         }
-                        if constexpr (_k < lolita::core::element::numElements<_domain, poss[0]>() - 1) {
+                        if constexpr (_k < lolita::core::base::numElements<_domain, poss.dim_>() - 1) {
                             self.template operator()<_k + 1>(self);
                         }
                     }
@@ -248,10 +248,10 @@ namespace lolita::core::mesh
                             auto & lhs = element->template getElement<_k>()->template getNeighbours<__i, __j>()[i];
                             rhs->tag_;
                         }
-                        if constexpr (__j < lolita::core::element::numNeighbours<_element, _domain, __i>() - 1) {
+                        if constexpr (__j < lolita::core::base::numNeighbours<_element, _domain, __i>() - 1) {
                             self3.template operator()<__i, __j + 1u>(self3);
                         }
-                        else if constexpr (__i < lolita::core::element::numNeighbours<_element, _domain>() - 1) {
+                        else if constexpr (__i < lolita::core::base::numNeighbours<_element, _domain>() - 1) {
                             self3.template operator()<__i + 1u, 0u>(self3);
                         }
                     };
@@ -278,20 +278,20 @@ namespace lolita::core::mesh
             /*
              *
              */
-            auto print_element_components = [&] <lolita::core::element::Element EE, auto I = 0, auto J = 0> (
+            auto print_element_components = [&] <lolita::core::base::Element EE, auto I = 0, auto J = 0> (
                     auto const & elem_arg,
                     auto & self
             )
             mutable
             {
-                if constexpr (!lolita::core::element::PointConcept<EE>) {
+                if constexpr (!lolita::core::base::PointConcept<EE>) {
                     for (auto const & c_ : elem_arg->template getComponents<I, J>()) {
                         os << "layer : " << I << " type : " << J << " <-- " << c_->hash() << std::endl;
                     }
-                    if constexpr (J < lolita::core::element::numComponents<EE, _domain, I>() - 1) {
+                    if constexpr (J < lolita::core::base::numComponents<EE, _domain, I>() - 1) {
                         self.template operator()<EE, I, J + 1>(elem_arg, self);
                     }
-                    else if constexpr (I < lolita::core::element::numComponents<EE, _domain>() - 1) {
+                    else if constexpr (I < lolita::core::base::numComponents<EE, _domain>() - 1) {
                         self.template operator()<EE, I + 1, 0>(elem_arg, self);
                     }
                 }
@@ -299,24 +299,24 @@ namespace lolita::core::mesh
             /*
              *
              */
-            auto print_element_neighbours = [&] <lolita::core::element::Element EE, auto I = 0, auto J = 0> (
+            auto print_element_neighbours = [&] <lolita::core::base::Element EE, auto I = 0, auto J = 0> (
                     auto const & elem_arg,
                     auto & self
             )
             mutable
             {
                 for (auto const & c_ : elem_arg->template getNeighbours<I, J>()) {
-                    if constexpr (!lolita::core::element::PointConcept<EE> && I == 0) {
+                    if constexpr (!lolita::core::base::PointConcept<EE> && I == 0) {
                         os << "layer : " << I << " type : " << J << " <-> " << c_->hash() << std::endl;
                     }
                     else {
                         os << "layer : " << I << " type : " << J << " --> " << c_->hash() << std::endl;
                     }
                 }
-                if constexpr (J < lolita::core::element::numNeighbours<EE, _domain, I>() - 1) {
+                if constexpr (J < lolita::core::base::numNeighbours<EE, _domain, I>() - 1) {
                     self.template operator()<EE, I, J + 1>(elem_arg, self);
                 }
-                else if constexpr (I < lolita::core::element::numNeighbours<EE, _domain>() - 1) {
+                else if constexpr (I < lolita::core::base::numNeighbours<EE, _domain>() - 1) {
                     self.template operator()<EE, I + 1, 0>(elem_arg, self);
                 }
             };
@@ -358,7 +358,7 @@ namespace lolita::core::mesh
             )
                     mutable
             {
-                auto constexpr elt = lolita::core::element::element<_domain, I, J>();
+                auto constexpr elt = lolita::core::base::element<_domain, I, J>();
                 if constexpr (I == 0 && J == 0) {
                     os << "*** Elements : " << std::endl;
                 }
@@ -371,10 +371,10 @@ namespace lolita::core::mesh
                     print_element_components.template operator()<elt>(element.second, print_element_components);
                     print_element_neighbours.template operator()<elt>(element.second, print_element_neighbours);
                 }
-                if constexpr (J < lolita::core::element::numElements<_domain, I>() - 1) {
+                if constexpr (J < lolita::core::base::numElements<_domain, I>() - 1) {
                     self.template operator()<I, J + 1>(self);
                 }
-                else if constexpr (I < lolita::core::element::numElements<_domain>() - 1) {
+                else if constexpr (I < lolita::core::base::numElements<_domain>() - 1) {
                     self.template operator()<I + 1, 0>(self);
                 }
             };
@@ -395,24 +395,24 @@ namespace lolita::core::mesh
     struct MeshParserModule<_mesh, _domain, _finite_element...>
     {
 
-        std::unordered_map<lolita::index, lolita::core::element::Element> const element_table_ = {
-                {15, element::pnt_00},
-                {01, element::seg_02},
-                {02, element::tri_03},
-                {03, element::qua_04},
+        std::unordered_map<lolita::index, lolita::core::base::Element> const element_table_ = {
+                {15, lolita::core::base::pnt_00},
+                {01, lolita::core::base::seg_02},
+                {02, lolita::core::base::tri_03},
+                {03, lolita::core::base::qua_04},
         };
 
         static constexpr
-        lolita::core::element::Element
+        lolita::core::base::Element
         getElemType(
                 lolita::index tag
         )
         {
-            if (tag == 15) return lolita::core::element::pnt_00;
-            else if (tag == 01) return lolita::core::element::seg_02;
-            else if (tag == 02) return lolita::core::element::tri_03;
-            else if (tag == 03) return lolita::core::element::qua_04;
-            else return lolita::core::element::pnt_00;
+            if (tag == 15) return lolita::core::base::pnt_00;
+            else if (tag == 01) return lolita::core::base::seg_02;
+            else if (tag == 02) return lolita::core::base::tri_03;
+            else if (tag == 03) return lolita::core::base::qua_04;
+            else return lolita::core::base::pnt_00;
         }
 
         struct Module
@@ -811,21 +811,21 @@ namespace lolita::core::mesh
                 }
             }
 
-            template<lolita::core::element::Element _element>
+            template<lolita::core::base::Element _element>
             void
             makeElement(
                     Module const & module
             );
 
-            template<lolita::core::element::Element _element>
+            template<lolita::core::base::Element _element>
             void
             makeElement(
                     Module const & module
             )
-            requires(lolita::core::element::PointConcept<_element>)
+            requires(lolita::core::base::PointConcept<_element>)
             {
                 using __Element = lolita::core::element::FiniteElementFinal<_element, _domain, _finite_element...>;
-                auto const constexpr _element_coordinates2 = element::elementPosition<_domain, _element>();
+                auto const constexpr _element_coordinates2 = lolita::core::base::elementPosition<_domain, _element>();
                 auto const & file_lines = module.file_.lines_;
                 auto const & physical_groups = module.physical_groups_;
                 auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Nodes"));
@@ -879,18 +879,18 @@ namespace lolita::core::mesh
                 }
             }
 
-            template<lolita::core::element::Element _element>
+            template<lolita::core::base::Element _element>
             void
             makeElement(
                     Module const &
                     module
             )
-            requires(!lolita::core::element::PointConcept<_element>)
+            requires(!lolita::core::base::PointConcept<_element>)
             {
                 using __Element = lolita::core::element::FiniteElementFinal<_element, _domain, _finite_element...>;
-                auto const constexpr _element_coordinates = lolita::core::element::elementPosition<_domain, _element>();
+                auto const constexpr _element_coordinates = lolita::core::base::elementPosition<_domain, _element>();
                 auto const & file_lines = module.file_.lines_;
-                auto & elements = this->mesh_data_.elements_.template getElements<_element_coordinates[0], _element_coordinates[1]>();
+                auto & elements = this->mesh_data_.elements_.template getElements<_element_coordinates.dim_, _element_coordinates.tag_>();
                 auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Elements"));
                 auto offset = 1;
                 auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
