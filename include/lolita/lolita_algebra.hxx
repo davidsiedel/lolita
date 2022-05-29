@@ -361,6 +361,96 @@ namespace lolita::numerics
 namespace lolita::matrix
 {
 
+    /**
+     * @brief
+     */
+    struct VectorBlock
+    {
+
+        /**
+         * @brief
+         */
+        constexpr
+        VectorBlock()
+        :
+        i_(-1),
+        j_(-1)
+        {}
+
+        /**
+         * @brief
+         * @param i
+         * @param j
+         */
+        constexpr
+        VectorBlock(
+                lolita::integer i,
+                lolita::integer j
+        )
+        :
+        i_(i),
+        j_(j)
+        {}
+
+        /**
+         * @brief
+         */
+        lolita::integer i_;
+
+        /**
+         * @brief
+         */
+        lolita::integer j_;
+
+    };
+
+    /**
+     * @brief
+     */
+    struct MatrixBlock
+    {
+
+        /**
+         * @brief
+         */
+        constexpr
+        MatrixBlock()
+        :
+        row_block_(),
+        col_block_()
+        {}
+
+        /**
+         * @brief
+         * @param i
+         * @param j
+         * @param k
+         * @param l
+         */
+        constexpr
+        MatrixBlock(
+                lolita::integer i,
+                lolita::integer j,
+                lolita::integer k,
+                lolita::integer l
+        )
+        :
+        row_block_(i, j),
+        col_block_(k, l)
+        {}
+
+        /**
+         * @brief
+         */
+        lolita::matrix::VectorBlock row_block_;
+
+        /**
+         * @brief
+         */
+        lolita::matrix::VectorBlock col_block_;
+
+    };
+
     struct Coordinates
     {
 

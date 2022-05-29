@@ -108,9 +108,9 @@ TEST(test_lolita_2, test_lolita_2)
 //    std::cout << "fun res : " << f(lolita::geometry::Point::Ones(), 1.0) << std::endl;
 
 
-//    std::cout << lolita::core::base::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::seg_02>()[2] << std::endl;
-//    std::cout << lolita::core::base::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::tri_03>()[2] << std::endl;
-//    std::cout << lolita::core::base::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::tet_04>()[2] << std::endl;
+//    std::cout << lolita::core::geometry::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::seg_02>()[2] << std::endl;
+//    std::cout << lolita::core::geometry::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::tri_03>()[2] << std::endl;
+//    std::cout << lolita::core::geometry::neighbourPosition<lolita::core::element::pnt_00, lolita::core::element::tet_04>()[2] << std::endl;
 
     auto file_path = "";
 //    file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/perforated_strip_huge.msh";

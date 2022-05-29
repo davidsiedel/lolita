@@ -15,6 +15,14 @@
 namespace lolita::utility
 {
 
+
+    namespace detail
+    {
+
+        struct _Void {};
+
+    }
+
     enum struct Output
     {
 
@@ -66,7 +74,7 @@ namespace lolita::utility
             lolita::utility::Label const & label
     )
     {
-        return std::basic_string_view<lolita::character>(label.data(), std::distance(label.begin(), std::find(label.begin(), label.end(), '#')));
+        return std::basic_string_view<lolita::character>(label.data(), std::distance(label.begin(), std::find(label.begin(), label.end(), lolita::character())));
     }
 
     namespace detail

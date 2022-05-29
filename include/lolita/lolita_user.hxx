@@ -815,10 +815,75 @@ namespace lolita
 
         };
 
-        enum struct Quadrature
+//        enum struct Quadrature
+//        {
+//
+//            Gauss,
+//
+//        };
+
+        /**
+         * @brief
+         */
+        struct Quadrature
         {
 
-            Gauss,
+            /**
+             * @brief
+             * @param other
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            operator==(
+                    Quadrature const & other
+            )
+            const = default;
+
+            /**
+             * @brief
+             * @param other
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            operator!=(
+                    Quadrature const & other
+            )
+            const = default;
+
+            /**
+             * @brief
+             * @param os
+             * @param quadrature
+             * @return
+             */
+            friend
+            std::ostream &
+            operator<<(
+                    std::ostream & os,
+                    Quadrature const & quadrature
+            )
+            {
+                os << lolita::utility::readLabel(quadrature.tag_);
+                return os;
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            static constexpr
+            Quadrature
+            Gauss()
+            {
+                return Quadrature{"Gauss"};
+            }
+
+            /**
+             * @brief
+             */
+            lolita::utility::Label tag_;
 
         };
 
@@ -1050,6 +1115,24 @@ namespace lolita
             )
             const = default;
 
+            constexpr
+            lolita::field::Tensor
+            getField()
+            const
+            {
+                return unknown_.tensor_;
+            }
+
+            constexpr
+            lolita::boolean
+            hasMethod(
+                    lolita::finite_element::Method method
+                    )
+            const
+            {
+                return discretization_.method_ == method;
+            }
+
             UnknownType unknown_;
 
             BehaviourType behaviour_;
@@ -1076,13 +1159,95 @@ namespace lolita
         template<typename _T>
         concept FiniteElementConcept = detail::IsFiniteElementConcept<_T>::value;
 
-        template<lolita::finite_element::FiniteElementConcept... FiniteElementT>
-        struct MixedElement
+        template<auto _arg>
+        concept HybridHighOrderFiniteElementConcept = FiniteElementConcept<std::remove_cvref_t<decltype(_arg)>> && requires(
+                std::remove_reference_t<decltype(_arg)> const arg
+        )
+        {
+            { arg.discretization_.method_ == lolita::finite_element::Method::HHO };
+        };
+
+        template<auto... _finite_elements>
+        struct ElementGroup
         {
 
+        private:
 
+            /**
+             * @brief A simple alias
+             */
+            using _FiniteElements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
+
+        public:
+
+            /**
+             * @brief
+             */
+            template<template<auto, auto, auto> typename _T, auto _element, auto _domain>
+            using Type = std::tuple<std::shared_ptr<_T<_element, _domain, _finite_elements>>...>;
+
+            /**
+             * @brief
+             */
+            _FiniteElements const static constexpr finite_elements_ = {_finite_elements...};
+
+            /**
+             * @brief
+             * @tparam _i
+             * @return
+             */
+            template<lolita::integer _i>
+            static constexpr
+            std::tuple_element_t<_i, _FiniteElements>
+            getFiniteElement()
+            {
+                return std::get<_i>(finite_elements_);
+            }
+
+            /**
+             * @brief Fetch the finite element index within the _finite_element list
+             * @tparam __finite_element the finite element object to find
+             * @return the finite_element index if found, and the size of the _finite_element list otherwise
+             */
+            template<lolita::finite_element::FiniteElementConcept auto __finite_element>
+            static constexpr
+            lolita::index
+            getFiniteElementIndex()
+            {
+                auto index = sizeof...(_finite_elements);
+                using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
+                auto const constexpr elements = _Elements{_finite_elements...};
+                auto set_index = [&] <lolita::index _i = 0u> (auto & self)
+                        constexpr mutable
+                {
+                    if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
+                        if (__finite_element == std::get<_i>(elements)) {
+                            index = _i;
+                        }
+                    }
+                    if constexpr(_i < sizeof...(_finite_elements) - 1) {
+                        self.template operator()<_i + 1u>(self);
+                    }
+                };
+                set_index(set_index);
+                return index;
+            }
 
         };
+
+        namespace detail
+        {
+
+            template<typename T>
+            struct IsMixedElementConcept : std::false_type {};
+
+            template<lolita::finite_element::FiniteElementConcept auto... _finite_elements>
+            struct IsMixedElementConcept<ElementGroup<_finite_elements...>> : std::true_type {};
+
+        }
+
+        template<typename _T>
+        concept ElementGroupConcept = lolita::finite_element::detail::IsMixedElementConcept<_T>::value;
 
     }
 

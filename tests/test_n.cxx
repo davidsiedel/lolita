@@ -38,6 +38,18 @@ TEST(test_lolita_2, test_lolita_2)
     auto constexpr hho_u1 = lolita::finite_element::FiniteElement<u_unknown, u_elasticity, u_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
     auto constexpr hho_d = lolita::finite_element::FiniteElement<d_unknown, d_phase_field, d_discretization>(lolita::finite_element::Quadrature::Gauss, 2);
 
+    static_assert(lolita::finite_element::HybridHighOrderFiniteElementConcept<hho_u0>);
+
+//    std::cout << "num struct ukns : " << lolita::core::element::FEObjectUnknownsPol<lolita::core::geometry::tri_03, domain, hho_u0>::_dim_unknowns<lolita::core::unknown::UnknownType::Structural>() << std::endl;
+//    std::cout << "num subsid ukns : " << lolita::core::element::FEObjectUnknownsPol<lolita::core::geometry::tri_03, domain, hho_u0>::_dim_unknowns<lolita::core::unknown::UnknownType::Subsidiary>() << std::endl;
+//    std::cout << "num struct ukns : " << lolita::core::element::FEObjectUnknownsPol<lolita::core::geometry::seg_02, domain, hho_u0>::_dim_unknowns<lolita::core::unknown::UnknownType::Structural>() << std::endl;
+//    std::cout << "num subsid ukns : " << lolita::core::element::FEObjectUnknownsPol<lolita::core::geometry::seg_02, domain, hho_u0>::_dim_unknowns<lolita::core::unknown::UnknownType::Subsidiary>() << std::endl;
+//
+//
+//    std::cout << "num subsid ukns : " << lolita::core::unknown::numUnknowns<lolita::core::element::FiniteElementTriplet(lolita::core::geometry::tri_03, domain, hho_u0), lolita::core::unknown::UnknownType::Structural>() << std::endl;
+
+    std::tuple_size_v<std::tuple<>>;
+
     auto path = "";
     path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/behaviour/src/libBehaviour.so";
     path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic/src/libBehaviour.so";
@@ -49,6 +61,13 @@ TEST(test_lolita_2, test_lolita_2)
             mgis::behaviour::FiniteStrainBehaviourOptions::StressMeasure::PK1,
             mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF
     };
+
+    lolita::matrix::Vector<lolita::integer, 3> aaa;
+    aaa = lolita::matrix::Vector<lolita::integer, 3>::LinSpaced(0, 3);
+    std::cout << "lin spaces d :" << aaa << std::endl;
+    lolita::matrix::Vector<lolita::integer> bbb;
+    bbb = lolita::matrix::Vector<lolita::integer>::LinSpaced(3, 0, 3);
+    std::cout << "lin spaces d :" << bbb << std::endl;
 
 //    opt.stress_measure = mgis::behaviour::FiniteStrainBehaviourOptions::PK1;
 //    opt.tangent_operator = mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF;

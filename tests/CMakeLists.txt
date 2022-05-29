@@ -40,8 +40,8 @@ add_executable(${PROJECT_NAME}_test
 #        new_test.cxx
 #        test_lolita_1.cpp
 #        hackaton.cpp
-        test_n.cxx
-        )
+#        test_n.cxx
+        test_nn.cxx)
 add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME}_test)
 #target_link_libraries(${PROJECT_NAME}_test
 #        PUBLIC ${PROJECT_NAME} gtest)
