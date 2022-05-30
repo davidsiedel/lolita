@@ -205,75 +205,47 @@ namespace lolita
             return rotation_matrix;
         }
 
-        enum struct Frame
+        struct Frame : public lolita::utility::EnumA
         {
 
-            AxiSymmetric,
-            Cartesian,
+            constexpr
+            Frame(
+                    std::basic_string_view<lolita::character> && tag
+            )
+            :
+            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            {}
+
+            static constexpr
+            Frame
+            AxiSymmetric()
+            {
+                return Frame("AxiSymmetric");
+            }
+
+            static constexpr
+            Frame
+            Cartesian()
+            {
+                return Frame("Cartesian");
+            }
 
         };
 
-        static constexpr
-        std::basic_string_view<lolita::character>
-        readFrame(
-                lolita::geometry::Frame
-                frame
-        )
-        {
-            if (frame == lolita::geometry::Frame::AxiSymmetric) {
-                return std::basic_string_view<lolita::character>("AxiSymmetric");
-            }
-            else {
-                return std::basic_string_view<lolita::character>("Cartesian");
-            }
-        }
-
-        struct Domain
+        struct Domain : public lolita::utility::EnumA
         {
 
             constexpr
             Domain(
-                    std::basic_string_view<lolita::character> &&
-                    tag,
-                    lolita::index
-                    dim,
-                    lolita::geometry::Frame
-                    frame
+                    std::basic_string_view<lolita::character> && tag,
+                    lolita::index dim,
+                    lolita::geometry::Frame && frame
             )
             :
-            tag_(lolita::utility::label(std::forward<std::basic_string_view<lolita::character>>(tag))),
+            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag)),
             dim_(dim),
-            frame_(frame)
+            frame_(std::forward<lolita::geometry::Frame>(frame))
             {}
-
-            constexpr
-            lolita::boolean
-            operator==(
-                    Domain const &
-                    other
-            )
-            const = default;
-
-            constexpr
-            lolita::boolean
-            operator!=(
-                    Domain const &
-                    other
-            )
-            const = default;
-
-            constexpr
-            lolita::index
-            ordIntegration(
-                    lolita::index
-                    ord
-            )
-            const
-            {
-                return frame_ == lolita::geometry::Frame::AxiSymmetric ? 2 * ord + 1 : 2 * ord;
-            }
-
-            lolita::utility::Label tag_;
 
             lolita::index dim_;
 
@@ -286,97 +258,84 @@ namespace lolita
     namespace field
     {
 
-        enum struct Mapping
+        struct Mapping : public lolita::utility::EnumA
         {
 
-            Gradient,
-            Identity,
-            Divergence,
-            LargeStrain,
-            SmallStrain,
-            LargeStrainPlane,
-            SmallStrainPlane,
-            LargeStrainSolid,
-            SmallStrainSolid
+            constexpr
+            Mapping(
+                    std::basic_string_view<lolita::character> && tag
+            )
+            :
+            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            {}
+
+            static constexpr
+            Mapping
+            Gradient()
+            {
+                return Mapping("Gradient");
+            }
+
+            static constexpr
+            Mapping
+            Identity()
+            {
+                return Mapping("Identity");
+            }
+
+            static constexpr
+            Mapping
+            Divergence()
+            {
+                return Mapping("Divergence");
+            }
+
+            static constexpr
+            Mapping
+            LargeStrain()
+            {
+                return Mapping("LargeStrain");
+            }
+
+            static constexpr
+            Mapping
+            SmallStrain()
+            {
+                return Mapping("SmallStrain");
+            }
 
         };
 
-//        static constexpr
-//        std::basic_string_view<lolita::character>
-//        readMapping(
-//                lolita::field::Mapping
-//                mapping
-//        )
-//        {
-//            if (mapping == lolita::field::Mapping::Gradient) {
-//                return std::basic_string_view<lolita::character>("Gradient");
-//            }
-//            else if (mapping == lolita::field::Mapping::Identity) {
-//                return std::basic_string_view<lolita::character>("Identity");
-//            }
-//            else if (mapping == lolita::field::Mapping::Divergence) {
-//                return std::basic_string_view<lolita::character>("Divergence");
-//            }
-//            else if (mapping == lolita::field::Mapping::LargeStrain) {
-//                return std::basic_string_view<lolita::character>("LargeStrain");
-//            }
-//            else {
-//                return std::basic_string_view<lolita::character>("SmallStrain");
-//            }
-//        }
-
-        struct Tensor
+        struct Tensor : public lolita::utility::EnumA
         {
 
             constexpr
             Tensor(
-                    std::basic_string_view<lolita::character> &&
-                    tag,
-                    lolita::index
-                    dim
+                    std::basic_string_view<lolita::character> && tag,
+                    lolita::index dim
             )
             :
-            tag_(lolita::utility::label(std::forward<std::basic_string_view<lolita::character>>(tag))),
+            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag)),
             ord_(dim)
             {}
 
-            constexpr
-            lolita::boolean
-            operator==(
-                    Tensor const &
-                    other
-            )
-            const = default;
+            static constexpr
+            Tensor
+            Displacement()
+            {
+                return Tensor("Displacement", 1);
+            }
 
-            constexpr
-            lolita::boolean
-            operator!=(
-                    Tensor const &
-                    other
-            )
-            const = default;
-
-            lolita::utility::Label tag_;
+            static constexpr
+            Tensor
+            Damage()
+            {
+                return Tensor("Damage", 0);
+            }
 
             lolita::index ord_;
 
         };
-
-//        namespace detail {
-//
-//            static constexpr
-//            lolita::utility::Label
-//            getOutputFieldLabel(
-//                    lolita::field::Tensor const &
-//                    tensor,
-//                    lolita::field::Mapping
-//                    mapping
-//            )
-//            {
-//                return lolita::utility::label(lolita::utility::readLabel(tensor.tag_), lolita::field::readMapping(mapping));
-//            }
-//
-//        }
 
         template<typename... _Mapping>
         requires((std::same_as<_Mapping, lolita::field::Mapping> && ...) && sizeof...(_Mapping) > 0)
@@ -385,10 +344,8 @@ namespace lolita
 
             constexpr
             Unknown(
-                    lolita::field::Tensor const &
-                    tensor,
-                    _Mapping &&...
-                    mappings
+                    lolita::field::Tensor const & tensor,
+                    _Mapping &&... mappings
             )
             :
             tensor_(tensor),
@@ -397,10 +354,8 @@ namespace lolita
 
             constexpr
             Unknown(
-                    lolita::field::Tensor &&
-                    tensor,
-                    _Mapping &&...
-                    mappings
+                    lolita::field::Tensor && tensor,
+                    _Mapping &&... mappings
             )
             :
             tensor_(std::forward<lolita::field::Tensor>(tensor)),
@@ -409,12 +364,9 @@ namespace lolita
 
             constexpr
             Unknown(
-                    std::basic_string_view<lolita::character> &&
-                    tag,
-                    lolita::index
-                    dim,
-                    _Mapping &&...
-                    mappings
+                    std::basic_string_view<lolita::character> && tag,
+                    lolita::index dim,
+                    _Mapping &&... mappings
             )
             :
             tensor_(std::forward<lolita::field::Tensor>(Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), dim))),
@@ -791,83 +743,23 @@ namespace lolita
     namespace finite_element
     {
 
-        enum struct Method
-        {
-
-            HHO,
-            Lagrange
-
-        };
-
-        enum struct Loading
-        {
-
-            Natural,
-            Constraint,
-
-        };
-
-        enum struct Basis
-        {
-
-            Monomial,
-            Lagrange,
-
-        };
-
-//        enum struct Quadrature
-//        {
-//
-//            Gauss,
-//
-//        };
-
         /**
          * @brief
          */
-        struct Quadrature
+        struct Quadrature : public lolita::utility::EnumA
         {
 
             /**
              * @brief
-             * @param other
-             * @return
+             * @param tag
              */
             constexpr
-            lolita::boolean
-            operator==(
-                    Quadrature const & other
+            Quadrature(
+                    std::basic_string_view<lolita::character> && tag
             )
-            const = default;
-
-            /**
-             * @brief
-             * @param other
-             * @return
-             */
-            constexpr
-            lolita::boolean
-            operator!=(
-                    Quadrature const & other
-            )
-            const = default;
-
-            /**
-             * @brief
-             * @param os
-             * @param quadrature
-             * @return
-             */
-            friend
-            std::ostream &
-            operator<<(
-                    std::ostream & os,
-                    Quadrature const & quadrature
-            )
-            {
-                os << lolita::utility::readLabel(quadrature.tag_);
-                return os;
-            }
+            :
+            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            {}
 
             /**
              * @brief
@@ -877,29 +769,80 @@ namespace lolita
             Quadrature
             Gauss()
             {
-                return Quadrature{"Gauss"};
+                return Quadrature("Gauss");
+            }
+
+        };
+
+        /**
+         * @brief
+         */
+        struct Loading : public lolita::utility::EnumA
+        {
+
+            /**
+             * @brief
+             * @param tag
+             */
+            constexpr
+            Loading(
+                    std::basic_string_view<lolita::character> && tag
+            )
+                    :
+                    lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            {}
+
+            /**
+             * @brief
+             * @return
+             */
+            static constexpr
+            Loading
+            Natural()
+            {
+                return Loading("Natural");
             }
 
             /**
              * @brief
+             * @return
              */
-            lolita::utility::Label tag_;
+            static constexpr
+            Loading
+            Constraint()
+            {
+                return Loading("Constraint");
+            }
 
         };
 
         using LoadFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
 
+        /**
+         * @brief
+         */
         struct LoadComponent
         {
 
+            /**
+             * @brief
+             */
             auto const static constexpr zero = [] (auto const &, auto const &) constexpr { return lolita::real(0); };
 
+            /**
+             * @brief
+             */
             LoadComponent()
             :
             function_(zero),
-            loading_(lolita::finite_element::Loading::Natural)
+            loading_(lolita::finite_element::Loading::Natural())
             {}
 
+            /**
+             * @brief
+             * @param function
+             * @param loading
+             */
             LoadComponent(
                     lolita::finite_element::LoadFunction &&
                     function,
@@ -911,6 +854,11 @@ namespace lolita
             loading_(loading)
             {}
 
+            /**
+             * @brief
+             * @param function
+             * @param loading
+             */
             LoadComponent(
                     lolita::finite_element::LoadFunction const &
                     function,
@@ -922,6 +870,12 @@ namespace lolita
             loading_(loading)
             {}
 
+            /**
+             * @brief
+             * @param point
+             * @param time
+             * @return
+             */
             lolita::real
             getImposedValue(
                     lolita::geometry::Point const &
@@ -934,39 +888,63 @@ namespace lolita
                 return function_(point, time);
             }
 
+            /**
+             * @brief
+             */
             lolita::finite_element::Loading loading_;
 
+            /**
+             * @brief
+             */
             lolita::finite_element::LoadFunction function_;
 
         };
 
+        /**
+         * @brief
+         */
         struct Load
         {
 
+            /**
+             * @brief
+             * @param unknown_tag
+             * @param domain_tag
+             * @param row
+             * @param col
+             * @param function
+             * @param loading
+             */
             Load(
-                    std::basic_string_view<lolita::character> &&
-                    unknown_tag,
-                    std::basic_string_view<lolita::character> &&
-                    domain_tag,
-                    lolita::index
-                    row,
-                    lolita::index
-                    col,
-                    lolita::finite_element::LoadFunction &&
-                    function,
-                    lolita::finite_element::Loading
-                    loading
+                    std::basic_string_view<lolita::character> && unknown_tag,
+                    std::basic_string_view<lolita::character> && domain_tag,
+                    lolita::integer element_dim,
+                    lolita::index row,
+                    lolita::index col,
+                    lolita::finite_element::LoadFunction && function,
+                    lolita::finite_element::Loading loading
             )
             :
             unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
             domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
+            element_dim_(element_dim),
             components_(lolita::matrix::Coordinates{row, col}),
             load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(std::forward<lolita::finite_element::LoadFunction>(function), loading)))
             {}
 
+            /**
+             * @brief
+             * @param unknown_tag
+             * @param domain_tag
+             * @param row
+             * @param col
+             * @param function
+             * @param loading
+             */
             Load(
                     std::basic_string_view<lolita::character> && unknown_tag,
                     std::basic_string_view<lolita::character> && domain_tag,
+                    lolita::integer element_dim,
                     lolita::index row,
                     lolita::index col,
                     lolita::finite_element::LoadFunction const & function,
@@ -975,71 +953,149 @@ namespace lolita
             :
             unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
             domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
+            element_dim_(element_dim),
             components_(lolita::matrix::Coordinates{row, col}),
             load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(function, loading)))
             {}
 
+            /**
+             * @brief
+             */
             std::basic_string_view<lolita::character> unknown_tag_;
 
+            /**
+             * @brief
+             */
             std::basic_string_view<lolita::character> domain_tag_;
 
+            /**
+             * @brief
+             */
+            lolita::integer element_dim_;
+
+            /**
+             * @brief
+             */
             lolita::matrix::Coordinates components_;
 
+            /**
+             * @brief
+             */
             std::shared_ptr<lolita::finite_element::LoadComponent> load_;
 
         };
 
-        struct FiniteElementMethod
+        /**
+         * @brief
+         */
+        struct FiniteElementMethod : public lolita::utility::EnumA
         {
 
+            /**
+             * @brief
+             * @param tag
+             */
             constexpr
             FiniteElementMethod(
-                    lolita::finite_element::Method method
+                    std::basic_string_view<lolita::character> && tag
             )
             :
-            method_(method)
+            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
             {}
 
-            constexpr
-            lolita::boolean
-            operator==(
-                    FiniteElementMethod const & other
-            )
-            const = default;
-
-            constexpr
-            lolita::boolean
-            operator!=(
-                    FiniteElementMethod const & other
-            )
-            const = default;
-
-            lolita::finite_element::Method method_;
+            /**
+             * @brief
+             * @return
+             */
+            static constexpr
+            FiniteElementMethod
+            HHO()
+            {
+                return FiniteElementMethod("HHO");
+            }
 
         };
 
+        /**
+         * @brief Implementation of the Hybrid Discontinuous Galerkin method
+         */
         struct HybridHighOrder : public lolita::finite_element::FiniteElementMethod
         {
 
+            /**
+             * @brief
+             */
+            struct Stabilization : public lolita::utility::EnumA
+            {
+
+                /**
+                 * @brief
+                 * @param tag
+                 */
+                constexpr
+                Stabilization(
+                        std::basic_string_view<lolita::character> && tag
+                )
+                :
+                lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+                {}
+
+                /**
+                 * @brief
+                 * @return
+                 */
+                static constexpr
+                Stabilization
+                HHO()
+                {
+                    return Stabilization("HHO");
+                }
+
+                /**
+                 * @brief
+                 * @return
+                 */
+                static constexpr
+                Stabilization
+                HDG()
+                {
+                    return Stabilization("HDG");
+                }
+
+            };
+
+            /**
+             * @brief
+             */
             constexpr
             HybridHighOrder()
             :
-            FiniteElementMethod(lolita::finite_element::Method::HHO),
+            lolita::finite_element::FiniteElementMethod(lolita::finite_element::FiniteElementMethod::HHO()),
             ord_cell_(-1),
             ord_face_(-1)
             {}
 
+            /**
+             * @brief
+             * @param ord_cell
+             * @param ord_face
+             */
             constexpr
             HybridHighOrder(
                     lolita::integer ord_cell,
                     lolita::integer ord_face
             )
             :
-            FiniteElementMethod(lolita::finite_element::Method::HHO),
+            lolita::finite_element::FiniteElementMethod(lolita::finite_element::FiniteElementMethod::HHO()),
             ord_cell_(ord_cell),
             ord_face_(ord_face)
             {}
 
+            /**
+             * @brief
+             * @param mapping
+             * @return
+             */
             constexpr
             lolita::integer
             ordMapping(
@@ -1047,11 +1103,17 @@ namespace lolita
             )
             const
             {
-                return mapping == lolita::field::Mapping::Identity ? ord_cell_ : ord_face_;
+                return mapping == lolita::field::Mapping::Identity() ? ord_cell_ : ord_face_;
             }
 
+            /**
+             * @brief
+             */
             lolita::integer ord_cell_;
 
+            /**
+             * @brief
+             */
             lolita::integer ord_face_;
 
         };
@@ -1126,11 +1188,11 @@ namespace lolita
             constexpr
             lolita::boolean
             hasMethod(
-                    lolita::finite_element::Method method
-                    )
+                    lolita::finite_element::FiniteElementMethod method
+            )
             const
             {
-                return discretization_.method_ == method;
+                return discretization_.tag_ == method.tag_;
             }
 
             UnknownType unknown_;
@@ -1151,7 +1213,7 @@ namespace lolita
             template<typename T>
             struct IsFiniteElementConcept : std::false_type {};
 
-            template<lolita::field::UnknownConcept auto _unknown, auto _behaviour, lolita::finite_element::FiniteElementMethodConcept auto _finite_element_method>
+            template<auto _unknown, auto _behaviour, auto _finite_element_method>
             struct IsFiniteElementConcept<FiniteElement<_unknown, _behaviour, _finite_element_method>> : std::true_type {};
 
         }
@@ -1164,8 +1226,25 @@ namespace lolita
                 std::remove_reference_t<decltype(_arg)> const arg
         )
         {
-            { arg.discretization_.method_ == lolita::finite_element::Method::HHO };
+            { arg.discretization_.tag_ == lolita::finite_element::FiniteElementMethod::HHO().tag_ };
         };
+
+        template<auto... _finite_elements>
+        struct ElementGroup;
+
+        namespace detail
+        {
+
+            template<typename T>
+            struct IsMixedElementConcept : std::false_type {};
+
+            template<auto... _finite_elements>
+            struct IsMixedElementConcept<ElementGroup<_finite_elements...>> : std::true_type {};
+
+        }
+
+        template<typename _T>
+        concept ElementGroupConcept = lolita::finite_element::detail::IsMixedElementConcept<_T>::value;
 
         template<auto... _finite_elements>
         struct ElementGroup
@@ -1178,18 +1257,43 @@ namespace lolita
              */
             using _FiniteElements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
 
+            /**
+             * @brief A simple alias
+             */
+            using _Self = lolita::finite_element::ElementGroup<_finite_elements...>;
+
         public:
 
             /**
              * @brief
              */
             template<template<auto, auto, auto> typename _T, auto _element, auto _domain>
-            using Type = std::tuple<std::shared_ptr<_T<_element, _domain, _finite_elements>>...>;
+            using ElementPointers = std::tuple<std::shared_ptr<_T<_element, _domain, _finite_elements>>...>;
+
+            /**
+             * @brief
+             */
+            template<template<auto, auto, auto> typename _T, auto _element, auto _domain>
+            using Elements = std::tuple<_T<_element, _domain, _finite_elements>...>;
 
             /**
              * @brief
              */
             _FiniteElements const static constexpr finite_elements_ = {_finite_elements...};
+
+            static constexpr
+            lolita::boolean
+            has()
+            {
+                return (lolita::finite_element::FiniteElementConcept<std::remove_cvref_t<decltype(_finite_elements)>> && ...);
+            }
+
+            static constexpr
+            lolita::integer
+            size()
+            {
+                return sizeof...(_finite_elements);
+            }
 
             /**
              * @brief
@@ -1205,49 +1309,185 @@ namespace lolita
             }
 
             /**
+             * @brief
+             * @return
+             */
+            static constexpr
+            lolita::integer
+            count()
+            {
+                if constexpr (has()) {
+                    return size();
+                }
+                else {
+                    return lolita::numerics::sum(_finite_elements.count()...);
+                }
+            }
+
+            template<auto __finite_element>
+            static constexpr
+            lolita::boolean
+            hasFiniteElement()
+            {
+                if constexpr(has()) {
+                    auto index = false;
+                    using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
+                    auto const constexpr elements = _Elements{_finite_elements...};
+                    auto set_index = [&] <lolita::index _i = 0u> (auto & self) constexpr mutable {
+                        if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
+                            if (__finite_element == std::get<_i>(elements)) {
+                                index = true;
+                            }
+                        }
+                        if constexpr(_i < sizeof...(_finite_elements) - 1) {
+                            self.template operator()<_i + 1u>(self);
+                        }
+                    };
+                    set_index(set_index);
+                    return index;
+                }
+                else {
+                    return (_finite_elements.template hasFiniteElement<__finite_element>() || ...);
+                }
+            }
+
+            template<auto __finite_element>
+            static constexpr
+            void
+            getFiniteElementIndex2(
+                    lolita::integer & index,
+                    lolita::boolean & found
+            )
+            {
+                if constexpr(has()) {
+                    if constexpr (hasFiniteElement<__finite_element>()) {
+                        auto index2 = 0;
+                        using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
+                        auto const constexpr elements = _Elements{_finite_elements...};
+                        auto set_index = [&] <lolita::index _i = 0u> (auto & self) constexpr mutable {
+                            if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
+                                if (__finite_element == std::get<_i>(elements)) {
+                                    index2 = _i;
+                                }
+                            }
+                            if constexpr(_i < sizeof...(_finite_elements) - 1) {
+                                self.template operator()<_i + 1u>(self);
+                            }
+                        };
+                        set_index(set_index);
+                        index += index2;
+                        found = true;
+                    }
+                    else {
+                        if (!found) {
+                            index += size();
+                        }
+                    };
+                }
+                else {
+                    (_finite_elements.template getFiniteElementIndex2<__finite_element>(index, found), ...);
+                }
+            }
+
+            template<auto __finite_element>
+            static constexpr
+            lolita::integer
+            getFiniteElementIndex()
+            {
+                auto index = 0;
+                auto found = false;
+//                auto mli = [&] <typename _T, lolita::integer __i = 0> (auto & self1) constexpr mutable {
+//                    if constexpr(_T::has()) {
+//                        if constexpr (_T::template hasFiniteElement<__finite_element>()) {
+//                            auto index2 = 0;
+//                            using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
+//                            auto const constexpr elements = _Elements{_finite_elements...};
+//                            auto set_index = [&] <lolita::index _i = 0u> (auto & self) constexpr mutable {
+//                                if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
+//                                    if (__finite_element == std::get<_i>(elements)) {
+//                                        index2 = _i;
+//                                    }
+//                                }
+//                                if constexpr(_i < sizeof...(_finite_elements) - 1) {
+//                                    self.template operator()<_i + 1u>(self);
+//                                }
+//                            };
+//                            set_index(set_index);
+//                            index += index2;
+//                            found = true;
+//                        }
+//                        else {
+//                            if (!found) {
+//                                index += size();
+//                            }
+//                        };
+//                    }
+//                    else {
+//                        if constexpr (__i < std::tuple_size_v<_T> - 1) {
+//                            self1.template operator ()<std::tuple_element_t<__i + 1, typename _T::_FiniteElements>, __i + 1>(self1);
+//                        }
+//                    }
+//                };
+                getFiniteElementIndex2<__finite_element>(index, found);
+                return index;
+            }
+
+//            template<auto __finite_element>
+//            static constexpr
+//            lolita::integer
+//            getFiniteElementIndex2()
+//            {
+//                auto index = -1;
+//                auto mli = [&] <auto fe = lolita::finite_element::ElementGroup<_finite_elements...>{}> (auto & self) constexpr mutable {
+//                    if constexpr (fe.has()) {
+//                        if (index < 0) {
+//                            if (fe.template hasFiniteElement<__finite_element>()) {
+//                                index = lolita::numerics::abs(index) + 1;
+//                            }
+//                            else {
+//                                index -= size();
+//                            }
+//                        }
+//                    }
+//                    else {
+//                        (self.template operator()<_finite_elements>(self), ...);
+//                    }
+//                };
+//                mli(mli);
+//                return index;
+//            }
+
+            /**
              * @brief Fetch the finite element index within the _finite_element list
              * @tparam __finite_element the finite element object to find
              * @return the finite_element index if found, and the size of the _finite_element list otherwise
              */
-            template<lolita::finite_element::FiniteElementConcept auto __finite_element>
-            static constexpr
-            lolita::index
-            getFiniteElementIndex()
-            {
-                auto index = sizeof...(_finite_elements);
-                using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
-                auto const constexpr elements = _Elements{_finite_elements...};
-                auto set_index = [&] <lolita::index _i = 0u> (auto & self)
-                        constexpr mutable
-                {
-                    if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
-                        if (__finite_element == std::get<_i>(elements)) {
-                            index = _i;
-                        }
-                    }
-                    if constexpr(_i < sizeof...(_finite_elements) - 1) {
-                        self.template operator()<_i + 1u>(self);
-                    }
-                };
-                set_index(set_index);
-                return index;
-            }
+//            template<auto __finite_element>
+//            static constexpr
+//            lolita::index
+//            getFiniteElementIndex()
+//            requires((lolita::finite_element::FiniteElementConcept<std::remove_cvref_t<decltype(_finite_elements)>>) && ...)
+//            {
+//                auto index = sizeof...(_finite_elements);
+//                using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
+//                auto const constexpr elements = _Elements{_finite_elements...};
+//                auto set_index = [&] <lolita::index _i = 0u> (auto & self)
+//                        constexpr mutable
+//                {
+//                    if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
+//                        if (__finite_element == std::get<_i>(elements)) {
+//                            index = _i;
+//                        }
+//                    }
+//                    if constexpr(_i < sizeof...(_finite_elements) - 1) {
+//                        self.template operator()<_i + 1u>(self);
+//                    }
+//                };
+//                set_index(set_index);
+//                return index;
+//            }
 
         };
-
-        namespace detail
-        {
-
-            template<typename T>
-            struct IsMixedElementConcept : std::false_type {};
-
-            template<lolita::finite_element::FiniteElementConcept auto... _finite_elements>
-            struct IsMixedElementConcept<ElementGroup<_finite_elements...>> : std::true_type {};
-
-        }
-
-        template<typename _T>
-        concept ElementGroupConcept = lolita::finite_element::detail::IsMixedElementConcept<_T>::value;
 
     }
 

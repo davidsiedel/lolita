@@ -21,13 +21,13 @@ namespace lolita::core::mesh
      * @tparam _domain
      * @tparam _arg
      */
-    template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _args>
+    template<template<lolita::core::Element, lolita::geometry::Domain, auto> typename _T, lolita::geometry::Domain _domain, auto _args>
     struct ElementCollection
     {
 
     private:
 
-        using _Elements = Elements<_T, _domain, _args...>;
+        using _Elements = Elements<_T, _domain, _args>;
 
     public:
 
@@ -98,7 +98,7 @@ namespace lolita::core::mesh
      * @tparam _domain
      * @tparam _finite_element
      */
-    template<lolita::geometry::Domain _domain, auto... _finite_element>
+    template<lolita::geometry::Domain _domain, auto _finite_element>
     struct Mesh
     {
 
@@ -107,10 +107,11 @@ namespace lolita::core::mesh
         /**
          * @brief
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain __domain, auto... __finite_element>
+        template<lolita::core::Element _element, lolita::geometry::Domain __domain, auto __finite_element>
         using _ElementPointerMap = std::unordered_map<
                 std::basic_string<lolita::character>,
-                std::shared_ptr<lolita::core::finite_element::FiniteElementFinal<_element, __domain, __finite_element...>>
+//                std::shared_ptr<lolita::core::finite_element::FiniteElementFinal<_element, __domain, __finite_element...>>
+                std::shared_ptr<lolita::core::finite_element::FEObject<_element, __domain, __finite_element>>
         >;
 
     public:
@@ -223,7 +224,7 @@ namespace lolita::core::mesh
         /**
          * @brief The list of all elements in the mesh
          */
-        lolita::core::mesh::ElementCollection<_ElementPointerMap, _domain, _finite_element...> elements_;
+        lolita::core::mesh::ElementCollection<_ElementPointerMap, _domain, _finite_element> elements_;
 
         /**
          * @brief The list of physical domains
@@ -243,7 +244,7 @@ namespace lolita::core::mesh
         /**
          * @brief The list of linear problems available
          */
-        std::array<lolita::core::mesh::FiniteElementLinearSystem, sizeof...(_finite_element)> systems_;
+        std::array<lolita::core::mesh::FiniteElementLinearSystem, _finite_element.count()> systems_;
 
         /**
          * @brief The mesh options, depending on the mesh format
@@ -312,7 +313,7 @@ namespace lolita::core::mesh
      * @tparam _domain
      * @tparam _finite_element
      */
-    template<lolita::mesh::Format _mesh, lolita::geometry::Domain _domain, auto... _finite_element>
+    template<lolita::mesh::Format _mesh, lolita::geometry::Domain _domain, auto _finite_element>
     struct MeshParserModule;
 
     /**
@@ -321,15 +322,15 @@ namespace lolita::core::mesh
      * @tparam _domain
      * @tparam _finite_element
      */
-    template<lolita::mesh::Format _mesh, lolita::geometry::Domain _domain, auto... _finite_element>
+    template<lolita::mesh::Format _mesh, lolita::geometry::Domain _domain, auto _finite_element>
     struct MeshParser
     {
 
     private:
 
-        using _Module = typename lolita::core::mesh::MeshParserModule<_mesh, _domain, _finite_element...>::Module;
+        using _Module = typename lolita::core::mesh::MeshParserModule<_mesh, _domain, _finite_element>::Module;
 
-        using _Implementation = typename lolita::core::mesh::MeshParserModule<_mesh, _domain, _finite_element...>::Implementation;
+        using _Implementation = typename lolita::core::mesh::MeshParserModule<_mesh, _domain, _finite_element>::Implementation;
 
     public:
 
@@ -394,7 +395,7 @@ namespace lolita::core::mesh
         }
 
         static
-        lolita::core::mesh::Mesh<_domain, _finite_element...>
+        lolita::core::mesh::Mesh<_domain, _finite_element>
         makeMesh(
                 std::basic_string_view<lolita::character> && mesh_file_path,
                 std::vector<lolita::finite_element::Load> && loads,
@@ -499,13 +500,13 @@ namespace lolita::core::mesh
         /**
          * @brief
          */
-        lolita::core::mesh::Mesh<_domain, _finite_element...> mesh_data_;
+        lolita::core::mesh::Mesh<_domain, _finite_element> mesh_data_;
 
     };
 
-    template<lolita::mesh::Format _mesh, lolita::geometry::Domain _domain, auto... _finite_element>
+    template<lolita::mesh::Format _mesh, lolita::geometry::Domain _domain, auto _finite_element>
     requires(_mesh == lolita::mesh::Format::Gmsh)
-    struct MeshParserModule<_mesh, _domain, _finite_element...>
+    struct MeshParserModule<_mesh, _domain, _finite_element>
     {
 
         std::unordered_map<lolita::index, lolita::core::Element> const element_table_ = {
@@ -910,7 +911,7 @@ namespace lolita::core::mesh
 
         };
 
-        struct Implementation : public MeshParser<_mesh, _domain, _finite_element...>
+        struct Implementation : public MeshParser<_mesh, _domain, _finite_element>
         {
 
             void
@@ -937,9 +938,10 @@ namespace lolita::core::mesh
             )
             requires(_element.isPoint())
             {
-                using __Element = lolita::core::finite_element::FiniteElementFinal<_element, _domain, _finite_element...>;
+//                using __Element = lolita::core::finite_element::FiniteElementFinal<_element, _domain, _finite_element...>;
+                using __Element = lolita::core::finite_element::FEObject<_element, _domain, _finite_element>;
 //                auto const constexpr _element_coordinates2 = lolita::core::elementPosition<_domain, _element>();
-                auto const constexpr _element_coordinates2 = lolita::core::MeshDescription<_domain>::template getElementCoordinates<_element>();
+//                auto const constexpr _element_coordinates2 = lolita::core::MeshDescription<_domain>::template getElementCoordinates<_element>();
                 auto const & file_lines = module.file_.lines_;
                 auto const & physical_groups = module.physical_groups_;
                 auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Nodes"));
@@ -1001,7 +1003,8 @@ namespace lolita::core::mesh
             )
             requires(!_element.isPoint())
             {
-                using __Element = lolita::core::finite_element::FiniteElementFinal<_element, _domain, _finite_element...>;
+//                using __Element = lolita::core::finite_element::FiniteElementFinal<_element, _domain, _finite_element...>;
+                using __Element = lolita::core::finite_element::FEObject<_element, _domain, _finite_element>;
 //                auto const constexpr _element_coordinates = lolita::core::elementPosition<_domain, _element>();
                 auto const constexpr _element_coordinates = lolita::core::MeshDescription<_domain>::template getElementCoordinates<_element>();
                 auto const & file_lines = module.file_.lines_;

@@ -107,7 +107,7 @@ namespace lolita::core::field
      */
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 0 && _mapping == lolita::field::Mapping::Identity)
+    requires(_tensor.ord_ == 0 && _mapping == lolita::field::Mapping::Identity())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -127,7 +127,7 @@ namespace lolita::core::field
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 0 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient)
+    requires(_tensor.ord_ == 0 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -148,7 +148,7 @@ namespace lolita::core::field
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 0 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient)
+    requires(_tensor.ord_ == 0 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -174,7 +174,7 @@ namespace lolita::core::field
      */
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Identity)
+    requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Identity())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -195,7 +195,7 @@ namespace lolita::core::field
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Identity)
+    requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Identity())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -217,7 +217,7 @@ namespace lolita::core::field
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient)
+    requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -240,7 +240,7 @@ namespace lolita::core::field
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient)
+    requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -267,36 +267,36 @@ namespace lolita::core::field
 
     };
 
+//    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+//    requires(_tensor.ord_ == 1 && _mapping == lolita::field::Mapping::SmallStrain())
+//    struct MappingPolicy<_tensor, _domain, _mapping>
+//    {
+//
+//        lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{3, 3};
+//
+//        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+//                lolita::core::field::MappingValues{0, 0, 0, 1},
+//                lolita::core::field::MappingValues{0, 1, 1, 1},
+//                lolita::core::field::MappingValues{0, 2, 2, 1},
+//                lolita::core::field::MappingValues{1, 0, 3, 1},
+//                lolita::core::field::MappingValues{1, 1, 4, 1},
+//                lolita::core::field::MappingValues{1, 2, 5, 1},
+//                lolita::core::field::MappingValues{2, 0, 6, 1},
+//                lolita::core::field::MappingValues{2, 1, 7, 1},
+//                lolita::core::field::MappingValues{2, 2, 8, 1},
+//        };
+//
+//        static
+//        void
+//        non_linear(
+//                lolita::matrix::Vector<lolita::real, shape_.size_> & gradient
+//        )
+//        {}
+//
+//    };
+
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _mapping == lolita::field::Mapping::SmallStrain)
-    struct MappingPolicy<_tensor, _domain, _mapping>
-    {
-
-        lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{3, 3};
-
-        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core::field::MappingValues{0, 0, 0, 1},
-                lolita::core::field::MappingValues{0, 1, 1, 1},
-                lolita::core::field::MappingValues{0, 2, 2, 1},
-                lolita::core::field::MappingValues{1, 0, 3, 1},
-                lolita::core::field::MappingValues{1, 1, 4, 1},
-                lolita::core::field::MappingValues{1, 2, 5, 1},
-                lolita::core::field::MappingValues{2, 0, 6, 1},
-                lolita::core::field::MappingValues{2, 1, 7, 1},
-                lolita::core::field::MappingValues{2, 2, 8, 1},
-        };
-
-        static
-        void
-        non_linear(
-                lolita::matrix::Vector<lolita::real, shape_.size_> & gradient
-        )
-        {}
-
-    };
-
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::SmallStrainPlane)
+    requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::SmallStrain())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -319,7 +319,7 @@ namespace lolita::core::field
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::SmallStrainSolid)
+    requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::SmallStrain())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -344,7 +344,7 @@ namespace lolita::core::field
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::LargeStrainPlane)
+    requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::LargeStrain())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -373,7 +373,7 @@ namespace lolita::core::field
     };
 
     template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
-    requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::LargeStrainSolid)
+    requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::LargeStrain())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
 
@@ -412,49 +412,29 @@ namespace lolita::core
     /**
      * @brief Basic structure to define an element
      */
-    struct Element
+    struct Element : public lolita::utility::EnumA
     {
 
         /**
-         * @brief Basic equality comparison operator
-         * @param other
-         * @return
-         */
-        constexpr
-        lolita::boolean
-        operator==(
-                Element const & other
-        )
-        const = default;
-
-        /**
-         * @brief Basic equality comparison operator
-         * @param other
-         * @return
-         */
-        constexpr
-        lolita::boolean
-        operator!=(
-                Element const & other
-        )
-        const = default;
-
-        /**
          * @brief
-         * @param os
-         * @param quadrature
-         * @return
+         * @param tag
+         * @param dim
+         * @param ord
+         * @param num_nodes
          */
-        friend
-        std::ostream &
-        operator<<(
-                std::ostream & os,
-                Element const & element
+        constexpr
+        Element(
+                std::basic_string_view<lolita::character> && tag,
+                lolita::index dim,
+                lolita::index ord,
+                lolita::index num_nodes
         )
-        {
-            os << lolita::utility::readLabel(element.tag_);
-            return os;
-        }
+        :
+        lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag)),
+        dim_(dim),
+        ord_(ord),
+        num_nodes_(num_nodes)
+        {}
 
         /**
          * @brief
@@ -464,7 +444,7 @@ namespace lolita::core
         lolita::core::Element
         Node()
         {
-            return Element{"Node", 0, 0, 1};
+            return Element("Node", 0, 0, 1);
         }
 
         /**
@@ -475,7 +455,7 @@ namespace lolita::core
         lolita::core::Element
         LinearSegment()
         {
-            return Element{"LinearSegment", 1, 1, 2};
+            return Element("LinearSegment", 1, 1, 2);
         }
 
         /**
@@ -486,7 +466,7 @@ namespace lolita::core
         lolita::core::Element
         LinearTriangle()
         {
-            return Element{"LinearTriangle", 2, 1, 3};
+            return Element("LinearTriangle", 2, 1, 3);
         }
 
         /**
@@ -497,7 +477,7 @@ namespace lolita::core
         lolita::core::Element
         LinearQuadrangle()
         {
-            return Element{"LinearQuadrangle", 2, 1, 4};
+            return Element("LinearQuadrangle", 2, 1, 4);
         }
 
         /**
@@ -508,7 +488,7 @@ namespace lolita::core
         lolita::core::Element
         LinearTetrahedron()
         {
-            return Element{"LinearTetrahedron", 3, 1, 4};
+            return Element("LinearTetrahedron", 3, 1, 4);
         }
 
         /**
@@ -608,11 +588,6 @@ namespace lolita::core
         }
 
         /**
-         * @brief The element tag, that fully defines it. Two elements cannot have the same tag
-         */
-        lolita::utility::Label tag_;
-
-        /**
          * @brief The euclidean element dimension
          */
         lolita::index dim_;
@@ -654,46 +629,50 @@ namespace lolita::core
     namespace finite_element
     {
 
-        /**
-         * @brief Forward declaration
-         * @tparam _T
-         * @tparam _element
-         * @tparam _domain
-         * @tparam _finite_element
-         */
-        template<
-                template<lolita::core::Element, lolita::geometry::Domain, lolita::finite_element::FiniteElementConcept auto...> typename _T,
-                lolita::core::Element _element,
-                lolita::geometry::Domain _domain,
-                lolita::finite_element::FiniteElementConcept auto... _finite_element
-        >
-        struct FiniteElementGeometry;
-
-        /**
-         * @brief
-         * @tparam _element
-         * @tparam _domain
-         * @tparam _finite_element
-         */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
-        struct FEObject;
-
-        /**
-         * @brief Forward declaration
-         * @tparam _T
-         * @tparam _element
-         * @tparam _domain
-         * @tparam _finite_element
-         */
-        template<
-                lolita::core::Element _element,
-                lolita::geometry::Domain _domain,
-                auto... _finite_element
-        >
-        struct FiniteElementFinal;
-
         namespace basis
         {
+
+            /**
+             * @brief
+             */
+            struct Basis : public lolita::utility::EnumA
+            {
+
+                /**
+                 * @brief
+                 * @param tag
+                 */
+                constexpr
+                Basis(
+                        std::basic_string_view<lolita::character> && tag
+                )
+                :
+                lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+                {}
+
+                /**
+                 * @brief
+                 * @return
+                 */
+                static constexpr
+                Basis
+                Monomial()
+                {
+                    return Basis("Monomial");
+                }
+
+                /**
+                 * @brief
+                 * @return
+                 */
+                static constexpr
+                Basis
+                Lagrange()
+                {
+                    return Basis("Lagrange");
+                }
+
+            };
 
             /**
              * @brief Implementation object for the definition of a polynomial basis function
@@ -701,7 +680,7 @@ namespace lolita::core
              * @tparam _basis the basis enum
              * @tparam _ord the polynomial order of the basis
              */
-            template<lolita::core::Element _element, lolita::finite_element::Basis _basis, lolita::index _ord>
+            template<lolita::core::Element _element, lolita::core::finite_element::basis::Basis _basis, lolita::index _ord>
             struct FiniteElementBasis;
 
         }
@@ -709,53 +688,23 @@ namespace lolita::core
         namespace unknown
         {
 
-//            /**
-//             * @brief
-//             */
-//            enum struct UnknownType
-//            {
-//
-//                /**
-//                 * @brief Is involved in the linear system construction
-//                 */
-//                Structural,
-//
-//                /**
-//                 * @brief Is needed for the computation of physical quantities, but does not intervene in the global linear system e.g. local unknowns
-//                 */
-//                Subsidiary,
-//
-//            };
-
             /**
              * @brief
              */
-            struct UnknownType
+            struct UnknownType : public lolita::utility::EnumA
             {
 
                 /**
-                 * @brief Basic equality comparison operator
-                 * @param other
-                 * @return
+                 * @brief
+                 * @param tag
                  */
                 constexpr
-                lolita::boolean
-                operator==(
-                        UnknownType const & other
+                UnknownType(
+                        std::basic_string_view<lolita::character> && tag
                 )
-                const = default;
-
-                /**
-                 * @brief Basic equality comparison operator
-                 * @param other
-                 * @return
-                 */
-                constexpr
-                lolita::boolean
-                operator!=(
-                        UnknownType const & other
-                )
-                const = default;
+                :
+                lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+                {}
 
                 /**
                  * @brief
@@ -765,7 +714,7 @@ namespace lolita::core
                 UnknownType
                 Structural()
                 {
-                    return UnknownType{"Structural"};
+                    return UnknownType("Structural");
                 }
 
                 /**
@@ -776,7 +725,7 @@ namespace lolita::core
                 UnknownType
                 Subsidiary()
                 {
-                    return UnknownType{"Subsidiary"};
+                    return UnknownType("Subsidiary");
                 }
 
                 /**
@@ -788,15 +737,10 @@ namespace lolita::core
                 UnknownTypes()
                 {
                     return std::array<UnknownType, 2>{
-                        UnknownType{"Structural"},
-                        UnknownType{"Subsidiary"}
+                        UnknownType::Structural(),
+                        UnknownType::Subsidiary(),
                     };
                 }
-
-                /**
-                 * @brief
-                 */
-                lolita::utility::Label tag_;
 
             };
 
@@ -867,6 +811,30 @@ namespace lolita::core
 
         }
 
+        /**
+         * @brief Forward declaration
+         * @tparam _T
+         * @tparam _element
+         * @tparam _domain
+         * @tparam _finite_element
+         */
+        template<
+                template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T,
+                lolita::core::Element _element,
+                lolita::geometry::Domain _domain,
+                auto... _finite_element
+        >
+        struct FiniteElementGeometry;
+
+        /**
+         * @brief
+         * @tparam _element
+         * @tparam _domain
+         * @tparam _finite_element
+         */
+        template<lolita::core::Element _element, lolita::geometry::Domain _domain, auto _finite_element>
+        struct FEObject;
+
     }
 
     namespace mesh
@@ -884,7 +852,7 @@ namespace lolita::core
          * @tparam _domain
          * @tparam _finite_element
          */
-        template<lolita::geometry::Domain _domain, auto... _finite_element>
+        template<lolita::geometry::Domain _domain, auto _finite_element>
         struct Mesh;
 
     }
@@ -1062,11 +1030,7 @@ namespace lolita::core
         {
             using _Elements = lolita::core::detail::_Elements<lolita::core::detail::_Span, _domain>;
             auto position = lolita::core::ElementCoordinates{-1, -1};
-            auto f0 = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (
-                    auto & self
-            )
-                    constexpr mutable
-            {
+            auto f0 = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (auto & self) constexpr mutable {
                 using _Element = typename std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements>>;
                 if (_Element::element_ == _element) {
                     position.dim_ = _i;
@@ -1096,11 +1060,7 @@ namespace lolita::core
         {
             using _Components = typename lolita::core::element::ElementGeometry<_element, _domain>::template Components<lolita::core::detail::_Span, _domain>;
             auto position = lolita::core::ElementCoordinates{-1, -1};
-            auto f0 = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (
-                    auto & self
-            )
-                    constexpr mutable
-            {
+            auto f0 = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (auto & self) constexpr mutable {
                 using _Component = typename std::tuple_element_t<_j, std::tuple_element_t<_i, _Components>>::value_type;
                 if (_Component::element_ == _component) {
                     position.dim_ = _i;
@@ -1204,11 +1164,7 @@ namespace lolita::core
         {
             using _Neighbours = typename lolita::core::element::ElementGeometry<_element, _domain>::template Neighbours<lolita::core::detail::_Span, _domain>;
             auto position = lolita::core::ElementCoordinates{-1, -1};
-            auto f0 = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (
-                    auto & self
-            )
-                    constexpr mutable
-            {
+            auto f0 = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (auto & self) constexpr mutable {
                 using _Neighbour = typename std::tuple_element_t<_j, std::tuple_element_t<_i, _Neighbours>>::value_type;
                 if (_Neighbour::element_ == _neighbour) {
                     position.dim_ = _i;
@@ -1319,7 +1275,7 @@ namespace lolita::core
         _ord_quadrature()
         {
             auto ord_quadrature = _finite_element.ord_quadrature_;
-            return _domain.frame_ == lolita::geometry::Frame::AxiSymmetric ? 2 * ord_quadrature + 1 : 2 * ord_quadrature;
+            return _domain.frame_ == lolita::geometry::Frame::AxiSymmetric() ? 2 * ord_quadrature + 1 : 2 * ord_quadrature;
         }
 
     public:
@@ -1344,12 +1300,12 @@ namespace lolita::core
          * @tparam _method
          * @return
          */
-        template<lolita::finite_element::Method _method>
+        template<lolita::finite_element::FiniteElementMethod _method>
         static constexpr
         lolita::boolean
         hasMethod()
         {
-            return finite_element_.discretization_.method_ == _method;
+            return finite_element_.discretization_ == _method;
         }
 
         /**

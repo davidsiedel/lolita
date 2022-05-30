@@ -43,12 +43,199 @@ namespace lolita::utility
 
     };
 
+    struct EnumA
+    {
+
+    private:
+
+        using Label = std::array<lolita::character, 50>;
+
+        template<typename... _U>
+        static constexpr
+        Label
+        makeLabel(
+                std::basic_string_view<_U> const &... str
+        )
+        requires(std::same_as<lolita::character, _U> && ...)
+        {
+            auto label = Label();
+            auto count = lolita::index(0);
+            auto make = [&] (auto const & s) constexpr mutable {
+                for (auto i = 0; i < s.size(); ++i) {
+                    label[i + count] = s[i];
+                }
+                count += s.size();
+            };
+            (make(str), ...);
+            return label;
+        }
+
+        template<typename... _U>
+        static constexpr
+        Label
+        makeLabel(
+                std::basic_string_view<_U> &&... str
+        )
+        requires(std::same_as<lolita::character, _U> && ...)
+        {
+            auto label = Label();
+            auto count = lolita::index(0);
+            auto make = [&] (auto && s) constexpr mutable {
+                for (auto i = 0; i < s.size(); ++i) {
+                    label[i + count] = s[i];
+                }
+                count += s.size();
+            };
+            (make(std::forward<std::basic_string_view<_U>>(str)), ...);
+            return label;
+        }
+
+    public:
+
+        constexpr
+        EnumA(
+                std::basic_string_view<lolita::character> const & str
+        )
+        :
+        tag_(makeLabel(str))
+        {}
+
+        constexpr
+        EnumA(
+                std::basic_string_view<lolita::character> && str
+        )
+        :
+        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)))
+        {}
+
+//        template<typename... _U>
+//        constexpr
+//        EnumA(
+//                std::basic_string_view<_U> const &... str
+//        )
+//        :
+//        tag_(makeLabel(str...))
+//        {}
+//
+//
+//        template<typename... _U>
+//        constexpr
+//        EnumA(
+//                std::basic_string_view<_U> &&... str
+//        )
+//        :
+//        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)...))
+//        {}
+
+        constexpr
+        lolita::boolean
+        operator==(
+                EnumA const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                EnumA const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator==(
+                std::basic_string_view<lolita::character> const & other
+        )
+        const
+        {
+            auto view = std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
+            return other == view;
+        }
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                std::basic_string_view<lolita::character> const & other
+        )
+        const
+        {
+            return !(* this == other);
+        }
+
+        friend
+        std::ostream &
+        operator<<(
+                std::ostream & os,
+                EnumA const & enuma
+        )
+        {
+            auto const & tag = enuma.tag_;
+            os << std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), lolita::character())));
+            return os;
+        }
+
+        Label tag_;
+
+    };
+
+    struct TupleSlice
+    {
+
+        struct detail
+        {
+
+            template<lolita::index _offset, typename... _T, lolita::index... _i>
+            static constexpr
+            auto
+            tupleSlice(
+                    std::tuple<_T...> const & tuple,
+                    std::integer_sequence<lolita::index, _i...>
+            )
+            {
+                return std::make_tuple(std::get<_i + _offset>(tuple)...);
+            }
+
+        };
+
+        template<lolita::index _begin, lolita::index _end, typename... _T>
+        static constexpr
+        auto
+        tupleSlice(
+                std::tuple<_T...> const & tuple
+        )
+        requires(_end >= _begin && sizeof...(_T) >= _end)
+        {
+            return detail::template tupleSlice<_begin, _T...>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
+        }
+
+    };
+
     using Label = std::array<lolita::character, 150>;
 
     template<typename... _U>
     static constexpr
     lolita::utility::Label
-    label(
+    makeLabel(
+            std::basic_string_view<_U> const &... str
+    )
+    requires(std::same_as<lolita::character, _U> && ...)
+    {
+        auto label = lolita::utility::Label();
+        auto count = lolita::index(0);
+        auto make = [&] (auto const & s) constexpr mutable {
+            for (auto i = 0; i < s.size(); ++i) {
+                label[i + count] = s[i];
+            }
+            count += s.size();
+        };
+        (make(str), ...);
+        return label;
+    }
+
+    template<typename... _U>
+    static constexpr
+    lolita::utility::Label
+    makeLabel(
             std::basic_string_view<_U> &&... str
     )
     requires(std::same_as<lolita::character, _U> && ...)
@@ -62,9 +249,6 @@ namespace lolita::utility
             count += s.size();
         };
         (make(std::forward<std::basic_string_view<_U>>(str)), ...);
-        for (auto i = count; i < label.size(); ++i) {
-            label[i] = '#';
-        }
         return label;
     }
 

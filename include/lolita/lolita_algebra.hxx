@@ -361,6 +361,54 @@ namespace lolita::numerics
 namespace lolita::matrix
 {
 
+    template<typename _T, lolita::integer _rows, lolita::integer _cols>
+    struct Array
+    {
+
+        using Data = std::array<std::array<_T, _rows>, _cols>;
+
+        _T const &
+        operator[] (
+                lolita::integer row,
+                lolita::integer col
+        )
+        const
+        {
+            return data_[col][row];
+        }
+
+        _T &
+        operator[] (
+                lolita::integer row,
+                lolita::integer col
+        )
+        {
+            return data_[col][row];
+        }
+
+        _T const &
+        operator() (
+                lolita::integer row,
+                lolita::integer col
+        )
+        const
+        {
+            return data_[col][row];
+        }
+
+        _T &
+        operator() (
+                lolita::integer row,
+                lolita::integer col
+        )
+        {
+            return data_[col][row];
+        }
+
+        std::array<std::array<_T, _rows>, _cols> data_;
+
+    };
+
     /**
      * @brief
      */
