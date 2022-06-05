@@ -680,10 +680,10 @@ namespace lolita::core2::finite_element
 
         lolita::boolean const static constexpr is_finite_element_ = true;
 
-        template<auto... __args>
+        template<auto __args>
         void
         initialize(
-                lolita::core2::mesh::Mesh<_domain, __args...> & mesh
+                lolita::core2::mesh::Mesh<_domain, __args> & mesh
         )
         {
             std::cout << "making element : " << this->hash() << std::endl;

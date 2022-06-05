@@ -423,17 +423,24 @@ namespace lolita::core2::geometry
             t_T<lolita::core2::geometry::Element::LinearTetrahedron(), t_domain, t_args...>
     >;
 
-    /**
-     * @brief
-     */
-    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
-    using Elements = lolita::utility::tuple_slice_t<
-            std::tuple<
+    namespace detail
+    {
+
+        template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
+        using Elements = std::tuple<
                 Points<t_T, t_domain, t_args...>,
                 Curves<t_T, t_domain, t_args...>,
                 Facets<t_T, t_domain, t_args...>,
                 Solids<t_T, t_domain, t_args...>
-    >, 0, t_domain.dim() + 1>;
+        >;
+
+    }
+
+    /**
+     * @brief
+     */
+    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
+    using Elements = lolita::utility::tuple_slice_t<detail::Elements<t_T, t_domain, t_args...>, 0, t_domain.dim() + 1>;
 
     /**
      * @brief
@@ -572,6 +579,12 @@ namespace lolita::core2::geometry
             template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<>;
 
+        private:
+
+            using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+
+        public:
+
             /**
              * @brief function evaluation given some scalar nodal values
              * @param nodal_field_values
@@ -605,6 +618,11 @@ namespace lolita::core2::geometry
             {
                 return lolita::real(0);
             }
+
+            /**
+             * @brief
+             */
+            NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{};
 
             /**
              * @brief Reference nodes for the reference element
@@ -876,7 +894,8 @@ namespace lolita::core2::geometry
                     value += +nodal_field_values(1) * (1.0 / 4.0) * (1.0 - reference_point(1));
                     value += +nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(1));
                     value += -nodal_field_values(3) * (1.0 / 4.0) * (1.0 + reference_point(1));
-                } else {
+                }
+                else {
                     value += -nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(0));
                     value += -nodal_field_values(1) * (1.0 / 4.0) * (1.0 + reference_point(0));
                     value += +nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(0));
@@ -1035,23 +1054,6 @@ namespace lolita::core2::geometry
 
     }
 
-    template<lolita::core2::geometry::Element t__element, lolita::domain::Domain t__domain>
-    struct Span
-    {
-
-        /**
-         * @brief
-         * @return
-         */
-        static constexpr
-        lolita::core2::geometry::Element
-        getElement()
-        {
-            return t__element;
-        }
-
-    };
-
     /**
      * @brief
      * @tparam t_element
@@ -1063,11 +1065,11 @@ namespace lolita::core2::geometry
 
     private:
 
-        using ElementOuterNeighbourhoodT = typename ElementGeometryTraits<t_element, t_domain>::template OuterConnectivity<Span>;
+        using ElementOuterNeighbourhoodT = typename ElementGeometryTraits<t_element, t_domain>::template OuterConnectivity<detail::ElementView>;
 
-        using ElementInnerNeighbourhoodT = typename ElementGeometryTraits<t_element, t_domain>::template InnerConnectivity<Span>;
+        using ElementInnerNeighbourhoodT = typename ElementGeometryTraits<t_element, t_domain>::template InnerConnectivity<detail::ElementView>;
 
-        using ElementsT = lolita::core2::geometry::Elements<Span, t_domain>;
+        using ElementsT = lolita::core2::geometry::Elements<detail::ElementView, t_domain>;
 
     public:
 
@@ -1295,7 +1297,7 @@ namespace lolita::core2::geometry
 
     private:
 
-        using ElementsT = lolita::core2::geometry::Elements<Span, t_domain>;
+        using ElementsT = lolita::core2::geometry::Elements<detail::ElementView, t_domain>;
 
     public:
 

@@ -61,7 +61,7 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
     std::cout << "triangle with dim " << triangle.dim() << std::endl;
     std::cout << lolita::core2::geometry::DomainGeometryTraits<domain>::getElementCoordinates<triangle>() << std::endl;
 
-    std::cout << "elements size : " << std::tuple_size_v<lolita::core2::geometry::Elements<lolita::core2::geometry::Span, domain>> << std::endl;
+    std::cout << "elements size : " << std::tuple_size_v<lolita::core2::geometry::Elements<lolita::core2::geometry::detail::ElementView, domain>> << std::endl;
 
     auto msh2 = lolita::core2::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, mixed_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
 //    auto msh1 = lolita::core2::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, coupled_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
