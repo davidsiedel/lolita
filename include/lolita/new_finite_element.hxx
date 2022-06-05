@@ -88,7 +88,7 @@ namespace lolita::core::finite_element
              * @tparam _domain
              * @tparam _arg
              */
-            template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _arg>
+            template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, lolita::domain::Domain _domain, auto... _arg>
             struct Implementation : public lolita::core::finite_element::FiniteElementGeometry<_T, _element, _domain, _arg...>
             {
 
@@ -158,7 +158,7 @@ namespace lolita::core::finite_element
                  */
                 lolita::matrix::Vector<lolita::real, dim_>
                 evaluate(
-                        lolita::geometry::Point const & point
+                        lolita::domain::Point const & point
                 )
                 const
                 {
@@ -185,7 +185,7 @@ namespace lolita::core::finite_element
                  */
                 lolita::matrix::Vector<lolita::real, dim_>
                 evaluate(
-                        lolita::geometry::Point const & point,
+                        lolita::domain::Point const & point,
                         lolita::index derivative_direction
                 )
                 const
@@ -237,7 +237,7 @@ namespace lolita::core::finite_element
          * @tparam _domain
          * @tparam _finite_element
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
         struct FiniteElementData : public lolita::core::finite_element::FiniteElementGeometry<FEObject, _element, _domain, _finite_element>
         {
 
@@ -398,8 +398,8 @@ namespace lolita::core::finite_element
          * @tparam _dim
          */
         template<
-                lolita::geometry::Domain _domain,
-                lolita::field::Tensor _field,
+                lolita::domain::Domain _domain,
+                lolita::field::Field _field,
                 lolita::integer _dim,
                 lolita::core::finite_element::unknown::UnknownType _unknown_type
         >
@@ -414,7 +414,7 @@ namespace lolita::core::finite_element
             /**
              * @brief The field object
              */
-            lolita::field::Tensor const static constexpr field_ = _field;
+            lolita::field::Field const static constexpr field_ = _field;
 
             /**
              * @brief The dimension or cardinality of the unknown
@@ -763,7 +763,7 @@ namespace lolita::core::finite_element
              * @tparam _unknown_type
              * @return
              */
-            template<lolita::geometry::Domain _domain, lolita::core::finite_element::unknown::UnknownType _unknown_type>
+            template<lolita::domain::Domain _domain, lolita::core::finite_element::unknown::UnknownType _unknown_type>
             static constexpr
             lolita::integer
             getNumUnknowns()
@@ -822,7 +822,7 @@ namespace lolita::core::finite_element
          * @tparam _domain
          * @tparam _finite_element
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
         struct FiniteElementUnknowns : public lolita::core::finite_element::dataa::FiniteElementData<_element, _domain, _finite_element>
         {
 
@@ -856,7 +856,7 @@ namespace lolita::core::finite_element
          * @tparam _domain
          * @tparam _finite_element
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
         requires(_finite_element.hasMethod(lolita::finite_element::FiniteElementMethod::HHO()) && lolita::core::ElementDescription<_element, _domain>().isCell())
         struct FiniteElementUnknowns<_element, _domain, _finite_element> : public lolita::core::finite_element::dataa::FiniteElementData<_element, _domain, _finite_element>
         {
@@ -920,7 +920,7 @@ namespace lolita::core::finite_element
          * @tparam _domain
          * @tparam _finite_element
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
         requires(_finite_element.hasMethod(lolita::finite_element::FiniteElementMethod::HHO()) && lolita::core::ElementDescription<_element, _domain>().isFace())
         struct FiniteElementUnknowns<_element, _domain, _finite_element> : public lolita::core::finite_element::dataa::FiniteElementData<_element, _domain, _finite_element>
         {
@@ -989,10 +989,10 @@ namespace lolita::core::finite_element
          * @tparam _domain
          * @tparam _finite_element
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
         struct FiniteElementData;
 
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
         requires(_finite_element.hasMethd(lolita::finite_element::FiniteElementMethod::HHO()))
         struct FiniteElementData<_element, _domain, _finite_element>
         {
@@ -1022,7 +1022,7 @@ namespace lolita::core::finite_element
      * @tparam _domain
      * @tparam _finite_element
      */
-    template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::core::Element _element, lolita::geometry::Domain _domain,
+    template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, lolita::core::Element _element, lolita::domain::Domain _domain,
             auto... _finite_element
     >
     struct FiniteElementGeometry
@@ -1043,7 +1043,7 @@ namespace lolita::core::finite_element
         /**
          * @brief
          */
-        template<lolita::core::Element __element, lolita::geometry::Domain __domain, auto... __finite_element>
+        template<lolita::core::Element __element, lolita::domain::Domain __domain, auto... __finite_element>
         using _ElementPointer = std::shared_ptr<_T<__element, __domain, __finite_element...>>;
 
         /**
@@ -1158,7 +1158,7 @@ namespace lolita::core::finite_element
          * @brief Get the current coordinates of the point/node in the mesh
          * @return the vector with x, y and z coordinates
          */
-        lolita::geometry::Point &
+        lolita::domain::Point &
         getCurrentCoordinates()
         requires(_element.isPoint())
         {
@@ -1169,7 +1169,7 @@ namespace lolita::core::finite_element
          * @brief Get the current coordinates of the point/node in the mesh
          * @return the vector with x, y and z coordinates
          */
-        lolita::geometry::Point const &
+        lolita::domain::Point const &
         getCurrentCoordinates()
         const
         requires(_element.isPoint())
@@ -1340,7 +1340,7 @@ namespace lolita::core::finite_element
         template<lolita::core::finite_element::basis::Basis _basis, lolita::index _ord>
         lolita::matrix::Vector<lolita::real, lolita::core::finite_element::basis::FiniteElementBasis<_element, _basis, _ord>::dim_>
         getBasisEvaluation(
-                lolita::geometry::Point const & point
+                lolita::domain::Point const & point
         )
         const
         {
@@ -1360,7 +1360,7 @@ namespace lolita::core::finite_element
         template<lolita::core::finite_element::basis::Basis _basis, lolita::index _ord>
         lolita::matrix::Vector<lolita::real, lolita::core::finite_element::basis::FiniteElementBasis<_element, _basis, _ord>::dim_>
         getBasisDerivative(
-                lolita::geometry::Point const & point,
+                lolita::domain::Point const & point,
                 lolita::index derivative_direction
         )
         const
@@ -1380,7 +1380,7 @@ namespace lolita::core::finite_element
         lolita::real
         getShapeMappingEvaluation(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point
+                lolita::domain::Point const & reference_point
         )
         {
             return lolita::core::element::ElementGeometry<_element, _domain>::getShapeMappingEvaluation(nodal_field_values, reference_point);
@@ -1397,7 +1397,7 @@ namespace lolita::core::finite_element
         lolita::real
         getShapeMappingDerivative(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point,
+                lolita::domain::Point const & reference_point,
                 lolita::index derivative_direction
         )
         {
@@ -1415,7 +1415,7 @@ namespace lolita::core::finite_element
          */
         lolita::real
         getShapeMappingDifferential(
-                lolita::geometry::Point const & point
+                lolita::domain::Point const & point
         )
         const
         {
@@ -1437,7 +1437,7 @@ namespace lolita::core::finite_element
             else {
                 du = numerics::abs(ru.col(0).norm());
             }
-            if constexpr (_domain.frame_ == lolita::geometry::Frame::AxiSymmetric()) {
+            if constexpr (_domain.frame_ == lolita::domain::Frame::AxiSymmetric()) {
                 lolita::real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
                 if (r0 < 1.e-10) {
                     r0 = 1.e-10;
@@ -1456,8 +1456,8 @@ namespace lolita::core::finite_element
          */
         lolita::real
         getRiemannianDistance(
-                lolita::geometry::Point const & first_point,
-                lolita::geometry::Point const & second_point,
+                lolita::domain::Point const & first_point,
+                lolita::domain::Point const & second_point,
                 lolita::integer direction = -1
         )
         const
@@ -1465,8 +1465,8 @@ namespace lolita::core::finite_element
             if constexpr (_ElementDescription::isCell()) {
                 auto const & current_coordinates = this->getCurrentCoordinates();
                 auto distance = lolita::real();
-                auto mp0 = lolita::geometry::Point();
-                auto mp1 = lolita::geometry::Point();
+                auto mp0 = lolita::domain::Point();
+                auto mp1 = lolita::domain::Point();
                 for (lolita::index i = 0; i < _element.dim_; ++i) {
                     mp0(i) = FiniteElementGeometry::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
                     mp1(i) = FiniteElementGeometry::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
@@ -1522,12 +1522,12 @@ namespace lolita::core::finite_element
          * @brief
          * @return
          */
-        lolita::geometry::Point
+        lolita::domain::Point
         getCurrentDiameters()
         const
         {
             auto reference_coordinates = FiniteElementGeometry::getReferenceCoordinates();
-            auto current_diameters = lolita::geometry::Point().setZero();
+            auto current_diameters = lolita::domain::Point().setZero();
             for (lolita::index i = 0; i < _element.num_nodes_; ++i) {
                 for (lolita::index j = i + 1; j < _element.num_nodes_; ++j) {
                     auto const & pt0 = reference_coordinates.col(i);
@@ -1548,12 +1548,12 @@ namespace lolita::core::finite_element
          * @brief
          * @return
          */
-        lolita::geometry::Point
+        lolita::domain::Point
         getCurrentCentroid()
         const
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            return lolita::geometry::getBarycenter(current_nodes_coordinates);
+            return lolita::domain::getBarycenter(current_nodes_coordinates);
         }
 
         /**
@@ -1561,11 +1561,11 @@ namespace lolita::core::finite_element
          * @return
          */
         static
-        lolita::geometry::Point
+        lolita::domain::Point
         getReferenceCentroid()
         {
             auto nds = FiniteElementGeometry::getReferenceCoordinates();
-            return lolita::geometry::getBarycenter(nds);
+            return lolita::domain::getBarycenter(nds);
         }
 
         /**
@@ -1573,10 +1573,10 @@ namespace lolita::core::finite_element
          * @return
          */
         static
-        lolita::geometry::Point
+        lolita::domain::Point
         getReferenceDiameters()
         {
-            auto dts = lolita::geometry::Point();
+            auto dts = lolita::domain::Point();
             auto nds = FiniteElementGeometry::getReferenceCoordinates();
             dts.setZero();
             for (lolita::index i = 0; i < _element.num_nodes_; ++i) {
@@ -1623,12 +1623,12 @@ namespace lolita::core::finite_element
          */
         template<lolita::finite_element::Quadrature _quadrature, lolita::index _ord>
         static
-        lolita::matrix::Span<lolita::geometry::Point const>
+        lolita::matrix::Span<lolita::domain::Point const>
         getReferenceQuadraturePoint(
                 lolita::index index
         )
         {
-            return lolita::matrix::Span<lolita::geometry::Point const>(
+            return lolita::matrix::Span<lolita::domain::Point const>(
                     lolita::core::element::ElementQuadrature<_element, _quadrature, _ord>::reference_points_[index].begin()
             );
         }
@@ -1659,13 +1659,13 @@ namespace lolita::core::finite_element
          * @return
          */
         template<lolita::finite_element::Quadrature _quadrature, lolita::index _ord>
-        lolita::geometry::Point
+        lolita::domain::Point
         getCurrentQuadraturePoint(
                 lolita::index index
         )
         const
         {
-            auto p = lolita::geometry::Point();
+            auto p = lolita::domain::Point();
             auto const nds = this->getCurrentCoordinates();
             for (lolita::index j = 0; j < 3; ++j) {
                 p(j) = FiniteElementGeometry::getShapeMappingEvaluation(nds.row(j), getReferenceQuadraturePoint<_quadrature, _ord>(index));
@@ -1707,7 +1707,7 @@ namespace lolita::core::finite_element
          */
         template<lolita::finite_element::Quadrature _quadrature, lolita::index _ord, lolita::index _i, lolita::index _j>
         static
-        lolita::geometry::Point
+        lolita::domain::Point
         getComponentReferenceQuadraturePoint(
                 lolita::index component_index,
                 lolita::index index
@@ -1716,7 +1716,7 @@ namespace lolita::core::finite_element
         {
 //            auto const constexpr _component = lolita::core::component<_element, _domain, _i, _j>();
             auto const constexpr _component = _ElementDescription::template getComponent<_i, _j>();
-            auto p = lolita::geometry::Point();
+            auto p = lolita::domain::Point();
             using ComponentGeometry = FiniteElementGeometry<_T, _component, _domain, _finite_element...>;
             auto const & elt_reference_nodes = lolita::core::element::ElementGeometry<_element, _domain>::reference_nodes_;
             for (lolita::index i = 0; i < 3; ++i) {
@@ -1765,7 +1765,7 @@ namespace lolita::core::finite_element
          * @return
          */
         template<lolita::finite_element::Quadrature _quadrature, lolita::index _ord, lolita::index _i, lolita::index _j>
-        lolita::geometry::Point
+        lolita::domain::Point
         getComponentCurrentQuadraturePoint(
                 lolita::index component_index,
                 lolita::index index
@@ -1773,7 +1773,7 @@ namespace lolita::core::finite_element
         const
         requires(!_element.isPoint())
         {
-            auto p = lolita::geometry::Point();
+            auto p = lolita::domain::Point();
             auto const cpt_ref_pnt = getComponentReferenceQuadraturePoint<_quadrature, _ord, _i, _j>(component_index, index);
             auto const nds = this->getCurrentCoordinates();
             for (lolita::index j = 0; j < 3; ++j) {
@@ -1787,9 +1787,9 @@ namespace lolita::core::finite_element
          * @param point
          * @return
          */
-        lolita::geometry::Point
+        lolita::domain::Point
         getNormalVector(
-                lolita::geometry::Point const & point
+                lolita::domain::Point const & point
         )
         const
         requires(_ElementDescription::isFace())
@@ -1803,10 +1803,10 @@ namespace lolita::core::finite_element
                 }
             }
             if constexpr (_element.isPoint()) {
-                return lolita::geometry::Point{0, 0, 0};
+                return lolita::domain::Point{0, 0, 0};
             }
             else if constexpr (_element.isCurve()) {
-                return lolita::geometry::Point{ru(1)/ru.norm(), -ru(0)/ru.norm(), 0};
+                return lolita::domain::Point{ru(1) / ru.norm(), -ru(0) / ru.norm(), 0};
             }
             else {
                 return (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
@@ -1819,16 +1819,16 @@ namespace lolita::core::finite_element
          * @param direction
          * @return
          */
-        lolita::geometry::Point
+        lolita::domain::Point
         getTangentVector(
-                lolita::geometry::Point const & point,
+                lolita::domain::Point const & point,
                 lolita::index direction
         )
         const
         requires(_element.isCurve())
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto tangent_vector = lolita::geometry::Point();
+            auto tangent_vector = lolita::domain::Point();
             for (lolita::index i = 0; i < 3; ++i) {
                 tangent_vector(i) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, direction);
             }
@@ -1858,7 +1858,7 @@ namespace lolita::core::finite_element
     };
 
 
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
     struct IntegrationPoint
     {
 
@@ -1920,7 +1920,7 @@ namespace lolita::core::finite_element
      * @tparam _domain
      * @tparam _finite_element
      */
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
     struct FiniteElementBase1 : public lolita::core::finite_element::FiniteElementGeometry<FEObject, _element, _domain, _finite_element>
     {
 
@@ -2070,10 +2070,10 @@ namespace lolita::core::finite_element
 
     };
 
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain, auto _finite_element>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain, auto _finite_element>
     struct FEObject;
 
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain, auto _element_group>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain, auto _element_group>
     struct FEObject : public lolita::core::finite_element::FiniteElementGeometry<FEObject, _element, _domain, _element_group>
     {
 
@@ -2287,7 +2287,7 @@ namespace lolita::core::finite_element
                 auto const constexpr _element_coordinates = lolita::core::MeshDescription<_domain>::template getElementCoordinates<_element>();
                 ptr_element->tag_ = initialization_data.tag_;
                 ptr_element->domains_ = initialization_data.domains_;
-                ptr_element->components_ = std::make_shared<lolita::geometry::Point>(initialization_data.coordinates_);
+                ptr_element->components_ = std::make_shared<lolita::domain::Point>(initialization_data.coordinates_);
                 ptr_element->make();
                 auto elem_hash = std::to_string(initialization_data.tag_);
                 mesh_data.elements_.template getElements<_element_coordinates.dim_, _element_coordinates.tag_>().insert({elem_hash, ptr_element});
@@ -2442,7 +2442,7 @@ namespace lolita::core::finite_element
 
     };
 
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _element_group>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _element_group>
     struct FEObject<_element, _domain, _element_group> : public lolita::core::finite_element::unknown::FiniteElementUnknowns<_element, _domain, _element_group>
     {
 

@@ -21,7 +21,7 @@
 namespace lolita
 {
 
-    namespace geometry
+    namespace domain
     {
 
         using Point = lolita::matrix::Vector<lolita::real, 3>;
@@ -47,165 +47,7 @@ namespace lolita
             return barycenter;
         }
 
-        /*
-         *
-         */
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getNormalVector2(
-                _Matrix const &
-                vector_args
-        );
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getNormalVector2(
-                _Matrix const &
-                vector_args
-        )
-        requires(lolita::matrix::rows<_Matrix>() == 1 && lolita::matrix::cols<_Matrix>() == 3)
-        {
-            auto norm = vector_args.norm();
-            return lolita::matrix::Vector<typename _Matrix::Scalar, 3>{vector_args(1)/norm, -vector_args(0)/norm, 0};
-        }
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getNormalVector2(
-                _Matrix const &
-                vector_args
-        )
-        requires(lolita::matrix::rows<_Matrix>() == 3 && lolita::matrix::cols<_Matrix>() == 3)
-        {
-            auto v0 = vector_args.col(0) / vector_args.col(0).norm();
-            auto v1 = vector_args.col(1) / vector_args.col(1).norm();
-            return v0.cross(v1);
-        }
-
-        /*
-         *
-         */
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getNormalVector(
-                _Matrix const &
-                vector_args
-        );
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getNormalVector(
-                _Matrix const &
-                vector_args
-        )
-        requires(lolita::matrix::rows<_Matrix>() == 1 && lolita::matrix::cols<_Matrix>() == 1)
-        {
-            return vector_args;
-        }
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getNormalVector(
-                _Matrix const &
-                vector_args
-        )
-        requires(lolita::matrix::rows<_Matrix>() == 2 && lolita::matrix::cols<_Matrix>() == 1)
-        {
-            auto norm = vector_args.norm();
-            return lolita::matrix::Vector<typename _Matrix::Scalar, 2>{vector_args(1)/norm, -vector_args(0)/norm};
-        }
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getNormalVector(
-                _Matrix const &
-                vector_args
-        )
-        requires(lolita::matrix::rows<_Matrix>() == 3 && lolita::matrix::cols<_Matrix>() == 2)
-        {
-            auto v0 = vector_args.col(0);
-            auto v1 = vector_args.col(1);
-            v0 /= v0.norm();
-            v1 /= v1.norm();
-            return v0.cross(v1);
-        }
-
-        /*
-         *
-         */
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getRotationMatrix(
-                _Matrix const &
-                point_args
-        );
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getRotationMatrix(
-                _Matrix const &
-                point_args
-        )
-        requires(lolita::matrix::rows<_Matrix>() == 1 && lolita::matrix::cols<_Matrix>() == 1)
-        {
-            return point_args;
-        }
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getRotationMatrix(
-                _Matrix const &
-                point_args
-        )
-        requires(lolita::matrix::rows<_Matrix>() == 2 && lolita::matrix::cols<_Matrix>() == 2)
-        {
-            auto rotation_matrix = lolita::matrix::Matrix<typename _Matrix::Scalar, 2, 2>();
-            auto edge = point_args.col(1) - point_args.col(0);
-            edge /= edge.norm();
-            rotation_matrix(0, 0) = edge(0);
-            rotation_matrix(0, 1) = edge(1);
-            rotation_matrix(1, 0) = edge(1);
-            rotation_matrix(1, 1) = -edge(0);
-            return rotation_matrix;
-        }
-
-        template<lolita::matrix::MatrixConcept _Matrix>
-        static inline
-        auto
-        getRotationMatrix(
-                _Matrix const &
-                point_args
-        )
-        requires(lolita::matrix::rows<_Matrix>() == 3 && lolita::matrix::cols<_Matrix>() == 3)
-        {
-            auto rotation_matrix = lolita::matrix::Matrix<typename _Matrix::Scalar, 3, 3>();
-            auto x_axis = point_args.col(2) - point_args.col(0);
-            auto vector = point_args.col(1) - point_args.col(0);
-            auto z_axis = x_axis.cross(vector);
-            auto y_axis = z_axis.cross(x_axis);
-            x_axis /= x_axis.norm();
-            y_axis /= y_axis.norm();
-            z_axis /= z_axis.norm();
-            rotation_matrix.row(0) = x_axis;
-            rotation_matrix.row(1) = y_axis;
-            rotation_matrix.row(2) = z_axis;
-            return rotation_matrix;
-        }
-
-        struct Frame : public lolita::utility::EnumA
+        struct Frame : public lolita::utility::Enumeration<Frame>
         {
 
             constexpr
@@ -213,7 +55,7 @@ namespace lolita
                     std::basic_string_view<lolita::character> && tag
             )
             :
-            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Frame>(std::forward<std::basic_string_view<lolita::character>>(tag))
             {}
 
             static constexpr
@@ -223,6 +65,14 @@ namespace lolita
                 return Frame("AxiSymmetric");
             }
 
+            constexpr
+            lolita::boolean
+            isAxiSymmetric()
+            const
+            {
+                return * this == AxiSymmetric();
+            }
+
             static constexpr
             Frame
             Cartesian()
@@ -230,26 +80,88 @@ namespace lolita
                 return Frame("Cartesian");
             }
 
+            constexpr
+            lolita::boolean
+            isCartesian()
+            const
+            {
+                return * this == Cartesian();
+            }
+
         };
 
-        struct Domain : public lolita::utility::EnumA
+        struct Domain : public lolita::utility::Enumeration<Domain>
         {
 
             constexpr
             Domain(
                     std::basic_string_view<lolita::character> && tag,
                     lolita::index dim,
-                    lolita::geometry::Frame && frame
+                    lolita::domain::Frame && frame
             )
             :
-            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag)),
+            lolita::utility::Enumeration<Domain>(std::forward<std::basic_string_view<lolita::character>>(tag)),
             dim_(dim),
-            frame_(std::forward<lolita::geometry::Frame>(frame))
+            frame_(std::forward<lolita::domain::Frame>(frame))
             {}
+
+            constexpr
+            lolita::boolean
+            hasDim(
+                    lolita::integer dim
+            )
+            const
+            {
+                return dim_ == dim;
+            }
+
+            constexpr
+            lolita::boolean
+            hasFrame(
+                    lolita::domain::Frame const & frame
+            )
+            const
+            {
+                return frame_ == frame;
+            }
+
+            constexpr
+            lolita::boolean
+            hasFrame(
+                    lolita::domain::Frame && frame
+            )
+            const
+            {
+                return frame_ == std::forward<lolita::domain::Frame>(frame);
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::integer
+            dim()
+            const
+            {
+                return dim_;
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::domain::Frame const &
+            frame()
+            const
+            {
+                return frame_;
+            }
 
             lolita::index dim_;
 
-            lolita::geometry::Frame frame_;
+            lolita::domain::Frame frame_;
 
         };
 
@@ -258,7 +170,7 @@ namespace lolita
     namespace field
     {
 
-        struct Mapping : public lolita::utility::EnumA
+        struct Mapping : public lolita::utility::Enumeration<Mapping>
         {
 
             constexpr
@@ -266,7 +178,7 @@ namespace lolita
                     std::basic_string_view<lolita::character> && tag
             )
             :
-            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Mapping>(std::forward<std::basic_string_view<lolita::character>>(tag))
             {}
 
             static constexpr
@@ -276,11 +188,27 @@ namespace lolita
                 return Mapping("Gradient");
             }
 
+            constexpr
+            lolita::boolean
+            isGradient()
+            const
+            {
+                return * this == Gradient();
+            }
+
             static constexpr
             Mapping
             Identity()
             {
                 return Mapping("Identity");
+            }
+
+            constexpr
+            lolita::boolean
+            isIdentity()
+            const
+            {
+                return * this == Identity();
             }
 
             static constexpr
@@ -290,11 +218,27 @@ namespace lolita
                 return Mapping("Divergence");
             }
 
+            constexpr
+            lolita::boolean
+            isDivergence()
+            const
+            {
+                return * this == Divergence();
+            }
+
             static constexpr
             Mapping
             LargeStrain()
             {
                 return Mapping("LargeStrain");
+            }
+
+            constexpr
+            lolita::boolean
+            isLargeStrain()
+            const
+            {
+                return * this == LargeStrain();
             }
 
             static constexpr
@@ -304,48 +248,124 @@ namespace lolita
                 return Mapping("SmallStrain");
             }
 
+            constexpr
+            lolita::boolean
+            isSmallStrain()
+            const
+            {
+                return * this == SmallStrain();
+            }
+
         };
 
-        struct Tensor : public lolita::utility::EnumA
+        namespace detail
+        {
+
+            template<typename T>
+            struct MappingConcept : public std::false_type {};
+
+            template<>
+            struct MappingConcept<Mapping> : public std::true_type {};
+
+        }
+
+        template<typename T>
+        concept MappingConcept = detail::MappingConcept<T>::value;
+
+        struct Field : public lolita::utility::Enumeration<Field>
         {
 
             constexpr
-            Tensor(
+            Field(
                     std::basic_string_view<lolita::character> && tag,
                     lolita::index dim
             )
             :
-            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag)),
+            lolita::utility::Enumeration<Field>(std::forward<std::basic_string_view<lolita::character>>(tag)),
             ord_(dim)
             {}
 
             static constexpr
-            Tensor
+            Field
             Displacement()
             {
-                return Tensor("Displacement", 1);
+                return Field("Displacement", 1);
+            }
+
+            constexpr
+            lolita::boolean
+            isDisplacement()
+            const
+            {
+                return * this == Displacement();
             }
 
             static constexpr
-            Tensor
+            Field
             Damage()
             {
-                return Tensor("Damage", 0);
+                return Field("Damage", 0);
+            }
+
+            constexpr
+            lolita::boolean
+            isDamage()
+            const
+            {
+                return * this == Damage();
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            isScalar()
+            const
+            {
+                return ord_ == 0;
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            isVector()
+            const
+            {
+                return ord_ == 1;
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            isTensor(
+                    lolita::integer ord
+            )
+            const
+            {
+                return ord_ == ord;
             }
 
             lolita::index ord_;
 
         };
 
-        template<typename... _Mapping>
-        requires((std::same_as<_Mapping, lolita::field::Mapping> && ...) && sizeof...(_Mapping) > 0)
+        template<lolita::field::MappingConcept... t_Mapping>
+        requires(sizeof...(t_Mapping) > 0)
         struct Unknown
         {
 
             constexpr
             Unknown(
-                    lolita::field::Tensor const & tensor,
-                    _Mapping &&... mappings
+                    lolita::field::Field const & tensor,
+                    t_Mapping &&... mappings
             )
             :
             tensor_(tensor),
@@ -354,11 +374,11 @@ namespace lolita
 
             constexpr
             Unknown(
-                    lolita::field::Tensor && tensor,
-                    _Mapping &&... mappings
+                    lolita::field::Field && tensor,
+                    t_Mapping &&... mappings
             )
             :
-            tensor_(std::forward<lolita::field::Tensor>(tensor)),
+            tensor_(std::forward<lolita::field::Field>(tensor)),
             mappings_({std::forward<lolita::field::Mapping>(mappings)...})
             {}
 
@@ -366,10 +386,10 @@ namespace lolita
             Unknown(
                     std::basic_string_view<lolita::character> && tag,
                     lolita::index dim,
-                    _Mapping &&... mappings
+                    t_Mapping &&... mappings
             )
             :
-            tensor_(std::forward<lolita::field::Tensor>(Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), dim))),
+            tensor_(std::forward<lolita::field::Field>(Field(std::forward<std::basic_string_view<lolita::character>>(tag), dim))),
             mappings_({std::forward<lolita::field::Mapping>(mappings)...})
             {}
 
@@ -389,9 +409,9 @@ namespace lolita
             )
             const = default;
 
-            lolita::field::Tensor tensor_;
+            lolita::field::Field tensor_;
 
-            std::array<lolita::field::Mapping, sizeof...(_Mapping)> mappings_;
+            std::array<lolita::field::Mapping, sizeof...(t_Mapping)> mappings_;
 
         };
 
@@ -409,226 +429,12 @@ namespace lolita
         template<typename T>
         concept UnknownConcept = detail::IsUnknownConcept<T>::value;
 
-//        struct MaterialProperty : public Tensor
-//        {
-//
-//            constexpr
-//            MaterialProperty(
-//                    std::basic_string_view<lolita::character> &&
-//                    tag
-//            )
-//            :
-//            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), 0)
-//            {}
-//
-//        };
-//
-//        struct InternalVariable : public Tensor
-//        {
-//
-//            constexpr
-//            InternalVariable(
-//                    std::basic_string_view<lolita::character> &&
-//                    tag,
-//                    lolita::index
-//                    ord
-//            )
-//            :
-//            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
-//            {}
-//
-//        };
-//
-//        struct ExternalVariable : public Tensor
-//        {
-//
-//            constexpr
-//            ExternalVariable(
-//                    std::basic_string_view<lolita::character> &&
-//                    tag,
-//                    lolita::index
-//                    ord
-//            )
-//            :
-//            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
-//            {}
-//
-//        };
-//
-//        struct SomeField : public Tensor
-//        {
-//
-//            constexpr
-//            SomeField(
-//                    std::basic_string_view<lolita::character> &&
-//                    tag,
-//                    lolita::index
-//                    ord
-//            )
-//            :
-//            Tensor(std::forward<std::basic_string_view<lolita::character>>(tag), ord)
-//            {}
-//
-//        };
-
     }
 
     namespace behaviour
     {
 
-        template<lolita::field::UnknownConcept auto... _unknown>
-        struct MgisBehaviour3
-        {
-
-//            using MaterialPoint = mgis::behaviour::BehaviourData;
-
-            constexpr
-            MgisBehaviour3()
-            {}
-
-            constexpr
-            lolita::boolean
-            operator==(
-                    MgisBehaviour3 const & other
-            )
-            const = default;
-
-            constexpr
-            lolita::boolean
-            operator!=(
-                    MgisBehaviour3 const & other
-            )
-            const = default;
-
-            template<lolita::field::UnknownConcept auto __unknown>
-            constexpr
-            lolita::index
-            getUnknownIndex()
-            const
-            {
-                auto idx = lolita::index(sizeof...(_unknown));
-                auto set_index = [&] <lolita::index _i = 0> (
-                        auto & self
-                )
-                        constexpr mutable
-                {
-                    using Unknowns = std::tuple<std::remove_cvref_t<decltype(_unknown)>...>;
-                    auto constexpr unknowns = Unknowns{_unknown...};
-                    if constexpr (std::is_same_v<std::tuple_element_t<_i, Unknowns>, std::remove_cvref_t<decltype(__unknown)>>) {
-                        if (lolita::utility::template get<_i>(unknowns) == __unknown) {
-                            idx = _i;
-                        }
-                    }
-                    if constexpr (_i < sizeof...(_unknown) - 1) {
-                        self.template operator()<_i + 1>(self);
-                    }
-                };
-                set_index(set_index);
-                return idx;
-            }
-
-        };
-
-        namespace detail
-        {
-
-            template<typename _T>
-            struct IsMgisBehaviour3 : std::false_type {};
-
-
-            template<lolita::field::UnknownConcept auto... _unknown>
-            struct IsMgisBehaviour3<MgisBehaviour3<_unknown...>> : std::true_type {};
-
-        }
-
-        template<typename _T>
-        concept MgisBehaviour3Concept = detail::IsMgisBehaviour3<_T>::value;
-
-        template<lolita::behaviour::MgisBehaviour3Concept auto _behaviour>
-        struct Behaviour
-        {
-
-            lolita::behaviour::MgisBehaviour3Concept auto const static constexpr b = _behaviour;
-
-            Behaviour()
-            {}
-
-            mgis::behaviour::Behaviour behaviour_;
-
-        };
-
-        template<lolita::behaviour::MgisBehaviour3Concept auto... _behaviour>
-        struct BehaviourHolder
-        {
-
-            using _Behaviours = std::tuple<lolita::behaviour::Behaviour<_behaviour>...>;
-
-            BehaviourHolder(
-                    lolita::behaviour::Behaviour<_behaviour> const &...
-                    behaviours
-            )
-            :
-            behaviours_(behaviours...)
-            {}
-
-            constexpr
-            lolita::boolean
-            operator==(
-                    BehaviourHolder const & other
-            )
-            const = default;
-
-            constexpr
-            lolita::boolean
-            operator!=(
-                    BehaviourHolder const & other
-            )
-            const = default;
-
-        private:
-
-            template<lolita::behaviour::MgisBehaviour3Concept auto __behaviour>
-            static constexpr
-            lolita::index
-            getBehaviourIndex()
-            {
-                auto index = std::tuple_size_v<_Behaviours>;
-                auto set_index = [&] <lolita::index _i = 0> (auto & self)
-                constexpr mutable
-                {
-                    if constexpr (std::is_same_v<lolita::behaviour::Behaviour<__behaviour>, std::tuple_element_t<_i, _Behaviours>>) {
-                        index = _i;
-                    }
-                    if constexpr (_i < std::tuple_size_v<_Behaviours> - 1) {
-                        self.template operator()<_i + 1>(self);
-                    }
-                };
-                set_index(set_index);
-                return index;
-            }
-
-        public:
-
-            template<lolita::behaviour::MgisBehaviour3Concept auto __behaviour>
-            std::tuple_element_t<getBehaviourIndex<__behaviour>(), _Behaviours> const &
-            getBehaviour()
-            const
-            {
-                return std::get<getBehaviourIndex<__behaviour>()>(behaviours_);
-            }
-
-            template<lolita::behaviour::MgisBehaviour3Concept auto __behaviour>
-            std::tuple_element_t<getBehaviourIndex<__behaviour>(), _Behaviours> &
-            getBehaviour()
-            {
-                return std::get<getBehaviourIndex<__behaviour>()>(behaviours_);
-            }
-
-            _Behaviours behaviours_;
-
-        };
-
-        using ParameterFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
+        using ParameterFunction = std::function<lolita::real(lolita::domain::Point const &, lolita::real const &)>;
 
         struct MgisParameter
         {
@@ -746,7 +552,7 @@ namespace lolita
         /**
          * @brief
          */
-        struct Quadrature : public lolita::utility::EnumA
+        struct Quadrature : public lolita::utility::Enumeration<Quadrature>
         {
 
             /**
@@ -758,7 +564,7 @@ namespace lolita
                     std::basic_string_view<lolita::character> && tag
             )
             :
-            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Quadrature>(std::forward<std::basic_string_view<lolita::character>>(tag))
             {}
 
             /**
@@ -772,12 +578,20 @@ namespace lolita
                 return Quadrature("Gauss");
             }
 
+            constexpr
+            lolita::boolean
+            isGauss()
+            const
+            {
+                return * this == Gauss();
+            }
+
         };
 
         /**
          * @brief
          */
-        struct Loading : public lolita::utility::EnumA
+        struct Loading : public lolita::utility::Enumeration<Loading>
         {
 
             /**
@@ -788,8 +602,8 @@ namespace lolita
             Loading(
                     std::basic_string_view<lolita::character> && tag
             )
-                    :
-                    lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            :
+            lolita::utility::Enumeration<Loading>(std::forward<std::basic_string_view<lolita::character>>(tag))
             {}
 
             /**
@@ -803,6 +617,14 @@ namespace lolita
                 return Loading("Natural");
             }
 
+            constexpr
+            lolita::boolean
+            isNatural()
+            const
+            {
+                return * this == Natural();
+            }
+
             /**
              * @brief
              * @return
@@ -814,9 +636,17 @@ namespace lolita
                 return Loading("Constraint");
             }
 
+            constexpr
+            lolita::boolean
+            isConstraint()
+            const
+            {
+                return * this == Constraint();
+            }
+
         };
 
-        using LoadFunction = std::function<lolita::real(lolita::geometry::Point const &, lolita::real const &)>;
+        using LoadFunction = std::function<lolita::real(lolita::domain::Point const &, lolita::real const &)>;
 
         /**
          * @brief
@@ -878,7 +708,7 @@ namespace lolita
              */
             lolita::real
             getImposedValue(
-                    lolita::geometry::Point const &
+                    lolita::domain::Point const &
                     point,
                     lolita::real const &
                     time
@@ -886,6 +716,17 @@ namespace lolita
             const
             {
                 return function_(point, time);
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            lolita::boolean
+            isConstrained()
+            const
+            {
+                return loading_.isConstraint();
             }
 
             /**
@@ -988,7 +829,7 @@ namespace lolita
         /**
          * @brief
          */
-        struct FiniteElementMethod : public lolita::utility::EnumA
+        struct FiniteElementMethod : public lolita::utility::Enumeration<FiniteElementMethod>
         {
 
             /**
@@ -1000,7 +841,7 @@ namespace lolita
                     std::basic_string_view<lolita::character> && tag
             )
             :
-            lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<FiniteElementMethod>(std::forward<std::basic_string_view<lolita::character>>(tag))
             {}
 
             /**
@@ -1014,6 +855,14 @@ namespace lolita
                 return FiniteElementMethod("HHO");
             }
 
+            constexpr
+            lolita::boolean
+            isHHO()
+            const
+            {
+                return * this == HHO();
+            }
+
         };
 
         /**
@@ -1025,7 +874,7 @@ namespace lolita
             /**
              * @brief
              */
-            struct Stabilization : public lolita::utility::EnumA
+            struct Stabilization : public lolita::utility::Enumeration<Stabilization>
             {
 
                 /**
@@ -1037,7 +886,7 @@ namespace lolita
                         std::basic_string_view<lolita::character> && tag
                 )
                 :
-                lolita::utility::EnumA(std::forward<std::basic_string_view<lolita::character>>(tag))
+                lolita::utility::Enumeration<Stabilization>(std::forward<std::basic_string_view<lolita::character>>(tag))
                 {}
 
                 /**
@@ -1051,6 +900,14 @@ namespace lolita
                     return Stabilization("HHO");
                 }
 
+                constexpr
+                lolita::boolean
+                isHHO()
+                const
+                {
+                    return * this == HHO();
+                }
+
                 /**
                  * @brief
                  * @return
@@ -1060,6 +917,14 @@ namespace lolita
                 HDG()
                 {
                     return Stabilization("HDG");
+                }
+
+                constexpr
+                lolita::boolean
+                isHDG()
+                const
+                {
+                    return * this == HDG();
                 }
 
             };
@@ -1108,6 +973,30 @@ namespace lolita
 
             /**
              * @brief
+             * @return
+             */
+            constexpr
+            lolita::integer
+            ordCell()
+            const
+            {
+                return ord_cell_;
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::integer
+            ordFace()
+            const
+            {
+                return ord_face_;
+            }
+
+            /**
+             * @brief
              */
             lolita::integer ord_cell_;
 
@@ -1128,7 +1017,7 @@ namespace lolita
             { arg.ordMapping(mapping) } -> std::convertible_to<lolita::index>;
         };
 
-        template<lolita::field::UnknownConcept auto _unknown, lolita::behaviour::MgisBehaviour3Concept auto _behaviour, lolita::finite_element::FiniteElementMethodConcept auto _finite_element_method>
+        template<lolita::field::UnknownConcept auto _unknown, auto _behaviour, lolita::finite_element::FiniteElementMethodConcept auto _finite_element_method>
         struct FiniteElement
         {
 
@@ -1178,11 +1067,43 @@ namespace lolita
             const = default;
 
             constexpr
-            lolita::field::Tensor
-            getField()
+            UnknownType const &
+            unknown()
             const
             {
-                return unknown_.tensor_;
+                return unknown_;
+            }
+
+            constexpr
+            FiniteElementMethodType const &
+            discretization()
+            const
+            {
+                return discretization_;
+            }
+
+            constexpr
+            lolita::finite_element::Quadrature const &
+            quadrature()
+            const
+            {
+                return quadrature_;
+            }
+
+            constexpr
+            lolita::integer
+            ordQuadrature()
+            const
+            {
+                return ord_quadrature_;
+            }
+
+            constexpr
+            lolita::field::Field const &
+            field()
+            const
+            {
+                return unknown_.field();
             }
 
             constexpr
@@ -1501,7 +1422,7 @@ namespace lolita
 
         };
 
-        template<lolita::geometry::Domain domain, lolita::field::UnknownConcept auto... unknowns>
+        template<lolita::domain::Domain domain, lolita::field::UnknownConcept auto... unknowns>
         struct Mesh
         {
 

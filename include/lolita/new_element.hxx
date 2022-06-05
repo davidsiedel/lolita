@@ -27,9 +27,9 @@ namespace lolita::core::element
          * @tparam _args
          */
         template<
-                template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T,
+                template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T,
                 lolita::core::Element _element,
-                lolita::geometry::Domain _domain,
+                lolita::domain::Domain _domain,
                 auto... _args
         >
         struct _ElementNeighboursPolicy
@@ -37,7 +37,7 @@ namespace lolita::core::element
 
         private:
 
-            template<lolita::core::Element __element, lolita::geometry::Domain __domain, auto... __args>
+            template<lolita::core::Element __element, lolita::domain::Domain __domain, auto... __args>
             using __Neighbours = std::vector<_T<__element, __domain, __args...>>;
 
             template<lolita::core::Element __element>
@@ -75,9 +75,9 @@ namespace lolita::core::element
          * @brief
          */
         template<
-                template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T,
+                template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T,
                 lolita::core::Element _element,
-                lolita::geometry::Domain _domain,
+                lolita::domain::Domain _domain,
                 auto... _args
         >
         using _ElementNeighbours = typename detail::_ElementNeighboursPolicy<_T, _element, _domain, _args...>::_Neighbours;
@@ -91,7 +91,7 @@ namespace lolita::core::element
     using ElementNodeConnectivity = std::array<lolita::index, _element.num_nodes_>;
 
 
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain>
     requires(_element == lolita::core::Element::Node())
     struct ElementGeometry<_element, _domain>
     {
@@ -106,12 +106,12 @@ namespace lolita::core::element
         /**
          * @brief Sub-elements composition
          */
-        using Components = lolita::geometry::Point;
+        using Components = lolita::domain::Point;
 
         /**
          * @brief Sup-elements composition
          */
-        template<template<lolita::core::Element __element, lolita::geometry::Domain __domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element __element, lolita::domain::Domain __domain, auto...> typename _T, auto... __args>
         using Neighbours = lolita::core::element::detail::_ElementNeighbours<_T, _element, _domain, __args...>;
 
         /**
@@ -124,7 +124,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingEvaluation(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point
+                lolita::domain::Point const & reference_point
         )
         {
             return nodal_field_values(0);
@@ -141,7 +141,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingDerivative(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point,
+                lolita::domain::Point const & reference_point,
                 lolita::index derivative_direction
         )
         {
@@ -150,7 +150,7 @@ namespace lolita::core::element
 
     };
 
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain>
     requires(_element == lolita::core::Element::LinearSegment())
     struct ElementGeometry<_element, _domain>
     {
@@ -166,7 +166,7 @@ namespace lolita::core::element
         /**
          * @brief Sub-elements composition
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, auto... __args>
         using Components = std::tuple<
                 std::tuple<
                         std::array<_T<lolita::core::Element::Node(), _domain, __args...>, 2>
@@ -176,7 +176,7 @@ namespace lolita::core::element
         /**
          * @brief Sup-elements composition
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, auto... __args>
         using Neighbours = lolita::core::element::detail::_ElementNeighbours<_T, _element, _domain, __args...>;
 
         /**
@@ -201,7 +201,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingEvaluation(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point
+                lolita::domain::Point const & reference_point
         )
         {
             auto value = lolita::real(0);
@@ -221,7 +221,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingDerivative(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point,
+                lolita::domain::Point const & reference_point,
                 lolita::index derivative_direction
         )
         {
@@ -240,7 +240,7 @@ namespace lolita::core::element
      * @tparam _domain 
      * @tparam _args 
      */
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain>
     requires(_element == lolita::core::Element::LinearTriangle())
     struct ElementGeometry<_element, _domain>
     {
@@ -257,7 +257,7 @@ namespace lolita::core::element
         /**
          * @brief Sub-elements composition
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, auto... __args>
         using Components = std::tuple<
                 std::tuple<
                         std::array<_T<lolita::core::Element::LinearSegment(), _domain, __args...>, 3>
@@ -270,7 +270,7 @@ namespace lolita::core::element
         /**
          * @brief Sup-elements composition
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, auto... __args>
         using Neighbours = lolita::core::element::detail::_ElementNeighbours<_T, _element, _domain, __args...>;
 
         /**
@@ -303,7 +303,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingEvaluation(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point
+                lolita::domain::Point const & reference_point
         )
         {
             auto value = lolita::real(0);
@@ -324,7 +324,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingDerivative(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point,
+                lolita::domain::Point const & reference_point,
                 lolita::index derivative_direction
         )
         {
@@ -350,7 +350,7 @@ namespace lolita::core::element
      * @tparam _domain 
      * @tparam _args 
      */
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain>
     requires(_element == lolita::core::Element::LinearQuadrangle())
     struct ElementGeometry<_element, _domain>
     {
@@ -368,7 +368,7 @@ namespace lolita::core::element
         /**
          * @brief Sub-elements composition
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, auto... __args>
         using Components = std::tuple<
                 std::tuple<
                         std::array<_T<lolita::core::Element::LinearSegment(), _domain, __args...>, 4>
@@ -381,7 +381,7 @@ namespace lolita::core::element
         /**
          * @brief Sup-elements composition
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, auto... __args>
         using Neighbours = lolita::core::element::detail::_ElementNeighbours<_T, _element, _domain, __args...>;
 
         /**
@@ -416,7 +416,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingEvaluation(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point
+                lolita::domain::Point const & reference_point
         )
         {
             auto value = lolita::real(0);
@@ -438,7 +438,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingDerivative(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point,
+                lolita::domain::Point const & reference_point,
                 lolita::index derivative_direction
         )
         {
@@ -466,7 +466,7 @@ namespace lolita::core::element
      * @tparam _domain 
      * @tparam _args 
      */
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain>
     requires(_element == lolita::core::Element::LinearTetrahedron())
     struct ElementGeometry<_element, _domain>
     {
@@ -489,7 +489,7 @@ namespace lolita::core::element
         /**
          * @brief
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, auto... __args>
         using Components = std::tuple<
                 std::tuple<
                         std::array<_T<lolita::core::Element::LinearTriangle(), _domain, __args...>, 4>
@@ -505,7 +505,7 @@ namespace lolita::core::element
         /**
          * @brief
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, auto... __args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, auto... __args>
         using Neighbours = lolita::core::element::detail::_ElementNeighbours<_T, _element, _domain, __args...>;
 
         /**
@@ -550,7 +550,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingEvaluation(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point
+                lolita::domain::Point const & reference_point
         )
         {
             auto value = lolita::real(0);
@@ -568,7 +568,7 @@ namespace lolita::core::element
         lolita::real
         getShapeMappingDerivative(
                 lolita::matrix::Vector<lolita::real, _element.num_nodes_> const & nodal_field_values,
-                lolita::geometry::Point const & reference_point,
+                lolita::domain::Point const & reference_point,
                 lolita::index derivative_direction
         )
         {

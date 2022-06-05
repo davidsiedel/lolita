@@ -178,6 +178,144 @@ namespace lolita::utility
 
     };
 
+    template<typename t_Base>
+    struct Enumeration
+    {
+
+    private:
+
+        using Label = std::array<lolita::character, 50>;
+
+        template<typename... _U>
+        static constexpr
+        Label
+        makeLabel(
+                std::basic_string_view<_U> const &... str
+        )
+        requires(std::same_as<lolita::character, _U> && ...)
+        {
+            auto label = Label();
+            auto count = lolita::index(0);
+            auto make = [&] (auto const & s) constexpr mutable {
+                for (auto i = 0; i < s.size(); ++i) {
+                    label[i + count] = s[i];
+                }
+                count += s.size();
+            };
+            (make(str), ...);
+            return label;
+        }
+
+        template<typename... _U>
+        static constexpr
+        Label
+        makeLabel(
+                std::basic_string_view<_U> &&... str
+        )
+        requires(std::same_as<lolita::character, _U> && ...)
+        {
+            auto label = Label();
+            auto count = lolita::index(0);
+            auto make = [&] (auto && s) constexpr mutable {
+                for (auto i = 0; i < s.size(); ++i) {
+                    label[i + count] = s[i];
+                }
+                count += s.size();
+            };
+            (make(std::forward<std::basic_string_view<_U>>(str)), ...);
+            return label;
+        }
+
+    public:
+
+        constexpr
+        Enumeration(
+                std::basic_string_view<lolita::character> const & str
+        )
+        :
+        tag_(makeLabel(str))
+        {}
+
+        constexpr
+        Enumeration(
+                std::basic_string_view<lolita::character> && str
+        )
+        :
+        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)))
+        {}
+
+//        template<typename... _U>
+//        constexpr
+//        EnumA(
+//                std::basic_string_view<_U> const &... str
+//        )
+//        :
+//        tag_(makeLabel(str...))
+//        {}
+//
+//
+//        template<typename... _U>
+//        constexpr
+//        EnumA(
+//                std::basic_string_view<_U> &&... str
+//        )
+//        :
+//        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)...))
+//        {}
+
+        constexpr
+        lolita::boolean
+        operator==(
+                Enumeration const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                Enumeration const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator==(
+                std::basic_string_view<lolita::character> const & other
+        )
+        const
+        {
+            auto constexpr t_null = lolita::character();
+            auto view = std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), t_null)));
+            return other == view;
+        }
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                std::basic_string_view<lolita::character> const & other
+        )
+        const
+        {
+            return !(* this == other);
+        }
+
+        friend
+        std::ostream &
+        operator<<(
+                std::ostream & os,
+                Enumeration const & enuma
+        )
+        {
+            auto constexpr t_null = lolita::character();
+            auto const & tag = enuma.tag_;
+            os << std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), t_null)));
+            return os;
+        }
+
+        Label tag_;
+
+    };
+
     struct TupleSlice
     {
 
@@ -261,20 +399,73 @@ namespace lolita::utility
         return std::basic_string_view<lolita::character>(label.data(), std::distance(label.begin(), std::find(label.begin(), label.end(), lolita::character())));
     }
 
+//    namespace detail
+//    {
+//
+//        template<lolita::index _offset, typename... _T, lolita::index... _i>
+//        constexpr
+//        auto
+//        tupleSlice(
+//                std::tuple<_T...> const & tuple,
+//                std::integer_sequence<lolita::index, _i...>
+//        )
+//        {
+//            return std::make_tuple(std::get<_i + _offset>(tuple)...);
+//        }
+//
+//    }
+//
+//    template<lolita::index _begin, lolita::index _end, typename... _T>
+//    constexpr
+//    auto
+//    tupleSlice(
+//            std::tuple<_T...> const & tuple
+//    )
+//    requires(_end >= _begin && sizeof...(_T) >= _end)
+//    {
+//        return detail::tupleSlice<_begin>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
+//    }
+
     namespace detail
     {
 
-        template<lolita::index _offset, typename... _T, lolita::index... _i>
+        template<typename... t_T, typename... t_U, lolita::index... t_i, lolita::index... t_j>
+        static constexpr
+        std::tuple<t_T..., t_U...>
+        tupleMerge(
+                std::tuple<t_T...> const & first_tuple,
+                std::tuple<t_U...> const & second_tuple,
+                std::integer_sequence<lolita::index, t_i...>,
+                std::integer_sequence<lolita::index, t_j...>
+        )
+        {
+            return std::make_tuple(std::get<t_i>(first_tuple)..., std::get<t_j>(second_tuple)...);
+        }
+
+        template<lolita::index t_offset, typename... t_T, lolita::index... t_i>
         constexpr
         auto
         tupleSlice(
-                std::tuple<_T...> const & tuple,
-                std::integer_sequence<lolita::index, _i...>
+                std::tuple<t_T...> const & tuple,
+                std::integer_sequence<lolita::index, t_i...>
         )
         {
-            return std::make_tuple(std::get<_i + _offset>(tuple)...);
+            return std::make_tuple(std::get<t_i + t_offset>(tuple)...);
         }
 
+    }
+
+    template<typename... _T, typename... _U>
+    static constexpr
+    std::tuple<_T..., _U...>
+    tupleMerge(
+            std::tuple<_T...> const & first_tuple,
+            std::tuple<_U...> const & second_tuple
+    )
+    {
+        auto const constexpr fi = std::make_integer_sequence<lolita::index, std::tuple_size_v<std::tuple<_T...>>>{};
+        auto const constexpr si = std::make_integer_sequence<lolita::index, std::tuple_size_v<std::tuple<_U...>>>{};
+        return lolita::utility::detail::tupleMerge(first_tuple, second_tuple, fi, si);
     }
 
     template<lolita::index _begin, lolita::index _end, typename... _T>
@@ -287,6 +478,13 @@ namespace lolita::utility
     {
         return detail::tupleSlice<_begin>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
     }
+
+    template<typename _T, lolita::index _begin, lolita::index _end>
+            requires(_end >= _begin && std::tuple_size_v<_T> >= _end)
+    using tuple_slice_t = decltype(lolita::utility::tupleSlice<_begin, _end>(std::declval<_T>()));
+
+    template<typename _T, typename _U>
+    using tuple_merge_t = decltype(lolita::utility::tupleMerge(std::declval<_T>(), std::declval<_U>()));
 
     static void inline
     removeCharacter(

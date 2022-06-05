@@ -13,10 +13,10 @@
 namespace lolita::core::field
 {
 
-    template<lolita::field::Tensor _tensor, lolita::index _dim_euclidean>
+    template<lolita::field::Field _tensor, lolita::index _dim_euclidean>
     struct TensorPolicy;
 
-    template<lolita::field::Tensor _tensor, lolita::index _dim_euclidean>
+    template<lolita::field::Field _tensor, lolita::index _dim_euclidean>
     requires(_tensor.ord_ == 0)
     struct TensorPolicy<_tensor, _dim_euclidean>
     {
@@ -30,7 +30,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::index _dim_euclidean>
+    template<lolita::field::Field _tensor, lolita::index _dim_euclidean>
     requires(_tensor.ord_ == 1)
     struct TensorPolicy<_tensor, _dim_euclidean>
     {
@@ -44,7 +44,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::index _dim_euclidean>
+    template<lolita::field::Field _tensor, lolita::index _dim_euclidean>
     requires(_tensor.ord_ == 2)
     struct TensorPolicy<_tensor, _dim_euclidean>
     {
@@ -58,7 +58,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::index _dim_euclidean>
+    template<lolita::field::Field _tensor, lolita::index _dim_euclidean>
     requires(_tensor.ord_ == 3)
     struct TensorPolicy<_tensor, _dim_euclidean>
     {
@@ -72,7 +72,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::index _dim_euclidean>
+    template<lolita::field::Field _tensor, lolita::index _dim_euclidean>
     requires(_tensor.ord_ == 4)
     struct TensorPolicy<_tensor, _dim_euclidean>
     {
@@ -99,14 +99,14 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     struct MappingPolicy;
 
     /*
      * SCALAR
      */
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 0 && _mapping == lolita::field::Mapping::Identity())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -126,7 +126,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 0 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -147,7 +147,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 0 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -173,7 +173,7 @@ namespace lolita::core::field
      * VECTOR
      */
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Identity())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -194,7 +194,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Identity())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -216,7 +216,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::Gradient())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -239,7 +239,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::Gradient())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -295,7 +295,7 @@ namespace lolita::core::field
 //
 //    };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::SmallStrain())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -318,7 +318,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::SmallStrain())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -343,7 +343,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 1 && _domain.dim_ == 2 && _mapping == lolita::field::Mapping::LargeStrain())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -372,7 +372,7 @@ namespace lolita::core::field
 
     };
 
-    template<lolita::field::Tensor _tensor, lolita::geometry::Domain _domain, lolita::field::Mapping _mapping>
+    template<lolita::field::Field _tensor, lolita::domain::Domain _domain, lolita::field::Mapping _mapping>
     requires(_tensor.ord_ == 1 && _domain.dim_ == 3 && _mapping == lolita::field::Mapping::LargeStrain())
     struct MappingPolicy<_tensor, _domain, _mapping>
     {
@@ -612,7 +612,7 @@ namespace lolita::core
          * @tparam _element
          * @tparam _domain
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain>
         struct ElementGeometry;
 
         /**
@@ -751,8 +751,8 @@ namespace lolita::core
              * @tparam _dim
              */
             template<
-                    lolita::geometry::Domain _domain,
-                    lolita::field::Tensor _field,
+                    lolita::domain::Domain _domain,
+                    lolita::field::Field _field,
                     lolita::integer _dim,
                     lolita::core::finite_element::unknown::UnknownType _unknown_type
             >
@@ -765,8 +765,8 @@ namespace lolita::core
                 struct _UnknownTrait : public std::false_type {};
 
                 template<
-                        lolita::geometry::Domain _domain,
-                        lolita::field::Tensor _field,
+                        lolita::domain::Domain _domain,
+                        lolita::field::Field _field,
                         lolita::integer _dim,
                         lolita::core::finite_element::unknown::UnknownType _unknown_type
                 >
@@ -806,7 +806,7 @@ namespace lolita::core
             template<typename _T>
             concept UnknownsConcept = lolita::core::finite_element::unknown::detail::UnknownsTrait<_T>::value;
 
-            template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+            template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
             struct FiniteElementUnknowns;
 
         }
@@ -819,9 +819,9 @@ namespace lolita::core
          * @tparam _finite_element
          */
         template<
-                template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T,
+                template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T,
                 lolita::core::Element _element,
-                lolita::geometry::Domain _domain,
+                lolita::domain::Domain _domain,
                 auto... _finite_element
         >
         struct FiniteElementGeometry;
@@ -832,7 +832,7 @@ namespace lolita::core
          * @tparam _domain
          * @tparam _finite_element
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, auto _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, auto _finite_element>
         struct FEObject;
 
     }
@@ -852,7 +852,7 @@ namespace lolita::core
          * @tparam _domain
          * @tparam _finite_element
          */
-        template<lolita::geometry::Domain _domain, auto _finite_element>
+        template<lolita::domain::Domain _domain, auto _finite_element>
         struct Mesh;
 
     }
@@ -884,7 +884,7 @@ namespace lolita::core
          * @tparam _domain
          * @tparam _args
          */
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, auto... _args>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, auto... _args>
         struct _Span
         {
 
@@ -895,7 +895,7 @@ namespace lolita::core
         /**
          * @brief
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, lolita::domain::Domain _domain, auto... _args>
         using _Points = std::tuple<
                 _T<lolita::core::Element::Node(), _domain, _args...>
         >;
@@ -903,7 +903,7 @@ namespace lolita::core
         /**
          * @brief
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, lolita::domain::Domain _domain, auto... _args>
         using _Curves = std::tuple<
                 _T<lolita::core::Element::LinearSegment(), _domain, _args...>
         >;
@@ -911,7 +911,7 @@ namespace lolita::core
         /**
          * @brief
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, lolita::domain::Domain _domain, auto... _args>
         using _Facets = std::tuple<
                 _T<lolita::core::Element::LinearTriangle(), _domain, _args...>,
                 _T<lolita::core::Element::LinearQuadrangle(), _domain, _args...>
@@ -920,7 +920,7 @@ namespace lolita::core
         /**
          * @brief
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, lolita::domain::Domain _domain, auto... _args>
         using _Solids = std::tuple<
                 _T<lolita::core::Element::LinearTetrahedron(), _domain, _args...>
         >;
@@ -928,7 +928,7 @@ namespace lolita::core
         /**
          * @brief
          */
-        template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _args>
+        template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, lolita::domain::Domain _domain, auto... _args>
         using _Elements = std::tuple<
                 _Points<_T, _domain, _args...>,
                 _Curves<_T, _domain, _args...>,
@@ -941,7 +941,7 @@ namespace lolita::core
     /**
      * @brief
      */
-    template<template<lolita::core::Element, lolita::geometry::Domain, auto...> typename _T, lolita::geometry::Domain _domain, auto... _args>
+    template<template<lolita::core::Element, lolita::domain::Domain, auto...> typename _T, lolita::domain::Domain _domain, auto... _args>
     using Elements = decltype(lolita::utility::tupleSlice<0, _domain.dim_ + 1>(std::declval<lolita::core::detail::_Elements<_T, _domain, _args...>>()));
 
     /**
@@ -949,7 +949,7 @@ namespace lolita::core
      * @tparam _element
      * @tparam _domain
      */
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain>
     struct ElementDescription
     {
 
@@ -961,7 +961,7 @@ namespace lolita::core
         /**
          * @brief
          */
-        lolita::geometry::Domain const static constexpr domain_= _domain;
+        lolita::domain::Domain const static constexpr domain_= _domain;
 
     private:
 
@@ -1244,7 +1244,7 @@ namespace lolita::core
         template<typename _T>
         struct _ElementDescriptionConcept : public std::false_type {};
 
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain>
         struct _ElementDescriptionConcept<lolita::core::ElementDescription<_element, _domain>> : public std::true_type {};
 
     }
@@ -1260,7 +1260,7 @@ namespace lolita::core
      * @brief
      * @tparam _finite_element
      */
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
     struct FiniteElementDescription
     {
 
@@ -1275,7 +1275,7 @@ namespace lolita::core
         _ord_quadrature()
         {
             auto ord_quadrature = _finite_element.ord_quadrature_;
-            return _domain.frame_ == lolita::geometry::Frame::AxiSymmetric() ? 2 * ord_quadrature + 1 : 2 * ord_quadrature;
+            return _domain.frame_ == lolita::domain::Frame::AxiSymmetric() ? 2 * ord_quadrature + 1 : 2 * ord_quadrature;
         }
 
     public:
@@ -1448,7 +1448,7 @@ namespace lolita::core
         template<typename _T>
         struct _FiniteElementDescriptionConcept : public std::false_type {};
 
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
         struct _FiniteElementDescriptionConcept<lolita::core::FiniteElementDescription<_element, _domain, _finite_element>> : public std::true_type {};
 
     }
@@ -1464,7 +1464,7 @@ namespace lolita::core
      * @brief
      * @tparam _FiniteElement
      */
-    template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto... _finite_element>
+    template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto... _finite_element>
     struct MixedElementDescription
     {
 
@@ -1542,7 +1542,7 @@ namespace lolita::core
         template<typename _T>
         struct _MixedElementDescriptionConcept : public std::false_type {};
 
-        template<lolita::core::Element _element, lolita::geometry::Domain _domain, lolita::finite_element::FiniteElementConcept auto... _finite_element>
+        template<lolita::core::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto... _finite_element>
         struct _MixedElementDescriptionConcept<lolita::core::MixedElementDescription<_element, _domain, _finite_element...>> : public std::true_type {};
 
     }
@@ -1558,14 +1558,14 @@ namespace lolita::core
      * @brief
      * @tparam _domain
      */
-    template<lolita::geometry::Domain _domain>
+    template<lolita::domain::Domain _domain>
     struct MeshDescription
     {
 
         /**
          * @brief
          */
-        lolita::geometry::Domain const static constexpr domain_ = _domain;
+        lolita::domain::Domain const static constexpr domain_ = _domain;
 
         /**
          * @brief
@@ -1652,7 +1652,7 @@ namespace lolita::core
         template<typename _T>
         struct MeshDescriptionTrait : public std::false_type {};
 
-        template<lolita::geometry::Domain _domain>
+        template<lolita::domain::Domain _domain>
         struct MeshDescriptionTrait<lolita::core::MeshDescription<_domain>> : public std::true_type {};
 
     }

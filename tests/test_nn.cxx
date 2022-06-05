@@ -21,19 +21,16 @@ TEST(test_lolita_22, test_lolita_22) {
 //    std::cout << "empty matrix size : " << sizeof(lolita::matrix::Vector<lolita::real, 0>) << std::endl;
 //    std::cout << "2x2 array of empty matrix size : " << sizeof(std::array<std::array<lolita::matrix::Vector<lolita::real, 0>, 2>, 2>) << std::endl;
 
-    auto constexpr domain = lolita::geometry::Domain("Middle", 2, lolita::geometry::Frame::Cartesian());
+    auto constexpr domain = lolita::domain::Domain("Middle", 2, lolita::domain::Frame::Cartesian());
     auto constexpr u_unknown = lolita::field::Unknown("Displacement", 1, lolita::field::Mapping::LargeStrain());
     auto constexpr p_unknown = lolita::field::Unknown("Pressure", 1, lolita::field::Mapping::Identity());
     auto constexpr d_unknown = lolita::field::Unknown("Damage", 0, lolita::field::Mapping::Gradient(), lolita::field::Mapping::Identity());
     auto constexpr u_discretization = lolita::finite_element::HybridHighOrder(1, 1);
     auto constexpr d_discretization = lolita::finite_element::HybridHighOrder(1, 1);
-    auto constexpr u_voce = lolita::behaviour::MgisBehaviour3<u_unknown, p_unknown>();
-    auto constexpr u_elasticity = lolita::behaviour::MgisBehaviour3<u_unknown>();
-    auto constexpr d_phase_field = lolita::behaviour::MgisBehaviour3<d_unknown>();
-    auto constexpr hho_u0 = lolita::finite_element::FiniteElement<u_unknown, u_voce, u_discretization>(lolita::finite_element::Quadrature::Gauss(), 2);
-    auto constexpr hho_p = lolita::finite_element::FiniteElement<p_unknown, u_voce, u_discretization>(lolita::finite_element::Quadrature::Gauss(), 2);
-    auto constexpr hho_u1 = lolita::finite_element::FiniteElement<u_unknown, u_elasticity, u_discretization>(lolita::finite_element::Quadrature::Gauss(), 2);
-    auto constexpr hho_d = lolita::finite_element::FiniteElement<d_unknown, d_phase_field, d_discretization>(lolita::finite_element::Quadrature::Gauss(), 2);
+    auto constexpr hho_u0 = lolita::finite_element::FiniteElement<u_unknown, 'a', u_discretization>(lolita::finite_element::Quadrature::Gauss(), 2);
+    auto constexpr hho_p = lolita::finite_element::FiniteElement<p_unknown, 'a', u_discretization>(lolita::finite_element::Quadrature::Gauss(), 2);
+    auto constexpr hho_u1 = lolita::finite_element::FiniteElement<u_unknown, 'a', u_discretization>(lolita::finite_element::Quadrature::Gauss(), 2);
+    auto constexpr hho_d = lolita::finite_element::FiniteElement<d_unknown, 'a', d_discretization>(lolita::finite_element::Quadrature::Gauss(), 2);
     auto constexpr mixed_0 = lolita::finite_element::ElementGroup<hho_u0>();
     auto constexpr mixed_1 = lolita::finite_element::ElementGroup<hho_d>();
     auto constexpr mixed_2 = lolita::finite_element::ElementGroup<hho_u0, hho_d>();
@@ -57,9 +54,12 @@ TEST(test_lolita_22, test_lolita_22) {
 //        std::cout << c << std::endl;
 //    }
 
-    static_assert(lolita::geometry::Domain("Middle", 2, lolita::geometry::Frame::Cartesian()) == domain);
+    static_assert(lolita::domain::Domain("Middle", 2, lolita::domain::Frame::Cartesian()) == domain);
 
     static_assert(lolita::finite_element::HybridHighOrderFiniteElementConcept<hho_u0>);
+
+    static_assert(lolita::field::MappingConcept<decltype(lolita::field::Mapping::Gradient())>);
+//    static_assert(lolita::field::MappingConcept<decltype(lolita::field::Tensor::Displacement())>);
 
     auto path = "";
     path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/behaviour/src/libBehaviour.so";
@@ -73,18 +73,16 @@ TEST(test_lolita_22, test_lolita_22) {
             mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF
     };
 
-    auto mgipara = lolita::behaviour::MgisParameter("Temperature", [](lolita::geometry::Point const & p, lolita::real const & t) { return 1.0; });
+    auto mgipara = lolita::behaviour::MgisParameter("Temperature", [](lolita::domain::Point const & p, lolita::real const & t) { return 1.0; });
     auto bhv_u = lolita::behaviour::MgisBehaviour("Displacement", "SQUARE", path, name, hyp, {mgipara});
     auto bhv_d = lolita::behaviour::MgisBehaviour("Damage", "SQUARE", path, name, hyp, {mgipara});
 
-    auto load = lolita::finite_element::Load("Displacement", "SQUARE", 2, 0, 0, [](lolita::geometry::Point const &p, lolita::real const &t) { return 1.0; },
+    auto load = lolita::finite_element::Load("Displacement", "SQUARE", 2, 0, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
                                              lolita::finite_element::Loading::Natural());
-    auto load_top_x = lolita::finite_element::Load("Displacement", "TOP", 1, 0, 0, [](lolita::geometry::Point const &p, lolita::real const &t) { return 1.0; },
+    auto load_top_x = lolita::finite_element::Load("Displacement", "TOP", 1, 0, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
                                                    lolita::finite_element::Loading::Constraint());
-    auto load_top_y = lolita::finite_element::Load("Displacement", "TOP", 1, 1, 0, [](lolita::geometry::Point const &p, lolita::real const &t) { return 1.0; },
+    auto load_top_y = lolita::finite_element::Load("Displacement", "TOP", 1, 1, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
                                                    lolita::finite_element::Loading::Constraint());
-
-    auto bhvvv = lolita::behaviour::Behaviour<u_voce>();
 
 //    auto bhvholder = lolita::behaviour::BehaviourHolder(bhvvv);
 

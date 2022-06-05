@@ -361,54 +361,6 @@ namespace lolita::numerics
 namespace lolita::matrix
 {
 
-    template<typename _T, lolita::integer _rows, lolita::integer _cols>
-    struct Array
-    {
-
-        using Data = std::array<std::array<_T, _rows>, _cols>;
-
-        _T const &
-        operator[] (
-                lolita::integer row,
-                lolita::integer col
-        )
-        const
-        {
-            return data_[col][row];
-        }
-
-        _T &
-        operator[] (
-                lolita::integer row,
-                lolita::integer col
-        )
-        {
-            return data_[col][row];
-        }
-
-        _T const &
-        operator() (
-                lolita::integer row,
-                lolita::integer col
-        )
-        const
-        {
-            return data_[col][row];
-        }
-
-        _T &
-        operator() (
-                lolita::integer row,
-                lolita::integer col
-        )
-        {
-            return data_[col][row];
-        }
-
-        std::array<std::array<_T, _rows>, _cols> data_;
-
-    };
-
     /**
      * @brief
      */
@@ -439,6 +391,30 @@ namespace lolita::matrix
         i_(i),
         j_(j)
         {}
+
+        constexpr
+        lolita::integer
+        first()
+        const
+        {
+            return i_;
+        }
+
+        constexpr
+        lolita::integer
+        last()
+        const
+        {
+            return j_;
+        }
+
+        constexpr
+        lolita::integer
+        size()
+        const
+        {
+            return j_ - i_;
+        }
 
         /**
          * @brief
@@ -487,6 +463,30 @@ namespace lolita::matrix
         col_block_(k, l)
         {}
 
+        constexpr
+        lolita::matrix::VectorBlock
+        rowBlock()
+        const
+        {
+            return row_block_;
+        }
+
+        constexpr
+        lolita::matrix::VectorBlock
+        colBlock()
+        const
+        {
+            return col_block_;
+        }
+
+        constexpr
+        lolita::integer
+        size()
+        const
+        {
+            return row_block_.size() * col_block_.size();
+        }
+
         /**
          * @brief
          */
@@ -502,9 +502,139 @@ namespace lolita::matrix
     struct Coordinates
     {
 
-        lolita::index row_;
+        constexpr
+        Coordinates()
+        :
+        row_(-1),
+        col_(-1)
+        {}
 
-        lolita::index col_;
+        constexpr
+        Coordinates(
+                lolita::integer row,
+                lolita::integer col
+        )
+        :
+        row_(row),
+        col_(col)
+        {}
+
+        constexpr
+        lolita::integer
+        row()
+        const
+        {
+            return row_;
+        }
+
+        constexpr
+        lolita::integer
+        col()
+        const
+        {
+            return col_;
+        }
+
+        lolita::integer row_;
+
+        lolita::integer col_;
+
+    };
+
+    struct SparseVectorInput
+    {
+
+        constexpr
+        SparseVectorInput()
+        :
+        row_(),
+        value_()
+        {}
+
+        constexpr
+        SparseVectorInput(
+                lolita::integer row,
+                lolita::real value
+        )
+        :
+        row_(row),
+        value_(value)
+        {}
+
+        constexpr
+        lolita::integer
+        row()
+        const
+        {
+            return row_;
+        }
+
+        constexpr
+        lolita::real
+        value()
+        const
+        {
+            return value_;
+        }
+
+        lolita::integer row_;
+
+        lolita::real value_;
+
+    };
+
+    struct SparseMatrixInput
+    {
+
+        constexpr
+        SparseMatrixInput()
+        :
+        row_(-1),
+        col_(-1),
+        value_()
+        {}
+
+        constexpr
+        SparseMatrixInput(
+                lolita::integer row,
+                lolita::integer col,
+                lolita::real value
+        )
+        :
+        row_(row),
+        col_(col),
+        value_(value)
+        {}
+
+        constexpr
+        lolita::integer
+        row()
+        const
+        {
+            return row_;
+        }
+
+        constexpr
+        lolita::integer
+        col()
+        const
+        {
+            return col_;
+        }
+
+        constexpr
+        lolita::real
+        value()
+        const
+        {
+            return value_;
+        }
+
+        lolita::integer row_;
+
+        lolita::integer col_;
+
+        lolita::real value_;
 
     };
 
@@ -521,6 +651,30 @@ namespace lolita::matrix
         cols_(cols),
         size_(rows * cols)
         {}
+
+        constexpr
+        lolita::integer
+        rows()
+        const
+        {
+            return rows_;
+        }
+
+        constexpr
+        lolita::integer
+        cols()
+        const
+        {
+            return cols_;
+        }
+
+        constexpr
+        lolita::integer
+        size()
+        const
+        {
+            return rows_ * cols_;
+        }
 
         lolita::index rows_;
 
@@ -713,6 +867,22 @@ namespace lolita::matrix
     )
     {
         return T::CompileTimeTraits::SizeAtCompileTime;
+    }
+
+    template<lolita::numerics::RealConcept _T, auto... _args>
+    static inline
+    lolita::matrix::Matrix<_T, _args...>
+    Zero()
+    {
+        return lolita::matrix::Matrix<_T, _args...>::Zero();
+    }
+
+    template<typename _Matrix>
+    static inline
+    _Matrix
+    Zero()
+    {
+        return _Matrix::Zero();
     }
 
     template<typename T, lolita::index _rows, lolita::index _cols>
