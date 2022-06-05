@@ -14,7 +14,6 @@
 #include "lolita/lolita_core_1.hxx"
 #include "lolita/lolita_core_2.hxx"
 #include "lolita/lolita_core_4.hxx"
-#include "lolita/lolita_core_5.hxx"
 
 namespace lolita::core2::finite_element
 {
