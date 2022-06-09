@@ -17,7 +17,7 @@ namespace lolita::core2::finite_element
 {
 
     template<lolita::core2::geometry::Element _element, lolita::domain::Domain _domain, auto _finite_element>
-    struct FEObject;
+    struct FiniteElement;
 
 }
 
@@ -119,7 +119,7 @@ namespace lolita::core2::mesh
         template<lolita::core2::geometry::Element _element, lolita::domain::Domain __domain, auto __finite_element>
         using _ElementPointerMap = std::unordered_map<
                 std::basic_string<lolita::character>,
-                std::shared_ptr<lolita::core2::finite_element::FEObject<_element, __domain, __finite_element>>
+                std::shared_ptr<lolita::core2::finite_element::FiniteElement<_element, __domain, __finite_element>>
         >;
 
     public:
@@ -947,7 +947,7 @@ namespace lolita::core2::mesh
             requires(_element.isPoint())
             {
 //                using __Element = lolita::core2::finite_element::FiniteElementFinal<_element, _domain, _finite_element...>;
-                using __Element = lolita::core2::finite_element::FEObject<_element, _domain, _finite_element>;
+                using __Element = lolita::core2::finite_element::FiniteElement<_element, _domain, _finite_element>;
 //                auto const constexpr _element_coordinates2 = lolita::core2::elementPosition<_domain, _element>();
 //                auto const constexpr _element_coordinates2 = lolita::core2::MeshDescription<_domain>::template getElementCoordinates<_element>();
                 auto const & file_lines = module.file_.lines_;
@@ -1009,7 +1009,7 @@ namespace lolita::core2::mesh
             requires(!_element.isPoint())
             {
 //                using __Element = lolita::core2::finite_element::FiniteElementFinal<_element, _domain, _finite_element...>;
-                using __Element = lolita::core2::finite_element::FEObject<_element, _domain, _finite_element>;
+                using __Element = lolita::core2::finite_element::FiniteElement<_element, _domain, _finite_element>;
 //                auto const constexpr _element_coordinates = lolita::core2::elementPosition<_domain, _element>();
                 auto const constexpr _element_coordinates = lolita::core2::geometry::DomainGeometryTraits<_domain>::template getElementCoordinates<_element>();
                 auto const & file_lines = module.file_.lines_;
