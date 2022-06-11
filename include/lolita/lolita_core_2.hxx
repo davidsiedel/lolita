@@ -494,16 +494,18 @@ namespace lolita::core2::geometry
         /**
          * @brief
          */
-        template<lolita::core2::geometry::Element t__element, auto...>
-        using ElementNodeConnectivity = std::array<lolita::index, t__element.numNodes()>;
+        template<lolita::core2::geometry::Element t_element, auto...>
+        using ElementNodeConnectivity = std::array<lolita::index, t_element.numNodes()>;
 
         /**
          * @brief
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain> requires (t_element.isPoint())
-        struct ElementOuterGeometryTraits<t_element, t_domain> {
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        requires (t_element.isPoint())
+        struct ElementOuterGeometryTraits<t_element, t_domain>
+        {
 
         private:
 
@@ -536,8 +538,10 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain> requires (!t_element.isPoint())
-        struct ElementOuterGeometryTraits<t_element, t_domain> {
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        requires (!t_element.isPoint())
+        struct ElementOuterGeometryTraits<t_element, t_domain>
+        {
 
         private:
 
@@ -570,8 +574,10 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain> requires (t_element.isPoint())
-        struct ElementInnerGeometryTraits<t_element, t_domain> {
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        requires (t_element.isPoint())
+        struct ElementInnerGeometryTraits<t_element, t_domain>
+        {
 
             /**
              * @brief
@@ -638,8 +644,10 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain> requires (t_element.isLinearSegment())
-        struct ElementInnerGeometryTraits<t_element, t_domain> {
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        requires (t_element.isLinearSegment())
+        struct ElementInnerGeometryTraits<t_element, t_domain>
+        {
 
             /**
              * @brief
@@ -725,8 +733,10 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain> requires (t_element.isLinearTriangle())
-        struct ElementInnerGeometryTraits<t_element, t_domain> {
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        requires (t_element.isLinearTriangle())
+        struct ElementInnerGeometryTraits<t_element, t_domain>
+        {
 
             /**
              * @brief
@@ -829,8 +839,10 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain> requires (t_element.isLinearQuadrangle())
-        struct ElementInnerGeometryTraits<t_element, t_domain> {
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        requires (t_element.isLinearQuadrangle())
+        struct ElementInnerGeometryTraits<t_element, t_domain>
+        {
 
             /**
              * @brief
@@ -943,8 +955,10 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain> requires (t_element.isLinearTetrahedron())
-        struct ElementInnerGeometryTraits<t_element, t_domain> {
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        requires (t_element.isLinearTetrahedron())
+        struct ElementInnerGeometryTraits<t_element, t_domain>
+        {
 
             /**
              * @brief

@@ -287,6 +287,27 @@ namespace lolita
 
             static constexpr
             Field
+            Scalar()
+            {
+                return Field("Scalar", 0);
+            }
+
+            static constexpr
+            Field
+            Vector()
+            {
+                return Field("Vector", 1);
+            }
+
+            static constexpr
+            Field
+            Tensor()
+            {
+                return Field("Tensor", 2);
+            }
+
+            static constexpr
+            Field
             Displacement()
             {
                 return Field("Displacement", 1);
@@ -646,6 +667,9 @@ namespace lolita
 
         };
 
+        /**
+         * @brief
+         */
         using LoadFunction = std::function<lolita::real(lolita::domain::Point const &, lolita::real const &)>;
 
         /**
@@ -763,14 +787,16 @@ namespace lolita
                     lolita::index row,
                     lolita::index col,
                     lolita::finite_element::LoadFunction && function,
-                    lolita::finite_element::Loading loading
+                    lolita::finite_element::Loading && loading
             )
             :
             unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
             domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
             element_dim_(element_dim),
             components_(lolita::matrix::Coordinates{row, col}),
-            load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(std::forward<lolita::finite_element::LoadFunction>(function), loading)))
+            load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(
+                    std::forward<lolita::finite_element::LoadFunction>(function),
+                    std::forward<lolita::finite_element::Loading>(loading))))
             {}
 
             /**
@@ -789,14 +815,16 @@ namespace lolita
                     lolita::index row,
                     lolita::index col,
                     lolita::finite_element::LoadFunction const & function,
-                    lolita::finite_element::Loading loading
+                    lolita::finite_element::Loading && loading
             )
             :
             unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
             domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
             element_dim_(element_dim),
             components_(lolita::matrix::Coordinates{row, col}),
-            load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(function, loading)))
+            load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(
+                    function,
+                    std::forward<lolita::finite_element::Loading>(loading))))
             {}
 
             /**
@@ -823,6 +851,93 @@ namespace lolita
              * @brief
              */
             std::shared_ptr<lolita::finite_element::LoadComponent> load_;
+
+        };
+
+        /**
+         * @brief
+         */
+        struct Basis : public lolita::utility::Enumeration<Basis>
+        {
+
+            /**
+             * @brief
+             * @param tag
+             */
+            constexpr
+            Basis(
+                    std::basic_string_view<lolita::character> && tag
+            )
+            :
+            lolita::utility::Enumeration<Basis>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            {}
+
+            /**
+             * @brief
+             * @return
+             */
+            static constexpr
+            Basis
+            Monomial()
+            {
+                return Basis("Monomial");
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            isMonomial()
+            {
+                return * this == Monomial();
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            static constexpr
+            Basis
+            Lagrange()
+            {
+                return Basis("Lagrange");
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            isLagrange()
+            {
+                return * this == Lagrange();
+            }
+
+        };
+
+        struct Field2
+        {
+
+            enum SupportCoordinates
+            {
+
+                Relative,
+                Absolute,
+
+            };
+
+            lolita::field::Field field_;
+
+            lolita::finite_element::Basis basis_;
+
+            lolita::integer ord_;
+
+            lolita::integer dim_;
+
+            SupportCoordinates support_coordinates_;
 
         };
 
@@ -1176,7 +1291,7 @@ namespace lolita
             /**
              * @brief A simple alias
              */
-            using _FiniteElements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
+            using t_FiniteElements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
 
             /**
              * @brief A simple alias
@@ -1200,7 +1315,7 @@ namespace lolita
             /**
              * @brief
              */
-            _FiniteElements const static constexpr finite_elements_ = {_finite_elements...};
+            t_FiniteElements const static constexpr finite_elements_ = {_finite_elements...};
 
             static constexpr
             lolita::boolean
@@ -1223,7 +1338,7 @@ namespace lolita
              */
             template<lolita::integer _i>
             static constexpr
-            std::tuple_element_t<_i, _FiniteElements>
+            std::tuple_element_t<_i, t_FiniteElements>
             getFiniteElement()
             {
                 return std::get<_i>(finite_elements_);
