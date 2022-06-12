@@ -612,7 +612,7 @@ namespace lolita
         /**
          * @brief
          */
-        struct Loading : public lolita::utility::Enumeration<Loading>
+        struct Load : public lolita::utility::Enumeration<Load>
         {
 
             /**
@@ -620,11 +620,11 @@ namespace lolita
              * @param tag
              */
             constexpr
-            Loading(
+            Load(
                     std::basic_string_view<lolita::character> && tag
             )
             :
-            lolita::utility::Enumeration<Loading>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Load>(std::forward<std::basic_string_view<lolita::character>>(tag))
             {}
 
             /**
@@ -632,10 +632,10 @@ namespace lolita
              * @return
              */
             static constexpr
-            Loading
+            Load
             Natural()
             {
-                return Loading("Natural");
+                return Load("Natural");
             }
 
             constexpr
@@ -651,10 +651,10 @@ namespace lolita
              * @return
              */
             static constexpr
-            Loading
+            Load
             Constraint()
             {
-                return Loading("Constraint");
+                return Load("Constraint");
             }
 
             constexpr
@@ -670,12 +670,12 @@ namespace lolita
         /**
          * @brief
          */
-        using LoadFunction = std::function<lolita::real(lolita::domain::Point const &, lolita::real const &)>;
+        using Loading = std::function<lolita::real(lolita::domain::Point const &, lolita::real const &)>;
 
         /**
          * @brief
          */
-        struct LoadComponent
+        struct ScalarLoad
         {
 
             /**
@@ -686,10 +686,10 @@ namespace lolita
             /**
              * @brief
              */
-            LoadComponent()
+            ScalarLoad()
             :
-            function_(zero),
-            loading_(lolita::finite_element::Loading::Natural())
+                    loading_(zero),
+                    load_(lolita::finite_element::Load::Natural())
             {}
 
             /**
@@ -697,15 +697,15 @@ namespace lolita
              * @param function
              * @param loading
              */
-            LoadComponent(
-                    lolita::finite_element::LoadFunction &&
+            ScalarLoad(
+                    lolita::finite_element::Loading &&
                     function,
-                    lolita::finite_element::Loading
+                    lolita::finite_element::Load
                     loading
             )
             :
-            function_(std::forward<lolita::finite_element::LoadFunction>(function)),
-            loading_(loading)
+                    loading_(std::forward<lolita::finite_element::Loading>(function)),
+                    load_(loading)
             {}
 
             /**
@@ -713,15 +713,15 @@ namespace lolita
              * @param function
              * @param loading
              */
-            LoadComponent(
-                    lolita::finite_element::LoadFunction const &
+            ScalarLoad(
+                    lolita::finite_element::Loading const &
                     function,
-                    lolita::finite_element::Loading
+                    lolita::finite_element::Load
                     loading
             )
             :
-            function_(function),
-            loading_(loading)
+                    loading_(function),
+                    load_(loading)
             {}
 
             /**
@@ -739,7 +739,7 @@ namespace lolita
             )
             const
             {
-                return function_(point, time);
+                return loading_(point, time);
             }
 
             /**
@@ -750,25 +750,25 @@ namespace lolita
             isConstrained()
             const
             {
-                return loading_.isConstraint();
+                return load_.isConstraint();
             }
+
+            /**
+             * @brief
+             */
+            lolita::finite_element::Load load_;
 
             /**
              * @brief
              */
             lolita::finite_element::Loading loading_;
 
-            /**
-             * @brief
-             */
-            lolita::finite_element::LoadFunction function_;
-
         };
 
         /**
          * @brief
          */
-        struct Load
+        struct LoadEntry
         {
 
             /**
@@ -780,23 +780,23 @@ namespace lolita
              * @param function
              * @param loading
              */
-            Load(
+            LoadEntry(
                     std::basic_string_view<lolita::character> && unknown_tag,
                     std::basic_string_view<lolita::character> && domain_tag,
                     lolita::integer element_dim,
                     lolita::index row,
                     lolita::index col,
-                    lolita::finite_element::LoadFunction && function,
-                    lolita::finite_element::Loading && loading
+                    lolita::finite_element::Loading && function,
+                    lolita::finite_element::Load && loading
             )
             :
             unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
             domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
             element_dim_(element_dim),
             components_(lolita::matrix::Coordinates{row, col}),
-            load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(
-                    std::forward<lolita::finite_element::LoadFunction>(function),
-                    std::forward<lolita::finite_element::Loading>(loading))))
+            scalar_load_(std::make_shared<lolita::finite_element::ScalarLoad>(lolita::finite_element::ScalarLoad(
+                    std::forward<lolita::finite_element::Loading>(function),
+                    std::forward<lolita::finite_element::Load>(loading))))
             {}
 
             /**
@@ -808,23 +808,23 @@ namespace lolita
              * @param function
              * @param loading
              */
-            Load(
+            LoadEntry(
                     std::basic_string_view<lolita::character> && unknown_tag,
                     std::basic_string_view<lolita::character> && domain_tag,
                     lolita::integer element_dim,
                     lolita::index row,
                     lolita::index col,
-                    lolita::finite_element::LoadFunction const & function,
-                    lolita::finite_element::Loading && loading
+                    lolita::finite_element::Loading const & function,
+                    lolita::finite_element::Load && loading
             )
             :
             unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
             domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
             element_dim_(element_dim),
             components_(lolita::matrix::Coordinates{row, col}),
-            load_(std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent(
+            scalar_load_(std::make_shared<lolita::finite_element::ScalarLoad>(lolita::finite_element::ScalarLoad(
                     function,
-                    std::forward<lolita::finite_element::Loading>(loading))))
+                    std::forward<lolita::finite_element::Load>(loading))))
             {}
 
             /**
@@ -850,96 +850,96 @@ namespace lolita
             /**
              * @brief
              */
-            std::shared_ptr<lolita::finite_element::LoadComponent> load_;
+            std::shared_ptr<lolita::finite_element::ScalarLoad> scalar_load_;
 
         };
 
-        /**
-         * @brief
-         */
-        struct Basis : public lolita::utility::Enumeration<Basis>
-        {
-
-            /**
-             * @brief
-             * @param tag
-             */
-            constexpr
-            Basis(
-                    std::basic_string_view<lolita::character> && tag
-            )
-            :
-            lolita::utility::Enumeration<Basis>(std::forward<std::basic_string_view<lolita::character>>(tag))
-            {}
-
-            /**
-             * @brief
-             * @return
-             */
-            static constexpr
-            Basis
-            Monomial()
-            {
-                return Basis("Monomial");
-            }
-
-            /**
-             * @brief
-             * @return
-             */
-            constexpr
-            lolita::boolean
-            isMonomial()
-            {
-                return * this == Monomial();
-            }
-
-            /**
-             * @brief
-             * @return
-             */
-            static constexpr
-            Basis
-            Lagrange()
-            {
-                return Basis("Lagrange");
-            }
-
-            /**
-             * @brief
-             * @return
-             */
-            constexpr
-            lolita::boolean
-            isLagrange()
-            {
-                return * this == Lagrange();
-            }
-
-        };
-
-        struct Field2
-        {
-
-            enum SupportCoordinates
-            {
-
-                Relative,
-                Absolute,
-
-            };
-
-            lolita::field::Field field_;
-
-            lolita::finite_element::Basis basis_;
-
-            lolita::integer ord_;
-
-            lolita::integer dim_;
-
-            SupportCoordinates support_coordinates_;
-
-        };
+//        /**
+//         * @brief
+//         */
+//        struct Basis : public lolita::utility::Enumeration<Basis>
+//        {
+//
+//            /**
+//             * @brief
+//             * @param tag
+//             */
+//            constexpr
+//            Basis(
+//                    std::basic_string_view<lolita::character> && tag
+//            )
+//            :
+//            lolita::utility::Enumeration<Basis>(std::forward<std::basic_string_view<lolita::character>>(tag))
+//            {}
+//
+//            /**
+//             * @brief
+//             * @return
+//             */
+//            static constexpr
+//            Basis
+//            Monomial()
+//            {
+//                return Basis("Monomial");
+//            }
+//
+//            /**
+//             * @brief
+//             * @return
+//             */
+//            constexpr
+//            lolita::boolean
+//            isMonomial()
+//            {
+//                return * this == Monomial();
+//            }
+//
+//            /**
+//             * @brief
+//             * @return
+//             */
+//            static constexpr
+//            Basis
+//            Lagrange()
+//            {
+//                return Basis("Lagrange");
+//            }
+//
+//            /**
+//             * @brief
+//             * @return
+//             */
+//            constexpr
+//            lolita::boolean
+//            isLagrange()
+//            {
+//                return * this == Lagrange();
+//            }
+//
+//        };
+//
+//        struct Field2
+//        {
+//
+//            enum SupportCoordinates
+//            {
+//
+//                Relative,
+//                Absolute,
+//
+//            };
+//
+//            lolita::field::Field field_;
+//
+//            lolita::finite_element::Basis basis_;
+//
+//            lolita::integer ord_;
+//
+//            lolita::integer dim_;
+//
+//            SupportCoordinates support_coordinates_;
+//
+//        };
 
         /**
          * @brief

@@ -21,9 +21,15 @@ namespace lolita::core2::finite_element
     /**
      * @brief
      */
-    auto const static null_load_ptr = std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent());
+    auto const static null_load_ptr = std::make_shared<lolita::finite_element::ScalarLoad>(lolita::finite_element::ScalarLoad());
 
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
+    /**
+     * @brief
+     * @tparam t_element
+     * @tparam t_domain
+     * @tparam t_finite_element
+     */
+    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementTraits;
 
     /**
@@ -42,54 +48,8 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<
-            template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T,
-            lolita::core2::geometry::Element t_element,
-            lolita::domain::Domain t_domain,
-            auto t_finite_element
-    >
-    struct FiniteElementConnectivityBase
-    {};
-
-    /**
-     * @brief
-     * @tparam t_T
-     * @tparam t_element
-     * @tparam t_domain
-     * @tparam t_finite_element
-     */
-    template<
-            template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T,
-            lolita::core2::geometry::Element t_element,
-            lolita::domain::Domain t_domain,
-            auto t_finite_element
-    >
-    requires(t_element.isPoint())
-    struct FiniteElementConnectivityBase<t_T, t_element, t_domain, t_finite_element>
-    {
-
-//        /**
-//         * @brief
-//         */
-//        std::unique_ptr<lolita::domain::Point> coordinates_;
-
-    };
-
-    /**
-     * @brief
-     * @tparam t_T
-     * @tparam t_element
-     * @tparam t_domain
-     * @tparam t_finite_element
-     */
-    template<
-            template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T,
-            lolita::core2::geometry::Element t_element,
-            lolita::domain::Domain t_domain,
-            auto t_finite_element
-    >
+    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
     struct FiniteElementConnectivity
-//            : lolita::core2::finite_element::FiniteElementConnectivityBase<t_T, t_element, t_domain, t_finite_element>
     {
 
     private:
@@ -97,13 +57,13 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        using t_ElementTraits = lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>;
+        using t_ElementTraits = lolita::core2::geometry::ElementTraits<t_element, t_domain>;
 
         /**
          * @brief
          */
         template<lolita::core2::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__finite_element>
-        using t_ElementPointer = std::shared_ptr<t_T<t__element, t__domain, t__finite_element...>>;
+        using t_ElementPointer = std::shared_ptr<FiniteElement<t__element, t__domain, t__finite_element...>>;
 
     public:
 
@@ -140,7 +100,7 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        std::unique_ptr<lolita::domain::Point> coordinates_;
+        std::shared_ptr<lolita::domain::Point> coordinates_;
 
         /**
          * @brief Basic equality comparison operator
@@ -209,7 +169,7 @@ namespace lolita::core2::finite_element
         )
         requires(!t_element.isPoint())
         {
-            return std::get<t_j>(std::get<t_i>(lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::node_connectivity_))[i][j];
+            return std::get<t_j>(std::get<t_i>(lolita::core2::geometry::ElementTraits<t_element, t_domain>::node_connectivity_))[i][j];
         }
 
         /**
@@ -284,7 +244,7 @@ namespace lolita::core2::finite_element
         requires(!t_element.isPoint())
         {
             auto constexpr t_component = t_ElementTraits::template getComponent<t_i, t_j>();
-            using t_NeighbourTraits = lolita::core2::geometry::ElementGeometryTraits<t_component, t_domain>;
+            using t_NeighbourTraits = lolita::core2::geometry::ElementTraits<t_component, t_domain>;
             auto constexpr t_coordinates = t_NeighbourTraits::template getNeighbourCoordinates<t_element>();
             auto const & items = getComponents<t_i, t_j>()[i]->template getNeighbours<t_coordinates.dim_, t_coordinates.tag_>();
             auto is_equal = [&] (std::shared_ptr<FiniteElementConnectivity> const & ptr_element) {
@@ -313,24 +273,14 @@ namespace lolita::core2::finite_element
 
     };
 
-//    /**
-//     * @brief
-//     * @tparam t_element
-//     * @tparam t_domain
-//     * @tparam t_finite_element
-//     */
-//    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-//    struct FiniteElementBase : FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element> {};
-
     /**
      * @brief
      * @tparam t_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
-    struct FiniteElementGeometry : virtual FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element>
-//            : public lolita::core2::finite_element::FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element>
+    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    struct FiniteElementGeometry : virtual FiniteElementConnectivity<t_element, t_domain, t_finite_element>
     {
 
     private:
@@ -338,7 +288,7 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        using t_ElementTraits = lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>;
+        using t_ElementTraits = lolita::core2::geometry::ElementTraits<t_element, t_domain>;
 
         /**
          * @brief
@@ -379,10 +329,10 @@ namespace lolita::core2::finite_element
          * @brief Get the current coordinates of the element in the mesh
          * @return the matrix composed of the column vectors with x, y and z coordinates of each node
          */
-        lolita::matrix::Matrix<lolita::real, 3, t_element.numNodes()>
+        lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_>
         getCurrentCoordinates()
         const
-        requires(!t_element.isPoint())
+//        requires(!t_element.isPoint())
         {
             auto current_nodes_coordinates = lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_>();
             auto count = lolita::index(0);
@@ -402,7 +352,7 @@ namespace lolita::core2::finite_element
         getReferenceCoordinates()
         {
             using _ReferenceCoordinates = lolita::matrix::Span<lolita::matrix::Matrix<lolita::real, 3, t_element.numNodes(), matrix::col_major> const>;
-            return _ReferenceCoordinates(lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
+            return _ReferenceCoordinates(lolita::core2::geometry::ElementTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
         }
 
 //        /**
@@ -458,7 +408,7 @@ namespace lolita::core2::finite_element
                 lolita::domain::Point const & reference_point
         )
         {
-            return lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::getShapeMappingEvaluation(nodal_field_values, reference_point);
+            return t_ElementTraits::getShapeMappingEvaluation(nodal_field_values, reference_point);
         }
 
         /**
@@ -476,12 +426,8 @@ namespace lolita::core2::finite_element
                 lolita::index derivative_direction
         )
         {
-            return lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::getShapeMappingDerivative(nodal_field_values, reference_point, derivative_direction);
+            return t_ElementTraits::getShapeMappingDerivative(nodal_field_values, reference_point, derivative_direction);
         }
-
-        /*
-         *
-         */
 
         /**
          * @brief
@@ -537,7 +483,7 @@ namespace lolita::core2::finite_element
         )
         const
         {
-            if constexpr (t_ElementTraits::isCell()) {
+            if constexpr (t_ElementTraits::hasDim(0)) {
                 auto const & current_coordinates = this->getCurrentCoordinates();
                 auto distance = lolita::real();
                 auto mp0 = lolita::domain::Point();
@@ -550,7 +496,7 @@ namespace lolita::core2::finite_element
                 return distance;
             }
             else {
-                auto const constexpr _quadrature = lolita::finite_element::Quadrature::Gauss();
+                auto constexpr _quadrature = lolita::finite_element::Quadrature::Gauss();
                 using SegmentQuadrature = lolita::core2::geometry::ElementQuadratureTraits<lolita::core2::geometry::Element::LinearSegment(), _quadrature, 4>;
                 auto distance = lolita::real(0);
                 auto dt = lolita::real();
@@ -793,7 +739,7 @@ namespace lolita::core2::finite_element
             auto const constexpr _component = t_ElementTraits ::template getComponent<_i, _j>();
             auto p = lolita::domain::Point();
             using ComponentGeometry = FiniteElementGeometry<_component, t_domain, t_finite_element>;
-            auto const & elt_reference_nodes = lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::reference_nodes_;
+            auto const & elt_reference_nodes = lolita::core2::geometry::ElementTraits<t_element, t_domain>::reference_nodes_;
             for (lolita::index i = 0; i < 3; ++i) {
                 auto cpt_coordinates = lolita::matrix::Vector<lolita::real, _component.num_nodes_>();
                 for (lolita::index j = 0; j < _component.num_nodes_; ++j) {
@@ -919,7 +865,7 @@ namespace lolita::core2::finite_element
      * @tparam t_finite_element
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-    struct FiniteElementBehaviour : virtual FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element>
+    struct FiniteElementBehaviour : virtual FiniteElementConnectivity<t_element, t_domain, t_finite_element>
     {
 
         /**
@@ -960,7 +906,7 @@ namespace lolita::core2::finite_element
      * @tparam t_finite_element
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-    struct FiniteElementLoad : virtual FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element>
+    struct FiniteElementFieldLoad : virtual FiniteElementConnectivity<t_element, t_domain, t_finite_element>
     {
 
     private:
@@ -975,10 +921,10 @@ namespace lolita::core2::finite_element
          * @return loads member initialized with the zero natural load
          */
         static
-        std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, t_Field::shape_.rows_>, t_Field::shape_.cols_>
+        std::array<std::array<std::shared_ptr<lolita::finite_element::ScalarLoad>, t_Field::shape_.rows_>, t_Field::shape_.cols_>
         def_loads()
         {
-            auto loads = std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, t_Field::shape_.rows_>, t_Field::shape_.cols_>();
+            auto loads = std::array<std::array<std::shared_ptr<lolita::finite_element::ScalarLoad>, t_Field::shape_.rows_>, t_Field::shape_.cols_>();
             for (int i = 0; i < t_Field::shape_.rows_; ++i) {
                 for (int j = 0; j < t_Field::shape_.cols_; ++j) {
                     loads[j][i] = lolita::core2::finite_element::null_load_ptr;
@@ -995,14 +941,14 @@ namespace lolita::core2::finite_element
          * @param col
          * @return
          */
-        std::shared_ptr<lolita::finite_element::LoadComponent> const &
-        getLoad(
+        std::shared_ptr<lolita::finite_element::ScalarLoad> const &
+        getLoadComponent(
                 lolita::integer row,
                 lolita::integer col
         )
         const
         {
-            return loads_[col][row];
+            return field_load_[col][row];
         }
 
         /**
@@ -1011,13 +957,13 @@ namespace lolita::core2::finite_element
          * @param col
          * @return
          */
-        std::shared_ptr<lolita::finite_element::LoadComponent> &
-        getLoad(
+        std::shared_ptr<lolita::finite_element::ScalarLoad> &
+        getLoadComponent(
                 lolita::integer row,
                 lolita::integer col
         )
         {
-            return loads_[col][row];
+            return field_load_[col][row];
         }
 
         /**
@@ -1042,7 +988,7 @@ namespace lolita::core2::finite_element
                     std::cout << "setting load : " << load.domain_tag_ << std::endl;
                     auto const i = load.components_.row_;
                     auto const j = load.components_.col_;
-                    getLoad(i, j) = load.load_;
+                    getLoadComponent(i, j) = load.scalar_load_;
                 }
             }
         }
@@ -1050,17 +996,18 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, t_Field::shape_.rows_>, t_Field::shape_.cols_> loads_ = def_loads();
+        std::array<std::array<std::shared_ptr<lolita::finite_element::ScalarLoad>, t_Field::shape_.rows_>, t_Field::shape_.cols_> field_load_ = def_loads();
 
     };
 
+    /**
+     * @brief
+     * @tparam t_element
+     * @tparam t_domain
+     * @tparam t_finite_element
+     */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-    struct FiniteElementBase2 : FiniteElementGeometry<t_element, t_domain, t_finite_element>, FiniteElementBehaviour<t_element, t_domain, t_finite_element>, FiniteElementLoad<t_element, t_domain, t_finite_element>
-    {
-
-
-
-    };
+    struct FiniteElementBase;
 
     namespace basis
     {
@@ -1101,6 +1048,7 @@ namespace lolita::core2::finite_element
             constexpr
             lolita::boolean
             isMonomial()
+            const
             {
                 return * this == Monomial();
             }
@@ -1123,11 +1071,21 @@ namespace lolita::core2::finite_element
             constexpr
             lolita::boolean
             isLagrange()
+            const
             {
                 return * this == Lagrange();
             }
 
         };
+
+        /**
+         * @brief
+         * @tparam t_element
+         * @tparam t_domain
+         * @tparam t_finite_element
+         */
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+        struct FiniteElementBasis;
 
         /**
          * @brief Implementation object for the definition of a polynomial basis function
@@ -1145,7 +1103,7 @@ namespace lolita::core2::finite_element
          * @tparam t_ord the polynomial order of the basis
          */
         template<lolita::core2::geometry::Element t_element, lolita::core2::finite_element::basis::Basis t_basis, lolita::index t_ord>
-        requires(t_basis == lolita::core2::finite_element::basis::Basis::Monomial())
+        requires(t_basis.isMonomial())
         struct FiniteElementBasisTraits<t_element, t_basis, t_ord>
         {
 
@@ -1171,7 +1129,7 @@ namespace lolita::core2::finite_element
              * @tparam t_finite_element
              */
             template<lolita::domain::Domain t_domain, auto t_finite_element>
-            struct Implementation : public lolita::core2::finite_element::FiniteElementGeometry<t_element, t_domain, t_finite_element>
+            struct Implementation : FiniteElement<t_element, t_domain, t_finite_element>
             {
 
             private:
@@ -1239,7 +1197,7 @@ namespace lolita::core2::finite_element
                  * @return a scalar-valued vector of size the dimension of the polynomial basis
                  */
                 lolita::matrix::Vector<lolita::real, dim_>
-                evaluate(
+                getBasisEvaluation(
                         lolita::domain::Point const & point
                 )
                 const
@@ -1266,7 +1224,7 @@ namespace lolita::core2::finite_element
                  * @return a scalar-valued vector of size the dimension of the polynomial basis
                  */
                 lolita::matrix::Vector<lolita::real, dim_>
-                evaluate(
+                getBasisDerivative(
                         lolita::domain::Point const & point,
                         lolita::index derivative_direction
                 )
@@ -1305,13 +1263,63 @@ namespace lolita::core2::finite_element
 
     }
 
+    /**
+     * @brief
+     * @tparam t_element
+     * @tparam t_domain
+     * @tparam t_finite_element
+     */
+    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    struct FiniteElementBasis
+    {
+
+        /**
+         * @brief
+         * @tparam t_basis
+         * @tparam t_ord
+         * @param point
+         * @return
+         */
+        template<lolita::core2::finite_element::basis::Basis t_basis, lolita::index t_ord>
+        lolita::matrix::Vector<lolita::real, lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis, t_ord>::dim_>
+        getBasisEvaluation(
+                lolita::domain::Point const & point
+        )
+        const
+        {
+            using t_Implementation = typename basis::FiniteElementBasisTraits<t_element, t_basis, t_ord>::template Implementation<t_domain, t_finite_element>;
+            return static_cast<t_Implementation const *>(this)->getBasisEvaluation(point);
+        }
+
+        /**
+         * @brief
+         * @tparam t_basis
+         * @tparam t_ord
+         * @param point
+         * @param derivative_direction
+         * @return
+         */
+        template<lolita::core2::finite_element::basis::Basis t_basis, lolita::index t_ord>
+        lolita::matrix::Vector<lolita::real, lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis, t_ord>::dim_>
+        getBasisDerivative(
+                lolita::domain::Point const & point,
+                lolita::index derivative_direction
+        )
+        const
+        {
+            using t_Implementation = typename basis::FiniteElementBasisTraits<t_element, t_basis, t_ord>::template Implementation<t_domain, t_finite_element>;
+            return static_cast<t_Implementation const *>(this)->getBasisDerivative(point, derivative_direction);
+        }
+
+    };
+
     namespace unknown
     {
 
         /**
          * @brief
          */
-        struct UnknownType : public lolita::utility::Enumeration<UnknownType>
+        struct Unknown : public lolita::utility::Enumeration<Unknown>
         {
 
             /**
@@ -1319,11 +1327,11 @@ namespace lolita::core2::finite_element
              * @param tag
              */
             constexpr
-            UnknownType(
+            Unknown(
                     std::basic_string_view<lolita::character> && tag
             )
             :
-            lolita::utility::Enumeration<UnknownType>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Unknown>(std::forward<std::basic_string_view<lolita::character>>(tag))
             {}
 
             /**
@@ -1331,10 +1339,10 @@ namespace lolita::core2::finite_element
              * @return
              */
             static constexpr
-            UnknownType
+            Unknown
             Structural()
             {
-                return UnknownType("Structural");
+                return Unknown("Structural");
             }
 
             /**
@@ -1354,10 +1362,10 @@ namespace lolita::core2::finite_element
              * @return
              */
             static constexpr
-            UnknownType
+            Unknown
             Subsidiary()
             {
-                return UnknownType("Subsidiary");
+                return Unknown("Subsidiary");
             }
 
             /**
@@ -1377,23 +1385,33 @@ namespace lolita::core2::finite_element
              * @return
              */
             static constexpr
-            std::array<UnknownType, 2>
+            std::array<Unknown, 2>
             UnknownTypes()
             {
-                return std::array<UnknownType, 2>{
-                        UnknownType::Structural(),
-                        UnknownType::Subsidiary(),
+                return std::array<Unknown, 2>{
+                        Unknown::Structural(),
+                        Unknown::Subsidiary(),
                 };
             }
 
         };
 
-        template<lolita::core2::finite_element::unknown::UnknownType, lolita::integer t_dim>
-        struct DegreeOfFreedom;
+        /**
+         * @brief
+         * @tparam t_unknown
+         * @tparam t_dim
+         */
+        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
+        struct ScalarUnknown;
 
-        template<lolita::core2::finite_element::unknown::UnknownType t_type, lolita::integer t_dim>
-        requires(t_type.isStructural())
-        struct DegreeOfFreedom<t_type, t_dim>
+        /**
+         * @brief
+         * @tparam t_unknown
+         * @tparam t_dim
+         */
+        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
+        requires(t_unknown.isStructural())
+        struct ScalarUnknown<t_unknown, t_dim>
         {
 
             /**
@@ -1523,9 +1541,14 @@ namespace lolita::core2::finite_element
 
         };
 
-        template<lolita::core2::finite_element::unknown::UnknownType t_type, lolita::integer t_dim>
-        requires(t_type.isSubsidiary())
-        struct DegreeOfFreedom<t_type, t_dim>
+        /**
+         * @brief
+         * @tparam t_unknown
+         * @tparam t_dim
+         */
+        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
+        requires(t_unknown.isSubsidiary())
+        struct ScalarUnknown<t_unknown, t_dim>
         {
 
             /**
@@ -1600,40 +1623,40 @@ namespace lolita::core2::finite_element
 
         /**
          * @brief
-         * @tparam _domain
-         * @tparam _field
-         * @tparam _dim
+         * @tparam t_domain
+         * @tparam t_field
+         * @tparam t_dim
          */
         template<
-                lolita::domain::Domain _domain,
-                lolita::field::Field _field,
-                lolita::integer _dim,
-                lolita::core2::finite_element::unknown::UnknownType _unknown_type
+                lolita::domain::Domain t_domain,
+                lolita::field::Field t_field,
+                lolita::integer t_dim,
+                lolita::core2::finite_element::unknown::Unknown t_unknown
         >
-        struct Unknown
+        struct FieldUnknown
         {
 
             /**
              * @brief The unknown type object
              */
-            lolita::core2::finite_element::unknown::UnknownType const static constexpr unknown_type_ = _unknown_type;
+            lolita::core2::finite_element::unknown::Unknown const static constexpr unknown_ = t_unknown;
 
             /**
              * @brief The field object
              */
-            lolita::field::Field const static constexpr field_ = _field;
+            lolita::field::Field const static constexpr field_ = t_field;
 
             /**
              * @brief The dimension or cardinality of the unknown
              */
-            lolita::integer const static constexpr dim_ = _dim;
+            lolita::integer const static constexpr dim_ = t_dim;
 
         private:
 
             /**
              * @brief The field type
              */
-            using t_Field = lolita::core2::field::TensorPolicy<_field, _domain.dim_>;
+            using t_Field = lolita::core2::field::TensorPolicy<t_field, t_domain.dim_>;
 
         public:
 
@@ -1643,13 +1666,13 @@ namespace lolita::core2::finite_element
              * @param col
              * @return
              */
-            DegreeOfFreedom<_unknown_type, _dim> &
-            getDegreeOfFreedom(
+            ScalarUnknown<t_unknown, t_dim> &
+            getUnknownComponent(
                     lolita::integer row,
                     lolita::integer col
             )
             {
-                return degrees_of_freedom_[col][row];
+                return field_unknown_[col][row];
             }
 
             /**
@@ -1658,14 +1681,14 @@ namespace lolita::core2::finite_element
              * @param col
              * @return
              */
-            DegreeOfFreedom<_unknown_type, _dim> const &
-            getDegreeOfFreedom(
+            ScalarUnknown<t_unknown, t_dim> const &
+            getUnknownComponent(
                     lolita::integer row,
                     lolita::integer col
             )
             const
             {
-                return degrees_of_freedom_[col][row];
+                return field_unknown_[col][row];
             }
 
             /**
@@ -1678,10 +1701,10 @@ namespace lolita::core2::finite_element
                     lolita::integer i,
                     lolita::integer j
             )
-            requires(_dim > 0 && _unknown_type.isSubsidiary())
+            requires(t_dim > 0 && t_unknown.isSubsidiary())
             {
-                using t_CoefficientVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoefficientVector;
-                getDegreeOfFreedom(i, j).unknowns_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero());
+                using t_CoefficientVector = typename ScalarUnknown<t_unknown, t_dim>::CoefficientVector;
+                getUnknownComponent(i, j).unknowns_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero());
             }
 
             /**
@@ -1696,63 +1719,63 @@ namespace lolita::core2::finite_element
                     lolita::integer j,
                     lolita::index dim_unknown
             )
-            requires(_dim == -1 && _unknown_type.isSubsidiary())
+            requires(t_dim == -1 && t_unknown.isSubsidiary())
             {
-                using t_CoefficientVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoefficientVector;
-                getDegreeOfFreedom(i, j).unknowns_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero(dim_unknown));
+                using t_CoefficientVector = typename ScalarUnknown<t_unknown, t_dim>::CoefficientVector;
+                getUnknownComponent(i, j).unknowns_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero(dim_unknown));
             }
 
             /**
              * @brief
-             * @tparam _finite_element
-             * @tparam __finite_element
+             * @tparam t_finite_element
+             * @tparam t_element_group
              * @param i
              * @param j
              * @param mesh
              */
-            template<auto _finite_element, auto __finite_element>
+            template<auto t_finite_element, auto t_element_group>
             void
             setUnknownCoefficients(
                     lolita::integer i,
                     lolita::integer j,
-                    lolita::core2::mesh::Mesh<_domain, __finite_element> & mesh
+                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
             )
-            requires(_dim > 0 && _unknown_type.isStructural())
+            requires(t_dim > 0 && t_unknown.isStructural())
             {
-                using t_CoefficientVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoefficientVector;
-                using t_CoordinateVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoordinateVector;
-                auto constexpr _finite_element_index = __finite_element.template getFiniteElementIndex<_finite_element>();
-                getDegreeOfFreedom(i, j).unknowns_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero());
+                using t_CoefficientVector = typename ScalarUnknown<t_unknown, t_dim>::CoefficientVector;
+                using t_CoordinateVector = typename ScalarUnknown<t_unknown, t_dim>::CoordinateVector;
+                auto constexpr _finite_element_index = t_element_group.template getFiniteElementIndex<t_finite_element>();
+                getUnknownComponent(i, j).unknowns_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero());
                 auto & k = mesh.systems_[_finite_element_index].num_unknowns_;
-                getDegreeOfFreedom(i, j).unknowns_coordinates_ = std::make_unique<t_CoordinateVector>(t_CoordinateVector::LinSpaced(k, k + _dim));
-                k += _dim;
+                getUnknownComponent(i, j).unknowns_coordinates_ = std::make_unique<t_CoordinateVector>(t_CoordinateVector::LinSpaced(k, k + t_dim));
+                k += t_dim;
             }
 
             /**
              * @brief
-             * @tparam _finite_element
-             * @tparam __finite_element
+             * @tparam t_finite_element
+             * @tparam t_element_group
              * @param i
              * @param j
              * @param dim_unknown
              * @param mesh
              */
-            template<auto _finite_element, auto __finite_element>
+            template<auto t_finite_element, auto t_element_group>
             void
             setUnknownCoefficients(
                     lolita::integer i,
                     lolita::integer j,
                     lolita::index dim_unknown,
-                    lolita::core2::mesh::Mesh<_domain, __finite_element> & mesh
+                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
             )
-            requires(_dim == -1 && _unknown_type.isStructural())
+            requires(t_dim == -1 && t_unknown.isStructural())
             {
-                using t_CoefficientVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoefficientVector;
-                using t_CoordinateVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoordinateVector;
-                auto constexpr _finite_element_index = __finite_element.template getFiniteElementIndex<_finite_element>();
-                getDegreeOfFreedom(i, j).unknowns_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero(dim_unknown));
+                using t_CoefficientVector = typename ScalarUnknown<t_unknown, t_dim>::CoefficientVector;
+                using t_CoordinateVector = typename ScalarUnknown<t_unknown, t_dim>::CoordinateVector;
+                auto constexpr _finite_element_index = t_element_group.template getFiniteElementIndex<t_finite_element>();
+                getUnknownComponent(i, j).unknowns_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero(dim_unknown));
                 auto & k = mesh.systems_[_finite_element_index].num_unknowns_;
-                getDegreeOfFreedom(i, j).unknowns_coordinates_ = std::make_unique<t_CoordinateVector>(t_CoordinateVector::LinSpaced(dim_unknown, k, k + dim_unknown));
+                getUnknownComponent(i, j).unknowns_coordinates_ = std::make_unique<t_CoordinateVector>(t_CoordinateVector::LinSpaced(dim_unknown, k, k + dim_unknown));
                 k += dim_unknown;
             }
 
@@ -1766,10 +1789,10 @@ namespace lolita::core2::finite_element
                     lolita::integer i,
                     lolita::integer j
             )
-            requires(_dim > 0 && _unknown_type.isSubsidiary())
+            requires(t_dim > 0 && t_unknown.isSubsidiary())
             {
-                using t_CoefficientVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoefficientVector;
-                getDegreeOfFreedom(i, j).bindings_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero());
+                using t_CoefficientVector = typename ScalarUnknown<t_unknown, t_dim>::CoefficientVector;
+                getUnknownComponent(i, j).bindings_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero());
             }
 
             /**
@@ -1784,118 +1807,118 @@ namespace lolita::core2::finite_element
                     lolita::integer j,
                     lolita::index dim_unknown
             )
-            requires(_dim == -1 && _unknown_type.isSubsidiary())
+            requires(t_dim == -1 && t_unknown.isSubsidiary())
             {
-                using t_CoefficientVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoefficientVector;
-                getDegreeOfFreedom(i, j).bindings_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero(dim_unknown));
+                using t_CoefficientVector = typename ScalarUnknown<t_unknown, t_dim>::CoefficientVector;
+                getUnknownComponent(i, j).bindings_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero(dim_unknown));
             }
 
             /**
              * @brief
-             * @tparam _finite_element
-             * @tparam __finite_element
+             * @tparam t_finite_element
+             * @tparam t_element_group
              * @param i
              * @param j
              * @param mesh
              */
-            template<auto _finite_element, auto __finite_element>
+            template<auto t_finite_element, auto t_element_group>
             void
             setBindingCoefficients(
                     lolita::integer i,
                     lolita::integer j,
-                    lolita::core2::mesh::Mesh<_domain, __finite_element> & mesh
+                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
             )
-            requires(_dim > 0 && _unknown_type.isStructural())
+            requires(t_dim > 0 && t_unknown.isStructural())
             {
-                using t_CoefficientVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoefficientVector;
-                using t_CoordinateVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoordinateVector;
-                auto constexpr _finite_element_index = __finite_element.template getFiniteElementIndex<_finite_element>();
-                getDegreeOfFreedom(i, j).bindings_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero());
+                using t_CoefficientVector = typename ScalarUnknown<t_unknown, t_dim>::CoefficientVector;
+                using t_CoordinateVector = typename ScalarUnknown<t_unknown, t_dim>::CoordinateVector;
+                auto constexpr _finite_element_index = t_element_group.template getFiniteElementIndex<t_finite_element>();
+                getUnknownComponent(i, j).bindings_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero());
                 auto & k = mesh.systems_[_finite_element_index].num_bindings_;
-                getDegreeOfFreedom(i, j).bindings_coordinates_ = std::make_unique<t_CoordinateVector>(t_CoordinateVector::LinSpaced(k, k + _dim));
-                k += _dim;
+                getUnknownComponent(i, j).bindings_coordinates_ = std::make_unique<t_CoordinateVector>(t_CoordinateVector::LinSpaced(k, k + t_dim));
+                k += t_dim;
             }
 
             /**
              * @brief
-             * @tparam _finite_element
-             * @tparam __finite_element
+             * @tparam t_finite_element
+             * @tparam t_element_group
              * @param i
              * @param j
              * @param dim_unknown
              * @param mesh
              */
-            template<auto _finite_element, auto __finite_element>
+            template<auto t_finite_element, auto t_element_group>
             void
             setBindingCoefficients(
                     lolita::integer i,
                     lolita::integer j,
                     lolita::index dim_unknown,
-                    lolita::core2::mesh::Mesh<_domain, __finite_element> & mesh
+                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
             )
-            requires(_dim == -1 && _unknown_type.isStructural())
+            requires(t_dim == -1 && t_unknown.isStructural())
             {
-                using t_CoefficientVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoefficientVector;
-                using t_CoordinateVector = typename DegreeOfFreedom<_unknown_type, _dim>::CoordinateVector;
-                auto constexpr _finite_element_index = __finite_element.template getFiniteElementIndex<_finite_element>();
-                getDegreeOfFreedom(i, j).bindings_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero(dim_unknown));
+                using t_CoefficientVector = typename ScalarUnknown<t_unknown, t_dim>::CoefficientVector;
+                using t_CoordinateVector = typename ScalarUnknown<t_unknown, t_dim>::CoordinateVector;
+                auto constexpr _finite_element_index = t_element_group.template getFiniteElementIndex<t_finite_element>();
+                getUnknownComponent(i, j).bindings_coefficients_ = std::make_unique<t_CoefficientVector>(t_CoefficientVector::Zero(dim_unknown));
                 auto & k = mesh.systems_[_finite_element_index].num_bindings_;
-                getDegreeOfFreedom(i, j).bindings_coordinates_ = std::make_unique<t_CoordinateVector>(t_CoordinateVector::LinSpaced(dim_unknown, k, k + dim_unknown));
+                getUnknownComponent(i, j).bindings_coordinates_ = std::make_unique<t_CoordinateVector>(t_CoordinateVector::LinSpaced(dim_unknown, k, k + dim_unknown));
                 k += dim_unknown;
             }
 
             /**
              * @brief
              */
-            std::array<std::array<DegreeOfFreedom<_unknown_type, _dim>, t_Field::shape_.rows_>, t_Field::shape_.cols_> degrees_of_freedom_;
+            std::array<std::array<ScalarUnknown<t_unknown, t_dim>, t_Field::shape_.rows_>, t_Field::shape_.cols_> field_unknown_;
 
         };
 
         namespace detail
         {
 
-            template<typename _T>
+            template<typename t_T>
             struct is_unknown : public std::false_type {};
 
             template<
-                    lolita::domain::Domain _domain,
-                    lolita::field::Field _field,
-                    lolita::integer _dim,
-                    lolita::core2::finite_element::unknown::UnknownType _unknown_type
+                    lolita::domain::Domain t_domain,
+                    lolita::field::Field t_field,
+                    lolita::integer t_dim,
+                    lolita::core2::finite_element::unknown::Unknown t_unknown
             >
-            struct is_unknown<lolita::core2::finite_element::unknown::Unknown<_domain, _field, _dim, _unknown_type>> : public std::true_type {};
+            struct is_unknown<lolita::core2::finite_element::unknown::FieldUnknown<t_domain, t_field, t_dim, t_unknown>> : public std::true_type {};
 
         }
 
         /**
          * @brief
-         * @tparam _T
+         * @tparam t_T
          */
-        template<typename _T>
-        concept UnknownConcept = lolita::core2::finite_element::unknown::detail::is_unknown<_T>::value;
+        template<typename t_T>
+        concept FieldUnknownConcept = lolita::core2::finite_element::unknown::detail::is_unknown<t_T>::value;
 
         /**
          * @brief
-         * @tparam _T
+         * @tparam t_FieldUnknown
          */
-        template<lolita::core2::finite_element::unknown::UnknownConcept... _T>
-        struct UnknownCollection
+        template<lolita::core2::finite_element::unknown::FieldUnknownConcept... t_FieldUnknown>
+        struct FieldUnknownCollection
         {
 
             /**
              * @brief
              */
-            using Unknowns = std::tuple<_T...>;
+            using Unknowns = std::tuple<t_FieldUnknown...>;
 
             /**
              * @brief
              */
-            std::array<lolita::integer, sizeof...(_T)> const static constexpr dim_unknowns_ = {_T::dim_...};
+            std::array<lolita::integer, sizeof...(t_FieldUnknown)> const static constexpr dim_unknowns_ = {t_FieldUnknown::dim_...};
 
             /**
              * @brief
              */
-            lolita::integer const static constexpr num_unknowns_ = sizeof...(_T);
+            lolita::integer const static constexpr num_unknowns_ = sizeof...(t_FieldUnknown);
 
             /**
              * @brief
@@ -1905,16 +1928,16 @@ namespace lolita::core2::finite_element
             lolita::boolean
             hasStructuralUnknowns()
             {
-                return ((_T::unknown_type_.isStructural()) || ...);
+                return ((t_FieldUnknown::unknown_type_.isStructural()) || ...);
             }
 
             /**
              * @brief
-             * @tparam _domain
+             * @tparam t_domain
              * @tparam _unknown_type
              * @return
              */
-            template<lolita::domain::Domain _domain, lolita::core2::finite_element::unknown::UnknownType _unknown_type>
+            template<lolita::domain::Domain t_domain, lolita::core2::finite_element::unknown::Unknown t_unknown>
             static constexpr
             lolita::integer
             getNumUnknowns()
@@ -1923,8 +1946,8 @@ namespace lolita::core2::finite_element
                 auto set_num_unknowns  = [&] <lolita::integer _i = 0> (auto & self) constexpr mutable {
                     if constexpr (std::tuple_size_v<Unknowns> > 0) {
                         using _Unknown = std::tuple_element_t<_i, Unknowns>;
-                        if constexpr (_Unknown::unknown_type_ == _unknown_type) {
-                            num_unknowns += _Unknown::dim_ * lolita::core2::field::TensorPolicy<_Unknown::field_, _domain.dim_>::shape_.size_;
+                        if constexpr (_Unknown::unknown_ == t_unknown) {
+                            num_unknowns += _Unknown::dim_ * lolita::core2::field::TensorPolicy<_Unknown::field_, t_domain.dim_>::shape_.size_;
                         }
                         if constexpr (_i < std::tuple_size_v<Unknowns> - 1) {
                             self.template operator()<_i + 1>(self);
@@ -1937,27 +1960,27 @@ namespace lolita::core2::finite_element
 
             /**
              * @brief
-             * @tparam _i
+             * @tparam t_i
              * @return
              */
-            template<lolita::integer _i>
-            std::tuple_element_t<_i, Unknowns> const &
+            template<lolita::integer t_i>
+            std::tuple_element_t<t_i, Unknowns> const &
             getUnknown()
             const
             {
-                return std::get<_i>(unknowns_);
+                return std::get<t_i>(unknowns_);
             }
 
             /**
              * @brief
-             * @tparam _i
+             * @tparam t_i
              * @return
              */
-            template<lolita::integer _i>
-            std::tuple_element_t<_i, Unknowns> &
+            template<lolita::integer t_i>
+            std::tuple_element_t<t_i, Unknowns> &
             getUnknown()
             {
-                return std::get<_i>(unknowns_);
+                return std::get<t_i>(unknowns_);
             }
 
             /**
@@ -1969,20 +1992,23 @@ namespace lolita::core2::finite_element
 
         /**
          * @brief Default initialization is zero unknowns
-         * @tparam _element
-         * @tparam _domain
-         * @tparam _finite_element
+         * @tparam t_element
+         * @tparam t_domain
+         * @tparam t_finite_element
          */
         template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-        struct FiniteElementUnknowns
+        struct FiniteElementFieldUnknownsTraits
         {
 
             /**
              * @brief
              */
-            using Unknowns = lolita::core2::finite_element::unknown::UnknownCollection<>;
+            using FieldUnknowns = lolita::core2::finite_element::unknown::FieldUnknownCollection<>;
 
-            struct Implementation
+            /**
+             * @brief
+             */
+            struct Implementation : FiniteElement<t_element, t_domain, t_finite_element>
             {
 
                 /**
@@ -1995,38 +2021,42 @@ namespace lolita::core2::finite_element
                 setUnknowns(
                         lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
                 )
-                {}
+                {
+                    std::cout << "----> setting unknown empty" << std::endl;
+                }
 
             };
 
-            /**
-             * @brief
-             * @tparam t_element_group
-             * @param mesh
-             */
-            template<auto t_element_group>
-            void
-            setUnknowns(
-                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
-            )
-            {}
-
-            /**
-             * @brief
-             */
-            Unknowns unknowns_;
+//            /**
+//             * @brief
+//             * @tparam t_element_group
+//             * @param mesh
+//             */
+//            template<auto t_element_group>
+//            void
+//            setUnknowns(
+//                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+//            )
+//            {
+//                std::cout << "----> setting unknown empty" << std::endl;
+//            }
+//
+//            /**
+//             * @brief
+//             */
+//            FieldUnknowns field_unknowns_;
 
         };
 
         /**
          * @brief
-         * @tparam _element
-         * @tparam _domain
-         * @tparam _finite_element
+         * @tparam t_element
+         * @tparam t_domain
+         * @tparam t_finite_element
          */
         template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-        requires(t_finite_element.isHHO() && t_element.isSub(t_domain, 0))
-        struct FiniteElementUnknowns<t_element, t_domain, t_finite_element>
+        requires(t_finite_element.discretization_.isHHO() && t_element.isSub(t_domain, 0))
+        struct FiniteElementFieldUnknownsTraits<t_element, t_domain, t_finite_element>
         {
 
         private:
@@ -2040,7 +2070,9 @@ namespace lolita::core2::finite_element
                     t_finite_element.discretization_.ord_cell_
             >;
 
-//            using t_Field = lolita::core2::field::TensorPolicy<_finite_element.unknown_.tensor_, _domain.dim_>;
+            /**
+             * @brief
+             */
             using t_Field = typename lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>::Field;
 
         public:
@@ -2048,17 +2080,19 @@ namespace lolita::core2::finite_element
             /**
              * @brief
              */
-            using Unknowns = lolita::core2::finite_element::unknown::UnknownCollection<
-                    lolita::core2::finite_element::unknown::Unknown<
+            using FieldUnknowns = lolita::core2::finite_element::unknown::FieldUnknownCollection<
+                    lolita::core2::finite_element::unknown::FieldUnknown<
                             t_domain,
                             t_finite_element.unknown_.tensor_,
                             t_Basis::dim_,
-                            lolita::core2::finite_element::unknown::UnknownType::Subsidiary()
+                            lolita::core2::finite_element::unknown::Unknown::Subsidiary()
                     >
             >;
 
-            template<typename t_Base>
-            struct Implementation
+            /**
+             * @brief
+             */
+            struct Implementation : FiniteElement<t_element, t_domain, t_finite_element>
             {
 
                 /**
@@ -2074,9 +2108,9 @@ namespace lolita::core2::finite_element
                 {
                     for (int i = 0; i < t_Field::shape_.rows_; ++i) {
                         for (int j = 0; j < t_Field::shape_.cols_; ++j) {
-                            this->unknowns_.template getUnknown<0>().setUnknownCoefficients(i, j);
-                            if (this->getLoad(i, j)->loading_.isConstraint()) {
-                                this->unknowns_.template getUnknown<0>().setBindingCoefficients(i, j);
+                            this->field_unknowns_.template getUnknown<0>().setUnknownCoefficients(i, j);
+                            if (this->getLoadComponent(i, j)->load_.isConstraint()) {
+                                this->field_unknowns_.template getUnknown<0>().setBindingCoefficients(i, j);
                             }
                         }
                     }
@@ -2084,43 +2118,43 @@ namespace lolita::core2::finite_element
 
             };
 
-            /**
-             * @brief
-             * @tparam _element_group
-             * @param mesh
-             */
-            template<auto _element_group>
-            void
-            setUnknowns(
-                    lolita::core2::mesh::Mesh<t_domain, _element_group> & mesh
-            )
-            {
-                for (int i = 0; i < t_Field::shape_.rows_; ++i) {
-                    for (int j = 0; j < t_Field::shape_.cols_; ++j) {
-                        unknowns_.template getUnknown<0>().setUnknownCoefficients(i, j);
-                        if (this->getLoad(i, j)->loading_ == lolita::finite_element::Loading::Constraint()) {
-                            unknowns_.template getUnknown<0>().setBindingCoefficients(i, j);
-                        }
-                    }
-                }
-            }
-
-            /**
-             * @brief
-             */
-            Unknowns unknowns_;
+//            /**
+//             * @brief
+//             * @tparam t_element_group
+//             * @param mesh
+//             */
+//            template<auto t_element_group>
+//            void
+//            setUnknowns(
+//                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+//            )
+//            {
+//                for (int i = 0; i < t_Field::shape_.rows_; ++i) {
+//                    for (int j = 0; j < t_Field::shape_.cols_; ++j) {
+//                        field_unknowns_.template getUnknown<0>().setUnknownCoefficients(i, j);
+//                        if (this->getLoad(i, j)->load_ == lolita::finite_element::Load::Constraint()) {
+//                            field_unknowns_.template getUnknown<0>().setBindingCoefficients(i, j);
+//                        }
+//                    }
+//                }
+//            }
+//
+//            /**
+//             * @brief
+//             */
+//            FieldUnknowns field_unknowns_;
 
         };
 
         /**
          * @brief
-         * @tparam _element
-         * @tparam _domain
-         * @tparam _finite_element
+         * @tparam t_element
+         * @tparam t_domain
+         * @tparam t_finite_element
          */
         template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-        requires(t_finite_element.isHHO() && t_element.isSub(t_domain, 1))
-        struct FiniteElementUnknowns<t_element, t_domain, t_finite_element>
+        requires(t_finite_element.discretization_.isHHO() && t_element.isSub(t_domain, 1))
+        struct FiniteElementFieldUnknownsTraits<t_element, t_domain, t_finite_element>
         {
 
         private:
@@ -2134,7 +2168,9 @@ namespace lolita::core2::finite_element
                     t_finite_element.discretization_.ord_face_
             >;
 
-//            using t_Field = lolita::core2::field::TensorPolicy<_finite_element.unknown_.tensor_, _domain.dim_>;
+            /**
+             * @brief
+             */
             using t_Field = typename lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>::Field;
 
         public:
@@ -2142,34 +2178,38 @@ namespace lolita::core2::finite_element
             /**
              * @brief
              */
-            using Unknowns = lolita::core2::finite_element::unknown::UnknownCollection<
-                    lolita::core2::finite_element::unknown::Unknown<
+            using FieldUnknowns = lolita::core2::finite_element::unknown::FieldUnknownCollection<
+                    lolita::core2::finite_element::unknown::FieldUnknown<
                             t_domain,
                             t_finite_element.unknown_.tensor_,
                             _Basis::dim_,
-                            lolita::core2::finite_element::unknown::UnknownType::Structural()
+                            lolita::core2::finite_element::unknown::Unknown::Structural()
                     >
             >;
 
-            struct Implementation
+            /**
+             * @brief
+             */
+            struct Implementation : FiniteElement<t_element, t_domain, t_finite_element>
             {
 
                 /**
                  * @brief
-                 * @tparam _element_group
+                 * @tparam t_element_group
                  * @param mesh
                  */
-                template<auto _element_group>
+                template<auto t_element_group>
                 void
                 setUnknowns(
-                        lolita::core2::mesh::Mesh<t_domain, _element_group> & mesh
+                        lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
                 )
                 {
                     for (int i = 0; i < t_Field::shape_.rows_; ++i) {
                         for (int j = 0; j < t_Field::shape_.cols_; ++j) {
-                            this->unknowns_.template getUnknown<0>().template setUnknownCoefficients<t_finite_element>(i, j, mesh);
-                            if (this->getLoad(i, j)->loading_.isConstraint()) {
-                                this->unknowns_.template getUnknown<0>().template setBindingCoefficients<t_finite_element>(i, j, mesh);
+                            this->field_unknowns_.template getUnknown<0>().template setUnknownCoefficients<t_finite_element>(i, j, mesh);
+                            if (this->getLoadComponent(i, j)->load_.isConstraint()) {
+                                std::cout << "setting const " << std::endl;
+                                this->field_unknowns_.template getUnknown<0>().template setBindingCoefficients<t_finite_element>(i, j, mesh);
                             }
                         }
                     }
@@ -2177,233 +2217,274 @@ namespace lolita::core2::finite_element
 
             };
 
-            /**
-             * @brief
-             * @tparam _element_group
-             * @param mesh
-             */
-            template<auto _element_group>
-            void
-            setUnknowns(
-                    lolita::core2::mesh::Mesh<t_domain, _element_group> & mesh
-            )
-            {
-                for (int i = 0; i < t_Field::shape_.rows_; ++i) {
-                    for (int j = 0; j < t_Field::shape_.cols_; ++j) {
-                        unknowns_.template getUnknown<0>().template setUnknownCoefficients<t_finite_element>(i, j, mesh);
-                        if (this->getLoad(i, j)->loading_ == lolita::finite_element::Loading::Constraint()) {
-                            unknowns_.template getUnknown<0>().template setBindingCoefficients<t_finite_element>(i, j, mesh);
-                        }
-                    }
-                }
-            }
-
-            /**
-             * @brief
-             */
-            Unknowns unknowns_;
-
-        };
-
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-        struct FiniteElementUnknowns2
-        {
-
-        private:
-
-            using t_Unknonws = typename FiniteElementUnknowns<t_element, t_domain, t_finite_element>::Unknowns;
-
-            using t_Implementation = typename FiniteElementUnknowns<t_element, t_domain, t_finite_element>::Implementation;
-
-        public:
-
-            /**
-             * @brief
-             * @tparam _element_group
-             * @param mesh
-             */
-            template<auto _element_group>
-            void
-            setUnknowns(
-                    lolita::core2::mesh::Mesh<t_domain, _element_group> & mesh
-            )
-            {
-                static_cast<t_Implementation *>(this)->setUnknowns(mesh);
-            }
-
-            t_Unknonws unknowns_;
+//            /**
+//             * @brief
+//             * @tparam t_element_group
+//             * @param mesh
+//             */
+//            template<auto t_element_group>
+//            void
+//            setUnknowns(
+//                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+//            )
+//            {
+//                for (int i = 0; i < t_Field::shape_.rows_; ++i) {
+//                    for (int j = 0; j < t_Field::shape_.cols_; ++j) {
+//                        field_unknowns_.template getUnknown<0>().template setUnknownCoefficients<t_finite_element>(i, j, mesh);
+//                        if (this->getLoad(i, j)->load_.isConstraint()) {
+//                            field_unknowns_.template getUnknown<0>().template setBindingCoefficients<t_finite_element>(i, j, mesh);
+//                        }
+//                    }
+//                }
+//            }
+//
+//            /**
+//             * @brief
+//             */
+//            FieldUnknowns field_unknowns_;
 
         };
 
     }
 
-    namespace dataa
+    /**
+     * @brief Default initialization is zero unknowns
+     * @tparam t_element
+     * @tparam t_domain
+     * @tparam t_finite_element
+     */
+    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    struct FiniteElementFieldUnknowns
     {
 
         /**
          * @brief
          */
-        auto const static null_load_ptr = std::make_shared<lolita::finite_element::LoadComponent>(lolita::finite_element::LoadComponent());
+        using t_FieldUnknowns = typename unknown::FiniteElementFieldUnknownsTraits<t_element, t_domain, t_finite_element>::FieldUnknowns;
 
         /**
          * @brief
-         * @tparam _element
-         * @tparam _domain
-         * @tparam _finite_element
+         * @tparam t_unknown
+         * @return
          */
-        template<lolita::core2::geometry::Element _element, lolita::domain::Domain _domain, lolita::finite_element::FiniteElementConcept auto _finite_element>
-        struct FiniteElementData : lolita::core2::finite_element::FiniteElementGeometry<_element, _domain, _finite_element>
+        template<lolita::core2::finite_element::unknown::Unknown t_unknown>
+        static constexpr
+        lolita::integer
+        getNumUnknowns()
         {
+            using t_FiniteElementFieldUnknowns = typename unknown::FiniteElementFieldUnknownsTraits<t_element, t_domain, t_finite_element>::FieldUnknowns;
+            return t_FiniteElementFieldUnknowns::template getNumUnknowns<t_domain, t_unknown>();
+        }
 
-        private:
+        /**
+         * @brief
+         * @tparam t_element_group
+         * @param mesh
+         */
+        template<auto t_element_group>
+        void
+        setUnknowns(
+                lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+        )
+        {
+            using t_Implementation = typename unknown::FiniteElementFieldUnknownsTraits<t_element, t_domain, t_finite_element>::Implementation;
+            static_cast<t_Implementation *>(this)->setUnknowns(mesh);
+        }
 
-//            /**
-//             * @brief
-//             */
-//            using t_FiniteElementTraits = lolita::core2::finite_element::FiniteElementTraits<_element, _domain, _finite_element>;
-//
-//        public:
-//
-//            /**
-//             * @brief
-//             */
-//            using Quadrature = lolita::core2::geometry::ElementQuadratureTraits<_element, _finite_element.quadrature_, _finite_element.ord_quadrature_>;
-
-            /**
-             * @brief
-             */
-            using Field = lolita::core2::field::TensorPolicy<_finite_element.unknown_.tensor_, _domain.dim_>;
-
-//        private:
-
-            /**
-             * @brief loads initializer
-             * @return loads member initialized with the zero natural load
-             */
-            static
-            std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, Field::shape_.rows_>, Field::shape_.cols_>
-            def_loads()
-            {
-                auto loads = std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, Field::shape_.rows_>, Field::shape_.cols_>();
-                for (int i = 0; i < Field::shape_.rows_; ++i) {
-                    for (int j = 0; j < Field::shape_.cols_; ++j) {
-                        loads[j][i] = lolita::core2::finite_element::dataa::null_load_ptr;
-                    }
-                }
-                return loads;
-            }
-
-        public:
-
-            /**
-             * @brief
-             * @param row
-             * @param col
-             * @return
-             */
-            std::shared_ptr<lolita::finite_element::LoadComponent> const &
-            getLoad(
-                    lolita::integer row,
-                    lolita::integer col
-            )
-            const
-            {
-                return loads_[col][row];
-            }
-
-            /**
-             * @brief
-             * @param row
-             * @param col
-             * @return
-             */
-            std::shared_ptr<lolita::finite_element::LoadComponent> &
-            getLoad(
-                    lolita::integer row,
-                    lolita::integer col
-            )
-            {
-                return loads_[col][row];
-            }
-
-            /**
-             * @brief
-             * @tparam t_element_group
-             * @param mesh
-             */
-            template<auto t_element_group>
-            void
-            setLoads(
-                    lolita::core2::mesh::Mesh<_domain, t_element_group> & mesh
-            )
-            {
-                for (auto const & load : mesh.loads_) {
-                    auto is_equal = [&] (std::shared_ptr<std::basic_string<lolita::character>> const & domain) {
-                        return * domain == load.domain_tag_;
-                    };
-                    auto const has_domain = std::find_if(this->domains_.begin(), this->domains_.end(), is_equal) != this->domains_.end();
-                    auto const has_unknown = load.unknown_tag_ == _finite_element.unknown_.tensor_;
-                    auto const has_dimension = load.element_dim_ == _element.dim_;
-                    if (has_domain && has_unknown && has_dimension) {
-                        std::cout << "setting load : " << load.domain_tag_ << std::endl;
-                        auto const i = load.components_.row_;
-                        auto const j = load.components_.col_;
-                        getLoad(i, j) = load.load_;
-                    }
-                }
-            }
-
-            /**
-             * @brief
-             * @tparam t_element_group
-             * @param mesh
-             */
-            template<auto t_element_group>
-            void
-            setBehaviour(
-                    lolita::core2::mesh::Mesh<_domain, t_element_group> & mesh
-            )
-            {
-                for (auto const & behaviour : mesh.behaviours_) {
-                    auto is_equal = [&] (std::shared_ptr<std::basic_string<lolita::character>> const & domain) {
-                        return * domain == behaviour.domain_tag_;
-                    };
-                    auto const has_domain = std::find_if(this->domains_.begin(), this->domains_.end(), is_equal) != this->domains_.end();
-                    auto const has_unknown = behaviour.unknown_tag_ == _finite_element.unknown_.tensor_;
-                    if (has_domain && has_unknown) {
-                        std::cout << "setting behaviour : " << behaviour.domain_tag_ << std::endl;
-                        behaviour_ = behaviour.behaviour_data_;
-                    }
-                }
-            }
-
-            /**
-             * @brief
-             */
-            std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, Field::shape_.rows_>, Field::shape_.cols_> loads_ = def_loads();
-
-            /**
-             * @brief
-             */
-            std::shared_ptr<lolita::behaviour::MgisBehaviourData> behaviour_;
-
-        };
-
-    }
-
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
-    struct FiniteElementTraits
-    {
-
-        using Quadrature = lolita::core2::geometry::ElementQuadratureTraits<lolita::core2::geometry::Element::LinearSegment(), lolita::finite_element::Quadrature::Gauss(), 2>;
+        /**
+         * @brief
+         */
+        t_FieldUnknowns field_unknowns_;
 
     };
 
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
-    struct FiniteElement;
+    namespace cell
+    {
 
+
+
+    }
+
+    /**
+     * @brief
+     * @tparam t_element
+     * @tparam t_domain
+     * @tparam t_finite_element
+     */
+    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    struct FiniteElementTraits
+    {
+
+    private:
+
+        /**
+         * @brief
+         * @return
+         */
+        static constexpr
+        lolita::integer
+        getOrdQuadrature()
+        {
+            auto ord_quadrature = t_finite_element.ord_quadrature_;
+            return t_domain.frame_ == lolita::domain::Frame::AxiSymmetric() ? 2 * ord_quadrature + 1 : 2 * ord_quadrature;
+        }
+
+
+    public:
+
+        /**
+         * @brief
+         */
+        lolita::finite_element::FiniteElementConcept auto const static constexpr finite_element_ = t_finite_element;
+
+        /**
+         * @brief
+         */
+        using ElementDescription = lolita::core2::geometry::ElementTraits<t_element, t_domain>;
+
+        /**
+         * @brief
+         */
+        using Quadrature = lolita::core2::geometry::ElementQuadratureTraits<t_element, t_finite_element.quadrature_, getOrdQuadrature()>;
+
+        /**
+         * @brief
+         */
+        using Field = lolita::core2::field::TensorPolicy<t_finite_element.unknown_.tensor_, t_domain.dim_>;
+
+        /**
+         * @brief
+         * @tparam t_method
+         * @return
+         */
+        template<lolita::finite_element::FiniteElementMethod t_method>
+        static constexpr
+        lolita::boolean
+        hasMethod()
+        {
+            return finite_element_.discretization_ == t_method;
+        }
+
+        /**
+         * @brief
+         * @tparam t_unknown
+         * @return
+         */
+        template<lolita::core2::finite_element::unknown::Unknown t_unknown>
+        static constexpr
+        lolita::integer
+        getNumUnknowns()
+        {
+            auto num_element_unknowns = FiniteElementFieldUnknowns<t_element, t_domain, t_finite_element>::template getNumUnknowns<t_unknown>();
+            auto get_num_components_unknowns = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & self) constexpr mutable {
+                auto const constexpr t_component = ElementDescription::template getComponent<t_i, t_j>();
+                auto num_component_unknowns = FiniteElementFieldUnknowns<t_component, t_domain, t_finite_element>::template getNumUnknowns<t_unknown>();
+                auto num_components = ElementDescription::template getNumComponents<t_i, t_j>();
+                num_element_unknowns += num_component_unknowns * num_components;
+                if constexpr (t_j < ElementDescription::template getNumComponents<t_i>() - 1) {
+                    self.template operator()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < ElementDescription::template getNumComponents<>() - 1) {
+                    self.template operator()<t_i + 1, 0>(self);
+                }
+            };
+            get_num_components_unknowns(get_num_components_unknowns);
+            return num_element_unknowns;
+        }
+
+        /**
+         * @brief
+         * @tparam t_unknown
+         * @tparam t_i
+         * @return
+         */
+        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_i>
+        static constexpr
+        lolita::integer
+        getNumUnknowns()
+        {
+            if constexpr (t_i == 0) {
+                return FiniteElementFieldUnknowns<t_element, t_domain, t_finite_element>::template getNumUnknowns<t_unknown>();
+            }
+            else {
+                auto num_unknowns = 0;
+                auto get_num_components_unknowns = [&] <lolita::integer t_j = 0> (auto & self) constexpr mutable {
+                    auto const constexpr t_component = ElementDescription::template getComponent<t_i - 1, t_j>();
+                    auto num_component_unknowns = FiniteElementFieldUnknowns<t_component, t_domain, t_finite_element>::template getNumUnknowns<t_unknown>();
+                    auto num_components = ElementDescription::template getNumComponents<t_i - 1, t_j>();
+                    num_unknowns += num_component_unknowns * num_components;
+                    if constexpr (t_j < ElementDescription::template getNumComponents<t_i - 1>() - 1) {
+                        self.template operator()<t_j + 1>(self);
+                    }
+                };
+                get_num_components_unknowns(get_num_components_unknowns);
+                return num_unknowns;
+            }
+        }
+
+        /**
+         * @brief
+         * @tparam t_mapping
+         * @return
+         */
+        template<lolita::field::Mapping t_mapping>
+        static constexpr
+        lolita::integer
+        getMappingSize()
+        {
+            return lolita::core2::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, t_mapping>::shape_.size_;
+        }
+
+        /**
+         * @brief
+         * @tparam t_mapping
+         * @return
+         */
+        template<lolita::field::Mapping t_mapping>
+        static constexpr
+        lolita::matrix::VectorBlock
+        getMappingBlock()
+        {
+
+            auto mapping_row = lolita::integer(0);
+            for (auto mapping : t_finite_element.unknown_.mappings_) {
+                if (mapping == t_mapping) {
+                    return lolita::matrix::VectorBlock(mapping_row, mapping_row + getMappingSize<t_mapping>());
+                }
+                mapping_row += getMappingSize<t_mapping>();
+            }
+            return lolita::matrix::VectorBlock();
+        }
+
+        /**
+         * @brief
+         * @return
+         */
+        static constexpr
+        lolita::integer
+        getOperatorNumRows()
+        {
+            auto mapping_size = lolita::integer(0);
+            auto set_dim_mapping = [&] <lolita::integer _i = 0> (auto & self) constexpr mutable {
+                mapping_size += getMappingSize<t_finite_element.unknown_.mappings_[_i]>();
+                if constexpr (_i < t_finite_element.unknown_.mappings_.size() - 1) {
+                    self.template operator()<_i + 1>(self);
+                }
+            };
+            set_dim_mapping(set_dim_mapping);
+            return mapping_size;
+        }
+
+    };
+
+    /**
+     * @brief
+     * @tparam t_element
+     * @tparam t_domain
+     * @tparam t_element_group
+     */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_element_group>
-    struct FiniteElement : public lolita::core2::finite_element::FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_element_group>
+    struct FiniteElement : FiniteElementConnectivity<t_element, t_domain, t_element_group>
     {
 
         /**
@@ -2531,9 +2612,9 @@ namespace lolita::core2::finite_element
                     mutable
             {
                 if constexpr (!__element.isPoint()) {
-                    using __ElementDescription = lolita::core2::geometry::ElementGeometryTraits<__element, t_domain>;
-                    using __ComponentDescription = lolita::core2::geometry::ElementGeometryTraits<__ElementDescription::template getComponent<_i, _j>(), t_domain>;
-                    using __MeshDescription = lolita::core2::geometry::DomainGeometryTraits<t_domain>;
+                    using __ElementDescription = lolita::core2::geometry::ElementTraits<__element, t_domain>;
+                    using __ComponentDescription = lolita::core2::geometry::ElementTraits<__ElementDescription::template getComponent<_i, _j>(), t_domain>;
+                    using __MeshDescription = lolita::core2::geometry::DomainTraits<t_domain>;
                     auto const constexpr _is_initialized = _i == 0 && _j == 0;
                     auto const constexpr _component = __ElementDescription::template getComponent<_i, _j>();
                     auto const constexpr _component_coordinates = __MeshDescription::template getElementCoordinates<_component>();
@@ -2616,11 +2697,11 @@ namespace lolita::core2::finite_element
             )
                     mutable
             {
-                auto const constexpr _element_coordinates = lolita::core2::geometry::DomainGeometryTraits<t_domain>::template getElementCoordinates<t_element>();
+                auto const constexpr _element_coordinates = lolita::core2::geometry::DomainTraits<t_domain>::template getElementCoordinates<t_element>();
                 ptr_element->tag_ = initialization_data.tag_;
                 ptr_element->domains_ = initialization_data.domains_;
-//                ptr_element->coordinates_ = std::make_shared<lolita::domain::Point>(initialization_data.coordinates_);
-                ptr_element->coordinates_ = std::make_unique<lolita::domain::Point>(initialization_data.coordinates_);
+                ptr_element->coordinates_ = std::make_shared<lolita::domain::Point>(initialization_data.coordinates_);
+//                ptr_element->coordinates_ = std::make_unique<lolita::domain::Point>(initialization_data.coordinates_);
                 ptr_element->make();
                 auto elem_hash = std::to_string(initialization_data.tag_);
                 mesh_data.elements_.template getElements<_element_coordinates.dim_, _element_coordinates.tag_>().insert({elem_hash, ptr_element});
@@ -2661,15 +2742,15 @@ namespace lolita::core2::finite_element
                 )
                         mutable
                 {
-                    for (int i = 0; i < lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::template getNumComponents<__i, __j>(); ++i) {
+                    for (int i = 0; i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<__i, __j>(); ++i) {
                         auto & rhs = this->template getComponents<__i, __j>()[i]->template getElement<_k>();
                         auto & lhs = this->template getElement<_k>()->template getComponents<__i, __j>()[i];
                         lhs = rhs;
                     }
-                    if constexpr (__j < lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::template getNumComponents<__i>() - 1) {
+                    if constexpr (__j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<__i>() - 1) {
                         initialize_components_imp.template operator()<__i, __j + 1u>(initialize_components_imp);
                     }
-                    else if constexpr (__i < lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::getNumComponents() - 1) {
+                    else if constexpr (__i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::getNumComponents() - 1) {
                         initialize_components_imp.template operator()<__i + 1u, 0u>(initialize_components_imp);
                     }
                 };
@@ -2686,10 +2767,10 @@ namespace lolita::core2::finite_element
                         auto & lhs = this->template getElement<_k>()->template getNeighbours<__i, __j>();
                         lhs.push_back(rhs);
                     }
-                    if constexpr (__j < lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::template getNumNeighbours<__i>() - 1) {
+                    if constexpr (__j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumNeighbours<__i>() - 1) {
                         initialize_neighbours_imp.template operator()<__i, __j + 1u>(initialize_neighbours_imp);
                     }
-                    else if constexpr (__i < lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::getNumNeighbours() - 1) {
+                    else if constexpr (__i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::getNumNeighbours() - 1) {
                         initialize_neighbours_imp.template operator()<__i + 1u, 0u>(initialize_neighbours_imp);
                     }
                 };
@@ -2732,6 +2813,7 @@ namespace lolita::core2::finite_element
                 auto initialize_coordinates = [&] ()
                 {
                     this->template getElement<_k>()->components_ = this->components_;
+                    this->template getElement<_k>()->coordinates_ = this->coordinates_;
                 };
                 /*
                  *
@@ -2746,10 +2828,10 @@ namespace lolita::core2::finite_element
                         auto & lhs = this->template getElement<_k>()->template getNeighbours<__i, __j>();
                         lhs.push_back(rhs);
                     }
-                    if constexpr (__j < lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::template getNumNeighbours<__i>() - 1) {
+                    if constexpr (__j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumNeighbours<__i>() - 1) {
                         initialize_neighbours_imp.template operator()<__i, __j + 1u>(initialize_neighbours_imp);
                     }
-                    else if constexpr (__i < lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::getNumNeighbours() - 1) {
+                    else if constexpr (__i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::getNumNeighbours() - 1) {
                         initialize_neighbours_imp.template operator()<__i + 1u, 0u>(initialize_neighbours_imp);
                     }
                 };
@@ -2775,10 +2857,20 @@ namespace lolita::core2::finite_element
 
     };
 
+    /**
+     * @brief
+     * @tparam t_element
+     * @tparam t_domain
+     * @tparam t_finite_element
+     */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElement<t_element, t_domain, t_finite_element>
-//            : lolita::core2::finite_element::FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element>
-    : FiniteElementBase2<t_element, t_domain, t_finite_element>
+    :
+    FiniteElementGeometry<t_element, t_domain, t_finite_element>,
+    FiniteElementBehaviour<t_element, t_domain, t_finite_element>,
+    FiniteElementFieldLoad<t_element, t_domain, t_finite_element>,
+    FiniteElementBasis<t_element, t_domain, t_finite_element>,
+    FiniteElementFieldUnknowns<t_element, t_domain, t_finite_element>
     {
 
         lolita::boolean const static constexpr is_finite_element_ = true;
@@ -2790,9 +2882,19 @@ namespace lolita::core2::finite_element
         )
         {
             std::cout << "making element : " << this->hash() << std::endl;
-//            this->setBehaviour(mesh);
-//            this->setLoads(mesh);
-//            this->setUnknowns(mesh);
+            this->setBehaviour(mesh);
+            this->setLoads(mesh);
+            this->setUnknowns(mesh);
+            this->getCurrentCoordinates();
+            this->action();
+        }
+
+        void
+        action()
+        const
+        {
+            auto pt = lolita::domain::Point();
+            this->template getBasisEvaluation<lolita::core2::finite_element::basis::Basis::Monomial(), 1>(pt);
         }
 
     };
@@ -2800,3 +2902,1652 @@ namespace lolita::core2::finite_element
 }
 
 #endif //LOLITA_LOLITA_CORE_5_HXX
+
+
+
+//namespace temp
+//{
+//
+//    /**
+//     * @brief
+//     * @tparam t_element
+//     * @tparam t_domain
+//     * @tparam t_finite_element
+//     */
+//    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//    struct FiniteElementGeometry2
+//    {
+//
+//    private:
+//
+//        /**
+//         * @brief
+//         */
+//        using t_ElementTraits = lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>;
+//
+//        /**
+//         * @brief
+//         */
+//        using t_FiniteElementTraits = lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>;
+//
+//        /**
+//         * @brief
+//         */
+//        using t_Quadrature = typename t_FiniteElementTraits::Quadrature;
+//
+//    public:
+//
+//        /**
+//         * @brief Get the current coordinates of the point/node in the mesh
+//         * @return the vector with x, y and z coordinates
+//         */
+//        lolita::domain::Point &
+//        getCurrentCoordinates()
+//        requires(t_element.isPoint())
+//        {
+//            return connectivity_->coordinates_;
+//        }
+//
+//        /**
+//         * @brief Get the current coordinates of the point/node in the mesh
+//         * @return the vector with x, y and z coordinates
+//         */
+//        lolita::domain::Point const &
+//        getCurrentCoordinates()
+//        const
+//        requires(t_element.isPoint())
+//        {
+//            return connectivity_->coordinates_;
+//        }
+//
+//        /**
+//         * @brief Get the current coordinates of the element in the mesh
+//         * @return the matrix composed of the column vectors with x, y and z coordinates of each node
+//         */
+//        lolita::matrix::Matrix<lolita::real, 3, t_element.numNodes()>
+//        getCurrentCoordinates()
+//        const
+//        requires(!t_element.isPoint())
+//        {
+//            auto current_nodes_coordinates = lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_>();
+//            auto count = lolita::index(0);
+//            for (auto const & node : connectivity_->template getComponents<t_element.dim_ - 1, 0>()) {
+//                current_nodes_coordinates.col(count) = node->getCurrentCoordinates();
+//                count ++;
+//            }
+//            return current_nodes_coordinates;
+//        }
+//
+//        /**
+//         * @brief
+//         * @return
+//         */
+//        static
+//        lolita::matrix::Span<lolita::matrix::Matrix<lolita::real, 3, t_element.numNodes(), matrix::col_major> const>
+//        getReferenceCoordinates()
+//        {
+//            using _ReferenceCoordinates = lolita::matrix::Span<lolita::matrix::Matrix<lolita::real, 3, t_element.numNodes(), matrix::col_major> const>;
+//            return _ReferenceCoordinates(lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
+//        }
+//
+//        /**
+//         * @brief
+//         * @param nodal_field_values
+//         * @param reference_point
+//         * @return
+//         */
+//        static
+//        lolita::real
+//        getShapeMappingEvaluation(
+//                lolita::matrix::Vector<lolita::real, t_element.numNodes()> const & nodal_field_values,
+//                lolita::domain::Point const & reference_point
+//        )
+//        {
+//            return lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::getShapeMappingEvaluation(nodal_field_values, reference_point);
+//        }
+//
+//        /**
+//         * @brief
+//         * @param nodal_field_values
+//         * @param reference_point
+//         * @param derivative_direction
+//         * @return
+//         */
+//        static
+//        lolita::real
+//        getShapeMappingDerivative(
+//                lolita::matrix::Vector<lolita::real, t_element.numNodes()> const & nodal_field_values,
+//                lolita::domain::Point const & reference_point,
+//                lolita::index derivative_direction
+//        )
+//        {
+//            return lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::getShapeMappingDerivative(nodal_field_values, reference_point, derivative_direction);
+//        }
+//
+//        /*
+//         *
+//         */
+//
+//        /**
+//         * @brief
+//         * @param point
+//         * @return
+//         */
+//        lolita::real
+//        getShapeMappingDifferential(
+//                lolita::domain::Point const & point
+//        )
+//        const
+//        {
+//            auto const current_coordinates = this->getCurrentCoordinates();
+//            auto ru = lolita::matrix::Matrix<lolita::real, 3, 3>();
+//            auto du = lolita::real(0);
+//            ru.setZero();
+//            for (lolita::index i = 0; i < t_domain.dim_; ++i) {
+//                for (lolita::index j = 0; j < t_element.dim_; ++j) {
+//                    ru(i, j) = FiniteElementGeometry2::getShapeMappingDerivative(current_coordinates.row(i), point, j);
+//                }
+//            }
+//            if constexpr (t_element.dim_ == 3) {
+//                du = numerics::abs((ru.col(0).template cross(ru.col(1))).template dot(ru.col(2)));
+//            }
+//            else if constexpr (t_element.dim_ == 2) {
+//                du = numerics::abs((ru.col(0).template cross(ru.col(1))).norm());
+//            }
+//            else {
+//                du = numerics::abs(ru.col(0).norm());
+//            }
+//            if constexpr (t_domain.frame_ == lolita::domain::Frame::AxiSymmetric()) {
+//                lolita::real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+//                if (r0 < 1.e-10) {
+//                    r0 = 1.e-10;
+//                }
+//                du *= 2.0 * numerics::pi * r0;
+//            }
+//            return du;
+//        }
+//
+//        /**
+//         * @brief
+//         * @param first_point
+//         * @param second_point
+//         * @param direction
+//         * @return
+//         */
+//        lolita::real
+//        getRiemannianDistance(
+//                lolita::domain::Point const & first_point,
+//                lolita::domain::Point const & second_point,
+//                lolita::integer direction = -1
+//        )
+//        const
+//        {
+//            if constexpr (t_ElementTraits::isCell()) {
+//                auto const & current_coordinates = this->getCurrentCoordinates();
+//                auto distance = lolita::real();
+//                auto mp0 = lolita::domain::Point();
+//                auto mp1 = lolita::domain::Point();
+//                for (lolita::index i = 0; i < t_element.dim_; ++i) {
+//                    mp0(i) = FiniteElementGeometry2::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+//                    mp1(i) = FiniteElementGeometry2::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+//                }
+//                direction == -1 ? distance = (mp1 - mp0).norm() : distance = (mp1 - mp0)(direction);
+//                return distance;
+//            }
+//            else {
+//                auto const constexpr _quadrature = lolita::finite_element::Quadrature::Gauss();
+//                using SegmentQuadrature = lolita::core2::geometry::ElementQuadratureTraits<lolita::core2::geometry::Element::LinearSegment(), _quadrature, 4>;
+//                auto distance = lolita::real(0);
+//                auto dt = lolita::real();
+//                auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//                for (lolita::index q = 0; q < SegmentQuadrature::getDim(); ++q) {
+//                    auto pq = SegmentQuadrature::reference_points_[q][0];
+//                    auto wq = SegmentQuadrature::reference_weights_[q];
+//                    auto ru = lolita::matrix::Matrix<lolita::real, 3, 3>().setZero();
+//                    auto difference = second_point - first_point;
+//                    auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+//                    for (lolita::index i = 0; i < t_domain.dim_; ++i) {
+//                        for (lolita::index j = 0; j < t_element.dim_; ++j) {
+//                            if (direction == -1 || i == static_cast<lolita::index>(direction)) {
+//                                auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+//                                auto dx = FiniteElementGeometry2::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
+//                                ru(i, j) = dx * du;
+//                            }
+//                        }
+//                    }
+//                    if constexpr (t_element.isFacet()) {
+//                        auto Eff = ru.col(0).template dot(ru.col(0));
+//                        auto Fff = ru.col(0).template dot(ru.col(1));
+//                        auto Gff = ru.col(1).template dot(ru.col(1));
+//                        dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+//                    }
+//                    else if constexpr (t_element.isCurve()) {
+//                        auto Eff = ru.col(0).template dot(ru.col(0));
+//                        dt = std::sqrt(Eff);
+//                    }
+//                    else {
+//                        dt = 0;
+//                    }
+//                    distance += wq * dt;
+//                }
+//                return distance;
+//            }
+//        }
+//
+//        /*
+//         * GEOMETRY
+//         */
+//
+//        /**
+//         * @brief
+//         * @return
+//         */
+//        lolita::domain::Point
+//        getCurrentDiameters()
+//        const
+//        {
+////            auto reference_coordinates = FiniteElementGeometry2::getReferenceCoordinates();
+//            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//            auto current_diameters = lolita::domain::Point().setZero();
+//            for (lolita::index i = 0; i < t_element.num_nodes_; ++i) {
+//                for (lolita::index j = i + 1; j < t_element.num_nodes_; ++j) {
+//                    auto const & pt0 = current_nodes_coordinates.col(i);
+//                    auto const & pt1 = current_nodes_coordinates.col(j);
+//                    for (lolita::index k = 0; k < 3; ++k) {
+//                        auto new_value = numerics::abs(getRiemannianDistance(pt0, pt1, k));
+//                        auto & current_value = current_diameters(k);
+//                        if (new_value > current_value) {
+//                            current_value = new_value;
+//                        }
+//                    }
+//                }
+//            }
+//            return current_diameters;
+//        }
+//
+//        /**
+//         * @brief
+//         * @return
+//         */
+//        lolita::domain::Point
+//        getCurrentCentroid()
+//        const
+//        {
+//            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//            return lolita::domain::getBarycenter(current_nodes_coordinates);
+//        }
+//
+//        /**
+//         * @brief
+//         * @return
+//         */
+//        static
+//        lolita::domain::Point
+//        getReferenceCentroid()
+//        {
+//            auto nds = FiniteElementGeometry2::getReferenceCoordinates();
+//            return lolita::domain::getBarycenter(nds);
+//        }
+//
+//        /**
+//         * @brief
+//         * @return
+//         */
+//        static
+//        lolita::domain::Point
+//        getReferenceDiameters()
+//        {
+////            auto dts = lolita::domain::Point();
+////            auto nds = FiniteElementGeometry2::getReferenceCoordinates();
+////            dts.setZero();
+////            for (lolita::index i = 0; i < t_element.num_nodes_; ++i) {
+////                for (lolita::index j = i + 1; j < t_element.num_nodes_; ++j) {
+////                    for (lolita::index k = 0; k < 3; ++k) {
+////                        auto new_value = numerics::abs(nds(k, i) - nds(k, j));
+////                        auto & current_value = dts(k);
+////                        if (new_value > current_value) {
+////                            current_value = new_value;
+////                        }
+////                    }
+////                }
+////            }
+////            return dts;
+//            auto const reference_nodes_coordinates = FiniteElementGeometry2::getReferenceCoordinates();
+////            auto const reference_nodes_coordinates = this->getCurrentCoordinates();
+//            auto current_diameters = lolita::domain::Point().setZero();
+//            for (lolita::index i = 0; i < t_element.num_nodes_; ++i) {
+//                for (lolita::index j = i + 1; j < t_element.num_nodes_; ++j) {
+//                    auto const & pt0 = reference_nodes_coordinates.col(i);
+//                    auto const & pt1 = reference_nodes_coordinates.col(j);
+//                    for (lolita::index k = 0; k < 3; ++k) {
+//                        auto new_value = numerics::abs((pt0 - pt1)(k));
+//                        auto & current_value = current_diameters(k);
+//                        if (new_value > current_value) {
+//                            current_value = new_value;
+//                        }
+//                    }
+//                }
+//            }
+//            return current_diameters;
+//        }
+//
+//        /*
+//         * QUADRATURE
+//         */
+//
+//        /**
+//         * @brief
+//         * @tparam _quadrature
+//         * @tparam _ord
+//         * @param index
+//         * @return
+//         */
+//        template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_>
+//        static
+//        lolita::real
+//        getReferenceQuadratureWeight(
+//                lolita::index index
+//        )
+//        {
+//            return lolita::core2::geometry::ElementQuadratureTraits<t_element, _quadrature, _ord>::reference_weights_[index];
+//        }
+//
+//        /**
+//         * @brief
+//         * @tparam _quadrature
+//         * @tparam _ord
+//         * @param index
+//         * @return
+//         */
+//        template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_>
+//        static
+//        lolita::matrix::Span<lolita::domain::Point const>
+//        getReferenceQuadraturePoint(
+//                lolita::index index
+//        )
+//        {
+//            return lolita::matrix::Span<lolita::domain::Point const>(
+//                    lolita::core2::geometry::ElementQuadratureTraits<t_element, _quadrature, _ord>::reference_points_[index].begin()
+//            );
+//        }
+//
+//        /**
+//         * @brief
+//         * @tparam _quadrature
+//         * @tparam _ord
+//         * @param index
+//         * @return
+//         */
+//        template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_>
+//        lolita::real
+//        getCurrentQuadratureWeight(
+//                lolita::index index
+//        )
+//        const
+//        {
+//            auto w = getReferenceQuadratureWeight<_quadrature, _ord>(index);
+//            return w * getShapeMappingDifferential(getReferenceQuadraturePoint<_quadrature, _ord>(index));
+//        }
+//
+//        /**
+//         * @brief
+//         * @tparam _quadrature
+//         * @tparam _ord
+//         * @param index
+//         * @return
+//         */
+//        template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_>
+//        lolita::domain::Point
+//        getCurrentQuadraturePoint(
+//                lolita::index index
+//        )
+//        const
+//        {
+//            auto p = lolita::domain::Point();
+//            auto const nds = this->getCurrentCoordinates();
+//            for (lolita::index j = 0; j < 3; ++j) {
+//                p(j) = FiniteElementGeometry2::getShapeMappingEvaluation(nds.row(j), getReferenceQuadraturePoint<_quadrature, _ord>(index));
+//            }
+//            return p;
+//        }
+//
+//        /**
+//         * @brief
+//         * @tparam _quadrature
+//         * @tparam _ord
+//         * @tparam _i
+//         * @tparam _j
+//         * @param index
+//         * @return
+//         */
+//        template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_, lolita::index _i, lolita::index _j>
+//        static
+//        lolita::real
+//        getComponentReferenceQuadratureWeight(
+//                lolita::index index
+//        )
+//        requires(!t_element.isPoint())
+//        {
+//            auto const constexpr _component = t_ElementTraits ::template getComponent<_i, _j>();
+//            using ComponentGeometry = FiniteElementGeometry2<_component, t_domain, t_finite_element>;
+//            return ComponentGeometry::template getReferenceQuadratureWeight<_quadrature, _ord>(index);
+//        }
+//
+//        /**
+//         * @brief
+//         * @tparam _quadrature
+//         * @tparam _ord
+//         * @tparam _i
+//         * @tparam _j
+//         * @param component_index
+//         * @param index
+//         * @return
+//         */
+//        template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_, lolita::index _i, lolita::index _j>
+//        static
+//        lolita::domain::Point
+//        getComponentReferenceQuadraturePoint(
+//                lolita::index component_index,
+//                lolita::index index
+//        )
+//        requires(!t_element.isPoint())
+//        {
+////            auto const constexpr _component = lolita::core::component<_element, _domain, _i, _j>();
+//            auto const constexpr _component = t_ElementTraits ::template getComponent<_i, _j>();
+//            auto p = lolita::domain::Point();
+//            using ComponentGeometry = FiniteElementGeometry2<_component, t_domain, t_finite_element>;
+//            auto const & elt_reference_nodes = lolita::core2::geometry::ElementGeometryTraits<t_element, t_domain>::reference_nodes_;
+//            for (lolita::index i = 0; i < 3; ++i) {
+//                auto cpt_coordinates = lolita::matrix::Vector<lolita::real, _component.num_nodes_>();
+//                for (lolita::index j = 0; j < _component.num_nodes_; ++j) {
+//                    auto const node_tag = getComponentNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);
+//                    cpt_coordinates(j) = elt_reference_nodes[node_tag][i];
+//                }
+//                auto cpt_reference_point = ComponentGeometry::template getReferenceQuadraturePoint<_quadrature, _ord>(index);
+//                p(i) = ComponentGeometry::getShapeMappingEvaluation(cpt_coordinates, cpt_reference_point);
+//            }
+//            return p;
+//        }
+//
+//        /**
+//         * @brief
+//         * @tparam _quadrature
+//         * @tparam _ord
+//         * @tparam _i
+//         * @tparam _j
+//         * @param component_index
+//         * @param index
+//         * @return
+//         */
+//        template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_, lolita::index _i, lolita::index _j>
+//        lolita::real
+//        getComponentCurrentQuadratureWeight(
+//                lolita::index component_index,
+//                lolita::index index
+//        )
+//        const
+//        requires(!t_element.isPoint())
+//        {
+//            auto const & cmp =  connectivity_->template getComponents<_i, _j>()[component_index];
+//            return cmp->template getCurrentQuadratureWeight<_quadrature, _ord>(index);
+//        }
+//
+//        /**
+//         * @brief
+//         * @tparam _quadrature
+//         * @tparam _ord
+//         * @tparam _i
+//         * @tparam _j
+//         * @param component_index
+//         * @param index
+//         * @return
+//         */
+//        template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_, lolita::index _i, lolita::index _j>
+//        lolita::domain::Point
+//        getComponentCurrentQuadraturePoint(
+//                lolita::index component_index,
+//                lolita::index index
+//        )
+//        const
+//        requires(!t_element.isPoint())
+//        {
+//            auto p = lolita::domain::Point();
+//            auto const cpt_ref_pnt = getComponentReferenceQuadraturePoint<_quadrature, _ord, _i, _j>(component_index, index);
+//            auto const nds = this->getCurrentCoordinates();
+//            for (lolita::index j = 0; j < 3; ++j) {
+//                p(j) = FiniteElementGeometry2::getShapeMappingEvaluation(nds.row(j), cpt_ref_pnt);
+//            }
+//            return p;
+//        }
+//
+//        /**
+//         * @brief
+//         * @param point
+//         * @return
+//         */
+//        lolita::domain::Point
+//        getNormalVector(
+//                lolita::domain::Point const & point
+//        )
+//        const
+//        requires(t_ElementTraits::isFace())
+//        {
+//            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//            auto ru = lolita::matrix::Matrix<lolita::real, 3, t_element.dim_>();
+//            ru.setZero();
+//            for (lolita::index i = 0; i < 3; ++i) {
+//                for (lolita::index j = 0; j < t_element.dim_; ++j) {
+//                    ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
+//                }
+//            }
+//            if constexpr (t_element.isPoint()) {
+//                return lolita::domain::Point{0, 0, 0};
+//            }
+//            else if constexpr (t_element.isCurve()) {
+//                return lolita::domain::Point{ru(1)/ru.norm(), -ru(0)/ru.norm(), 0};
+//            }
+//            else {
+//                return (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
+//            }
+//        }
+//
+//        /**
+//         * @brief
+//         * @param point
+//         * @param direction
+//         * @return
+//         */
+//        lolita::domain::Point
+//        getTangentVector(
+//                lolita::domain::Point const & point,
+//                lolita::index direction
+//        )
+//        const
+//        requires(t_element.isCurve())
+//        {
+//            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//            auto tangent_vector = lolita::domain::Point();
+//            for (lolita::index i = 0; i < 3; ++i) {
+//                tangent_vector(i) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, direction);
+//            }
+//            return tangent_vector;
+//        }
+//
+//        /**
+//         * @brief
+//         */
+//        std::shared_ptr<FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element>> connectivity_;
+//
+//    };
+//
+//    /**
+//     * @brief
+//     * @tparam t_element
+//     * @tparam t_domain
+//     * @tparam t_finite_element
+//     */
+//    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//    struct FiniteElementLoad2
+//    {
+//
+//    private:
+//
+//        /**
+//         * @brief
+//         */
+//        using t_Field = lolita::core2::field::TensorPolicy<t_finite_element.unknown_.tensor_, t_domain.dim_>;
+//
+//        /**
+//         * @brief loads initializer
+//         * @return loads member initialized with the zero natural load
+//         */
+//        static
+//        std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, t_Field::shape_.rows_>, t_Field::shape_.cols_>
+//        def_loads()
+//        {
+//            auto loads = std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, t_Field::shape_.rows_>, t_Field::shape_.cols_>();
+//            for (int i = 0; i < t_Field::shape_.rows_; ++i) {
+//                for (int j = 0; j < t_Field::shape_.cols_; ++j) {
+//                    loads[j][i] = lolita::core2::finite_element::null_load_ptr;
+//                }
+//            }
+//            return loads;
+//        }
+//
+//    public:
+//
+//        /**
+//         * @brief
+//         * @param row
+//         * @param col
+//         * @return
+//         */
+//        std::shared_ptr<lolita::finite_element::LoadComponent> const &
+//        getLoad(
+//                lolita::integer row,
+//                lolita::integer col
+//        )
+//        const
+//        {
+//            return loads_[col][row];
+//        }
+//
+//        /**
+//         * @brief
+//         * @param row
+//         * @param col
+//         * @return
+//         */
+//        std::shared_ptr<lolita::finite_element::LoadComponent> &
+//        getLoad(
+//                lolita::integer row,
+//                lolita::integer col
+//        )
+//        {
+//            return loads_[col][row];
+//        }
+//
+//        /**
+//         * @brief
+//         * @tparam t_element_group
+//         * @param mesh
+//         */
+//        template<auto t_element_group>
+//        void
+//        setLoads(
+//                lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+//        )
+//        {
+//            for (auto const & load : mesh.loads_) {
+//                auto is_equal = [&] (std::shared_ptr<std::basic_string<lolita::character>> const & domain) {
+//                    return * domain == load.domain_tag_;
+//                };
+//                auto const has_domain = std::find_if(connectivity_->domains_.begin(), connectivity_->domains_.end(), is_equal) != connectivity_->domains_.end();
+//                auto const has_unknown = load.unknown_tag_ == t_finite_element.unknown_.tensor_;
+//                auto const has_dimension = load.element_dim_ == t_element.dim_;
+//                if (has_domain && has_unknown && has_dimension) {
+//                    std::cout << "setting load : " << load.domain_tag_ << std::endl;
+//                    auto const i = load.components_.row_;
+//                    auto const j = load.components_.col_;
+//                    getLoad(i, j) = load.load_;
+//                }
+//            }
+//        }
+//
+//        /**
+//         * @brief
+//         */
+//        std::shared_ptr<FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element>> connectivity_;
+//
+//        /**
+//         * @brief
+//         */
+//        std::array<std::array<std::shared_ptr<lolita::finite_element::LoadComponent>, t_Field::shape_.rows_>, t_Field::shape_.cols_> loads_ = def_loads();
+//
+//    };
+//
+//    /**
+//     * @brief
+//     * @tparam t_element
+//     * @tparam t_domain
+//     * @tparam t_finite_element
+//     */
+//    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//    struct FiniteElementBehaviour2
+//    {
+//
+//        /**
+//         * @brief
+//         * @tparam t_element_group
+//         * @param mesh
+//         */
+//        template<auto t_element_group>
+//        void
+//        setBehaviour(
+//                lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+//        )
+//        {
+//            for (auto const & behaviour : mesh.behaviours_) {
+//                auto is_equal = [&] (std::shared_ptr<std::basic_string<lolita::character>> const & domain) {
+//                    return * domain == behaviour.domain_tag_;
+//                };
+//                auto const has_domain = std::find_if(connectivity_->domains_.begin(), connectivity_->domains_.end(), is_equal) != connectivity_->domains_.end();
+//                auto const has_unknown = behaviour.unknown_tag_ == t_finite_element.unknown_.tensor_;
+//                if (has_domain && has_unknown) {
+//                    std::cout << "setting behaviour : " << behaviour.domain_tag_ << std::endl;
+//                    behaviour_ = behaviour.behaviour_data_;
+//                }
+//            }
+//        }
+//
+//        /**
+//         * @brief
+//         */
+//        std::shared_ptr<FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_finite_element>> connectivity_;
+//
+//        /**
+//         * @brief
+//         */
+//        std::shared_ptr<lolita::behaviour::MgisBehaviourData> behaviour_;
+//
+//    };
+//
+//}
+
+/**
+ * @brief
+ * @tparam t_T
+ * @tparam t_element
+ * @tparam t_domain
+ * @tparam t_finite_element
+ */
+//template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
+//struct FiniteElementBaseM
+//{
+//
+//private:
+//
+//    /**
+//     * @brief
+//     */
+//    template<lolita::core2::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__finite_element>
+//    using t_FiniteElementPointer = std::shared_ptr<FiniteElement<t__element, t__domain, t__finite_element...>>;
+//
+//    /**
+//     * @brief
+//     */
+//    using t_ElementTraits = lolita::core2::geometry::ElementTraits<t_element, t_domain>;
+//
+//    /**
+//     * @brief
+//     */
+//    using t_FiniteElementTraits = lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>;
+//
+//    /**
+//     * @brief
+//     */
+//    using t_FiniteElement = FiniteElement<t_element, t_domain, t_finite_element>;
+//
+//    /**
+//     * @brief
+//     */
+//    using t_Quadrature = typename t_FiniteElementTraits::Quadrature;
+//
+//    /**
+//     * @brief
+//     */
+//    using t_Field = lolita::core2::field::TensorPolicy<t_finite_element.unknown_.tensor_, t_domain.dim_>;
+//
+//    /**
+//     * @brief loads initializer
+//     * @return loads member initialized with the zero natural load
+//     */
+//    static
+//    std::array<std::array<std::shared_ptr<lolita::finite_element::ScalarLoad>, t_Field::shape_.rows_>, t_Field::shape_.cols_>
+//    def_loads()
+//    {
+//        auto loads = std::array<std::array<std::shared_ptr<lolita::finite_element::ScalarLoad>, t_Field::shape_.rows_>, t_Field::shape_.cols_>();
+//        for (int i = 0; i < t_Field::shape_.rows_; ++i) {
+//            for (int j = 0; j < t_Field::shape_.cols_; ++j) {
+//                loads[j][i] = lolita::core2::finite_element::null_load_ptr;
+//            }
+//        }
+//        return loads;
+//    }
+//
+//public:
+//
+//    /**
+//     * @brief
+//     */
+//    using Components = typename t_ElementTraits::template InnerConnectivity<t_FiniteElementPointer, t_finite_element>;
+//
+//    /**
+//     * @brief
+//     */
+//    using Neighbours = typename t_ElementTraits::template OuterConnectivity<t_FiniteElementPointer, t_finite_element>;
+//
+//    /**
+//     * @brief Basic equality comparison operator
+//     * @param other
+//     * @return
+//     */
+//    lolita::boolean
+//    operator==(
+//            FiniteElementBaseM const & other
+//    )
+//    const = default;
+//
+//    /**
+//     * @brief Basic equality comparison operator
+//     * @param other
+//     * @return
+//     */
+//    lolita::boolean
+//    operator!=(
+//            FiniteElementBaseM const & other
+//    )
+//    const = default;
+//
+//    /**
+//     * @brief
+//     * @return
+//     */
+//    std::basic_string<lolita::character>
+//    hash()
+//    const
+//    requires(t_element.isPoint())
+//    {
+//        return std::to_string(this->tag_);
+//    }
+//
+//    /**
+//     * @brief
+//     * @return
+//     */
+//    std::basic_string<lolita::character>
+//    hash()
+//    const
+//    {
+//        std::basic_stringstream<lolita::character> hash;
+//        auto const & nodes = getComponents<t_element.dim_ - 1, 0>();
+//        for (auto const & node : nodes) {
+//            hash << node->hash();
+//        }
+//        return hash.str();
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_i
+//     * @tparam t_j
+//     * @return
+//     */
+//    template<lolita::index t_i, lolita::index t_j>
+//    std::tuple_element_t<t_j, std::tuple_element_t<t_i, Neighbours>> &
+//    getNeighbours()
+//    {
+//        return std::get<t_j>(std::get<t_i>(neighbours_));
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_i
+//     * @tparam t_j
+//     * @return
+//     */
+//    template<lolita::index t_i, lolita::index t_j>
+//    std::tuple_element_t<t_j, std::tuple_element_t<t_i, Neighbours>> const &
+//    getNeighbours()
+//    const
+//    {
+//        return std::get<t_j>(std::get<t_i>(neighbours_));
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_i
+//     * @tparam t_j
+//     * @return
+//     */
+//    template<lolita::index t_i, lolita::index t_j>
+//    std::tuple_element_t<t_j, std::tuple_element_t<t_i, Components>> &
+//    getComponents()
+//    requires(!t_element.isPoint())
+//    {
+//        return std::get<t_j>(std::get<t_i>(components_));
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_i
+//     * @tparam t_j
+//     * @return
+//     */
+//    template<lolita::index t_i, lolita::index t_j>
+//    std::tuple_element_t<t_j, std::tuple_element_t<t_i, Components>> const &
+//    getComponents()
+//    const
+//    requires(!t_element.isPoint())
+//    {
+//        return std::get<t_j>(std::get<t_i>(components_));
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_i
+//     * @tparam t_j
+//     * @param i
+//     * @param j
+//     * @return
+//     */
+//    template<lolita::index t_i, lolita::index t_j>
+//    static constexpr
+//    lolita::index
+//    getComponentNodeConnection(
+//            lolita::index i,
+//            lolita::index j
+//    )
+//    requires(!t_element.isPoint())
+//    {
+//        return std::get<t_j>(std::get<t_i>(t_ElementTraits::node_connectivity_))[i][j];
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_i
+//     * @tparam t_j
+//     * @param i
+//     * @return
+//     */
+//    template<lolita::index t_i, lolita::index t_j>
+//    lolita::index
+//    getComponentIndex(
+//            lolita::index i
+//    )
+//    const
+//    requires(!t_element.isPoint())
+//    {
+//        auto constexpr t_component = t_ElementTraits::template getComponent<t_i, t_j>();
+//        using t_NeighbourTraits = lolita::core2::geometry::ElementTraits<t_component, t_domain>;
+//        auto constexpr t_coordinates = t_NeighbourTraits::template getNeighbourCoordinates<t_element>();
+//        auto const & items = getComponents<t_i, t_j>()[i]->template getNeighbours<t_coordinates.dim_, t_coordinates.tag_>();
+//        auto is_equal = [&] (std::shared_ptr<t_FiniteElement> const & ptr_element) {
+//            return * ptr_element == * this;
+//        };
+//        return std::distance(items.begin(), std::find_if(items.begin(), items.end(), is_equal));
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_i
+//     * @tparam t_j
+//     * @param i
+//     * @return
+//     */
+//    template<lolita::index t_i, lolita::index t_j>
+//    lolita::integer
+//    getComponentOrientation(
+//            lolita::index i
+//    )
+//    const
+//    requires(!t_element.isPoint())
+//    {
+//        return getComponentIndex<t_i, t_j>(i) == 0 ? 1 : -1;
+//    }
+//
+//    /**
+//     * @brief Get the current coordinates of the point/node in the mesh
+//     * @return the vector with x, y and z coordinates
+//     */
+//    lolita::domain::Point &
+//    getCurrentCoordinates()
+//    requires(t_element.isPoint())
+//    {
+//        return * this->coordinates_;
+//    }
+//
+//    /**
+//     * @brief Get the current coordinates of the point/node in the mesh
+//     * @return the vector with x, y and z coordinates
+//     */
+//    lolita::domain::Point const &
+//    getCurrentCoordinates()
+//    const
+//    requires(t_element.isPoint())
+//    {
+//        return * this->coordinates_;
+//    }
+//
+//    /**
+//     * @brief Get the current coordinates of the element in the mesh
+//     * @return the matrix composed of the column vectors with x, y and z coordinates of each node
+//     */
+//    lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_>
+//    getCurrentCoordinates()
+//    const
+//    {
+//        auto current_nodes_coordinates = lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_>();
+//        auto count = lolita::index(0);
+//        for (auto const & node : this->template getComponents<t_element.dim_ - 1, 0>()) {
+//            current_nodes_coordinates.col(count) = node->getCurrentCoordinates();
+//            count ++;
+//        }
+//        return current_nodes_coordinates;
+//    }
+//
+//    /**
+//     * @brief
+//     * @return
+//     */
+//    static
+//    lolita::matrix::Span<lolita::matrix::Matrix<lolita::real, 3, t_element.numNodes(), matrix::col_major> const>
+//    getReferenceCoordinates()
+//    {
+//        using _ReferenceCoordinates = lolita::matrix::Span<lolita::matrix::Matrix<lolita::real, 3, t_element.numNodes(), matrix::col_major> const>;
+//        return _ReferenceCoordinates(t_ElementTraits::reference_nodes_.begin()->begin());
+//    }
+//
+////        /**
+////         * @brief
+////         * @tparam _basis
+////         * @tparam _ord
+////         * @param point
+////         * @return
+////         */
+////        template<lolita::core2::finite_element::basis::Basis _basis, lolita::index _ord>
+////        lolita::matrix::Vector<lolita::real, lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, _basis, _ord>::dim_>
+////        getBasisEvaluation(
+////                lolita::domain::Point const & point
+////        )
+////        const
+////        {
+////            using t_FiniteElementBasis = lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, _basis, _ord>;
+////            using t_FiniteElementBasisImplementation = typename t_FiniteElementBasis::template Implementation<t_domain, t_finite_element>;
+////            return static_cast<t_FiniteElementBasisImplementation const *>(this)->evaluate(point);
+////        }
+////
+////        /**
+////         * @brief
+////         * @tparam _basis
+////         * @tparam _ord
+////         * @param point
+////         * @param derivative_direction
+////         * @return
+////         */
+////        template<lolita::core2::finite_element::basis::Basis _basis, lolita::index _ord>
+////        lolita::matrix::Vector<lolita::real, lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, _basis, _ord>::dim_>
+////        getBasisDerivative(
+////                lolita::domain::Point const & point,
+////                lolita::index derivative_direction
+////        )
+////        const
+////        {
+////            using t_FiniteElementBasis = lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, _basis, _ord>;
+////            using t_FiniteElementBasisImplementation = typename t_FiniteElementBasis::template Implementation<t_domain, t_finite_element>;
+////            return static_cast<t_FiniteElementBasisImplementation const *>(this)->evaluate(point, derivative_direction);
+////        }
+//
+//    /**
+//     * @brief
+//     * @param nodal_field_values
+//     * @param reference_point
+//     * @return
+//     */
+//    static
+//    lolita::real
+//    getShapeMappingEvaluation(
+//            lolita::matrix::Vector<lolita::real, t_element.numNodes()> const & nodal_field_values,
+//            lolita::domain::Point const & reference_point
+//    )
+//    {
+//        return t_ElementTraits::getShapeMappingEvaluation(nodal_field_values, reference_point);
+//    }
+//
+//    /**
+//     * @brief
+//     * @param nodal_field_values
+//     * @param reference_point
+//     * @param derivative_direction
+//     * @return
+//     */
+//    static
+//    lolita::real
+//    getShapeMappingDerivative(
+//            lolita::matrix::Vector<lolita::real, t_element.numNodes()> const & nodal_field_values,
+//            lolita::domain::Point const & reference_point,
+//            lolita::index derivative_direction
+//    )
+//    {
+//        return t_ElementTraits::getShapeMappingDerivative(nodal_field_values, reference_point, derivative_direction);
+//    }
+//
+//    /*
+//     *
+//     */
+//
+//    /**
+//     * @brief
+//     * @param point
+//     * @return
+//     */
+//    lolita::real
+//    getShapeMappingDifferential(
+//            lolita::domain::Point const & point
+//    )
+//    const
+//    {
+//        auto const current_coordinates = this->getCurrentCoordinates();
+//        auto ru = lolita::matrix::Matrix<lolita::real, 3, 3>();
+//        auto du = lolita::real(0);
+//        ru.setZero();
+//        for (lolita::index i = 0; i < t_domain.dim_; ++i) {
+//            for (lolita::index j = 0; j < t_element.dim_; ++j) {
+//                ru(i, j) = FiniteElementBaseM::getShapeMappingDerivative(current_coordinates.row(i), point, j);
+//            }
+//        }
+//        if constexpr (t_element.dim_ == 3) {
+//            du = numerics::abs((ru.col(0).template cross(ru.col(1))).template dot(ru.col(2)));
+//        }
+//        else if constexpr (t_element.dim_ == 2) {
+//            du = numerics::abs((ru.col(0).template cross(ru.col(1))).norm());
+//        }
+//        else {
+//            du = numerics::abs(ru.col(0).norm());
+//        }
+//        if constexpr (t_domain.frame_ == lolita::domain::Frame::AxiSymmetric()) {
+//            lolita::real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+//            if (r0 < 1.e-10) {
+//                r0 = 1.e-10;
+//            }
+//            du *= 2.0 * numerics::pi * r0;
+//        }
+//        return du;
+//    }
+//
+//    /**
+//     * @brief
+//     * @param first_point
+//     * @param second_point
+//     * @param direction
+//     * @return
+//     */
+//    lolita::real
+//    getRiemannianDistance(
+//            lolita::domain::Point const & first_point,
+//            lolita::domain::Point const & second_point,
+//            lolita::integer direction = -1
+//    )
+//    const
+//    {
+//        if constexpr (t_ElementTraits::isCell()) {
+//            auto const & current_coordinates = this->getCurrentCoordinates();
+//            auto distance = lolita::real();
+//            auto mp0 = lolita::domain::Point();
+//            auto mp1 = lolita::domain::Point();
+//            for (lolita::index i = 0; i < t_element.dim_; ++i) {
+//                mp0(i) = FiniteElementBaseM::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+//                mp1(i) = FiniteElementBaseM::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+//            }
+//            direction == -1 ? distance = (mp1 - mp0).norm() : distance = (mp1 - mp0)(direction);
+//            return distance;
+//        }
+//        else {
+//            auto const constexpr _quadrature = lolita::finite_element::Quadrature::Gauss();
+//            using SegmentQuadrature = lolita::core2::geometry::ElementQuadratureTraits<lolita::core2::geometry::Element::LinearSegment(), _quadrature, 4>;
+//            auto distance = lolita::real(0);
+//            auto dt = lolita::real();
+//            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//            for (lolita::index q = 0; q < SegmentQuadrature::getDim(); ++q) {
+//                auto pq = SegmentQuadrature::reference_points_[q][0];
+//                auto wq = SegmentQuadrature::reference_weights_[q];
+//                auto ru = lolita::matrix::Matrix<lolita::real, 3, 3>().setZero();
+//                auto difference = second_point - first_point;
+//                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+//                for (lolita::index i = 0; i < t_domain.dim_; ++i) {
+//                    for (lolita::index j = 0; j < t_element.dim_; ++j) {
+//                        if (direction == -1 || i == static_cast<lolita::index>(direction)) {
+//                            auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+//                            auto dx = FiniteElementBaseM::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
+//                            ru(i, j) = dx * du;
+//                        }
+//                    }
+//                }
+//                if constexpr (t_element.isFacet()) {
+//                    auto Eff = ru.col(0).template dot(ru.col(0));
+//                    auto Fff = ru.col(0).template dot(ru.col(1));
+//                    auto Gff = ru.col(1).template dot(ru.col(1));
+//                    dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+//                }
+//                else if constexpr (t_element.isCurve()) {
+//                    auto Eff = ru.col(0).template dot(ru.col(0));
+//                    dt = std::sqrt(Eff);
+//                }
+//                else {
+//                    dt = 0;
+//                }
+//                distance += wq * dt;
+//            }
+//            return distance;
+//        }
+//    }
+//
+//    /*
+//     * GEOMETRY
+//     */
+//
+//    /**
+//     * @brief
+//     * @return
+//     */
+//    lolita::domain::Point
+//    getCurrentDiameters()
+//    const
+//    {
+//        auto reference_coordinates = FiniteElementBaseM::getReferenceCoordinates();
+//        auto current_diameters = lolita::domain::Point().setZero();
+//        for (lolita::index i = 0; i < t_element.num_nodes_; ++i) {
+//            for (lolita::index j = i + 1; j < t_element.num_nodes_; ++j) {
+//                auto const & pt0 = reference_coordinates.col(i);
+//                auto const & pt1 = reference_coordinates.col(j);
+//                for (lolita::index k = 0; k < 3; ++k) {
+//                    auto new_value = numerics::abs(getRiemannianDistance(pt0, pt1, k));
+//                    auto & current_value = current_diameters(k);
+//                    if (new_value > current_value) {
+//                        current_value = new_value;
+//                    }
+//                }
+//            }
+//        }
+//        return current_diameters;
+//    }
+//
+//    /**
+//     * @brief
+//     * @return
+//     */
+//    lolita::domain::Point
+//    getCurrentCentroid()
+//    const
+//    {
+//        auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//        return lolita::domain::getBarycenter(current_nodes_coordinates);
+//    }
+//
+//    /**
+//     * @brief
+//     * @return
+//     */
+//    static
+//    lolita::domain::Point
+//    getReferenceCentroid()
+//    {
+//        auto nds = FiniteElementBaseM::getReferenceCoordinates();
+//        return lolita::domain::getBarycenter(nds);
+//    }
+//
+//    /**
+//     * @brief
+//     * @return
+//     */
+//    static
+//    lolita::domain::Point
+//    getReferenceDiameters()
+//    {
+//        auto dts = lolita::domain::Point();
+//        auto nds = FiniteElementBaseM::getReferenceCoordinates();
+//        dts.setZero();
+//        for (lolita::index i = 0; i < t_element.num_nodes_; ++i) {
+//            for (lolita::index j = i + 1; j < t_element.num_nodes_; ++j) {
+//                for (lolita::index k = 0; k < 3; ++k) {
+//                    auto new_value = numerics::abs(nds(k, i) - nds(k, j));
+//                    auto & current_value = dts(k);
+//                    if (new_value > current_value) {
+//                        current_value = new_value;
+//                    }
+//                }
+//            }
+//        }
+//        return dts;
+//    }
+//
+//    /*
+//     * QUADRATURE
+//     */
+//
+//    /**
+//     * @brief
+//     * @tparam _quadrature
+//     * @tparam _ord
+//     * @param index
+//     * @return
+//     */
+//    template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_>
+//    static
+//    lolita::real
+//    getReferenceQuadratureWeight(
+//            lolita::index index
+//    )
+//    {
+//        return lolita::core2::geometry::ElementQuadratureTraits<t_element, _quadrature, _ord>::reference_weights_[index];
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam _quadrature
+//     * @tparam _ord
+//     * @param index
+//     * @return
+//     */
+//    template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_>
+//    static
+//    lolita::matrix::Span<lolita::domain::Point const>
+//    getReferenceQuadraturePoint(
+//            lolita::index index
+//    )
+//    {
+//        return lolita::matrix::Span<lolita::domain::Point const>(
+//                lolita::core2::geometry::ElementQuadratureTraits<t_element, _quadrature, _ord>::reference_points_[index].begin()
+//        );
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam _quadrature
+//     * @tparam _ord
+//     * @param index
+//     * @return
+//     */
+//    template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_>
+//    lolita::real
+//    getCurrentQuadratureWeight(
+//            lolita::index index
+//    )
+//    const
+//    {
+//        auto w = getReferenceQuadratureWeight<_quadrature, _ord>(index);
+//        return w * getShapeMappingDifferential(getReferenceQuadraturePoint<_quadrature, _ord>(index));
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam _quadrature
+//     * @tparam _ord
+//     * @param index
+//     * @return
+//     */
+//    template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_>
+//    lolita::domain::Point
+//    getCurrentQuadraturePoint(
+//            lolita::index index
+//    )
+//    const
+//    {
+//        auto p = lolita::domain::Point();
+//        auto const nds = this->getCurrentCoordinates();
+//        for (lolita::index j = 0; j < 3; ++j) {
+//            p(j) = FiniteElementBaseM::getShapeMappingEvaluation(nds.row(j), getReferenceQuadraturePoint<_quadrature, _ord>(index));
+//        }
+//        return p;
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam _quadrature
+//     * @tparam _ord
+//     * @tparam _i
+//     * @tparam _j
+//     * @param index
+//     * @return
+//     */
+//    template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_, lolita::index _i, lolita::index _j>
+//    static
+//    lolita::real
+//    getComponentReferenceQuadratureWeight(
+//            lolita::index index
+//    )
+//    requires(!t_element.isPoint())
+//    {
+//        auto const constexpr _component = t_ElementTraits ::template getComponent<_i, _j>();
+//        using ComponentGeometry = FiniteElementBaseM<_component, t_domain, t_finite_element>;
+//        return ComponentGeometry::template getReferenceQuadratureWeight<_quadrature, _ord>(index);
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam _quadrature
+//     * @tparam _ord
+//     * @tparam _i
+//     * @tparam _j
+//     * @param component_index
+//     * @param index
+//     * @return
+//     */
+//    template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_, lolita::index _i, lolita::index _j>
+//    static
+//    lolita::domain::Point
+//    getComponentReferenceQuadraturePoint(
+//            lolita::index component_index,
+//            lolita::index index
+//    )
+//    requires(!t_element.isPoint())
+//    {
+////            auto const constexpr _component = lolita::core::component<_element, _domain, _i, _j>();
+//        auto const constexpr _component = t_ElementTraits ::template getComponent<_i, _j>();
+//        auto p = lolita::domain::Point();
+//        using ComponentGeometry = FiniteElementBaseM<_component, t_domain, t_finite_element>;
+//        auto const & elt_reference_nodes = lolita::core2::geometry::ElementTraits<t_element, t_domain>::reference_nodes_;
+//        for (lolita::index i = 0; i < 3; ++i) {
+//            auto cpt_coordinates = lolita::matrix::Vector<lolita::real, _component.num_nodes_>();
+//            for (lolita::index j = 0; j < _component.num_nodes_; ++j) {
+//                auto const node_tag = getComponentNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);
+//                cpt_coordinates(j) = elt_reference_nodes[node_tag][i];
+//            }
+//            auto cpt_reference_point = ComponentGeometry::template getReferenceQuadraturePoint<_quadrature, _ord>(index);
+//            p(i) = ComponentGeometry::getShapeMappingEvaluation(cpt_coordinates, cpt_reference_point);
+//        }
+//        return p;
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam _quadrature
+//     * @tparam _ord
+//     * @tparam _i
+//     * @tparam _j
+//     * @param component_index
+//     * @param index
+//     * @return
+//     */
+//    template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_, lolita::index _i, lolita::index _j>
+//    lolita::real
+//    getComponentCurrentQuadratureWeight(
+//            lolita::index component_index,
+//            lolita::index index
+//    )
+//    const
+//    requires(!t_element.isPoint())
+//    {
+//        auto const & cmp =  this->template getComponents<_i, _j>()[component_index];//.template get<I>().template get<J>().get(component_index).get();
+//        return cmp->template getCurrentQuadratureWeight<_quadrature, _ord>(index);
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam _quadrature
+//     * @tparam _ord
+//     * @tparam _i
+//     * @tparam _j
+//     * @param component_index
+//     * @param index
+//     * @return
+//     */
+//    template<lolita::finite_element::Quadrature _quadrature = t_Quadrature::quadrature_, lolita::index _ord = t_Quadrature::ord_, lolita::index _i, lolita::index _j>
+//    lolita::domain::Point
+//    getComponentCurrentQuadraturePoint(
+//            lolita::index component_index,
+//            lolita::index index
+//    )
+//    const
+//    requires(!t_element.isPoint())
+//    {
+//        auto p = lolita::domain::Point();
+//        auto const cpt_ref_pnt = getComponentReferenceQuadraturePoint<_quadrature, _ord, _i, _j>(component_index, index);
+//        auto const nds = this->getCurrentCoordinates();
+//        for (lolita::index j = 0; j < 3; ++j) {
+//            p(j) = FiniteElementBaseM::getShapeMappingEvaluation(nds.row(j), cpt_ref_pnt);
+//        }
+//        return p;
+//    }
+//
+//    /**
+//     * @brief
+//     * @param point
+//     * @return
+//     */
+//    lolita::domain::Point
+//    getNormalVector(
+//            lolita::domain::Point const & point
+//    )
+//    const
+//    requires(t_ElementTraits::isFace())
+//    {
+//        auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//        auto ru = lolita::matrix::Matrix<lolita::real, 3, t_element.dim_>();
+//        ru.setZero();
+//        for (lolita::index i = 0; i < 3; ++i) {
+//            for (lolita::index j = 0; j < t_element.dim_; ++j) {
+//                ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
+//            }
+//        }
+//        if constexpr (t_element.isPoint()) {
+//            return lolita::domain::Point{0, 0, 0};
+//        }
+//        else if constexpr (t_element.isCurve()) {
+//            return lolita::domain::Point{ru(1)/ru.norm(), -ru(0)/ru.norm(), 0};
+//        }
+//        else {
+//            return (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
+//        }
+//    }
+//
+//    /**
+//     * @brief
+//     * @param point
+//     * @param direction
+//     * @return
+//     */
+//    lolita::domain::Point
+//    getTangentVector(
+//            lolita::domain::Point const & point,
+//            lolita::index direction
+//    )
+//    const
+//    requires(t_element.isCurve())
+//    {
+//        auto const current_nodes_coordinates = this->getCurrentCoordinates();
+//        auto tangent_vector = lolita::domain::Point();
+//        for (lolita::index i = 0; i < 3; ++i) {
+//            tangent_vector(i) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, direction);
+//        }
+//        return tangent_vector;
+//    }
+//
+//    /**
+//     * @brief
+//     * @param row
+//     * @param col
+//     * @return
+//     */
+//    std::shared_ptr<lolita::finite_element::ScalarLoad> const &
+//    getLoad(
+//            lolita::integer row,
+//            lolita::integer col
+//    )
+//    const
+//    {
+//        return loads_[col][row];
+//    }
+//
+//    /**
+//     * @brief
+//     * @param row
+//     * @param col
+//     * @return
+//     */
+//    std::shared_ptr<lolita::finite_element::ScalarLoad> &
+//    getLoad(
+//            lolita::integer row,
+//            lolita::integer col
+//    )
+//    {
+//        return loads_[col][row];
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_element_group
+//     * @param mesh
+//     */
+//    template<auto t_element_group>
+//    void
+//    setLoads(
+//            lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+//    )
+//    {
+//        for (auto const & load : mesh.loads_) {
+//            auto is_equal = [&] (std::shared_ptr<std::basic_string<lolita::character>> const & domain) {
+//                return * domain == load.domain_tag_;
+//            };
+//            auto const has_domain = std::find_if(domains_.begin(), domains_.end(), is_equal) != domains_.end();
+//            auto const has_unknown = load.unknown_tag_ == t_finite_element.unknown_.tensor_;
+//            auto const has_dimension = load.element_dim_ == t_element.dim_;
+//            if (has_domain && has_unknown && has_dimension) {
+//                std::cout << "setting load : " << load.domain_tag_ << std::endl;
+//                auto const i = load.components_.row_;
+//                auto const j = load.components_.col_;
+//                getLoad(i, j) = load.load_;
+//            }
+//        }
+//    }
+//
+//    /**
+//     * @brief
+//     * @tparam t_element_group
+//     * @param mesh
+//     */
+//    template<auto t_element_group>
+//    void
+//    setBehaviour(
+//            lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+//    )
+//    {
+//        for (auto const & behaviour : mesh.behaviours_) {
+//            auto is_equal = [&] (std::shared_ptr<std::basic_string<lolita::character>> const & domain) {
+//                return * domain == behaviour.domain_tag_;
+//            };
+//            auto const has_domain = std::find_if(domains_.begin(), domains_.end(), is_equal) != domains_.end();
+//            auto const has_unknown = behaviour.unknown_tag_ == t_finite_element.unknown_.tensor_;
+//            if (has_domain && has_unknown) {
+//                std::cout << "setting behaviour : " << behaviour.domain_tag_ << std::endl;
+//                behaviour_ = behaviour.behaviour_data_;
+//            }
+//        }
+//    }
+//
+//    /**
+//     * @brief
+//     */
+//    Neighbours neighbours_;
+//
+//    /**
+//     * @brief
+//     */
+//    Components components_;
+//
+//    /**
+//     * @brief
+//     */
+//    std::vector<std::shared_ptr<std::basic_string<lolita::character>>> domains_;
+//
+//    /**
+//     * @brief
+//     */
+//    lolita::natural tag_;
+//
+//    /**
+//     * @brief
+//     */
+//    std::shared_ptr<lolita::domain::Point> coordinates_;
+//
+//    /**
+//     * @brief
+//     */
+//    std::array<std::array<std::shared_ptr<lolita::finite_element::ScalarLoad>, t_Field::shape_.rows_>, t_Field::shape_.cols_> loads_ = def_loads();
+//
+//    /**
+//     * @brief
+//     */
+//    std::shared_ptr<lolita::behaviour::MgisBehaviourData> behaviour_;
+//
+//};

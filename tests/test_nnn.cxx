@@ -45,12 +45,12 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
     auto bhv_u = lolita::behaviour::MgisBehaviour("Displacement", "SQUARE", path, name, hyp, {mgipara});
     auto bhv_d = lolita::behaviour::MgisBehaviour("Damage", "SQUARE", path, name, hyp, {mgipara});
 
-    auto load = lolita::finite_element::Load("Displacement", "SQUARE", 2, 0, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
-                                             lolita::finite_element::Loading::Natural());
-    auto load_top_x = lolita::finite_element::Load("Displacement", "TOP", 1, 0, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
-                                                   lolita::finite_element::Loading::Constraint());
-    auto load_top_y = lolita::finite_element::Load("Displacement", "TOP", 1, 1, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
-                                                   lolita::finite_element::Loading::Constraint());
+    auto load = lolita::finite_element::LoadEntry("Displacement", "SQUARE", 2, 0, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
+                                                  lolita::finite_element::Load::Natural());
+    auto load_top_x = lolita::finite_element::LoadEntry("Displacement", "TOP", 1, 0, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
+                                                        lolita::finite_element::Load::Constraint());
+    auto load_top_y = lolita::finite_element::LoadEntry("Displacement", "TOP", 1, 1, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
+                                                        lolita::finite_element::Load::Constraint());
 
 //    auto bhvholder = lolita::behaviour::BehaviourHolder(bhvvv);
 
@@ -62,16 +62,23 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
     auto constexpr triangle = lolita::core2::geometry::Element::LinearQuadrangle();
 //    lolita::core2::geometry::ElementGeometryTraits<node, domain>::getNeighbours<arg0, arg1>();
     std::cout << "node with dim " << node.dim() << std::endl;
-    std::cout << lolita::core2::geometry::DomainGeometryTraits<domain>::getElementCoordinates<node>() << std::endl;
+    std::cout << lolita::core2::geometry::DomainTraits<domain>::getElementCoordinates<node>() << std::endl;
     std::cout << "segment with dim " << segment.dim() << std::endl;
-    std::cout << lolita::core2::geometry::DomainGeometryTraits<domain>::getElementCoordinates<segment>() << std::endl;
+    std::cout << lolita::core2::geometry::DomainTraits<domain>::getElementCoordinates<segment>() << std::endl;
     std::cout << "triangle with dim " << triangle.dim() << std::endl;
-    std::cout << lolita::core2::geometry::DomainGeometryTraits<domain>::getElementCoordinates<triangle>() << std::endl;
+    std::cout << lolita::core2::geometry::DomainTraits<domain>::getElementCoordinates<triangle>() << std::endl;
 
     std::cout << "elements size : " << std::tuple_size_v<lolita::core2::geometry::Elements<lolita::core2::geometry::detail::ElementView, domain>> << std::endl;
 
     auto msh2 = lolita::core2::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, mixed_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
 //    auto msh1 = lolita::core2::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, coupled_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
+
+    std::cout << "num unknowns displacement : " << msh2.mesh_data_.systems_[0].num_unknowns_ << std::endl;
+    std::cout << "num bindings displacement : " << msh2.mesh_data_.systems_[0].num_bindings_ << std::endl;
+    std::cout << "num unknowns damage : " << msh2.mesh_data_.systems_[1].num_unknowns_ << std::endl;
+    std::cout << "num bindings damage : " << msh2.mesh_data_.systems_[1].num_bindings_ << std::endl;
+
+    std::cout << "here : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::template getNumUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
 
     std::cout << msh2.mesh_data_ << std::endl;
 

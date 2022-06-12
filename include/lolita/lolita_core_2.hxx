@@ -448,7 +448,7 @@ namespace lolita::core2::geometry
      * @tparam t_domain
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
-    struct ElementGeometryTraits;
+    struct ElementTraits;
 
     namespace detail
     {
@@ -1074,14 +1074,14 @@ namespace lolita::core2::geometry
      * @tparam t_domain
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
-    struct ElementGeometryTraits : detail::ElementOuterGeometryTraits<t_element, t_domain>, detail::ElementInnerGeometryTraits<t_element, t_domain>
+    struct ElementTraits : detail::ElementOuterGeometryTraits<t_element, t_domain>, detail::ElementInnerGeometryTraits<t_element, t_domain>
     {
 
     private:
 
-        using ElementOuterNeighbourhoodT = typename ElementGeometryTraits<t_element, t_domain>::template OuterConnectivity<detail::ElementView>;
+        using ElementOuterNeighbourhoodT = typename ElementTraits<t_element, t_domain>::template OuterConnectivity<detail::ElementView>;
 
-        using ElementInnerNeighbourhoodT = typename ElementGeometryTraits<t_element, t_domain>::template InnerConnectivity<detail::ElementView>;
+        using ElementInnerNeighbourhoodT = typename ElementTraits<t_element, t_domain>::template InnerConnectivity<detail::ElementView>;
 
         using ElementsT = lolita::core2::geometry::Elements<detail::ElementView, t_domain>;
 
@@ -1191,11 +1191,11 @@ namespace lolita::core2::geometry
          */
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita::core2::geometry::ElementGeometryTraits<getComponent<t_i, t_j>(), t_domain>
+        lolita::core2::geometry::ElementTraits<getComponent<t_i, t_j>(), t_domain>
         getComponentDescription()
         requires(!t_element.isPoint())
         {
-            return lolita::core2::geometry::ElementGeometryTraits<getComponent<t_i, t_j>(), t_domain>();
+            return lolita::core2::geometry::ElementTraits<getComponent<t_i, t_j>(), t_domain>();
         }
 
         /**
@@ -1273,10 +1273,10 @@ namespace lolita::core2::geometry
          */
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita::core2::geometry::ElementGeometryTraits<getNeighbour<t_i, t_j>(), t_domain>
+        lolita::core2::geometry::ElementTraits<getNeighbour<t_i, t_j>(), t_domain>
         getNeighbourDescription()
         {
-            return lolita::core2::geometry::ElementGeometryTraits<getNeighbour<t_i, t_j>(), t_domain>();
+            return lolita::core2::geometry::ElementTraits<getNeighbour<t_i, t_j>(), t_domain>();
         }
 
         /**
@@ -1306,7 +1306,7 @@ namespace lolita::core2::geometry
      * @tparam t_domain
      */
     template<lolita::domain::Domain t_domain>
-    struct DomainGeometryTraits
+    struct DomainTraits
     {
 
     private:

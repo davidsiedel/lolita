@@ -147,14 +147,14 @@ namespace lolita::core2::mesh
                     mutable
             {
                 if constexpr (!_element.isPoint()) {
-                    auto const constexpr _component = lolita::core2::geometry::ElementGeometryTraits<_element, _domain>::template getComponent<_i, _j>();
+                    auto const constexpr _component = lolita::core2::geometry::ElementTraits<_element, _domain>::template getComponent<_i, _j>();
                     for (auto const & c_ : elem_arg->template getComponents<_i, _j>()) {
                         os << "layer : " << _i << " type : " << _j << " <-- " << _component << " " << c_->hash() << std::endl;
                     }
-                    if constexpr (_j < lolita::core2::geometry::ElementGeometryTraits<_element, _domain>::template getNumComponents<_i>() - 1) {
+                    if constexpr (_j < lolita::core2::geometry::ElementTraits<_element, _domain>::template getNumComponents<_i>() - 1) {
                         self.template operator()<_element, _i, _j + 1>(elem_arg, self);
                     }
-                    else if constexpr (_i < lolita::core2::geometry::ElementGeometryTraits<_element, _domain>::getNumComponents() - 1) {
+                    else if constexpr (_i < lolita::core2::geometry::ElementTraits<_element, _domain>::getNumComponents() - 1) {
                         self.template operator()<_element, _i + 1, 0>(elem_arg, self);
                     }
                 }
@@ -168,7 +168,7 @@ namespace lolita::core2::mesh
             )
                     mutable
             {
-                auto const constexpr _neighbour = lolita::core2::geometry::ElementGeometryTraits<_element, _domain>::template getNeighbour<_i, _j>();
+                auto const constexpr _neighbour = lolita::core2::geometry::ElementTraits<_element, _domain>::template getNeighbour<_i, _j>();
                 for (auto const & c_ : elem_arg->template getNeighbours<_i, _j>()) {
                     if constexpr (!_element.isPoint() && _i == 0) {
                         os << "layer : " << _i << " type : " << _j << " <-> " << _neighbour << " " << c_->hash() << std::endl;
@@ -177,10 +177,10 @@ namespace lolita::core2::mesh
                         os << "layer : " << _i << " type : " << _j << " --> " << _neighbour << " " << c_->hash() << std::endl;
                     }
                 }
-                if constexpr (_j < lolita::core2::geometry::ElementGeometryTraits<_element, _domain>::template getNumNeighbours<_i>() - 1) {
+                if constexpr (_j < lolita::core2::geometry::ElementTraits<_element, _domain>::template getNumNeighbours<_i>() - 1) {
                     self.template operator()<_element, _i, _j + 1>(elem_arg, self);
                 }
-                else if constexpr (_i < lolita::core2::geometry::ElementGeometryTraits<_element, _domain>::getNumNeighbours() - 1) {
+                else if constexpr (_i < lolita::core2::geometry::ElementTraits<_element, _domain>::getNumNeighbours() - 1) {
                     self.template operator()<_element, _i + 1, 0>(elem_arg, self);
                 }
             };
@@ -192,7 +192,7 @@ namespace lolita::core2::mesh
             )
                     mutable
             {
-                auto constexpr _element = lolita::core2::geometry::DomainGeometryTraits<_domain>::template getElement<_i, _j>();
+                auto constexpr _element = lolita::core2::geometry::DomainTraits<_domain>::template getElement<_i, _j>();
                 if constexpr (_i == 0 && _j == 0) {
                     os << "*** Elements : " << std::endl;
                 }
@@ -205,10 +205,10 @@ namespace lolita::core2::mesh
                     print_element_components.template operator()<_element>(element.second, print_element_components);
                     print_element_neighbours.template operator()<_element>(element.second, print_element_neighbours);
                 }
-                if constexpr (_j < lolita::core2::geometry::DomainGeometryTraits<_domain>::template getNumElements<_i>() - 1) {
+                if constexpr (_j < lolita::core2::geometry::DomainTraits<_domain>::template getNumElements<_i>() - 1) {
                     self.template operator()<_i, _j + 1>(self);
                 }
-                else if constexpr (_i < lolita::core2::geometry::DomainGeometryTraits<_domain>::getNumElements() - 1) {
+                else if constexpr (_i < lolita::core2::geometry::DomainTraits<_domain>::getNumElements() - 1) {
                     self.template operator()<_i + 1, 0>(self);
                 }
             };
@@ -242,7 +242,7 @@ namespace lolita::core2::mesh
         /**
          * @brief The list of loads applied on physical domains. Default is the zero natural load
          */
-        std::vector<lolita::finite_element::Load> loads_;
+        std::vector<lolita::finite_element::LoadEntry> loads_;
 
         /**
          * @brief The list of behaviours applied on physical domains
@@ -350,14 +350,14 @@ namespace lolita::core2::mesh
          */
         MeshParser(
                 std::basic_string_view<lolita::character> && mesh_file_path,
-                std::vector<lolita::finite_element::Load> && loads,
+                std::vector<lolita::finite_element::LoadEntry> && loads,
                 std::vector<lolita::behaviour::MgisBehaviour> && behaviours
         )
         {
             /*
              * simply load behaviours loads and options
              */
-            this->mesh_data_.loads_ = std::forward<std::vector<lolita::finite_element::Load>>(loads);
+            this->mesh_data_.loads_ = std::forward<std::vector<lolita::finite_element::LoadEntry>>(loads);
             this->mesh_data_.options_.offset_ = 1;
             this->mesh_data_.behaviours_ = std::forward<std::vector<lolita::behaviour::MgisBehaviour>>(behaviours);
             /*
@@ -374,12 +374,12 @@ namespace lolita::core2::mesh
             auto set_elements = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (auto & set_elements_imp)
                     mutable
             {
-                auto const constexpr _element = lolita::core2::geometry::DomainGeometryTraits<_domain>::template getElement<_i, _j>();
+                auto const constexpr _element = lolita::core2::geometry::DomainTraits<_domain>::template getElement<_i, _j>();
                 makeElement<_element>(module);
-                if constexpr (_j < lolita::core2::geometry::DomainGeometryTraits<_domain>::template getNumElements<_i>() - 1) {
+                if constexpr (_j < lolita::core2::geometry::DomainTraits<_domain>::template getNumElements<_i>() - 1) {
                     set_elements_imp.template operator()<_i, _j + 1u>(set_elements_imp);
                 }
-                else if constexpr (_i < lolita::core2::geometry::DomainGeometryTraits<_domain>::getNumElements() - 1) {
+                else if constexpr (_i < lolita::core2::geometry::DomainTraits<_domain>::getNumElements() - 1) {
                     set_elements_imp.template operator()<_i + 1u, 0u>(set_elements_imp);
                 }
             };
@@ -390,12 +390,12 @@ namespace lolita::core2::mesh
             auto make_elements = [&] <lolita::index _i = 0u, lolita::index _j = 0u> (auto & self)
                     mutable
             {
-                auto const constexpr _element = lolita::core2::geometry::DomainGeometryTraits<_domain>::template getElement<_i, _j>();
+                auto const constexpr _element = lolita::core2::geometry::DomainTraits<_domain>::template getElement<_i, _j>();
                 buildElement<_element>();
-                if constexpr (_j < lolita::core2::geometry::DomainGeometryTraits<_domain>::template getNumElements<_i>() - 1) {
+                if constexpr (_j < lolita::core2::geometry::DomainTraits<_domain>::template getNumElements<_i>() - 1) {
                     self.template operator()<_i, _j + 1u>(self);
                 }
-                else if constexpr (_i < lolita::core2::geometry::DomainGeometryTraits<_domain>::getNumElements() - 1) {
+                else if constexpr (_i < lolita::core2::geometry::DomainTraits<_domain>::getNumElements() - 1) {
                     self.template operator()<_i + 1u, 0u>(self);
                 }
             };
@@ -406,7 +406,7 @@ namespace lolita::core2::mesh
         lolita::core2::mesh::Mesh<_domain, _finite_element>
         makeMesh(
                 std::basic_string_view<lolita::character> && mesh_file_path,
-                std::vector<lolita::finite_element::Load> && loads,
+                std::vector<lolita::finite_element::LoadEntry> && loads,
                 std::vector<lolita::behaviour::MgisBehaviour> && behaviours
         )
         {
@@ -453,7 +453,7 @@ namespace lolita::core2::mesh
              * get element coordinates and element list
              */
 //            auto const constexpr _coordinates = lolita::core2::elementPosition<_domain, _element>();
-            auto const constexpr _coordinates = lolita::core2::geometry::DomainGeometryTraits<_domain>::template getElementCoordinates<_element>();
+            auto const constexpr _coordinates = lolita::core2::geometry::DomainTraits<_domain>::template getElementCoordinates<_element>();
             auto & element_map = mesh_data_.elements_.template getElements<_coordinates.dim_, _coordinates.tag_>();
             /*
              * loop over each element
@@ -490,7 +490,7 @@ namespace lolita::core2::mesh
                             }
                         }
 //                        if constexpr (_k < lolita::core2::numElements<_domain, _coordinates.dim_>() - 1) {
-                        if constexpr (_k < lolita::core2::geometry::DomainGeometryTraits<_domain>::template getNumElements<_coordinates.dim_>() - 1) {
+                        if constexpr (_k < lolita::core2::geometry::DomainTraits<_domain>::template getNumElements<_coordinates.dim_>() - 1) {
                             self.template operator()<_k + 1>(self);
                         }
                     }
@@ -1011,7 +1011,7 @@ namespace lolita::core2::mesh
 //                using __Element = lolita::core2::finite_element::FiniteElementFinal<_element, _domain, _finite_element...>;
                 using __Element = lolita::core2::finite_element::FiniteElement<_element, _domain, _finite_element>;
 //                auto const constexpr _element_coordinates = lolita::core2::elementPosition<_domain, _element>();
-                auto const constexpr _element_coordinates = lolita::core2::geometry::DomainGeometryTraits<_domain>::template getElementCoordinates<_element>();
+                auto const constexpr _element_coordinates = lolita::core2::geometry::DomainTraits<_domain>::template getElementCoordinates<_element>();
                 auto const & file_lines = module.file_.lines_;
                 auto & elements = this->mesh_data_.elements_.template getElements<_element_coordinates.dim_, _element_coordinates.tag_>();
                 auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Elements"));
