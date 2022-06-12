@@ -79,6 +79,7 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
     std::cout << "num bindings damage : " << msh2.mesh_data_.systems_[1].num_bindings_ << std::endl;
 
     std::cout << "here : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::template getNumUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
+    std::cout << "here : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::getNumUnknowns() << std::endl;
 
     std::cout << msh2.mesh_data_ << std::endl;
 

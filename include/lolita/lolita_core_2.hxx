@@ -475,6 +475,11 @@ namespace lolita::core2::geometry
 
         };
 
+    }
+
+    namespace element_geometry
+    {
+
         /**
          * @brief Forward declaration
          * @tparam t_element
@@ -482,20 +487,6 @@ namespace lolita::core2::geometry
          */
         template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
         struct ElementOuterGeometryTraits;
-
-        /**
-         * @brief Forward declaration
-         * @tparam t_element
-         * @tparam t_domain
-         */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
-        struct ElementInnerGeometryTraits;
-
-        /**
-         * @brief
-         */
-        template<lolita::core2::geometry::Element t_element, auto...>
-        using ElementNodeConnectivity = std::array<lolita::index, t_element.numNodes()>;
 
         /**
          * @brief
@@ -568,6 +559,20 @@ namespace lolita::core2::geometry
             using OuterConnectivity = typename OuterConnectivityTraits<t_T, t_args...>::OuterConnectivity;
 
         };
+
+        /**
+         * @brief Forward declaration
+         * @tparam t_element
+         * @tparam t_domain
+         */
+        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        struct ElementInnerGeometryTraits;
+
+        /**
+         * @brief
+         */
+        template<lolita::core2::geometry::Element t_element, auto...>
+        using ElementNodeConnectivity = std::array<lolita::index, t_element.numNodes()>;
 
         /**
          * @brief
@@ -817,7 +822,7 @@ namespace lolita::core2::geometry
                     {
                             {
                                     0,
-                                    1,
+                                       1,
                                     2,
                             }
                     }
@@ -931,9 +936,9 @@ namespace lolita::core2::geometry
                     {
                             {
                                     0,
-                                    1,
+                                       1,
                                     2,
-                                    3,
+                                       3,
                             }
                     }
             };
@@ -1029,27 +1034,27 @@ namespace lolita::core2::geometry
                     {
                             {
                                     0, 1, 3,
-                                    0, 3, 2,
+                                             0, 3, 2,
                                     0, 2, 1,
-                                    1, 2, 3,
+                                             1, 2, 3,
                             }
                     },
                     {
                             {
                                     0, 1,
-                                    1, 2,
-                                    2, 0,
+                                          1, 2,
+                                                2, 0,
                                     0, 3,
-                                    3, 2,
-                                    1, 3,
+                                          3, 2,
+                                                1, 3,
                             }
                     },
                     {
                             {
                                     0,
-                                    1,
-                                    2,
-                                    3,
+                                       1,
+                                          2,
+                                             3,
                             }
                     }
             };
@@ -1074,7 +1079,10 @@ namespace lolita::core2::geometry
      * @tparam t_domain
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
-    struct ElementTraits : detail::ElementOuterGeometryTraits<t_element, t_domain>, detail::ElementInnerGeometryTraits<t_element, t_domain>
+    struct ElementTraits
+    :
+    element_geometry::ElementOuterGeometryTraits<t_element, t_domain>,
+    element_geometry::ElementInnerGeometryTraits<t_element, t_domain>
     {
 
     private:

@@ -35,14 +35,10 @@ namespace lolita::core2::geometry
     struct ElementQuadratureRuleTraits<t_element, t_quadrature, t_ord>
     {
 
-    protected:
-
         /**
          * @brief
          */
         lolita::index const static constexpr dim_ = 1;
-
-    public:
 
         /**
          * @brief
