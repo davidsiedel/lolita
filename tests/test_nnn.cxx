@@ -80,6 +80,10 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
 
     std::cout << "here : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::template getNumUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
     std::cout << "here : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::getNumUnknowns() << std::endl;
+    std::cout << "here cell structural : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Structural()>() << std::endl;
+    std::cout << "here face structural : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Structural()>() << std::endl;
+    std::cout << "here cell subsidiary : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
+    std::cout << "here face subsidiary : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
 
     std::cout << msh2.mesh_data_ << std::endl;
 

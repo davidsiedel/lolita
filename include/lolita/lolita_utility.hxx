@@ -184,17 +184,17 @@ namespace lolita::utility
 
     private:
 
-        using Label = std::array<lolita::character, 50>;
+        using t_Tag = std::array<lolita::character, 50>;
 
         template<typename... _U>
         static constexpr
-        Label
-        makeLabel(
+        t_Tag
+        setTag(
                 std::basic_string_view<_U> const &... str
         )
         requires(std::same_as<lolita::character, _U> && ...)
         {
-            auto label = Label();
+            auto label = t_Tag();
             auto count = lolita::index(0);
             auto make = [&] (auto const & s) constexpr mutable {
                 for (auto i = 0; i < s.size(); ++i) {
@@ -208,13 +208,13 @@ namespace lolita::utility
 
         template<typename... _U>
         static constexpr
-        Label
-        makeLabel(
+        t_Tag
+        setTag(
                 std::basic_string_view<_U> &&... str
         )
         requires(std::same_as<lolita::character, _U> && ...)
         {
-            auto label = Label();
+            auto label = t_Tag();
             auto count = lolita::index(0);
             auto make = [&] (auto && s) constexpr mutable {
                 for (auto i = 0; i < s.size(); ++i) {
@@ -233,7 +233,7 @@ namespace lolita::utility
                 std::basic_string_view<lolita::character> const & str
         )
         :
-        tag_(makeLabel(str))
+        tag_(setTag(str))
         {}
 
         constexpr
@@ -241,7 +241,7 @@ namespace lolita::utility
                 std::basic_string_view<lolita::character> && str
         )
         :
-        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)))
+        tag_(setTag(std::forward<std::basic_string_view<lolita::character>>(str)))
         {}
 
 //        template<typename... _U>
@@ -312,7 +312,7 @@ namespace lolita::utility
             return os;
         }
 
-        Label tag_;
+        t_Tag tag_;
 
     };
 
