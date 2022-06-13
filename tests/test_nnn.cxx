@@ -85,6 +85,15 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
     std::cout << "here cell subsidiary : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
     std::cout << "here face subsidiary : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
 
+    using HHH = lolita::matrix::Vector<lolita::integer, 0>;
+    auto hhh_vec = HHH::LinSpaced(0, 0 + 0 - 1);
+    std::cout << "hhh_vec : " << std::endl;
+    std::cout << hhh_vec << std::endl;
+    using HHH2 = lolita::matrix::Vector<lolita::integer>;
+    auto hhh_vec2 = HHH2::LinSpaced(2, 0, 0 + 2 - 1);
+    std::cout << "hhh_vec2 : " << std::endl;
+    std::cout << hhh_vec2 << std::endl;
+
     std::cout << msh2.mesh_data_ << std::endl;
 
 }
