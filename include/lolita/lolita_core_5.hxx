@@ -958,15 +958,6 @@ namespace lolita::core2::finite_element
 
     };
 
-    /**
-     * @brief
-     * @tparam t_element
-     * @tparam t_domain
-     * @tparam t_finite_element
-     */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-    struct FiniteElementBase;
-
     namespace basis
     {
 

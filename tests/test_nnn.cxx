@@ -6,14 +6,15 @@
 #include <ranges>
 #include "gtest/gtest.h"
 
-#include "lolita/lolita.hxx"
-#include "lolita/lolita_utility.hxx"
-#include "lolita/lolita_algebra.hxx"
-#include "lolita/lolita_user.hxx"
-#include "lolita/lolita_core_1.hxx"
-#include "lolita/lolita_core_2.hxx"
-#include "lolita/lolita_core_4.hxx"
-#include "lolita/lolita_core_5.hxx"
+//#include "lolita/lolita.hxx"
+//#include "lolita/lolita_utility.hxx"
+//#include "lolita/lolita_algebra.hxx"
+//#include "lolita/lolita_user.hxx"
+//#include "lolita/lolita_core_1.hxx"
+//#include "lolita/lolita_core_2.hxx"
+//#include "lolita/lolita_core_4.hxx"
+//#include "lolita/lolita_core_5.hxx"
+#include "lolita/lolita_core_5_final.hxx"
 
 TEST(test_lolita_nnn, test_lolita_nnn) {
 
