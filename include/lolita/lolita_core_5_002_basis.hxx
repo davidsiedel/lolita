@@ -132,7 +132,7 @@ namespace lolita::core2::finite_element
             /**
              * @brief The basis dimension or cardinality
              */
-            lolita::index const static constexpr dim_ = dim();
+            lolita::index const static constexpr dim_ = numerics::binomial(t_element.dim_ + t_ord, t_element.dim_);
 
             /**
              * @brief Implementation of the evaluation and derivative function for the given polynomial basis

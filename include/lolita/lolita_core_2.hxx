@@ -14,6 +14,8 @@
 namespace lolita::core2::geometry
 {
 
+    namespace core_geo = lolita::core2::geometry;
+
     /**
      * @brief Holder for the position of an element in a mesh, or with respect to some other element
      */

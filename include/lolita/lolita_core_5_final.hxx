@@ -30,16 +30,6 @@ namespace lolita::core2::finite_element
      * @tparam t_finite_element
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-    struct FiniteElementBase2 : FiniteElementBasis<t_element, t_domain, t_finite_element>, FiniteElementFieldUnknowns<t_element, t_domain, t_finite_element>
-    {};
-
-    /**
-     * @brief
-     * @tparam t_element
-     * @tparam t_domain
-     * @tparam t_finite_element
-     */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementTraits
     {
 
@@ -54,7 +44,7 @@ namespace lolita::core2::finite_element
         getOrdQuadrature()
         {
             auto ord_quadrature = t_finite_element.ord_quadrature_;
-            return t_domain.frame_ == lolita::domain::Frame::AxiSymmetric() ? 2 * ord_quadrature + 1 : 2 * ord_quadrature;
+            return t_domain.frame_.isAxiSymmetric() ? 2 * ord_quadrature + 1 : 2 * ord_quadrature;
         }
 
 
@@ -92,6 +82,35 @@ namespace lolita::core2::finite_element
         {
             return finite_element_.discretization_ == t_method;
         }
+
+//        /**
+//         * @brief
+//         * @tparam t_unknown
+//         * @return
+//         */
+//        template<lolita_fld::Field... t_field>
+//        static constexpr
+//        lolita::integer
+//        getDimUnknowns()
+//        {
+//            auto num_element_unknowns = FiniteElementFieldUnknowns<t_element, t_domain, t_finite_element>::template getDimUnknowns<t_unknown>();
+//            auto get_num_components_unknowns = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & self) constexpr mutable {
+//                auto const constexpr t_component = ElementDescription::template getComponent<t_i, t_j>();
+//                auto num_component_unknowns = FiniteElementFieldUnknowns<t_component, t_domain, t_finite_element>::template getDimUnknowns<t_unknown>();
+//                auto num_components = ElementDescription::template getNumComponents<t_i, t_j>();
+//                num_element_unknowns += num_component_unknowns * num_components;
+//                if constexpr (t_j < ElementDescription::template getNumComponents<t_i>() - 1) {
+//                    self.template operator()<t_i, t_j + 1>(self);
+//                }
+//                else if constexpr (t_i < ElementDescription::template getNumComponents<>() - 1) {
+//                    self.template operator()<t_i + 1, 0>(self);
+//                }
+//            };
+//            if constexpr (!t_element.isPoint()) {
+//                get_num_components_unknowns(get_num_components_unknowns);
+//            }
+//            return num_element_unknowns;
+//        }
 
         /**
          * @brief
@@ -332,6 +351,19 @@ namespace lolita::core2::finite_element
         }
 
     };
+
+//    template<std::array<lolita::character, 3> t_str>
+//    static constexpr
+//    lolita::integer
+//    makeTest()
+//    {
+//        if constexpr (t_str == std::array<lolita::character, 3>{"AAA"}) {
+//            return 1;
+//        }
+//        else {
+//            return -1;
+//        }
+//    }
 
     /**
      * @brief
@@ -720,7 +752,7 @@ namespace lolita::core2::finite_element
      * @tparam t_finite_element
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-    struct FiniteElement<t_element, t_domain, t_finite_element> : FiniteElementBase2<t_element, t_domain, t_finite_element>
+    struct FiniteElement<t_element, t_domain, t_finite_element> : FiniteElementCell_n<t_element, t_domain, t_finite_element>
     {
 
         lolita::boolean const static constexpr is_finite_element_ = true;
@@ -738,6 +770,7 @@ namespace lolita::core2::finite_element
             this->getCurrentCoordinates();
             this->template getUnknowns<unknown::Unknown::Subsidiary()>();
             this->template getUnknowns<unknown::Unknown::Structural()>();
+            this->setIntegrationPoint();
 //            if constexpr (t_element.isSub(t_domain, 0)) {
 //                this->setGeneralizedGradients();
 //            }

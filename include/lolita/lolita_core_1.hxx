@@ -13,6 +13,8 @@
 namespace lolita::core2::field
 {
 
+    namespace core_fld = lolita::core2::field;
+
     template<lolita::field::Field _tensor, lolita::index _dim_euclidean>
     struct TensorPolicy;
 

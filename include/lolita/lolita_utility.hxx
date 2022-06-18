@@ -178,23 +178,111 @@ namespace lolita::utility
 
     };
 
+    using Tag = std::array<lolita::character, 50>;
+
+    struct Labell
+    {
+
+    private:
+
+        static constexpr
+        Tag
+        setTag(
+                std::basic_string_view<lolita::character> str
+        )
+        {
+            auto tag = Tag();
+            std::copy_n(std::make_move_iterator(str.begin()), str.size(), tag.begin());
+//            auto count = lolita::index(0);
+//            for (auto c : std::forward<std::basic_string_view<lolita::character>>(str)) {
+//                tag[count] = c;
+//                count ++;
+//            }
+            return tag;
+        }
+
+    public:
+
+        constexpr
+        Labell(
+                std::basic_string_view<lolita::character> str
+        )
+        :
+        tag_(setTag(str))
+        {}
+
+        constexpr
+        lolita::boolean
+        operator==(
+                Labell const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                Labell const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator==(
+                std::basic_string_view<lolita::character> const & tag
+        )
+        const
+        {
+            return tag == this->view();
+        }
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                std::basic_string_view<lolita::character> const & other
+        )
+        const
+        {
+            return !(* this == other);
+        }
+
+        constexpr
+        std::basic_string_view<lolita::character>
+        view()
+        const
+        {
+            return std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
+        }
+
+        friend
+        std::ostream &
+        operator<<(
+                std::ostream & os,
+                Labell const & label
+        )
+        {
+            os << label.view();
+            return os;
+        }
+
+        Tag tag_;
+
+    };
+
     template<typename t_Base>
     struct Enumeration
     {
 
     private:
 
-        using t_Tag = std::array<lolita::character, 50>;
-
         template<typename... _U>
         static constexpr
-        t_Tag
+        Tag
         setTag(
                 std::basic_string_view<_U> const &... str
         )
         requires(std::same_as<lolita::character, _U> && ...)
         {
-            auto label = t_Tag();
+            auto label = Tag();
             auto count = lolita::index(0);
             auto make = [&] (auto const & s) constexpr mutable {
                 for (auto i = 0; i < s.size(); ++i) {
@@ -208,13 +296,13 @@ namespace lolita::utility
 
         template<typename... _U>
         static constexpr
-        t_Tag
+        Tag
         setTag(
                 std::basic_string_view<_U> &&... str
         )
         requires(std::same_as<lolita::character, _U> && ...)
         {
-            auto label = t_Tag();
+            auto label = Tag();
             auto count = lolita::index(0);
             auto make = [&] (auto && s) constexpr mutable {
                 for (auto i = 0; i < s.size(); ++i) {
@@ -243,6 +331,14 @@ namespace lolita::utility
         :
         tag_(setTag(std::forward<std::basic_string_view<lolita::character>>(str)))
         {}
+
+        constexpr
+        std::basic_string_view<lolita::character>
+        view()
+        const
+        {
+            return std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
+        }
 
 //        template<typename... _U>
 //        constexpr
@@ -284,9 +380,7 @@ namespace lolita::utility
         )
         const
         {
-            auto constexpr t_null = lolita::character();
-            auto view = std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), t_null)));
-            return other == view;
+            return other == this->view();
         }
 
         constexpr
@@ -297,6 +391,29 @@ namespace lolita::utility
         const
         {
             return !(* this == other);
+        }
+
+        constexpr
+        lolita::boolean
+        operator==(
+                lolita::utility::Tag const & tag
+        )
+        const
+        {
+            auto constexpr t_null = lolita::character();
+            auto view = std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), t_null)));
+            auto view1 = std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), t_null)));
+            return view1 == view;
+        }
+
+        constexpr
+        lolita::boolean
+        operator!=(
+                lolita::utility::Tag const & tag
+        )
+        const
+        {
+            return !(* this == tag);
         }
 
         friend
@@ -312,7 +429,7 @@ namespace lolita::utility
             return os;
         }
 
-        t_Tag tag_;
+        Tag tag_;
 
     };
 

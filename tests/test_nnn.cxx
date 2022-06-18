@@ -18,6 +18,8 @@
 
 TEST(test_lolita_nnn, test_lolita_nnn) {
 
+    lolita::core2::finite_element::unknown::ABCD abcd{lolita::core2::finite_element::unknown::ABCD::A, 2};
+
     auto constexpr domain = lolita::domain::Domain("Middle", 2, lolita::domain::Frame::Cartesian());
     auto constexpr u_unknown = lolita::field::Unknown("Displacement", 1, lolita::field::Mapping::LargeStrain());
     auto constexpr d_unknown = lolita::field::Unknown("Damage", 0, lolita::field::Mapping::Gradient(), lolita::field::Mapping::Identity());
@@ -94,6 +96,8 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
     auto hhh_vec2 = HHH2::LinSpaced(2, 0, 0 + 2 - 1);
     std::cout << "hhh_vec2 : " << std::endl;
     std::cout << hhh_vec2 << std::endl;
+
+    static_assert(lolita::core2::finite_element::unknown::Unknown("Coucou", false) == lolita::core2::finite_element::unknown::Unknown("Coucou", true));
 
     std::cout << msh2.mesh_data_ << std::endl;
 

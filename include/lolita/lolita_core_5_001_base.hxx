@@ -717,7 +717,11 @@ namespace lolita::core2::finite_element
      * @tparam t_finite_element
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
-    struct FiniteElementBase : FiniteElementGeometry<t_element, t_domain, t_finite_element>, FiniteElementBehaviour<t_element, t_domain, t_finite_element>, FiniteElementFieldLoad<t_element, t_domain, t_finite_element>
+    struct FiniteElementBase
+    :
+    FiniteElementGeometry<t_element, t_domain, t_finite_element>,
+    FiniteElementBehaviour<t_element, t_domain, t_finite_element>,
+    FiniteElementFieldLoad<t_element, t_domain, t_finite_element>
     {};
 
 }

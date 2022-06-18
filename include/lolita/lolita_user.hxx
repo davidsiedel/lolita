@@ -285,6 +285,16 @@ namespace lolita
             ord_(dim)
             {}
 
+            constexpr
+            Field
+            as(
+                    std::basic_string_view<lolita::character> && tag
+            )
+            const
+            {
+                return Field(std::forward<std::basic_string_view<lolita::character>>(tag), ord_);
+            }
+
             static constexpr
             Field
             Scalar()
@@ -688,40 +698,40 @@ namespace lolita
              */
             ScalarLoad()
             :
-                    loading_(zero),
-                    load_(lolita::finite_element::Load::Natural())
+            loading_(zero),
+            load_(lolita::finite_element::Load::Natural())
             {}
 
             /**
              * @brief
              * @param function
-             * @param loading
+             * @param load
              */
             ScalarLoad(
                     lolita::finite_element::Loading &&
                     function,
                     lolita::finite_element::Load
-                    loading
+                    load
             )
             :
-                    loading_(std::forward<lolita::finite_element::Loading>(function)),
-                    load_(loading)
+            loading_(std::forward<lolita::finite_element::Loading>(function)),
+            load_(load)
             {}
 
             /**
              * @brief
              * @param function
-             * @param loading
+             * @param load
              */
             ScalarLoad(
                     lolita::finite_element::Loading const &
                     function,
                     lolita::finite_element::Load
-                    loading
+                    load
             )
             :
-                    loading_(function),
-                    load_(loading)
+            loading_(function),
+            load_(load)
             {}
 
             /**
@@ -854,92 +864,141 @@ namespace lolita
 
         };
 
-//        /**
-//         * @brief
-//         */
-//        struct Basis : public lolita::utility::Enumeration<Basis>
-//        {
-//
-//            /**
-//             * @brief
-//             * @param tag
-//             */
-//            constexpr
-//            Basis(
-//                    std::basic_string_view<lolita::character> && tag
-//            )
-//            :
-//            lolita::utility::Enumeration<Basis>(std::forward<std::basic_string_view<lolita::character>>(tag))
-//            {}
-//
-//            /**
-//             * @brief
-//             * @return
-//             */
-//            static constexpr
-//            Basis
-//            Monomial()
-//            {
-//                return Basis("Monomial");
-//            }
-//
-//            /**
-//             * @brief
-//             * @return
-//             */
-//            constexpr
-//            lolita::boolean
-//            isMonomial()
-//            {
-//                return * this == Monomial();
-//            }
-//
-//            /**
-//             * @brief
-//             * @return
-//             */
-//            static constexpr
-//            Basis
-//            Lagrange()
-//            {
-//                return Basis("Lagrange");
-//            }
-//
-//            /**
-//             * @brief
-//             * @return
-//             */
-//            constexpr
-//            lolita::boolean
-//            isLagrange()
-//            {
-//                return * this == Lagrange();
-//            }
-//
-//        };
-//
-//        struct Field2
-//        {
-//
-//            enum SupportCoordinates
-//            {
-//
-//                Relative,
-//                Absolute,
-//
-//            };
-//
-//            lolita::field::Field field_;
-//
-//            lolita::finite_element::Basis basis_;
-//
-//            lolita::integer ord_;
-//
-//            lolita::integer dim_;
-//
-//            SupportCoordinates support_coordinates_;
-//
-//        };
+        /**
+         * @brief
+         */
+        struct Basis : public lolita::utility::Enumeration<Basis>
+        {
+
+            /**
+             * @brief
+             * @param tag
+             */
+            constexpr
+            Basis(
+                    std::basic_string_view<lolita::character> && tag
+            )
+            :
+            lolita::utility::Enumeration<Basis>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            {}
+
+            /**
+             * @brief
+             * @return
+             */
+            static constexpr
+            Basis
+            Monomial()
+            {
+                return Basis("Monomial");
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            isMonomial()
+            const
+            {
+                return * this == Monomial();
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            static constexpr
+            Basis
+            Lagrange()
+            {
+                return Basis("Lagrange");
+            }
+
+            /**
+             * @brief
+             * @return
+             */
+            constexpr
+            lolita::boolean
+            isLagrange()
+            const
+            {
+                return * this == Lagrange();
+            }
+
+        };
+
+        /**
+         * @brief
+         */
+        struct UnknownTmpN
+        {
+
+            constexpr
+            UnknownTmpN(
+                    lolita::field::Field && field,
+                    lolita::finite_element::Basis && basis,
+                    lolita::integer ord,
+                    lolita::integer num
+            )
+            :
+            field_(std::forward<lolita::field::Field>(field)),
+            basis_(std::forward<lolita::finite_element::Basis>(basis)),
+            ord_(ord),
+            num_(num)
+            {}
+
+            constexpr
+            UnknownTmpN(
+                    std::basic_string_view<lolita::character> && tag,
+                    lolita::integer dim,
+                    lolita::finite_element::Basis && basis,
+                    lolita::integer ord,
+                    lolita::integer num
+            )
+            :
+            field_(lolita::field::Field(std::forward<std::basic_string_view<lolita::character>>(tag), dim)),
+            basis_(std::forward<lolita::finite_element::Basis>(basis)),
+            ord_(ord),
+            num_(num)
+            {}
+
+            enum Location
+            {
+                Cell,
+                Face,
+                Edge,
+                Node
+            };
+
+            /**
+             * @brief
+             */
+            lolita::finite_element::UnknownTmpN::Location loc_;
+
+            /**
+             * @brief
+             */
+            lolita::field::Field field_;
+
+            /**
+             * @brief
+             */
+            lolita::finite_element::Basis basis_;
+
+            /**
+             * @brief
+             */
+            lolita::integer ord_;
+
+            /**
+             * @brief
+             */
+            lolita::integer num_;
+
+        };
 
         /**
          * @brief

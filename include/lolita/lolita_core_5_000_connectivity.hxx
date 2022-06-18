@@ -18,6 +18,8 @@
 namespace lolita::core2::finite_element
 {
 
+    namespace core_fem = lolita::core2::finite_element;
+
     /**
      * @brief
      * @tparam t_element
@@ -243,6 +245,11 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
+        lolita::natural tag_;
+
+        /**
+         * @brief
+         */
         Neighbours neighbours_;
 
         /**
@@ -254,11 +261,6 @@ namespace lolita::core2::finite_element
          * @brief
          */
         std::vector<std::shared_ptr<std::basic_string<lolita::character>>> domains_;
-
-        /**
-         * @brief
-         */
-        lolita::natural tag_;
 
         /**
          * @brief
