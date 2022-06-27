@@ -21,32 +21,51 @@
 namespace lolita
 {
 
-    namespace domain
+    namespace new_one
     {
 
+        struct Field
+        {
+
+            lolita::integer int_;
+
+        };
+
+    }
+
+    namespace domain
+    {
+        /**
+         * @brief 
+         * 
+         */
         using Point = lolita::matrix::Vector<lolita::real, 3>;
 
-        /*
-         *
+        /**
+         * @brief 
+         * 
+         * @tparam t_Matrix 
          */
-
-        template<lolita::matrix::MatrixConcept _Matrix>
+        template<lolita::matrix::MatrixConcept t_Matrix>
         static inline
-        lolita::matrix::Vector<typename _Matrix::Scalar, lolita::matrix::rows<_Matrix>()>
+        lolita::matrix::Vector<typename t_Matrix::Scalar, lolita::matrix::rows<t_Matrix>()>
         getBarycenter(
-                _Matrix const &
-                point_args
+                t_Matrix const & point_args
         )
-        requires(lolita::matrix::rows<_Matrix>() > 0)
+        requires(lolita::matrix::rows<t_Matrix>() > 0)
         {
-            auto barycenter = lolita::matrix::Vector<typename _Matrix::Scalar, lolita::matrix::rows<_Matrix>()>().setZero();
-            for (auto i = 0; i < lolita::matrix::cols<_Matrix>(); ++i) {
+            auto barycenter = lolita::matrix::Vector<typename t_Matrix::Scalar, lolita::matrix::rows<t_Matrix>()>().setZero();
+            for (auto i = 0; i < lolita::matrix::cols<t_Matrix>(); ++i) {
                 barycenter += point_args.col(i);
             }
-            barycenter /= lolita::real(lolita::matrix::cols<_Matrix>());
+            barycenter /= lolita::real(lolita::matrix::cols<t_Matrix>());
             return barycenter;
         }
 
+        /**
+         * @brief 
+         * 
+         */
         struct Frame : public lolita::utility::Enumeration<Frame>
         {
 
@@ -867,20 +886,20 @@ namespace lolita
         /**
          * @brief
          */
-        struct Basis : public lolita::utility::Enumeration<Basis>
+        struct Basis
         {
 
-            /**
-             * @brief
-             * @param tag
-             */
-            constexpr
-            Basis(
-                    std::basic_string_view<lolita::character> && tag
-            )
-            :
-            lolita::utility::Enumeration<Basis>(std::forward<std::basic_string_view<lolita::character>>(tag))
-            {}
+        private:
+
+            enum Type
+            {
+
+                Monomial,
+                Lagrange
+
+            };
+
+        public:
 
             /**
              * @brief
@@ -888,9 +907,9 @@ namespace lolita
              */
             static constexpr
             Basis
-            Monomial()
+            monomial()
             {
-                return Basis("Monomial");
+                return Basis{Monomial};
             }
 
             /**
@@ -902,18 +921,7 @@ namespace lolita
             isMonomial()
             const
             {
-                return * this == Monomial();
-            }
-
-            /**
-             * @brief
-             * @return
-             */
-            static constexpr
-            Basis
-            Lagrange()
-            {
-                return Basis("Lagrange");
+                return type_ == Monomial;
             }
 
             /**
@@ -925,63 +933,42 @@ namespace lolita
             isLagrange()
             const
             {
-                return * this == Lagrange();
+                return type_ == Lagrange;
             }
+
+            lolita::finite_element::Basis::Type type_;
 
         };
 
         /**
          * @brief
          */
-        struct UnknownTmpN
+        struct Field
         {
 
             constexpr
-            UnknownTmpN(
-                    lolita::field::Field && field,
-                    lolita::finite_element::Basis && basis,
-                    lolita::integer ord,
-                    lolita::integer num
-            )
-            :
-            field_(std::forward<lolita::field::Field>(field)),
-            basis_(std::forward<lolita::finite_element::Basis>(basis)),
-            ord_(ord),
-            num_(num)
-            {}
-
-            constexpr
-            UnknownTmpN(
-                    std::basic_string_view<lolita::character> && tag,
+            Field(
+                    std::basic_string_view<lolita::character> tag,
                     lolita::integer dim,
-                    lolita::finite_element::Basis && basis,
-                    lolita::integer ord,
-                    lolita::integer num
+                    lolita::finite_element::Basis basis,
+                    lolita::integer ord
             )
             :
-            field_(lolita::field::Field(std::forward<std::basic_string_view<lolita::character>>(tag), dim)),
-            basis_(std::forward<lolita::finite_element::Basis>(basis)),
-            ord_(ord),
-            num_(num)
+            tag_(tag),
+            dim_(dim),
+            basis_(basis),
+            ord_(ord)
             {}
 
-            enum Location
-            {
-                Cell,
-                Face,
-                Edge,
-                Node
-            };
+            /**
+             * @brief
+             */
+            lolita::utility::Labell tag_;
 
             /**
              * @brief
              */
-            lolita::finite_element::UnknownTmpN::Location loc_;
-
-            /**
-             * @brief
-             */
-            lolita::field::Field field_;
+            lolita::integer dim_;
 
             /**
              * @brief
@@ -993,10 +980,114 @@ namespace lolita
              */
             lolita::integer ord_;
 
+        };
+
+        /**
+         * @brief
+         */
+        struct Unknown : Field
+        {
+
+        private:
+
+            enum Location
+            {
+                Cell,
+                Face,
+                Edge,
+                Node
+            };
+
+            enum Role
+            {
+
+                Structural,
+                Subsidiary
+
+            };
+
+            constexpr
+            Unknown(
+                    std::basic_string_view<lolita::character> tag,
+                    lolita::integer dim,
+                    lolita::finite_element::Basis basis,
+                    lolita::integer ord,
+                    lolita::finite_element::Unknown::Location location,
+                    lolita::finite_element::Unknown::Role role
+            )
+            :
+            Field(tag, dim, basis, ord),
+            location_(location),
+            role_(role)
+            {}
+
+        public:
+
+            static constexpr
+            Unknown
+            cellField(
+                    std::basic_string_view<lolita::character> tag,
+                    lolita::integer dim,
+                    lolita::finite_element::Basis basis,
+                    lolita::integer ord
+            )
+            {
+                return Unknown(tag, dim, basis, ord, Location::Cell, Role::Subsidiary);
+            }
+
+            static constexpr
+            Unknown
+            faceField(
+                    std::basic_string_view<lolita::character> tag,
+                    lolita::integer dim,
+                    lolita::finite_element::Basis basis,
+                    lolita::integer ord
+            )
+            {
+                return Unknown(tag, dim, basis, ord, Location::Face, Role::Structural);
+            }
+
             /**
              * @brief
              */
-            lolita::integer num_;
+            lolita::finite_element::Unknown::Role role_;
+
+            /**
+             * @brief
+             */
+            lolita::finite_element::Unknown::Location location_;
+
+        };
+
+        template<typename... t_T>
+        struct SubsidiaryField : Field
+        {
+
+            SubsidiaryField(
+                    std::basic_string_view<lolita::character> tag,
+                    lolita::integer dim,
+                    lolita::finite_element::Basis basis,
+                    lolita::integer ord,
+                    t_T const &... ukns
+            )
+            :
+            Field(tag, dim, basis, ord),
+            unknowns_({ukns...})
+            {}
+
+            std::array<Unknown, sizeof...(t_T)> unknowns_;
+
+        };
+
+        template<typename t_T>
+        struct MatBlock
+        {
+
+            MatBlock(
+                    t_T subsidiary_field,
+                    Unknown unknown
+            )
+            {}
 
         };
 

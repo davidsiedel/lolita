@@ -74,3 +74,23 @@ spack load intel-mkl@2020.4.304
 cmake ../ -DCMAKE_BUILD_TYPE=Debug -DINTEL_MKL_HOME=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk -DTEST_MODE=test
 
 make
+
+-G "Unix Makefiles"
+-DCMAKE_BUILD_TYPE=Debug
+-DINTEL_MKL_HOME=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk
+-DEigen3_DIR=/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/share/eigen3/cmake
+-DBOOST_ROOT=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/boost-1.75.0-btqcoicndp6zvdqg65olvz5antacsfap
+-DMFrontGenericInterface_DIR=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/mgis-master-rl6bdjtij4rspaz636wx3uf46wghnnib/share/mgis/cmake
+-DPython3_ROOT_DIR=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/python-3.8.8-wdmpjmaw5o4paivnhtpkpzdy42dmoq3k
+-Dfmt_DIR=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/fmt-7.1.3-zueo7clg4363ze556c54xttcuskstcv3/lib/cmake/fmt
+-DGTEST_ROOT=/home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.10.0-zoanm2vm72yk4tnzyvm523bvjnlxz435
+-DTEST_MODE=test
+-DCMAKE_FIND_DEBUG_MODE=ON
+
+
+-G "Unix Makefiles"
+-DINTEL_MKL_HOME=/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f
+-DEigen3_DIR=/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/share/eigen3/cmake
+-DGTEST_ROOT=/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.11.0-fym76qqgkka37m27u25kkn2h2sosbwad
+-DTEST_MODE=test
+-DCMAKE_FIND_DEBUG_MODE=ON

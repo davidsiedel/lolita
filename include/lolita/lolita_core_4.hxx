@@ -144,7 +144,7 @@ namespace lolita::core2::mesh
                     auto const & elem_arg,
                     auto & self
             )
-                    mutable
+            mutable
             {
                 if constexpr (!_element.isPoint()) {
                     auto const constexpr _component = lolita::core2::geometry::ElementTraits<_element, _domain>::template getComponent<_i, _j>();
@@ -166,7 +166,7 @@ namespace lolita::core2::mesh
                     auto const & elem_arg,
                     auto & self
             )
-                    mutable
+            mutable
             {
                 auto const constexpr _neighbour = lolita::core2::geometry::ElementTraits<_element, _domain>::template getNeighbour<_i, _j>();
                 for (auto const & c_ : elem_arg->template getNeighbours<_i, _j>()) {
@@ -190,7 +190,7 @@ namespace lolita::core2::mesh
             auto print_elements = [&] <lolita::integer _i = 0, lolita::integer _j = 0> (
                     auto & self
             )
-                    mutable
+            mutable
             {
                 auto constexpr _element = lolita::core2::geometry::DomainTraits<_domain>::template getElement<_i, _j>();
                 if constexpr (_i == 0 && _j == 0) {
