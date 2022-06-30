@@ -12,6 +12,7 @@
 #include "lolita/lolita_core_1.hxx"
 #include "lolita/lolita_core_2.hxx"
 #include "lolita/lolita_core_3.hxx"
+#include "lolita/lolita_core_4_system.hxx"
 
 namespace lolita::core2::finite_element
 {
@@ -23,84 +24,6 @@ namespace lolita::core2::finite_element
 
 namespace lolita::core2::mesh
 {
-
-    /**
-     * @brief
-     * @tparam _T
-     * @tparam _domain
-     * @tparam _arg
-     */
-    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto> typename _T, lolita::domain::Domain _domain, auto _args>
-    struct ElementCollection
-    {
-
-    private:
-
-        using _Elements = lolita::core2::geometry::Elements<_T, _domain, _args>;
-
-    public:
-
-        /**
-         * @brief
-         * @tparam _i
-         * @tparam _j
-         * @return
-         */
-        template<lolita::index _i, lolita::index _j>
-        std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements>> const &
-        getElements()
-        const
-        {
-            return std::get<_j>(std::get<_i>(elements_));
-        }
-
-        /**
-         * @brief
-         * @tparam _i
-         * @tparam _j
-         * @return
-         */
-        template<lolita::index _i, lolita::index _j>
-        std::tuple_element_t<_j, std::tuple_element_t<_i, _Elements>> &
-        getElements()
-        {
-            return std::get<_j>(std::get<_i>(elements_));
-        }
-
-        /**
-         * @brief The list of all available elements in a given domain
-         */
-        _Elements elements_;
-
-    };
-
-    /**
-     * @brief
-     */
-    struct FiniteElementLinearSystem
-    {
-
-        /**
-         * @brief
-         */
-        lolita::natural num_unknowns_ = 0;
-
-        /**
-         * @brief
-         */
-        lolita::natural num_bindings_ = 0;
-
-        /**
-         * @brief
-         */
-        Eigen::SparseMatrix<lolita::real> lhs_;
-
-        /**
-         * @brief
-         */
-        lolita::matrix::Vector<lolita::real> rhs_;
-
-    };
 
     /**
      * @brief
@@ -232,7 +155,7 @@ namespace lolita::core2::mesh
         /**
          * @brief The list of all elements in the mesh
          */
-        lolita::core2::mesh::ElementCollection<_ElementPointerMap, _domain, _finite_element> elements_;
+        lolita::core2::geometry::ElementCollection<_ElementPointerMap, _domain, _finite_element> elements_;
 
         /**
          * @brief The list of physical domains
@@ -252,7 +175,7 @@ namespace lolita::core2::mesh
         /**
          * @brief The list of linear problems available
          */
-        std::array<lolita::core2::mesh::FiniteElementLinearSystem, _finite_element.count()> systems_;
+        std::array<lolita::core2::system::FiniteElementLinearSystem, _finite_element.count()> systems_;
 
         /**
          * @brief The mesh options, depending on the mesh format
@@ -263,18 +186,18 @@ namespace lolita::core2::mesh
 
     /**
      * @brief
-     * @tparam _element
+     * @tparam t_element
      */
-    template<lolita::core2::geometry::Element _element>
+    template<lolita::core2::geometry::Element t_element>
     struct ElementInitializationData;
 
     /**
      * @brief
-     * @tparam _element
+     * @tparam t_element
      */
-    template<lolita::core2::geometry::Element _element>
-    requires(_element.isPoint())
-    struct ElementInitializationData<_element>
+    template<lolita::core2::geometry::Element t_element>
+    requires(t_element.isPoint())
+    struct ElementInitializationData<t_element>
     {
 
         /**
@@ -296,11 +219,11 @@ namespace lolita::core2::mesh
 
     /**
      * @brief
-     * @tparam _element
+     * @tparam t_element
      */
-    template<lolita::core2::geometry::Element _element>
-    requires(!_element.isPoint())
-    struct ElementInitializationData<_element>
+    template<lolita::core2::geometry::Element t_element>
+    requires(!t_element.isPoint())
+    struct ElementInitializationData<t_element>
     {
 
         /**
@@ -311,7 +234,7 @@ namespace lolita::core2::mesh
         /**
          * @brief
          */
-        std::array<lolita::index, _element.num_nodes_> node_tags_;
+        std::array<lolita::index, t_element.num_nodes_> node_tags_;
 
     };
 

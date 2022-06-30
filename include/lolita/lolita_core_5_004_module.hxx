@@ -52,11 +52,6 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-//        using t_FiniteElementCellTraits = cell::FiniteElementCellTraits<t_element, t_domain, t_finite_element>;
-
-        /**
-         * @brief
-         */
         using t_Quadrature = typename FiniteElementTraits<t_element, t_domain, t_finite_element>::Quadrature;
 
     };

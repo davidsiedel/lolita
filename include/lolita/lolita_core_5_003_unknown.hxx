@@ -39,15 +39,21 @@ namespace lolita::core2::finite_element
 
     namespace unknown
     {
-
+        
         /**
-         * @brief
-         * @tparam t_unknown
-         * @tparam t_dim
+         * @brief 
+         * 
+         * @tparam t_dim 
          */
         template<lolita::integer t_dim>
-        struct ScalarUnknown2
+        struct ScalarUnknown
         {
+
+            lolita::integer unknown_index_;
+
+            lolita::integer binding_index_;
+
+            std::shared_ptr<lolita::core2::system::FiniteElementLinearSystem> system_;
 
             /**
              * @brief The binding coefficient vector type
