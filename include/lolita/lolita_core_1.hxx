@@ -10,10 +10,10 @@
 #include "lolita/lolita_algebra.hxx"
 #include "lolita/lolita_user.hxx"
 
-namespace lolita::core2::field
+namespace lolita::core::field
 {
 
-    namespace core_fld = lolita::core2::field;
+    namespace core_fld = lolita::core::field;
 
     template<lolita::field::Field _tensor, lolita::index _dim_euclidean>
     struct TensorPolicy;
@@ -219,8 +219,8 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{1, 1};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
         };
 
         static constexpr
@@ -253,9 +253,9 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{2, 1};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{0, 1, 1, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{0, 1, 1, 1},
         };
 
         static constexpr
@@ -288,10 +288,10 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{3, 1};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{0, 1, 1, 1},
-                lolita::core2::field::MappingValues{0, 2, 2, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{0, 1, 1, 1},
+                lolita::core::field::MappingValues{0, 2, 2, 1},
         };
 
         static constexpr
@@ -328,9 +328,9 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{2, 1};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{0, 1, 1, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{0, 1, 1, 1},
         };
 
         static constexpr
@@ -363,10 +363,10 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{3, 1};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{0, 1, 1, 1},
-                lolita::core2::field::MappingValues{0, 2, 2, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{0, 1, 1, 1},
+                lolita::core::field::MappingValues{0, 2, 2, 1},
         };
 
         static constexpr
@@ -399,11 +399,11 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{2, 2};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{0, 1, 1, 1},
-                lolita::core2::field::MappingValues{1, 0, 2, 1},
-                lolita::core2::field::MappingValues{1, 1, 3, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{0, 1, 1, 1},
+                lolita::core::field::MappingValues{1, 0, 2, 1},
+                lolita::core::field::MappingValues{1, 1, 3, 1},
         };
 
         static constexpr
@@ -436,16 +436,16 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{3, 3};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{0, 1, 1, 1},
-                lolita::core2::field::MappingValues{0, 2, 2, 1},
-                lolita::core2::field::MappingValues{1, 0, 3, 1},
-                lolita::core2::field::MappingValues{1, 1, 4, 1},
-                lolita::core2::field::MappingValues{1, 2, 5, 1},
-                lolita::core2::field::MappingValues{2, 0, 6, 1},
-                lolita::core2::field::MappingValues{2, 1, 7, 1},
-                lolita::core2::field::MappingValues{2, 2, 8, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{0, 1, 1, 1},
+                lolita::core::field::MappingValues{0, 2, 2, 1},
+                lolita::core::field::MappingValues{1, 0, 3, 1},
+                lolita::core::field::MappingValues{1, 1, 4, 1},
+                lolita::core::field::MappingValues{1, 2, 5, 1},
+                lolita::core::field::MappingValues{2, 0, 6, 1},
+                lolita::core::field::MappingValues{2, 1, 7, 1},
+                lolita::core::field::MappingValues{2, 2, 8, 1},
         };
 
         static constexpr
@@ -478,11 +478,11 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{1, 4};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{1, 1, 1, 1},
-                lolita::core2::field::MappingValues{0, 0, 2, 0},
-                lolita::core2::field::MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{1, 1, 1, 1},
+                lolita::core::field::MappingValues{0, 0, 2, 0},
+                lolita::core::field::MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
         };
 
         static constexpr
@@ -515,13 +515,13 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{1, 6};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{1, 1, 1, 1},
-                lolita::core2::field::MappingValues{2, 2, 2, 0},
-                lolita::core2::field::MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
-                lolita::core2::field::MappingValues{0, 2, 4, lolita::numerics::sqrt_2},
-                lolita::core2::field::MappingValues{1, 2, 5, lolita::numerics::sqrt_2},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{1, 1, 1, 1},
+                lolita::core::field::MappingValues{2, 2, 2, 0},
+                lolita::core::field::MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
+                lolita::core::field::MappingValues{0, 2, 4, lolita::numerics::sqrt_2},
+                lolita::core::field::MappingValues{1, 2, 5, lolita::numerics::sqrt_2},
         };
 
         static constexpr
@@ -554,12 +554,12 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{1, 5};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{1, 1, 1, 1},
-                lolita::core2::field::MappingValues{0, 0, 2, 0},
-                lolita::core2::field::MappingValues{0, 1, 3, 1},
-                lolita::core2::field::MappingValues{1, 0, 4, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{1, 1, 1, 1},
+                lolita::core::field::MappingValues{0, 0, 2, 0},
+                lolita::core::field::MappingValues{0, 1, 3, 1},
+                lolita::core::field::MappingValues{1, 0, 4, 1},
         };
 
         static constexpr
@@ -600,16 +600,16 @@ namespace lolita::core2::field
 
         lolita::matrix::Shape const static constexpr shape_ = lolita::matrix::Shape{1, 9};
 
-        std::array<lolita::core2::field::MappingValues, shape_.size_> const static constexpr values_ = {
-                lolita::core2::field::MappingValues{0, 0, 0, 1},
-                lolita::core2::field::MappingValues{1, 1, 1, 1},
-                lolita::core2::field::MappingValues{2, 2, 2, 0},
-                lolita::core2::field::MappingValues{0, 1, 3, 1},
-                lolita::core2::field::MappingValues{0, 2, 4, 1},
-                lolita::core2::field::MappingValues{1, 2, 5, 1},
-                lolita::core2::field::MappingValues{1, 0, 6, 1},
-                lolita::core2::field::MappingValues{2, 0, 7, 1},
-                lolita::core2::field::MappingValues{2, 1, 8, 1},
+        std::array<lolita::core::field::MappingValues, shape_.size_> const static constexpr values_ = {
+                lolita::core::field::MappingValues{0, 0, 0, 1},
+                lolita::core::field::MappingValues{1, 1, 1, 1},
+                lolita::core::field::MappingValues{2, 2, 2, 0},
+                lolita::core::field::MappingValues{0, 1, 3, 1},
+                lolita::core::field::MappingValues{0, 2, 4, 1},
+                lolita::core::field::MappingValues{1, 2, 5, 1},
+                lolita::core::field::MappingValues{1, 0, 6, 1},
+                lolita::core::field::MappingValues{2, 0, 7, 1},
+                lolita::core::field::MappingValues{2, 1, 8, 1},
         };
 
         static constexpr

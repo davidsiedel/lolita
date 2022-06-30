@@ -15,10 +15,10 @@
 #include "lolita/lolita_core_2.hxx"
 #include "lolita/lolita_core_4.hxx"
 
-namespace lolita::core2::finite_element
+namespace lolita::core::finite_element
 {
 
-    namespace core_fem = lolita::core2::finite_element;
+    namespace core_fem = lolita::core::finite_element;
 
     /**
      * @brief
@@ -26,7 +26,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementTraits;
 
     /**
@@ -35,7 +35,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
     struct FiniteElement;
 
     /**
@@ -44,7 +44,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
     struct FiniteElementConnectivity
     {
 
@@ -53,12 +53,12 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        using t_ElementTraits = lolita::core2::geometry::ElementTraits<t_element, t_domain>;
+        using t_ElementTraits = lolita::core::geometry::ElementTraits<t_element, t_domain>;
 
         /**
          * @brief
          */
-        template<lolita::core2::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__finite_element>
+        template<lolita::core::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__finite_element>
         using t_ElementPointer = std::shared_ptr<FiniteElement<t__element, t__domain, t__finite_element...>>;
 
     public:
@@ -140,7 +140,7 @@ namespace lolita::core2::finite_element
         )
         requires(!t_element.isPoint())
         {
-            return std::get<t_j>(std::get<t_i>(lolita::core2::geometry::ElementTraits<t_element, t_domain>::node_connectivity_))[i][j];
+            return std::get<t_j>(std::get<t_i>(lolita::core::geometry::ElementTraits<t_element, t_domain>::node_connectivity_))[i][j];
         }
 
         /**
@@ -215,7 +215,7 @@ namespace lolita::core2::finite_element
         requires(!t_element.isPoint())
         {
             auto constexpr t_component = t_ElementTraits::template getComponent<t_i, t_j>();
-            using t_NeighbourTraits = lolita::core2::geometry::ElementTraits<t_component, t_domain>;
+            using t_NeighbourTraits = lolita::core::geometry::ElementTraits<t_component, t_domain>;
             auto constexpr t_coordinates = t_NeighbourTraits::template getNeighbourCoordinates<t_element>();
             auto const & items = getComponents<t_i, t_j>()[i]->template getNeighbours<t_coordinates.dim_, t_coordinates.tag_>();
             auto is_equal = [&] (std::shared_ptr<FiniteElementConnectivity> const & ptr_element) {

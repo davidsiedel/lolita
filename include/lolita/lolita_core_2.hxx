@@ -11,10 +11,10 @@
 #include "lolita/lolita_user.hxx"
 #include "lolita/lolita_core_1.hxx"
 
-namespace lolita::core2::geometry
+namespace lolita::core::geometry
 {
 
-    namespace core_geo = lolita::core2::geometry;
+    namespace core_geo = lolita::core::geometry;
 
     /**
      * @brief Holder for the position of an element in a mesh, or with respect to some other element
@@ -101,7 +101,7 @@ namespace lolita::core2::geometry
          * @return
          */
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         Node()
         {
             return Element("Node", 0, 0, 1);
@@ -124,7 +124,7 @@ namespace lolita::core2::geometry
          * @return
          */
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         LinearSegment()
         {
             return Element("LinearSegment", 1, 1, 2);
@@ -147,7 +147,7 @@ namespace lolita::core2::geometry
          * @return
          */
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         LinearTriangle()
         {
             return Element("LinearTriangle", 2, 1, 3);
@@ -170,7 +170,7 @@ namespace lolita::core2::geometry
          * @return
          */
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         LinearQuadrangle()
         {
             return Element("LinearQuadrangle", 2, 1, 4);
@@ -193,7 +193,7 @@ namespace lolita::core2::geometry
          * @return
          */
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         LinearTetrahedron()
         {
             return Element("LinearTetrahedron", 3, 1, 4);
@@ -395,40 +395,40 @@ namespace lolita::core2::geometry
     /**
      * @brief
      */
-    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
+    template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
     using Points = std::tuple<
-            t_T<lolita::core2::geometry::Element::Node(), t_domain, t_args...>
+            t_T<lolita::core::geometry::Element::Node(), t_domain, t_args...>
     >;
 
     /**
      * @brief
      */
-    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
+    template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
     using Curves = std::tuple<
-            t_T<lolita::core2::geometry::Element::LinearSegment(), t_domain, t_args...>
+            t_T<lolita::core::geometry::Element::LinearSegment(), t_domain, t_args...>
     >;
 
     /**
      * @brief
      */
-    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
+    template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
     using Facets = std::tuple<
-            t_T<lolita::core2::geometry::Element::LinearTriangle(), t_domain, t_args...>,
-            t_T<lolita::core2::geometry::Element::LinearQuadrangle(), t_domain, t_args...>
+            t_T<lolita::core::geometry::Element::LinearTriangle(), t_domain, t_args...>,
+            t_T<lolita::core::geometry::Element::LinearQuadrangle(), t_domain, t_args...>
     >;
 
     /**
      * @brief
      */
-    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
+    template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
     using Solids = std::tuple<
-            t_T<lolita::core2::geometry::Element::LinearTetrahedron(), t_domain, t_args...>
+            t_T<lolita::core::geometry::Element::LinearTetrahedron(), t_domain, t_args...>
     >;
 
     namespace detail
     {
 
-        template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
+        template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
         using Elements = std::tuple<
                 Points<t_T, t_domain, t_args...>,
                 Curves<t_T, t_domain, t_args...>,
@@ -441,7 +441,7 @@ namespace lolita::core2::geometry
     /**
      * @brief
      */
-    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
+    template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, lolita::domain::Domain t_domain, auto... t_args>
     using Elements = lolita::utility::tuple_slice_t<detail::Elements<t_T, t_domain, t_args...>, 0, t_domain.dim() + 1>;
 
     /**
@@ -449,7 +449,7 @@ namespace lolita::core2::geometry
      * @tparam t_element
      * @tparam t_domain
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
     struct ElementTraits;
 
     namespace detail
@@ -460,7 +460,7 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         struct ElementView
         {
 
@@ -469,7 +469,7 @@ namespace lolita::core2::geometry
              * @return
              */
             static constexpr
-            lolita::core2::geometry::Element
+            lolita::core::geometry::Element
             getElement()
             {
                 return t_element;
@@ -487,7 +487,7 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         struct ElementOuterGeometryTraits;
 
         /**
@@ -495,19 +495,19 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         requires (t_element.isPoint())
         struct ElementOuterGeometryTraits<t_element, t_domain>
         {
 
         private:
 
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             struct OuterConnectivityTraits {
 
             private:
 
-                template<lolita::core2::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__args>
+                template<lolita::core::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__args>
                 using NeighbourVector = std::vector<t_T<t__element, t__domain, t__args...>>;
 
             public:
@@ -521,7 +521,7 @@ namespace lolita::core2::geometry
             /**
              * @brief
              */
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             using OuterConnectivity = typename OuterConnectivityTraits<t_T, t_args...>::OuterConnectivity;
 
         };
@@ -531,19 +531,19 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         requires (!t_element.isPoint())
         struct ElementOuterGeometryTraits<t_element, t_domain>
         {
 
         private:
 
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             struct OuterConnectivityTraits {
 
             private:
 
-                template<lolita::core2::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__args>
+                template<lolita::core::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__args>
                 using NeighbourVector = std::vector<t_T<t__element, t__domain, t__args...>>;
 
             public:
@@ -557,7 +557,7 @@ namespace lolita::core2::geometry
             /**
              * @brief
              */
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             using OuterConnectivity = typename OuterConnectivityTraits<t_T, t_args...>::OuterConnectivity;
 
         };
@@ -567,13 +567,13 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         struct ElementInnerGeometryTraits;
 
         /**
          * @brief
          */
-        template<lolita::core2::geometry::Element t_element, auto...>
+        template<lolita::core::geometry::Element t_element, auto...>
         using ElementNodeConnectivity = std::array<lolita::index, t_element.numNodes()>;
 
         /**
@@ -581,7 +581,7 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         requires (t_element.isPoint())
         struct ElementInnerGeometryTraits<t_element, t_domain>
         {
@@ -589,7 +589,7 @@ namespace lolita::core2::geometry
             /**
              * @brief
              */
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<>;
 
         private:
@@ -651,7 +651,7 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         requires (t_element.isLinearSegment())
         struct ElementInnerGeometryTraits<t_element, t_domain>
         {
@@ -659,10 +659,10 @@ namespace lolita::core2::geometry
             /**
              * @brief
              */
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
                     std::tuple<
-                            std::array<t_T<lolita::core2::geometry::Element::Node(), t_domain, t_args...>, 2>
+                            std::array<t_T<lolita::core::geometry::Element::Node(), t_domain, t_args...>, 2>
                     >
             >;
 
@@ -740,7 +740,7 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         requires (t_element.isLinearTriangle())
         struct ElementInnerGeometryTraits<t_element, t_domain>
         {
@@ -748,13 +748,13 @@ namespace lolita::core2::geometry
             /**
              * @brief
              */
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
                     std::tuple<
-                            std::array<t_T<lolita::core2::geometry::Element::LinearSegment(), t_domain, t_args...>, 3>
+                            std::array<t_T<lolita::core::geometry::Element::LinearSegment(), t_domain, t_args...>, 3>
                     >,
                     std::tuple<
-                            std::array<t_T<lolita::core2::geometry::Element::Node(), t_domain, t_args...>, 3>
+                            std::array<t_T<lolita::core::geometry::Element::Node(), t_domain, t_args...>, 3>
                     >
             >;
 
@@ -846,7 +846,7 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         requires (t_element.isLinearQuadrangle())
         struct ElementInnerGeometryTraits<t_element, t_domain>
         {
@@ -854,13 +854,13 @@ namespace lolita::core2::geometry
             /**
              * @brief
              */
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
                     std::tuple<
-                            std::array<t_T<lolita::core2::geometry::Element::LinearSegment(), t_domain, t_args...>, 4>
+                            std::array<t_T<lolita::core::geometry::Element::LinearSegment(), t_domain, t_args...>, 4>
                     >,
                     std::tuple<
-                            std::array<t_T<lolita::core2::geometry::Element::Node(), t_domain, t_args...>, 4>
+                            std::array<t_T<lolita::core::geometry::Element::Node(), t_domain, t_args...>, 4>
                     >
             >;
 
@@ -962,7 +962,7 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @tparam t_domain
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
         requires (t_element.isLinearTetrahedron())
         struct ElementInnerGeometryTraits<t_element, t_domain>
         {
@@ -970,16 +970,16 @@ namespace lolita::core2::geometry
             /**
              * @brief
              */
-            template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
+            template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
                     std::tuple<
-                            std::array<t_T<lolita::core2::geometry::Element::LinearTriangle(), t_domain, t_args...>, 4>
+                            std::array<t_T<lolita::core::geometry::Element::LinearTriangle(), t_domain, t_args...>, 4>
                     >,
                     std::tuple<
-                            std::array<t_T<lolita::core2::geometry::Element::LinearSegment(), t_domain, t_args...>, 6>
+                            std::array<t_T<lolita::core::geometry::Element::LinearSegment(), t_domain, t_args...>, 6>
                     >,
                     std::tuple<
-                            std::array<t_T<lolita::core2::geometry::Element::Node(), t_domain, t_args...>, 4>
+                            std::array<t_T<lolita::core::geometry::Element::Node(), t_domain, t_args...>, 4>
                     >
             >;
 
@@ -1080,7 +1080,7 @@ namespace lolita::core2::geometry
      * @tparam t_element
      * @tparam t_domain
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain>
     struct ElementTraits
     :
     element_geometry::ElementOuterGeometryTraits<t_element, t_domain>,
@@ -1093,7 +1093,7 @@ namespace lolita::core2::geometry
 
         using ElementInnerNeighbourhoodT = typename ElementTraits<t_element, t_domain>::template InnerConnectivity<detail::ElementView>;
 
-        using ElementsT = lolita::core2::geometry::Elements<detail::ElementView, t_domain>;
+        using ElementsT = lolita::core::geometry::Elements<detail::ElementView, t_domain>;
 
     public:
 
@@ -1102,7 +1102,7 @@ namespace lolita::core2::geometry
          * @return
          */
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         getElement()
         {
             return t_element;
@@ -1126,11 +1126,11 @@ namespace lolita::core2::geometry
          * @return
          */
         static constexpr
-        lolita::core2::geometry::ElementCoordinates
+        lolita::core::geometry::ElementCoordinates
         getCoordinates()
         {
-//            auto coordinates = lolita::core2::element::ElementCoordinates{-1, -1};
-            auto coordinates = lolita::core2::geometry::ElementCoordinates{0, 0};
+//            auto coordinates = lolita::core::element::ElementCoordinates{-1, -1};
+            auto coordinates = lolita::core::geometry::ElementCoordinates{0, 0};
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
                 using ElementT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>>;
                 if (ElementT::getElement() == t_element) {
@@ -1153,14 +1153,14 @@ namespace lolita::core2::geometry
          * @tparam t_neighbour
          * @return
          */
-        template<lolita::core2::geometry::Element t_neighbour>
+        template<lolita::core::geometry::Element t_neighbour>
         static constexpr
-        lolita::core2::geometry::ElementCoordinates
+        lolita::core::geometry::ElementCoordinates
         getComponentCoordinates()
         requires(!t_element.isPoint())
         {
-//            auto coordinates = lolita::core2::element::ElementCoordinates{-1, -1};
-            auto coordinates = lolita::core2::geometry::ElementCoordinates{0, 0};
+//            auto coordinates = lolita::core::element::ElementCoordinates{-1, -1};
+            auto coordinates = lolita::core::geometry::ElementCoordinates{0, 0};
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
                 using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementInnerNeighbourhoodT>>::value_type;
                 if (NeighbourT::getElement() == t_neighbour) {
@@ -1186,7 +1186,7 @@ namespace lolita::core2::geometry
          */
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         getComponent()
         requires(!t_element.isPoint())
         {
@@ -1201,11 +1201,11 @@ namespace lolita::core2::geometry
          */
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita::core2::geometry::ElementTraits<getComponent<t_i, t_j>(), t_domain>
+        lolita::core::geometry::ElementTraits<getComponent<t_i, t_j>(), t_domain>
         getComponentDescription()
         requires(!t_element.isPoint())
         {
-            return lolita::core2::geometry::ElementTraits<getComponent<t_i, t_j>(), t_domain>();
+            return lolita::core::geometry::ElementTraits<getComponent<t_i, t_j>(), t_domain>();
         }
 
         /**
@@ -1237,13 +1237,13 @@ namespace lolita::core2::geometry
          * @tparam _neighbour
          * @return
          */
-        template<lolita::core2::geometry::Element t_neighbour>
+        template<lolita::core::geometry::Element t_neighbour>
         static constexpr
-        lolita::core2::geometry::ElementCoordinates
+        lolita::core::geometry::ElementCoordinates
         getNeighbourCoordinates()
         {
-//            auto coordinates = lolita::core2::element::ElementCoordinates{-1, -1};
-            auto coordinates = lolita::core2::geometry::ElementCoordinates{0, 0};
+//            auto coordinates = lolita::core::element::ElementCoordinates{-1, -1};
+            auto coordinates = lolita::core::geometry::ElementCoordinates{0, 0};
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
                 using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementOuterNeighbourhoodT>>::value_type;
                 if (NeighbourT::getElement() == t_neighbour) {
@@ -1269,7 +1269,7 @@ namespace lolita::core2::geometry
          */
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         getNeighbour()
         {
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementOuterNeighbourhoodT>>::value_type::getElement();
@@ -1283,10 +1283,10 @@ namespace lolita::core2::geometry
          */
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita::core2::geometry::ElementTraits<getNeighbour<t_i, t_j>(), t_domain>
+        lolita::core::geometry::ElementTraits<getNeighbour<t_i, t_j>(), t_domain>
         getNeighbourDescription()
         {
-            return lolita::core2::geometry::ElementTraits<getNeighbour<t_i, t_j>(), t_domain>();
+            return lolita::core::geometry::ElementTraits<getNeighbour<t_i, t_j>(), t_domain>();
         }
 
         /**
@@ -1321,7 +1321,7 @@ namespace lolita::core2::geometry
 
     private:
 
-        using ElementsT = lolita::core2::geometry::Elements<detail::ElementView, t_domain>;
+        using ElementsT = lolita::core::geometry::Elements<detail::ElementView, t_domain>;
 
     public:
 
@@ -1341,13 +1341,13 @@ namespace lolita::core2::geometry
          * @tparam t_element
          * @return
          */
-        template<lolita::core2::geometry::Element t_element>
+        template<lolita::core::geometry::Element t_element>
         static constexpr
-        lolita::core2::geometry::ElementCoordinates
+        lolita::core::geometry::ElementCoordinates
         getElementCoordinates()
         {
-//            auto coordinates = lolita::core2::element::ElementCoordinates{t_element.dim(), -1};
-            auto coordinates = lolita::core2::geometry::ElementCoordinates{t_element.dim(), 0};
+//            auto coordinates = lolita::core::element::ElementCoordinates{t_element.dim(), -1};
+            auto coordinates = lolita::core::geometry::ElementCoordinates{t_element.dim(), 0};
             auto set_coordinates = [&] <lolita::integer t_i = 0> (auto & t_set_coordinates) constexpr mutable {
                 using ElementT = std::tuple_element_t<t_i, std::tuple_element_t<t_element.dim(), ElementsT>>;
                 if (ElementT::getElement() == t_element) {
@@ -1369,7 +1369,7 @@ namespace lolita::core2::geometry
          */
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita::core2::geometry::Element
+        lolita::core::geometry::Element
         getElement()
         {
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>>::getElement();
@@ -1383,10 +1383,10 @@ namespace lolita::core2::geometry
 //         */
 //        template<lolita::integer t_i, lolita::integer t_j>
 //        static constexpr
-//        lolita::core2::element::ElementGeometryTraits<getElement<t_i, t_j>(), t_domain>
+//        lolita::core::element::ElementGeometryTraits<getElement<t_i, t_j>(), t_domain>
 //        getElementDescription()
 //        {
-//            return lolita::core2::element::ElementGeometryTraits<getElement<t_i, t_j>(), t_domain>();
+//            return lolita::core::element::ElementGeometryTraits<getElement<t_i, t_j>(), t_domain>();
 //        }
 
         /**
@@ -1417,13 +1417,13 @@ namespace lolita::core2::geometry
      * @tparam t_domain
      * @tparam t_arg
      */
-    template<template<lolita::core2::geometry::Element, lolita::domain::Domain, auto> typename t_T, lolita::domain::Domain t_domain, auto t_args>
+    template<template<lolita::core::geometry::Element, lolita::domain::Domain, auto> typename t_T, lolita::domain::Domain t_domain, auto t_args>
     struct ElementCollection
     {
 
     private:
 
-        using ElementsT = lolita::core2::geometry::Elements<t_T, t_domain, t_args>;
+        using ElementsT = lolita::core::geometry::Elements<t_T, t_domain, t_args>;
 
     public:
 

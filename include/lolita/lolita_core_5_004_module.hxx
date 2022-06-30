@@ -19,7 +19,7 @@
 #include "lolita/lolita_core_5_002_basis.hxx"
 #include "lolita/lolita_core_5_003_unknown.hxx"
 
-namespace lolita::core2::finite_element
+namespace lolita::core::finite_element
 {
 
     /**
@@ -28,7 +28,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementBase2 : FiniteElementBasis<t_element, t_domain, t_finite_element>
     {};
 
@@ -38,7 +38,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementCell_n : FiniteElementBase2<t_element, t_domain, t_finite_element>
     {
 
@@ -59,10 +59,10 @@ namespace lolita::core2::finite_element
 //    namespace face
 //    {
 //
-//        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
 //        struct FiniteElementFaceTraits;
 //
-//        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
 //        requires(t_finite_element.discretization_.isHHO())
 //        struct FiniteElementFaceTraits<t_element, t_domain, t_finite_element>
 //        {
@@ -76,7 +76,7 @@ namespace lolita::core2::finite_element
 //                template<auto t_element_group>
 //                void
 //                makeDirichlet(
-//                        lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+//                        lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
 //                )
 //                {
 //
@@ -88,7 +88,7 @@ namespace lolita::core2::finite_element
 //
 //    }
 //
-//    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
 //    struct FiniteElementFace
 //    {
 //
@@ -97,7 +97,7 @@ namespace lolita::core2::finite_element
 //        /**
 //         * @brief
 //         */
-//        using t_FiniteElementTraits = lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>;
+//        using t_FiniteElementTraits = lolita::core::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>;
 //
 //    public:
 //
@@ -167,7 +167,7 @@ namespace lolita::core2::finite_element
 //     * @tparam t_domain
 //     * @tparam t_finite_element
 //     */
-//    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
 //    struct FiniteElementCell;
 //
 //    namespace cell
@@ -179,7 +179,7 @@ namespace lolita::core2::finite_element
 //         * @tparam t_domain
 //         * @tparam t_finite_element
 //         */
-//        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
 //        struct FiniteElementCellTraits;
 //
 //        /**
@@ -188,7 +188,7 @@ namespace lolita::core2::finite_element
 //         * @tparam t_domain
 //         * @tparam t_finite_element
 //         */
-//        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
 //        requires(t_finite_element.discretization_.isHHO())
 //        struct FiniteElementCellTraits<t_element, t_domain, t_finite_element>
 //        {
@@ -303,7 +303,7 @@ namespace lolita::core2::finite_element
 ////                        }
 ////                    };
 ////                    auto set_faces_block = [&] <lolita::integer t_i = 0> (auto & self) mutable {
-////                        auto const constexpr _face = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, t_i>();
+////                        auto const constexpr _face = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, t_i>();
 ////                        using t_FaceUnknowns = typename unknown::FiniteElementFieldUnknownsTraits<_face, t_domain, t_finite_element>::FieldUnknowns;
 ////                        using t_FaceUnknown = std::tuple_element_t<0, typename t_FaceUnknowns::Unknowns>;
 ////                        auto const & faces = this->template getComponents<0, t_i>();
@@ -316,7 +316,7 @@ namespace lolita::core2::finite_element
 ////                                }
 ////                            }
 ////                        }
-////                        if constexpr (t_i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
+////                        if constexpr (t_i < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
 ////                            self.template operator()<t_i + 1>(self);
 ////                        }
 ////                    };
@@ -344,7 +344,7 @@ namespace lolita::core2::finite_element
 ////                        generalized_gradient_values.setZero();
 //                        auto set_generalized_gradient = [&] <lolita::integer t_i = 0> (auto & self) mutable {
 //                            auto constexpr t_mapping = t_finite_element.unknown_.mappings_[t_i];
-//                            using t_MappingPolicy = lolita::core2::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, t_mapping>;
+//                            using t_MappingPolicy = lolita::core::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, t_mapping>;
 //                            auto constexpr t_mapping_vector_block = t_FiniteElementTraits::template getMappingBlock<t_mapping>();
 //                            auto constexpr t_mapping_block_size = t_mapping_vector_block.j_ - t_mapping_vector_block.i_;
 //                            auto strain_block = strain.template segment<t_mapping_block_size>(t_mapping_vector_block.i_);
@@ -405,11 +405,11 @@ namespace lolita::core2::finite_element
 //                        }
 //                    };
 //                    auto set_faces_block = [&] <lolita::integer _i = 0> (auto & self) mutable {
-//                        auto const constexpr t_face = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _i>();
+//                        auto const constexpr t_face = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _i>();
 //                        using t_FaceFieldUnknownsTraits = unknown::FiniteElementFieldUnknownsTraits<t_face, t_domain, t_finite_element>;
 //                        using t_FaceUnknowns = typename t_FaceFieldUnknownsTraits::FieldUnknowns;
 //                        using t_FaceUnknown = std::tuple_element_t<0, typename t_FaceUnknowns::Unknowns>;
-//                        using t_FaceElementTraits = lolita::core2::finite_element::FiniteElementTraits<t_face, t_domain, t_finite_element>;
+//                        using t_FaceElementTraits = lolita::core::finite_element::FiniteElementTraits<t_face, t_domain, t_finite_element>;
 //                        auto const & faces = this->template getComponents<0, _i>();
 //                        for (auto const & face : faces) {
 //                            for (int i = 0; i < t_FaceElementTraits::Field::shape_.rows_; ++i) {
@@ -424,7 +424,7 @@ namespace lolita::core2::finite_element
 //                                }
 //                            }
 //                        }
-//                        if constexpr (_i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
+//                        if constexpr (_i < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
 //                            self.template operator()<_i + 1>(self);
 //                        }
 //                    };
@@ -447,7 +447,7 @@ namespace lolita::core2::finite_element
 ////                            auto const constexpr _mapping = t_finite_element.unknown_.mappings_[_i];
 ////                            auto const constexpr _mapping_vector_block = t_FiniteElementTraits::template getMappingBlock<_mapping>();
 ////                            auto const constexpr _mapping_block_size = _mapping_vector_block.j_ - _mapping_vector_block.i_;
-////                            using _MappingPolicy = lolita::core2::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, _mapping>;
+////                            using _MappingPolicy = lolita::core::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, _mapping>;
 ////                            using _MappingMatrix = lolita::matrix::Matrix<lolita::real, _mapping_block_size, _mapping_block_size>;
 ////                            auto tangent_operator_block = tangent_operator_tensor.template block<_mapping_block_size, _mapping_block_size>(
 ////                                    _mapping_vector_block.i_,
@@ -470,7 +470,7 @@ namespace lolita::core2::finite_element
 ////                template<auto _arg>
 ////                void
 ////                assemble(
-////                        lolita::core2::mesh::Mesh<t_domain, _arg> & mesh
+////                        lolita::core::mesh::Mesh<t_domain, _arg> & mesh
 ////                )
 ////                {
 ////                    auto const constexpr _cs = getNumCellUnknowns();
@@ -509,18 +509,18 @@ namespace lolita::core2::finite_element
 ////                    auto col_offset = 0;
 ////                    auto set_rows = [&] <lolita::integer _i = 0> (auto & t_set_rows) mutable {
 ////                        auto const & faces_row = this->template getComponents<0, _i>();
-////                        auto const constexpr _face_r = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _i>();
-////                        using _RowFaceUnknowns = typename lolita::core2::finite_element::unknown::FiniteElementFieldUnknownsTraits<_face_r, t_domain, t_finite_element>::FieldUnknowns;
+////                        auto const constexpr _face_r = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _i>();
+////                        using _RowFaceUnknowns = typename lolita::core::finite_element::unknown::FiniteElementFieldUnknownsTraits<_face_r, t_domain, t_finite_element>::FieldUnknowns;
 ////                        using _RowFaceUnknown = std::tuple_element_t<0, typename _RowFaceUnknowns::Unknowns>;
-//////                        using _RowFiniteElementFace = lolita::core2::finite_element::face::FiniteElementFace<_face_r, t_domain, t_finite_element>;
-////                        using _RowFiniteElementFace = lolita::core2::finite_element::FiniteElementTraits<_face_r, t_domain, t_finite_element>;
+//////                        using _RowFiniteElementFace = lolita::core::finite_element::face::FiniteElementFace<_face_r, t_domain, t_finite_element>;
+////                        using _RowFiniteElementFace = lolita::core::finite_element::FiniteElementTraits<_face_r, t_domain, t_finite_element>;
 ////                        auto set_cols = [&] <lolita::integer _j = 0> (auto & t_set_cols) mutable {
 ////                            auto const & faces_col = this->template getComponents<0, _j>();
-////                            auto const constexpr _face_c = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _j>();
-////                            using _ColFaceUnknowns = typename lolita::core2::finite_element::unknown::FiniteElementFieldUnknownsTraits<_face_c, t_domain, t_finite_element>::FieldUnknowns;
+////                            auto const constexpr _face_c = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _j>();
+////                            using _ColFaceUnknowns = typename lolita::core::finite_element::unknown::FiniteElementFieldUnknownsTraits<_face_c, t_domain, t_finite_element>::FieldUnknowns;
 ////                            using _ColFaceUnknown = std::tuple_element_t<0, typename _ColFaceUnknowns::Unknowns>;
-//////                            using _ColFiniteElementFace = lolita::core2::finite_element::face::FiniteElementFace<_face_c, t_domain, t_finite_element>;
-////                            using _ColFiniteElementFace = lolita::core2::finite_element::FiniteElementTraits<_face_c, t_domain, t_finite_element>;
+//////                            using _ColFiniteElementFace = lolita::core::finite_element::face::FiniteElementFace<_face_c, t_domain, t_finite_element>;
+////                            using _ColFiniteElementFace = lolita::core::finite_element::FiniteElementTraits<_face_c, t_domain, t_finite_element>;
 ////                            for (auto const & face_row : faces_row) {
 ////                                for (auto const & face_col : faces_col) {
 ////                                    for (int i = 0; i < t_FiniteElementTraits::Field::shape_.rows_; ++i) {
@@ -543,11 +543,11 @@ namespace lolita::core2::finite_element
 ////                                    }
 ////                                }
 ////                            }
-////                            if constexpr (_j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
+////                            if constexpr (_j < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
 ////                                t_set_cols.template operator()<_j + 1>(t_set_cols);
 ////                            }
 ////                        };
-////                        if constexpr (_i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
+////                        if constexpr (_i < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
 ////                            t_set_rows.template operator()<_i + 1>(t_set_rows);
 ////                        }
 ////                    };
@@ -586,7 +586,7 @@ namespace lolita::core2::finite_element
 //     * @tparam t_domain
 //     * @tparam t_finite_element
 //     */
-//    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+//    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
 //    struct FiniteElementCell
 //    {
 //

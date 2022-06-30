@@ -9,7 +9,7 @@
 #include "lolita/lolita_core_2.hxx"
 #include "lolita/lolita_core_3.hxx"
 
-namespace lolita::core2::system
+namespace lolita::core::system
 {
     
     /**

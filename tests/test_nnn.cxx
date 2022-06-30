@@ -19,9 +19,9 @@
 
 TEST(test_lolita_nnn, test_lolita_nnn) {
 
-    // std::cout << lolita::core2::finite_element::basis::FiniteElementBasisTraits<lolita::core2::geometry::Element::LinearTriangle(), lolita::core2::finite_element::basis::Basis::Monomial(), 4>::dim_ << std::endl;
+    // std::cout << lolita::core::finite_element::basis::FiniteElementBasisTraits<lolita::core::geometry::Element::LinearTriangle(), lolita::core::finite_element::basis::Basis::Monomial(), 4>::dim_ << std::endl;
 
-    // lolita::core2::finite_element::unknown::ABCD abcd{lolita::core2::finite_element::unknown::ABCD::A, 2};
+    // lolita::core::finite_element::unknown::ABCD abcd{lolita::core::finite_element::unknown::ABCD::A, 2};
 
     auto constexpr domain = lolita::domain::Domain("Middle", 2, lolita::domain::Frame::Cartesian());
     auto constexpr u_unknown = lolita::field::Unknown("Displacement", 1, lolita::field::Mapping::LargeStrain());
@@ -67,33 +67,33 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
     auto file_path = "";
     file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
 
-    auto constexpr node = lolita::core2::geometry::Element::Node();
-    auto constexpr segment = lolita::core2::geometry::Element::LinearSegment();
-    auto constexpr triangle = lolita::core2::geometry::Element::LinearQuadrangle();
-    //    lolita::core2::geometry::ElementGeometryTraits<node, domain>::getNeighbours<arg0, arg1>();
+    auto constexpr node = lolita::core::geometry::Element::Node();
+    auto constexpr segment = lolita::core::geometry::Element::LinearSegment();
+    auto constexpr triangle = lolita::core::geometry::Element::LinearQuadrangle();
+    //    lolita::core::geometry::ElementGeometryTraits<node, domain>::getNeighbours<arg0, arg1>();
     std::cout << "node with dim " << node.dim() << std::endl;
-    std::cout << lolita::core2::geometry::DomainTraits<domain>::getElementCoordinates<node>() << std::endl;
+    std::cout << lolita::core::geometry::DomainTraits<domain>::getElementCoordinates<node>() << std::endl;
     std::cout << "segment with dim " << segment.dim() << std::endl;
-    std::cout << lolita::core2::geometry::DomainTraits<domain>::getElementCoordinates<segment>() << std::endl;
+    std::cout << lolita::core::geometry::DomainTraits<domain>::getElementCoordinates<segment>() << std::endl;
     std::cout << "triangle with dim " << triangle.dim() << std::endl;
-    std::cout << lolita::core2::geometry::DomainTraits<domain>::getElementCoordinates<triangle>() << std::endl;
+    std::cout << lolita::core::geometry::DomainTraits<domain>::getElementCoordinates<triangle>() << std::endl;
 
-    std::cout << "elements size : " << std::tuple_size_v<lolita::core2::geometry::Elements<lolita::core2::geometry::detail::ElementView, domain>> << std::endl;
+    std::cout << "elements size : " << std::tuple_size_v<lolita::core::geometry::Elements<lolita::core::geometry::detail::ElementView, domain>> << std::endl;
 
-    auto msh2 = lolita::core2::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, mixed_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
-    //    auto msh1 = lolita::core2::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, coupled_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
+    auto msh2 = lolita::core::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, mixed_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
+    //    auto msh1 = lolita::core::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, coupled_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
 
 //    std::cout << "num unknowns displacement : " << msh2.mesh_data_.systems_[0].num_unknowns_ << std::endl;
 //    std::cout << "num bindings displacement : " << msh2.mesh_data_.systems_[0].num_bindings_ << std::endl;
 //    std::cout << "num unknowns damage : " << msh2.mesh_data_.systems_[1].num_unknowns_ << std::endl;
 //    std::cout << "num bindings damage : " << msh2.mesh_data_.systems_[1].num_bindings_ << std::endl;
 //
-//    std::cout << "here : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::template getNumUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
-//    std::cout << "here : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::getNumUnknowns() << std::endl;
-//    std::cout << "here cell structural : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Structural()>() << std::endl;
-//    std::cout << "here face structural : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Structural()>() << std::endl;
-//    std::cout << "here cell subsidiary : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
-//    std::cout << "here face subsidiary : " << lolita::core2::finite_element::FiniteElementTraits<lolita::core2::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core2::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
+//    std::cout << "here : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearTriangle(), domain, hho_u>::template getNumUnknowns<lolita::core::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
+//    std::cout << "here : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearTriangle(), domain, hho_u>::getNumUnknowns() << std::endl;
+//    std::cout << "here cell structural : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core::finite_element::unknown::Unknown::Structural()>() << std::endl;
+//    std::cout << "here face structural : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core::finite_element::unknown::Unknown::Structural()>() << std::endl;
+//    std::cout << "here cell subsidiary : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
+//    std::cout << "here face subsidiary : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
 
 //    using HHH = lolita::matrix::Vector<lolita::integer, 0>;
 //    auto hhh_vec = HHH::LinSpaced(0, 0 + 0 - 1);
@@ -104,7 +104,7 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
 //    std::cout << "hhh_vec2 : " << std::endl;
 //    std::cout << hhh_vec2 << std::endl;
 //
-//    static_assert(lolita::core2::finite_element::unknown::Unknown("Coucou", false) == lolita::core2::finite_element::unknown::Unknown("Coucou", true));
+//    static_assert(lolita::core::finite_element::unknown::Unknown("Coucou", false) == lolita::core::finite_element::unknown::Unknown("Coucou", true));
 //
    std::cout << msh2.mesh_data_ << std::endl;
 

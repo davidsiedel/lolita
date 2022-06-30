@@ -12,7 +12,7 @@
 #include "lolita/lolita_core_1.hxx"
 #include "lolita/lolita_core_2.hxx"
 
-namespace lolita::core2::geometry
+namespace lolita::core::geometry
 {
 
     /**
@@ -21,7 +21,7 @@ namespace lolita::core2::geometry
      * @tparam t_quadrature
      * @tparam t_ord
      */
-    template<lolita::core2::geometry::Element t_element, lolita::finite_element::Quadrature t_quadrature, lolita::index t_ord>
+    template<lolita::core::geometry::Element t_element, lolita::finite_element::Quadrature t_quadrature, lolita::index t_ord>
     struct ElementQuadratureRuleTraits;
 
     /**
@@ -30,7 +30,7 @@ namespace lolita::core2::geometry
      * @tparam t_quadrature
      * @tparam t_ord
      */
-    template<lolita::core2::geometry::Element t_element, lolita::finite_element::Quadrature t_quadrature, lolita::index t_ord>
+    template<lolita::core::geometry::Element t_element, lolita::finite_element::Quadrature t_quadrature, lolita::index t_ord>
     requires(t_element.isPoint() || !t_element.isPoint())
     struct ElementQuadratureRuleTraits<t_element, t_quadrature, t_ord>
     {
@@ -61,7 +61,7 @@ namespace lolita::core2::geometry
      * @tparam t_quadrature
      * @tparam t_ord
      */
-    template<lolita::core2::geometry::Element t_element, lolita::finite_element::Quadrature t_quadrature, lolita::index t_ord>
+    template<lolita::core::geometry::Element t_element, lolita::finite_element::Quadrature t_quadrature, lolita::index t_ord>
     struct ElementQuadratureTraits : public ElementQuadratureRuleTraits<t_element, t_quadrature, t_ord>
     {
 

@@ -18,15 +18,15 @@
 #include "lolita/lolita_core_5_001_base.hxx"
 #include "lolita/lolita_core_5_002_basis.hxx"
 
-namespace lolita::core2::finite_element
+namespace lolita::core::finite_element
 {
 
     namespace lolita_fem = lolita::finite_element;
     namespace lolita_dom = lolita::domain;
     namespace lolita_fld = lolita::field;
-    namespace core_fld = lolita::core2::field;
-    namespace core_geo = lolita::core2::geometry;
-    namespace core_fem = lolita::core2::finite_element;
+    namespace core_fld = lolita::core::field;
+    namespace core_geo = lolita::core::geometry;
+    namespace core_fem = lolita::core::finite_element;
 
     /**
      * @brief
@@ -53,7 +53,7 @@ namespace lolita::core2::finite_element
 
             lolita::integer binding_index_;
 
-            std::shared_ptr<lolita::core2::system::FiniteElementLinearSystem> system_;
+            std::shared_ptr<lolita::core::system::FiniteElementLinearSystem> system_;
 
             /**
              * @brief The binding coefficient vector type

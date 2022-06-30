@@ -15,7 +15,7 @@
 #include "lolita/lolita_core_2.hxx"
 #include "lolita/lolita_core_4.hxx"
 
-namespace lolita::core2::finite_element
+namespace lolita::core::finite_element
 {
 
     /**
@@ -29,7 +29,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementTraits;
 
     /**
@@ -38,7 +38,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
     struct FiniteElement;
 
     /**
@@ -47,7 +47,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_finite_element>
     struct FiniteElementConnectivity
     {
 
@@ -56,12 +56,12 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        using t_ElementTraits = lolita::core2::geometry::ElementTraits<t_element, t_domain>;
+        using t_ElementTraits = lolita::core::geometry::ElementTraits<t_element, t_domain>;
 
         /**
          * @brief
          */
-        template<lolita::core2::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__finite_element>
+        template<lolita::core::geometry::Element t__element, lolita::domain::Domain t__domain, auto... t__finite_element>
         using t_ElementPointer = std::shared_ptr<FiniteElement<t__element, t__domain, t__finite_element...>>;
 
     public:
@@ -168,7 +168,7 @@ namespace lolita::core2::finite_element
         )
         requires(!t_element.isPoint())
         {
-            return std::get<t_j>(std::get<t_i>(lolita::core2::geometry::ElementTraits<t_element, t_domain>::node_connectivity_))[i][j];
+            return std::get<t_j>(std::get<t_i>(lolita::core::geometry::ElementTraits<t_element, t_domain>::node_connectivity_))[i][j];
         }
 
         /**
@@ -243,7 +243,7 @@ namespace lolita::core2::finite_element
         requires(!t_element.isPoint())
         {
             auto constexpr t_component = t_ElementTraits::template getComponent<t_i, t_j>();
-            using t_NeighbourTraits = lolita::core2::geometry::ElementTraits<t_component, t_domain>;
+            using t_NeighbourTraits = lolita::core::geometry::ElementTraits<t_component, t_domain>;
             auto constexpr t_coordinates = t_NeighbourTraits::template getNeighbourCoordinates<t_element>();
             auto const & items = getComponents<t_i, t_j>()[i]->template getNeighbours<t_coordinates.dim_, t_coordinates.tag_>();
             auto is_equal = [&] (std::shared_ptr<FiniteElementConnectivity> const & ptr_element) {
@@ -278,7 +278,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementGeometry : virtual FiniteElementConnectivity<t_element, t_domain, t_finite_element>
     {
 
@@ -287,12 +287,12 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        using t_ElementTraits = lolita::core2::geometry::ElementTraits<t_element, t_domain>;
+        using t_ElementTraits = lolita::core::geometry::ElementTraits<t_element, t_domain>;
 
         /**
          * @brief
          */
-        using t_FiniteElementTraits = lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>;
+        using t_FiniteElementTraits = lolita::core::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>;
 
         /**
          * @brief
@@ -351,7 +351,7 @@ namespace lolita::core2::finite_element
         getReferenceCoordinates()
         {
             using _ReferenceCoordinates = lolita::matrix::Span<lolita::matrix::Matrix<lolita::real, 3, t_element.numNodes(), matrix::col_major> const>;
-            return _ReferenceCoordinates(lolita::core2::geometry::ElementTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
+            return _ReferenceCoordinates(lolita::core::geometry::ElementTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
         }
 
         /**
@@ -456,7 +456,7 @@ namespace lolita::core2::finite_element
             }
             else {
                 auto constexpr _quadrature = lolita::finite_element::Quadrature::Gauss();
-                using SegmentQuadrature = lolita::core2::geometry::ElementQuadratureTraits<lolita::core2::geometry::Element::LinearSegment(), _quadrature, 4>;
+                using SegmentQuadrature = lolita::core::geometry::ElementQuadratureTraits<lolita::core::geometry::Element::LinearSegment(), _quadrature, 4>;
                 auto distance = lolita::real(0);
                 auto dt = lolita::real();
                 auto const current_nodes_coordinates = this->getCurrentCoordinates();
@@ -591,7 +591,7 @@ namespace lolita::core2::finite_element
                 lolita::index index
         )
         {
-            return lolita::core2::geometry::ElementQuadratureTraits<t_element, _quadrature, _ord>::reference_weights_[index];
+            return lolita::core::geometry::ElementQuadratureTraits<t_element, _quadrature, _ord>::reference_weights_[index];
         }
 
         /**
@@ -609,7 +609,7 @@ namespace lolita::core2::finite_element
         )
         {
             return lolita::matrix::Span<lolita::domain::Point const>(
-                    lolita::core2::geometry::ElementQuadratureTraits<t_element, _quadrature, _ord>::reference_points_[index].begin()
+                    lolita::core::geometry::ElementQuadratureTraits<t_element, _quadrature, _ord>::reference_points_[index].begin()
             );
         }
 
@@ -697,7 +697,7 @@ namespace lolita::core2::finite_element
             auto const constexpr _component = t_ElementTraits ::template getComponent<_i, _j>();
             auto p = lolita::domain::Point();
             using ComponentGeometry = FiniteElementGeometry<_component, t_domain, t_finite_element>;
-            auto const & elt_reference_nodes = lolita::core2::geometry::ElementTraits<t_element, t_domain>::reference_nodes_;
+            auto const & elt_reference_nodes = lolita::core::geometry::ElementTraits<t_element, t_domain>::reference_nodes_;
             for (lolita::index i = 0; i < 3; ++i) {
                 auto cpt_coordinates = lolita::matrix::Vector<lolita::real, _component.num_nodes_>();
                 for (lolita::index j = 0; j < _component.num_nodes_; ++j) {
@@ -822,7 +822,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementBehaviour : virtual FiniteElementConnectivity<t_element, t_domain, t_finite_element>
     {
 
@@ -834,7 +834,7 @@ namespace lolita::core2::finite_element
         template<auto t_element_group>
         void
         setBehaviour(
-                lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
         )
         {
             for (auto const & behaviour : mesh.behaviours_) {
@@ -863,7 +863,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementFieldLoad : virtual FiniteElementConnectivity<t_element, t_domain, t_finite_element>
     {
 
@@ -872,7 +872,7 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        using t_Field = lolita::core2::field::TensorPolicy<t_finite_element.unknown_.tensor_, t_domain.dim_>;
+        using t_Field = lolita::core::field::TensorPolicy<t_finite_element.unknown_.tensor_, t_domain.dim_>;
 
         /**
          * @brief loads initializer
@@ -885,7 +885,7 @@ namespace lolita::core2::finite_element
             auto loads = std::array<std::array<std::shared_ptr<lolita::finite_element::ScalarLoad>, t_Field::shape_.rows_>, t_Field::shape_.cols_>();
             for (int i = 0; i < t_Field::shape_.rows_; ++i) {
                 for (int j = 0; j < t_Field::shape_.cols_; ++j) {
-                    loads[j][i] = lolita::core2::finite_element::null_load_ptr;
+                    loads[j][i] = lolita::core::finite_element::null_load_ptr;
                 }
             }
             return loads;
@@ -932,7 +932,7 @@ namespace lolita::core2::finite_element
         template<auto t_element_group>
         void
         setLoads(
-                lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
         )
         {
             for (auto const & load : mesh.loads_) {
@@ -1033,7 +1033,7 @@ namespace lolita::core2::finite_element
          * @tparam t_basis the basis enum
          * @tparam t_ord the polynomial order of the basis
          */
-        template<lolita::core2::geometry::Element t_element, lolita::core2::finite_element::basis::Basis t_basis, lolita::index t_ord>
+        template<lolita::core::geometry::Element t_element, lolita::core::finite_element::basis::Basis t_basis, lolita::index t_ord>
         struct FiniteElementBasisTraits;
 
         /**
@@ -1042,7 +1042,7 @@ namespace lolita::core2::finite_element
          * @tparam t_basis the monomial basis enum
          * @tparam t_ord the polynomial order of the basis
          */
-        template<lolita::core2::geometry::Element t_element, lolita::core2::finite_element::basis::Basis t_basis, lolita::index t_ord>
+        template<lolita::core::geometry::Element t_element, lolita::core::finite_element::basis::Basis t_basis, lolita::index t_ord>
         requires(t_basis.isMonomial())
         struct FiniteElementBasisTraits<t_element, t_basis, t_ord>
         {
@@ -1209,7 +1209,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementBasis
     {
 
@@ -1220,8 +1220,8 @@ namespace lolita::core2::finite_element
          * @param point
          * @return
          */
-        template<lolita::core2::finite_element::basis::Basis t_basis, lolita::index t_ord>
-        lolita::matrix::Vector<lolita::real, lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis, t_ord>::dim_>
+        template<lolita::core::finite_element::basis::Basis t_basis, lolita::index t_ord>
+        lolita::matrix::Vector<lolita::real, lolita::core::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis, t_ord>::dim_>
         getBasisEvaluation(
                 lolita::domain::Point const & point
         )
@@ -1239,8 +1239,8 @@ namespace lolita::core2::finite_element
          * @param derivative_direction
          * @return
          */
-        template<lolita::core2::finite_element::basis::Basis t_basis, lolita::index t_ord>
-        lolita::matrix::Vector<lolita::real, lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis, t_ord>::dim_>
+        template<lolita::core::finite_element::basis::Basis t_basis, lolita::index t_ord>
+        lolita::matrix::Vector<lolita::real, lolita::core::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis, t_ord>::dim_>
         getBasisDerivative(
                 lolita::domain::Point const & point,
                 lolita::index derivative_direction
@@ -1341,7 +1341,7 @@ namespace lolita::core2::finite_element
          * @tparam t_unknown
          * @tparam t_dim
          */
-        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
+        template<lolita::core::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
         struct ScalarUnknown;
 
         /**
@@ -1349,7 +1349,7 @@ namespace lolita::core2::finite_element
          * @tparam t_unknown
          * @tparam t_dim
          */
-        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
+        template<lolita::core::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
         requires(t_unknown.isStructural())
         struct ScalarUnknown<t_unknown, t_dim>
         {
@@ -1486,7 +1486,7 @@ namespace lolita::core2::finite_element
          * @tparam t_unknown
          * @tparam t_dim
          */
-        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
+        template<lolita::core::finite_element::unknown::Unknown t_unknown, lolita::integer t_dim>
         requires(t_unknown.isSubsidiary())
         struct ScalarUnknown<t_unknown, t_dim>
         {
@@ -1571,7 +1571,7 @@ namespace lolita::core2::finite_element
                 lolita::domain::Domain t_domain,
                 lolita::field::Field t_field,
                 lolita::integer t_dim,
-                lolita::core2::finite_element::unknown::Unknown t_unknown
+                lolita::core::finite_element::unknown::Unknown t_unknown
         >
         struct FieldUnknown
         {
@@ -1579,12 +1579,12 @@ namespace lolita::core2::finite_element
             /**
              * @brief The field type
              */
-            using Field = lolita::core2::field::TensorPolicy<t_field, t_domain.dim_>;
+            using Field = lolita::core::field::TensorPolicy<t_field, t_domain.dim_>;
 
             /**
              * @brief The unknown type object
              */
-            lolita::core2::finite_element::unknown::Unknown const static constexpr unknown_ = t_unknown;
+            lolita::core::finite_element::unknown::Unknown const static constexpr unknown_ = t_unknown;
 
             /**
              * @brief The field object
@@ -1675,7 +1675,7 @@ namespace lolita::core2::finite_element
             setUnknownCoefficients(
                     lolita::integer i,
                     lolita::integer j,
-                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                    lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
             )
             requires(t_dim > 0 && t_unknown.isStructural())
             {
@@ -1704,7 +1704,7 @@ namespace lolita::core2::finite_element
                     lolita::integer i,
                     lolita::integer j,
                     lolita::index dim,
-                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                    lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
             )
             requires(t_dim == -1 && t_unknown.isStructural())
             {
@@ -1764,7 +1764,7 @@ namespace lolita::core2::finite_element
             setBindingCoefficients(
                     lolita::integer i,
                     lolita::integer j,
-                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                    lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
             )
             requires(t_dim > 0 && t_unknown.isStructural())
             {
@@ -1792,7 +1792,7 @@ namespace lolita::core2::finite_element
                     lolita::integer i,
                     lolita::integer j,
                     lolita::index dim,
-                    lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                    lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
             )
             requires(t_dim == -1 && t_unknown.isStructural())
             {
@@ -1822,9 +1822,9 @@ namespace lolita::core2::finite_element
                     lolita::domain::Domain t_domain,
                     lolita::field::Field t_field,
                     lolita::integer t_dim,
-                    lolita::core2::finite_element::unknown::Unknown t_unknown
+                    lolita::core::finite_element::unknown::Unknown t_unknown
             >
-            struct is_unknown<lolita::core2::finite_element::unknown::FieldUnknown<t_domain, t_field, t_dim, t_unknown>> : public std::true_type {};
+            struct is_unknown<lolita::core::finite_element::unknown::FieldUnknown<t_domain, t_field, t_dim, t_unknown>> : public std::true_type {};
 
         }
 
@@ -1833,13 +1833,13 @@ namespace lolita::core2::finite_element
          * @tparam t_T
          */
         template<typename t_T>
-        concept FieldUnknownConcept = lolita::core2::finite_element::unknown::detail::is_unknown<t_T>::value;
+        concept FieldUnknownConcept = lolita::core::finite_element::unknown::detail::is_unknown<t_T>::value;
 
         /**
          * @brief
          * @tparam t_FieldUnknown
          */
-        template<lolita::core2::finite_element::unknown::FieldUnknownConcept... t_FieldUnknown>
+        template<lolita::core::finite_element::unknown::FieldUnknownConcept... t_FieldUnknown>
         struct FieldUnknownCollection
         {
 
@@ -1874,12 +1874,12 @@ namespace lolita::core2::finite_element
              * @tparam t_unknown
              * @return
              */
-            template<lolita::core2::finite_element::unknown::Unknown... t_unknown>
+            template<lolita::core::finite_element::unknown::Unknown... t_unknown>
             static constexpr
             lolita::integer
             getDimUnknowns()
             {
-                auto constexpr unknowns = std::array<lolita::core2::finite_element::unknown::Unknown, sizeof...(t_unknown)>{t_unknown...};
+                auto constexpr unknowns = std::array<lolita::core::finite_element::unknown::Unknown, sizeof...(t_unknown)>{t_unknown...};
                 auto dim_unknowns = lolita::integer(0);
                 auto set_dim_unknowns  = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & self) constexpr mutable {
                     if constexpr (std::tuple_size_v<Unknowns> > 0) {
@@ -1905,7 +1905,7 @@ namespace lolita::core2::finite_element
              * @tparam t_unknown
              * @return
              */
-            template<lolita::domain::Domain t_domain, lolita::core2::finite_element::unknown::Unknown... t_unknown>
+            template<lolita::domain::Domain t_domain, lolita::core::finite_element::unknown::Unknown... t_unknown>
             static constexpr
             lolita::integer
             getNumUnknowns()
@@ -1924,7 +1924,7 @@ namespace lolita::core2::finite_element
 //                };
 //                set_num_unknowns(set_num_unknowns);
 //                return num_unknowns;
-                auto constexpr unknowns = std::array<lolita::core2::finite_element::unknown::Unknown, sizeof...(t_unknown)>{t_unknown...};
+                auto constexpr unknowns = std::array<lolita::core::finite_element::unknown::Unknown, sizeof...(t_unknown)>{t_unknown...};
                 auto num_unknowns = lolita::integer(0);
                 auto set_num_unknowns  = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & self) constexpr mutable {
                     if constexpr (std::tuple_size_v<Unknowns> > 0) {
@@ -1982,14 +1982,14 @@ namespace lolita::core2::finite_element
          * @tparam t_domain
          * @tparam t_finite_element
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
         struct FiniteElementFieldUnknownsTraits
         {
 
             /**
              * @brief
              */
-            using FieldUnknowns = lolita::core2::finite_element::unknown::FieldUnknownCollection<>;
+            using FieldUnknowns = lolita::core::finite_element::unknown::FieldUnknownCollection<>;
 
             /**
              * @brief
@@ -2005,7 +2005,7 @@ namespace lolita::core2::finite_element
                 template<auto t_element_group>
                 void
                 setUnknowns(
-                        lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                        lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
                 )
                 {
                     std::cout << "----> setting unknown empty" << std::endl;
@@ -2021,7 +2021,7 @@ namespace lolita::core2::finite_element
          * @tparam t_domain
          * @tparam t_finite_element
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
         requires(t_finite_element.discretization_.isHHO() && t_element.isSub(t_domain, 0))
         struct FiniteElementFieldUnknownsTraits<t_element, t_domain, t_finite_element>
         {
@@ -2031,28 +2031,28 @@ namespace lolita::core2::finite_element
             /**
              * @brief
              */
-            using t_Field = typename lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>::Field;
+            using t_Field = typename lolita::core::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>::Field;
 
         public:
 
             /**
              * @brief
              */
-            using Basis = lolita::core2::finite_element::basis::FiniteElementBasisTraits<
+            using Basis = lolita::core::finite_element::basis::FiniteElementBasisTraits<
                     t_element,
-                    lolita::core2::finite_element::basis::Basis::Monomial(),
+                    lolita::core::finite_element::basis::Basis::Monomial(),
                     t_finite_element.discretization_.ord_cell_
             >;
 
             /**
              * @brief
              */
-            using FieldUnknowns = lolita::core2::finite_element::unknown::FieldUnknownCollection<
-                    lolita::core2::finite_element::unknown::FieldUnknown<
+            using FieldUnknowns = lolita::core::finite_element::unknown::FieldUnknownCollection<
+                    lolita::core::finite_element::unknown::FieldUnknown<
                             t_domain,
                             t_finite_element.unknown_.tensor_,
                             Basis::dim_,
-                            lolita::core2::finite_element::unknown::Unknown::Subsidiary()
+                            lolita::core::finite_element::unknown::Unknown::Subsidiary()
                     >
             >;
 
@@ -2070,7 +2070,7 @@ namespace lolita::core2::finite_element
                 template<auto t_element_group>
                 void
                 setUnknowns(
-                        lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                        lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
                 )
                 {
                     for (int i = 0; i < t_Field::shape_.rows_; ++i) {
@@ -2093,7 +2093,7 @@ namespace lolita::core2::finite_element
          * @tparam t_domain
          * @tparam t_finite_element
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
         requires(t_finite_element.discretization_.isHHO() && t_element.isSub(t_domain, 1))
         struct FiniteElementFieldUnknownsTraits<t_element, t_domain, t_finite_element>
         {
@@ -2103,34 +2103,34 @@ namespace lolita::core2::finite_element
             /**
              * @brief
              */
-            using t_Field = typename lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>::Field;
+            using t_Field = typename lolita::core::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>::Field;
 
         public:
 
             /**
              * @brief
              */
-            using Basis = lolita::core2::finite_element::basis::FiniteElementBasisTraits<
+            using Basis = lolita::core::finite_element::basis::FiniteElementBasisTraits<
                     t_element,
-                    lolita::core2::finite_element::basis::Basis::Monomial(),
+                    lolita::core::finite_element::basis::Basis::Monomial(),
                     t_finite_element.discretization_.ord_face_
             >;
 
             /**
              * @brief
              */
-            using FieldUnknowns = lolita::core2::finite_element::unknown::FieldUnknownCollection<
-                    lolita::core2::finite_element::unknown::FieldUnknown<
+            using FieldUnknowns = lolita::core::finite_element::unknown::FieldUnknownCollection<
+                    lolita::core::finite_element::unknown::FieldUnknown<
                             t_domain,
                             t_finite_element.unknown_.tensor_,
                             Basis::dim_,
-                            lolita::core2::finite_element::unknown::Unknown::Structural()
+                            lolita::core::finite_element::unknown::Unknown::Structural()
                     >
-//                    ,lolita::core2::finite_element::unknown::FieldUnknown<
+//                    ,lolita::core::finite_element::unknown::FieldUnknown<
 //                            t_domain,
 //                            t_finite_element.unknown_.tensor_,
 //                            Basis::dim_,
-//                            lolita::core2::finite_element::unknown::Unknown::Structural()
+//                            lolita::core::finite_element::unknown::Unknown::Structural()
 //                    >
             >;
 
@@ -2148,7 +2148,7 @@ namespace lolita::core2::finite_element
                 template<auto t_element_group>
                 void
                 setUnknowns(
-                        lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                        lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
                 )
                 {
                     for (int i = 0; i < t_Field::shape_.rows_; ++i) {
@@ -2183,7 +2183,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementFieldUnknowns
     {
 
@@ -2207,7 +2207,7 @@ namespace lolita::core2::finite_element
          * @tparam t_unknown
          * @return
          */
-        template<lolita::core2::finite_element::unknown::Unknown... t_unknown>
+        template<lolita::core::finite_element::unknown::Unknown... t_unknown>
         static constexpr
         lolita::integer
         getNumUnknowns()
@@ -2220,7 +2220,7 @@ namespace lolita::core2::finite_element
          * @tparam t_unknown
          * @return
          */
-        template<lolita::core2::finite_element::unknown::Unknown... t_unknown>
+        template<lolita::core::finite_element::unknown::Unknown... t_unknown>
         static constexpr
         lolita::integer
         getDimUnknowns()
@@ -2239,7 +2239,7 @@ namespace lolita::core2::finite_element
              * @tparam t_unknown
              * @return
              */
-            template<lolita::core2::finite_element::unknown::Unknown t_unknown>
+            template<lolita::core::finite_element::unknown::Unknown t_unknown>
             lolita::matrix::Vector<lolita::real, t_FiniteElementTraits::template getNumUnknowns<t_unknown>()>
             getUnknowns()
             const
@@ -2268,7 +2268,7 @@ namespace lolita::core2::finite_element
                 set_element_unknowns(set_element_unknowns);
                 auto set_neighbours_unknowns = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0, lolita::integer t_k = 0> (auto & self) constexpr mutable {
                     //std::cout << t_element << " " << "t_i : " << t_i << " " << "t_j : " << t_j << " " << "t_k : " << t_k << std::endl;
-                    auto constexpr t_face = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<t_i, t_j>();
+                    auto constexpr t_face = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<t_i, t_j>();
                     using t_FaceUnknowns = typename unknown::FiniteElementFieldUnknownsTraits<t_face, t_domain, t_finite_element>::FieldUnknowns;
                     if constexpr (std::tuple_size_v<typename t_FaceUnknowns::Unknowns> > 0) {
                         using t_FaceUnknown = std::tuple_element_t<t_k, typename t_FaceUnknowns::Unknowns>;
@@ -2288,10 +2288,10 @@ namespace lolita::core2::finite_element
                     if constexpr (t_k < lolita::integer(std::tuple_size_v<typename t_FaceUnknowns::Unknowns>) - 1) {
                         self.template operator()<t_i, t_j, t_k + 1>(self);
                     }
-                    else if constexpr (t_j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<t_i>() - 1) {
+                    else if constexpr (t_j < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<t_i>() - 1) {
                         self.template operator()<t_i, t_j + 1, 0>(self);
                     }
-                    else if constexpr (t_i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<>() - 1) {
+                    else if constexpr (t_i < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<>() - 1) {
                         self.template operator()<t_i + 1, 0, 0>(self);
                     }
                 };
@@ -2314,11 +2314,11 @@ namespace lolita::core2::finite_element
                 auto unknowns = lolita::matrix::Vector<lolita::real, t_FiniteElementTraits::template getNumUnknowns()>();
                 auto count = lolita::integer(0);
                 auto set_unknown_block = [&] <lolita::integer t_i = 0> (auto & self) mutable {
-                    auto constexpr t_unknown = lolita::core2::finite_element::unknown::Unknown::Unknowns()[t_i];
+                    auto constexpr t_unknown = lolita::core::finite_element::unknown::Unknown::Unknowns()[t_i];
                     auto constexpr num_unknowns = t_FiniteElementTraits::template getNumUnknowns<t_unknown>();
                     unknowns.template segment<num_unknowns>(count) = getUnknowns<t_unknown>();
                     count += num_unknowns;
-                    if constexpr (t_i < lolita::core2::finite_element::unknown::Unknown::Unknowns().size() - 1) {
+                    if constexpr (t_i < lolita::core::finite_element::unknown::Unknown::Unknowns().size() - 1) {
                         self.template operator()<t_i + 1>(self);
                     }
                 };
@@ -2336,7 +2336,7 @@ namespace lolita::core2::finite_element
         template<auto t_element_group>
         void
         setUnknowns(
-                lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
         )
         {
             static_cast<typename t_FiniteElementFieldUnknownsTraits::Implementation *>(this)->setUnknowns(mesh);
@@ -2347,7 +2347,7 @@ namespace lolita::core2::finite_element
          * @tparam t_unknown
          * @return
          */
-        template<lolita::core2::finite_element::unknown::Unknown t_unknown>
+        template<lolita::core::finite_element::unknown::Unknown t_unknown>
         lolita::matrix::Vector<lolita::real, t_FiniteElementTraits::template getNumUnknowns<t_unknown>()>
         getUnknowns()
         const
@@ -2376,10 +2376,10 @@ namespace lolita::core2::finite_element
     namespace face
     {
 
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
         struct FiniteElementFaceTraits;
 
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
         requires(t_finite_element.discretization_.isHHO())
         struct FiniteElementFaceTraits<t_element, t_domain, t_finite_element>
         {
@@ -2393,7 +2393,7 @@ namespace lolita::core2::finite_element
                 template<auto t_element_group>
                 void
                 makeDirichlet(
-                        lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                        lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
                 )
                 {
 
@@ -2405,7 +2405,7 @@ namespace lolita::core2::finite_element
 
     }
 
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementFace
     {
 
@@ -2414,7 +2414,7 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        using t_FiniteElementTraits = lolita::core2::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>;
+        using t_FiniteElementTraits = lolita::core::finite_element::FiniteElementTraits<t_element, t_domain, t_finite_element>;
 
     public:
 
@@ -2484,7 +2484,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementCell;
 
     namespace cell
@@ -2496,7 +2496,7 @@ namespace lolita::core2::finite_element
          * @tparam t_domain
          * @tparam t_finite_element
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
         struct FiniteElementCellTraits;
 
         /**
@@ -2505,7 +2505,7 @@ namespace lolita::core2::finite_element
          * @tparam t_domain
          * @tparam t_finite_element
          */
-        template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+        template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
         requires(t_finite_element.discretization_.isHHO())
         struct FiniteElementCellTraits<t_element, t_domain, t_finite_element>
         {
@@ -2620,7 +2620,7 @@ namespace lolita::core2::finite_element
 //                        }
 //                    };
 //                    auto set_faces_block = [&] <lolita::integer t_i = 0> (auto & self) mutable {
-//                        auto const constexpr _face = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, t_i>();
+//                        auto const constexpr _face = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, t_i>();
 //                        using t_FaceUnknowns = typename unknown::FiniteElementFieldUnknownsTraits<_face, t_domain, t_finite_element>::FieldUnknowns;
 //                        using t_FaceUnknown = std::tuple_element_t<0, typename t_FaceUnknowns::Unknowns>;
 //                        auto const & faces = this->template getComponents<0, t_i>();
@@ -2633,7 +2633,7 @@ namespace lolita::core2::finite_element
 //                                }
 //                            }
 //                        }
-//                        if constexpr (t_i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
+//                        if constexpr (t_i < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
 //                            self.template operator()<t_i + 1>(self);
 //                        }
 //                    };
@@ -2661,7 +2661,7 @@ namespace lolita::core2::finite_element
 //                        generalized_gradient_values.setZero();
                         auto set_generalized_gradient = [&] <lolita::integer t_i = 0> (auto & self) mutable {
                             auto constexpr t_mapping = t_finite_element.unknown_.mappings_[t_i];
-                            using t_MappingPolicy = lolita::core2::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, t_mapping>;
+                            using t_MappingPolicy = lolita::core::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, t_mapping>;
                             auto constexpr t_mapping_vector_block = t_FiniteElementTraits::template getMappingBlock<t_mapping>();
                             auto constexpr t_mapping_block_size = t_mapping_vector_block.j_ - t_mapping_vector_block.i_;
                             auto strain_block = strain.template segment<t_mapping_block_size>(t_mapping_vector_block.i_);
@@ -2722,11 +2722,11 @@ namespace lolita::core2::finite_element
                         }
                     };
                     auto set_faces_block = [&] <lolita::integer _i = 0> (auto & self) mutable {
-                        auto const constexpr t_face = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _i>();
+                        auto const constexpr t_face = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _i>();
                         using t_FaceFieldUnknownsTraits = unknown::FiniteElementFieldUnknownsTraits<t_face, t_domain, t_finite_element>;
                         using t_FaceUnknowns = typename t_FaceFieldUnknownsTraits::FieldUnknowns;
                         using t_FaceUnknown = std::tuple_element_t<0, typename t_FaceUnknowns::Unknowns>;
-                        using t_FaceElementTraits = lolita::core2::finite_element::FiniteElementTraits<t_face, t_domain, t_finite_element>;
+                        using t_FaceElementTraits = lolita::core::finite_element::FiniteElementTraits<t_face, t_domain, t_finite_element>;
                         auto const & faces = this->template getComponents<0, _i>();
                         for (auto const & face : faces) {
                             for (int i = 0; i < t_FaceElementTraits::Field::shape_.rows_; ++i) {
@@ -2741,7 +2741,7 @@ namespace lolita::core2::finite_element
                                 }
                             }
                         }
-                        if constexpr (_i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
+                        if constexpr (_i < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
                             self.template operator()<_i + 1>(self);
                         }
                     };
@@ -2764,7 +2764,7 @@ namespace lolita::core2::finite_element
 //                            auto const constexpr _mapping = t_finite_element.unknown_.mappings_[_i];
 //                            auto const constexpr _mapping_vector_block = t_FiniteElementTraits::template getMappingBlock<_mapping>();
 //                            auto const constexpr _mapping_block_size = _mapping_vector_block.j_ - _mapping_vector_block.i_;
-//                            using _MappingPolicy = lolita::core2::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, _mapping>;
+//                            using _MappingPolicy = lolita::core::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, _mapping>;
 //                            using _MappingMatrix = lolita::matrix::Matrix<lolita::real, _mapping_block_size, _mapping_block_size>;
 //                            auto tangent_operator_block = tangent_operator_tensor.template block<_mapping_block_size, _mapping_block_size>(
 //                                    _mapping_vector_block.i_,
@@ -2787,7 +2787,7 @@ namespace lolita::core2::finite_element
 //                template<auto _arg>
 //                void
 //                assemble(
-//                        lolita::core2::mesh::Mesh<t_domain, _arg> & mesh
+//                        lolita::core::mesh::Mesh<t_domain, _arg> & mesh
 //                )
 //                {
 //                    auto const constexpr _cs = getNumCellUnknowns();
@@ -2826,18 +2826,18 @@ namespace lolita::core2::finite_element
 //                    auto col_offset = 0;
 //                    auto set_rows = [&] <lolita::integer _i = 0> (auto & t_set_rows) mutable {
 //                        auto const & faces_row = this->template getComponents<0, _i>();
-//                        auto const constexpr _face_r = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _i>();
-//                        using _RowFaceUnknowns = typename lolita::core2::finite_element::unknown::FiniteElementFieldUnknownsTraits<_face_r, t_domain, t_finite_element>::FieldUnknowns;
+//                        auto const constexpr _face_r = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _i>();
+//                        using _RowFaceUnknowns = typename lolita::core::finite_element::unknown::FiniteElementFieldUnknownsTraits<_face_r, t_domain, t_finite_element>::FieldUnknowns;
 //                        using _RowFaceUnknown = std::tuple_element_t<0, typename _RowFaceUnknowns::Unknowns>;
-////                        using _RowFiniteElementFace = lolita::core2::finite_element::face::FiniteElementFace<_face_r, t_domain, t_finite_element>;
-//                        using _RowFiniteElementFace = lolita::core2::finite_element::FiniteElementTraits<_face_r, t_domain, t_finite_element>;
+////                        using _RowFiniteElementFace = lolita::core::finite_element::face::FiniteElementFace<_face_r, t_domain, t_finite_element>;
+//                        using _RowFiniteElementFace = lolita::core::finite_element::FiniteElementTraits<_face_r, t_domain, t_finite_element>;
 //                        auto set_cols = [&] <lolita::integer _j = 0> (auto & t_set_cols) mutable {
 //                            auto const & faces_col = this->template getComponents<0, _j>();
-//                            auto const constexpr _face_c = lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _j>();
-//                            using _ColFaceUnknowns = typename lolita::core2::finite_element::unknown::FiniteElementFieldUnknownsTraits<_face_c, t_domain, t_finite_element>::FieldUnknowns;
+//                            auto const constexpr _face_c = lolita::core::geometry::ElementTraits<t_element, t_domain>::template getComponent<0, _j>();
+//                            using _ColFaceUnknowns = typename lolita::core::finite_element::unknown::FiniteElementFieldUnknownsTraits<_face_c, t_domain, t_finite_element>::FieldUnknowns;
 //                            using _ColFaceUnknown = std::tuple_element_t<0, typename _ColFaceUnknowns::Unknowns>;
-////                            using _ColFiniteElementFace = lolita::core2::finite_element::face::FiniteElementFace<_face_c, t_domain, t_finite_element>;
-//                            using _ColFiniteElementFace = lolita::core2::finite_element::FiniteElementTraits<_face_c, t_domain, t_finite_element>;
+////                            using _ColFiniteElementFace = lolita::core::finite_element::face::FiniteElementFace<_face_c, t_domain, t_finite_element>;
+//                            using _ColFiniteElementFace = lolita::core::finite_element::FiniteElementTraits<_face_c, t_domain, t_finite_element>;
 //                            for (auto const & face_row : faces_row) {
 //                                for (auto const & face_col : faces_col) {
 //                                    for (int i = 0; i < t_FiniteElementTraits::Field::shape_.rows_; ++i) {
@@ -2860,11 +2860,11 @@ namespace lolita::core2::finite_element
 //                                    }
 //                                }
 //                            }
-//                            if constexpr (_j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
+//                            if constexpr (_j < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
 //                                t_set_cols.template operator()<_j + 1>(t_set_cols);
 //                            }
 //                        };
-//                        if constexpr (_i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
+//                        if constexpr (_i < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<0>() - 1) {
 //                            t_set_rows.template operator()<_i + 1>(t_set_rows);
 //                        }
 //                    };
@@ -2903,7 +2903,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementCell
     {
 
@@ -3034,7 +3034,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementModule
     {};
 
@@ -3044,7 +3044,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     requires(t_element.isSub(t_domain, 0))
     struct FiniteElementModule<t_element, t_domain, t_finite_element> : FiniteElementCell<t_element, t_domain, t_finite_element>
     {};
@@ -3055,7 +3055,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     requires(t_element.isSub(t_domain, 1))
     struct FiniteElementModule<t_element, t_domain, t_finite_element> : FiniteElementFace<t_element, t_domain, t_finite_element>
     {};
@@ -3066,7 +3066,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementTraits
     {
 
@@ -3095,17 +3095,17 @@ namespace lolita::core2::finite_element
         /**
          * @brief
          */
-        using ElementDescription = lolita::core2::geometry::ElementTraits<t_element, t_domain>;
+        using ElementDescription = lolita::core::geometry::ElementTraits<t_element, t_domain>;
 
         /**
          * @brief
          */
-        using Quadrature = lolita::core2::geometry::ElementQuadratureTraits<t_element, t_finite_element.quadrature_, getOrdQuadrature()>;
+        using Quadrature = lolita::core::geometry::ElementQuadratureTraits<t_element, t_finite_element.quadrature_, getOrdQuadrature()>;
 
         /**
          * @brief
          */
-        using Field = lolita::core2::field::TensorPolicy<t_finite_element.unknown_.tensor_, t_domain.dim_>;
+        using Field = lolita::core::field::TensorPolicy<t_finite_element.unknown_.tensor_, t_domain.dim_>;
 
         /**
          * @brief
@@ -3157,7 +3157,7 @@ namespace lolita::core2::finite_element
          * @tparam t_unknown
          * @return
          */
-        template<lolita::core2::finite_element::unknown::Unknown t_unknown>
+        template<lolita::core::finite_element::unknown::Unknown t_unknown>
         static constexpr
         lolita::integer
         getDimUnknowns()
@@ -3187,7 +3187,7 @@ namespace lolita::core2::finite_element
          * @tparam t_i
          * @return
          */
-        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_i>
+        template<lolita::core::finite_element::unknown::Unknown t_unknown, lolita::integer t_i>
         static constexpr
         lolita::integer
         getDimUnknowns()
@@ -3250,7 +3250,7 @@ namespace lolita::core2::finite_element
          * @tparam t_unknown
          * @return
          */
-        template<lolita::core2::finite_element::unknown::Unknown t_unknown>
+        template<lolita::core::finite_element::unknown::Unknown t_unknown>
         static constexpr
         lolita::integer
         getNumUnknowns()
@@ -3280,7 +3280,7 @@ namespace lolita::core2::finite_element
          * @tparam t_i
          * @return
          */
-        template<lolita::core2::finite_element::unknown::Unknown t_unknown, lolita::integer t_i>
+        template<lolita::core::finite_element::unknown::Unknown t_unknown, lolita::integer t_i>
         static constexpr
         lolita::integer
         getNumUnknowns()
@@ -3316,7 +3316,7 @@ namespace lolita::core2::finite_element
         lolita::integer
         getMappingSize()
         {
-            return lolita::core2::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, t_mapping>::shape_.size_;
+            return lolita::core::field::MappingPolicy<t_finite_element.unknown_.tensor_, t_domain, t_mapping>::shape_.size_;
         }
 
         /**
@@ -3366,7 +3366,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_element_group
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_element_group>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, auto t_element_group>
     struct FiniteElement : FiniteElementConnectivity<t_element, t_domain, t_element_group>
     {
 
@@ -3451,27 +3451,27 @@ namespace lolita::core2::finite_element
             make_elements(make_elements);
         }
 
-        template<lolita::core2::geometry::Element t__element = t_element, auto t_arg>
+        template<lolita::core::geometry::Element t__element = t_element, auto t_arg>
         static
         void
         makeElement(
-                lolita::core2::mesh::ElementInitializationData<t_element> const & initialization_data,
-                lolita::core2::mesh::Mesh<t_domain, t_arg> & mesh_data
+                lolita::core::mesh::ElementInitializationData<t_element> const & initialization_data,
+                lolita::core::mesh::Mesh<t_domain, t_arg> & mesh_data
         );
 
-        template<lolita::core2::geometry::Element ___element = t_element, auto t_arg>
+        template<lolita::core::geometry::Element ___element = t_element, auto t_arg>
         static
         void
         makeElement(
-                lolita::core2::mesh::ElementInitializationData<t_element> const & initialization_data,
-                lolita::core2::mesh::Mesh<t_domain, t_arg> & mesh_data
+                lolita::core::mesh::ElementInitializationData<t_element> const & initialization_data,
+                lolita::core::mesh::Mesh<t_domain, t_arg> & mesh_data
         )
         requires(!___element.isPoint())
         {
             /*
              *
              */
-            auto get_element_hash = [&] <lolita::core2::geometry::Element __element> (
+            auto get_element_hash = [&] <lolita::core::geometry::Element __element> (
                     std::array<lolita::index, __element.num_nodes_> node_tags
             )
             {
@@ -3487,31 +3487,31 @@ namespace lolita::core2::finite_element
             /*
              * make element
              */
-            auto make_element = [&] <lolita::core2::geometry::Element __element = t_element, lolita::index _i = 0, lolita::index _j = 0> (
-                    std::shared_ptr<lolita::core2::finite_element::FiniteElement<__element, t_domain, t_element_group>> & ptr_element,
-                    lolita::core2::mesh::ElementInitializationData<__element> const & element_initialization_data,
+            auto make_element = [&] <lolita::core::geometry::Element __element = t_element, lolita::index _i = 0, lolita::index _j = 0> (
+                    std::shared_ptr<lolita::core::finite_element::FiniteElement<__element, t_domain, t_element_group>> & ptr_element,
+                    lolita::core::mesh::ElementInitializationData<__element> const & element_initialization_data,
                     auto & make_element_imp
             )
                     mutable
             {
                 if constexpr (!__element.isPoint()) {
-                    using __ElementDescription = lolita::core2::geometry::ElementTraits<__element, t_domain>;
-                    using __ComponentDescription = lolita::core2::geometry::ElementTraits<__ElementDescription::template getComponent<_i, _j>(), t_domain>;
-                    using __MeshDescription = lolita::core2::geometry::DomainTraits<t_domain>;
+                    using __ElementDescription = lolita::core::geometry::ElementTraits<__element, t_domain>;
+                    using __ComponentDescription = lolita::core::geometry::ElementTraits<__ElementDescription::template getComponent<_i, _j>(), t_domain>;
+                    using __MeshDescription = lolita::core::geometry::DomainTraits<t_domain>;
                     auto const constexpr _is_initialized = _i == 0 && _j == 0;
                     auto const constexpr _component = __ElementDescription::template getComponent<_i, _j>();
                     auto const constexpr _component_coordinates = __MeshDescription::template getElementCoordinates<_component>();
                     auto const constexpr _neighbour_coordinates = __ComponentDescription::template getNeighbourCoordinates<__element>();
                     auto const constexpr _element_coordinates = __MeshDescription::template getElementCoordinates<__element>();
-                    auto const constexpr _node_coordinates = __ElementDescription::template getComponentCoordinates<lolita::core2::geometry::Element::Node()>();
-                    using __Component = lolita::core2::finite_element::FiniteElement<_component, t_domain, t_element_group>;
-                    using __Self = lolita::core2::finite_element::FiniteElement<__element, t_domain, t_element_group>;
+                    auto const constexpr _node_coordinates = __ElementDescription::template getComponentCoordinates<lolita::core::geometry::Element::Node()>();
+                    using __Component = lolita::core::finite_element::FiniteElement<_component, t_domain, t_element_group>;
+                    using __Self = lolita::core::finite_element::FiniteElement<__element, t_domain, t_element_group>;
                     auto & components = mesh_data.elements_.template getElements<_component_coordinates.dim_, _component_coordinates.tag_>();
                     auto & element_component_array = ptr_element->template getComponents<_i, _j>();
                     for (auto i = 0; i < element_component_array.size(); ++i) {
                         auto component_hash = std::basic_string<lolita::character>();
                         if constexpr(!_component.isPoint()) {
-                            auto component_initialization_data = lolita::core2::mesh::ElementInitializationData<_component>();
+                            auto component_initialization_data = lolita::core::mesh::ElementInitializationData<_component>();
                             for (int j = 0; j < _component.num_nodes_; ++j) {
                                 auto const k = __Self::template getComponentNodeConnection<_i, _j>(i, j);
                                 component_initialization_data.node_tags_[j] = element_initialization_data.node_tags_[k];
@@ -3563,12 +3563,12 @@ namespace lolita::core2::finite_element
             make_element(ptr_element, initialization_data, make_element);
         }
 
-        template<lolita::core2::geometry::Element ___element = t_element, auto t_arg>
+        template<lolita::core::geometry::Element ___element = t_element, auto t_arg>
         static
         void
         makeElement(
-                lolita::core2::mesh::ElementInitializationData<t_element> const & initialization_data,
-                lolita::core2::mesh::Mesh<t_domain, t_arg> & mesh_data
+                lolita::core::mesh::ElementInitializationData<t_element> const & initialization_data,
+                lolita::core::mesh::Mesh<t_domain, t_arg> & mesh_data
         )
         requires(___element.isPoint())
         {
@@ -3576,11 +3576,11 @@ namespace lolita::core2::finite_element
              *
              */
             auto make_element = [&] (
-                    std::shared_ptr<lolita::core2::finite_element::FiniteElement<t_element, t_domain, t_element_group>> & ptr_element
+                    std::shared_ptr<lolita::core::finite_element::FiniteElement<t_element, t_domain, t_element_group>> & ptr_element
             )
                     mutable
             {
-                auto const constexpr _element_coordinates = lolita::core2::geometry::DomainTraits<t_domain>::template getElementCoordinates<t_element>();
+                auto const constexpr _element_coordinates = lolita::core::geometry::DomainTraits<t_domain>::template getElementCoordinates<t_element>();
                 ptr_element->tag_ = initialization_data.tag_;
                 ptr_element->domains_ = initialization_data.domains_;
                 ptr_element->coordinates_ = std::make_shared<lolita::domain::Point>(initialization_data.coordinates_);
@@ -3596,16 +3596,16 @@ namespace lolita::core2::finite_element
             make_element(ptr_element);
         }
 
-        template<lolita::core2::geometry::Element __element = t_element, auto t_arg>
+        template<lolita::core::geometry::Element __element = t_element, auto t_arg>
         void
         initialize(
-                lolita::core2::mesh::Mesh<t_domain, t_arg> & mesh_data
+                lolita::core::mesh::Mesh<t_domain, t_arg> & mesh_data
         );
 
-        template<lolita::core2::geometry::Element __element = t_element, auto t_arg>
+        template<lolita::core::geometry::Element __element = t_element, auto t_arg>
         void
         initialize(
-                lolita::core2::mesh::Mesh<t_domain, t_arg> & mesh_data
+                lolita::core::mesh::Mesh<t_domain, t_arg> & mesh_data
         )
         requires(!__element.isPoint())
         {
@@ -3625,15 +3625,15 @@ namespace lolita::core2::finite_element
                 )
                         mutable
                 {
-                    for (int i = 0; i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<__i, __j>(); ++i) {
+                    for (int i = 0; i < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<__i, __j>(); ++i) {
                         auto & rhs = this->template getComponents<__i, __j>()[i]->template getElement<_k>();
                         auto & lhs = this->template getElement<_k>()->template getComponents<__i, __j>()[i];
                         lhs = rhs;
                     }
-                    if constexpr (__j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<__i>() - 1) {
+                    if constexpr (__j < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumComponents<__i>() - 1) {
                         initialize_components_imp.template operator()<__i, __j + 1u>(initialize_components_imp);
                     }
-                    else if constexpr (__i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::getNumComponents() - 1) {
+                    else if constexpr (__i < lolita::core::geometry::ElementTraits<t_element, t_domain>::getNumComponents() - 1) {
                         initialize_components_imp.template operator()<__i + 1u, 0u>(initialize_components_imp);
                     }
                 };
@@ -3650,10 +3650,10 @@ namespace lolita::core2::finite_element
                         auto & lhs = this->template getElement<_k>()->template getNeighbours<__i, __j>();
                         lhs.push_back(rhs);
                     }
-                    if constexpr (__j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumNeighbours<__i>() - 1) {
+                    if constexpr (__j < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumNeighbours<__i>() - 1) {
                         initialize_neighbours_imp.template operator()<__i, __j + 1u>(initialize_neighbours_imp);
                     }
-                    else if constexpr (__i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::getNumNeighbours() - 1) {
+                    else if constexpr (__i < lolita::core::geometry::ElementTraits<t_element, t_domain>::getNumNeighbours() - 1) {
                         initialize_neighbours_imp.template operator()<__i + 1u, 0u>(initialize_neighbours_imp);
                     }
                 };
@@ -3675,10 +3675,10 @@ namespace lolita::core2::finite_element
             initialize_element(initialize_element);
         }
 
-        template<lolita::core2::geometry::Element __element = t_element, auto _arg>
+        template<lolita::core::geometry::Element __element = t_element, auto _arg>
         void
         initialize(
-                lolita::core2::mesh::Mesh<t_domain, _arg> & mesh_data
+                lolita::core::mesh::Mesh<t_domain, _arg> & mesh_data
         )
         requires(__element.isPoint())
         {
@@ -3711,10 +3711,10 @@ namespace lolita::core2::finite_element
                         auto & lhs = this->template getElement<_k>()->template getNeighbours<__i, __j>();
                         lhs.push_back(rhs);
                     }
-                    if constexpr (__j < lolita::core2::geometry::ElementTraits<t_element, t_domain>::template getNumNeighbours<__i>() - 1) {
+                    if constexpr (__j < lolita::core::geometry::ElementTraits<t_element, t_domain>::template getNumNeighbours<__i>() - 1) {
                         initialize_neighbours_imp.template operator()<__i, __j + 1u>(initialize_neighbours_imp);
                     }
-                    else if constexpr (__i < lolita::core2::geometry::ElementTraits<t_element, t_domain>::getNumNeighbours() - 1) {
+                    else if constexpr (__i < lolita::core::geometry::ElementTraits<t_element, t_domain>::getNumNeighbours() - 1) {
                         initialize_neighbours_imp.template operator()<__i + 1u, 0u>(initialize_neighbours_imp);
                     }
                 };
@@ -3746,7 +3746,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElement<t_element, t_domain, t_finite_element>
     :
     FiniteElementGeometry<t_element, t_domain, t_finite_element>,
@@ -3762,7 +3762,7 @@ namespace lolita::core2::finite_element
         template<auto t_element_group>
         void
         initialize(
-                lolita::core2::mesh::Mesh<t_domain, t_element_group> & mesh
+                lolita::core::mesh::Mesh<t_domain, t_element_group> & mesh
         )
         {
             std::cout << "making element : " << this->hash() << std::endl;
@@ -3783,7 +3783,7 @@ namespace lolita::core2::finite_element
         const
         {
             auto pt = lolita::domain::Point();
-            this->template getBasisEvaluation<lolita::core2::finite_element::basis::Basis::Monomial(), 1>(pt);
+            this->template getBasisEvaluation<lolita::core::finite_element::basis::Basis::Monomial(), 1>(pt);
         }
 
     };

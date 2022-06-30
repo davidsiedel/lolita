@@ -17,7 +17,7 @@
 #include "lolita/lolita_core_5_000_connectivity.hxx"
 #include "lolita/lolita_core_5_001_base.hxx"
 
-namespace lolita::core2::finite_element
+namespace lolita::core::finite_element
 {
 
     /**
@@ -27,7 +27,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementBasis;
 
     namespace basis
@@ -140,10 +140,10 @@ namespace lolita::core2::finite_element
          * @tparam t_element 
          * @tparam t_basis 
          */
-        template<lolita::core2::geometry::Element t_element, lolita::core2::finite_element::basis::Basis t_basis>
+        template<lolita::core::geometry::Element t_element, lolita::core::finite_element::basis::Basis t_basis>
         struct FiniteElementBasisTraits;
 
-        template<lolita::core2::geometry::Element t_element, lolita::core2::finite_element::basis::Basis t_basis>
+        template<lolita::core::geometry::Element t_element, lolita::core::finite_element::basis::Basis t_basis>
         requires(t_basis.isMonomial())
         struct FiniteElementBasisTraits<t_element, t_basis>
         {
@@ -303,7 +303,7 @@ namespace lolita::core2::finite_element
      * @tparam t_domain
      * @tparam t_finite_element
      */
-    template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
+    template<lolita::core::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
     struct FiniteElementBasis : virtual FiniteElementBase<t_element, t_domain, t_finite_element>
     {
 
@@ -314,8 +314,8 @@ namespace lolita::core2::finite_element
          * @param point
          * @return
          */
-        template<lolita::core2::finite_element::basis::Basis t_basis>
-        lolita::matrix::Vector<lolita::real, lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis>::dim_>
+        template<lolita::core::finite_element::basis::Basis t_basis>
+        lolita::matrix::Vector<lolita::real, lolita::core::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis>::dim_>
         getBasisEvaluation(
                 lolita::domain::Point const & point
         )
@@ -333,8 +333,8 @@ namespace lolita::core2::finite_element
          * @param derivative_direction
          * @return
          */
-        template<lolita::core2::finite_element::basis::Basis t_basis>
-        lolita::matrix::Vector<lolita::real, lolita::core2::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis>::dim_>
+        template<lolita::core::finite_element::basis::Basis t_basis>
+        lolita::matrix::Vector<lolita::real, lolita::core::finite_element::basis::FiniteElementBasisTraits<t_element, t_basis>::dim_>
         getBasisDerivative(
                 lolita::domain::Point const & point,
                 lolita::index derivative_direction
