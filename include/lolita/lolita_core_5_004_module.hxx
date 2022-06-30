@@ -29,7 +29,7 @@ namespace lolita::core2::finite_element
      * @tparam t_finite_element
      */
     template<lolita::core2::geometry::Element t_element, lolita::domain::Domain t_domain, lolita::finite_element::FiniteElementConcept auto t_finite_element>
-    struct FiniteElementBase2 : FiniteElementBasis<t_element, t_domain, t_finite_element>, FiniteElementFieldUnknowns<t_element, t_domain, t_finite_element>
+    struct FiniteElementBase2 : FiniteElementBasis<t_element, t_domain, t_finite_element>
     {};
 
     /**
@@ -58,97 +58,6 @@ namespace lolita::core2::finite_element
          * @brief
          */
         using t_Quadrature = typename FiniteElementTraits<t_element, t_domain, t_finite_element>::Quadrature;
-
-    public:
-
-        unknown::Unknown static constexpr cell_unknown_ = unknown::Unknown::HybridDiscontinuousGalerkinCell();
-        unknown::Unknown static constexpr face_unknown_ = unknown::Unknown::HybridDiscontinuousGalerkinFace();
-
-        /**
-         * @brief
-         */
-        lolita::integer static constexpr dim_structural_unknowns = t_FiniteElementTraits::template getDimUnknowns<unknown::Unknown("Cell", false)>();
-
-        /**
-         * @brief
-         */
-        lolita::integer static constexpr dim_subsidiary_unknowns = t_FiniteElementTraits::template getDimUnknowns<unknown::Unknown::Subsidiary()>();
-
-        /**
-         * @brief
-         */
-        lolita::integer static constexpr num_structural_unknowns = t_FiniteElementTraits::template getNumUnknowns<unknown::Unknown::Structural()>();
-
-        /**
-         * @brief
-         */
-        lolita::integer static constexpr num_subsidiary_unknowns = t_FiniteElementTraits::template getNumUnknowns<unknown::Unknown::Subsidiary()>();
-
-        /**
-         * @brief
-         */
-        struct IntegrationPoint
-        {
-
-            /**
-             * @brief
-             */
-            lolita::domain::Point coordinates_;
-
-            /**
-             * @brief
-             */
-            lolita::real weight_;
-
-            /**
-             * @brief
-             */
-            std::unique_ptr<mgis::behaviour::BehaviourData> material_point_;
-
-            /**
-             * @brief
-             */
-            lolita::matrix::Matrix<lolita::real, t_FiniteElementTraits::getGeneralizedStrainNumRows(), num_structural_unknowns> structural_strain_operator_;
-
-            /**
-             * @brief
-             */
-            lolita::matrix::Matrix<lolita::real, t_FiniteElementTraits::getGeneralizedStrainNumRows(), num_subsidiary_unknowns> subsidiary_strain_operator_;
-
-            /**
-             * @brief
-             */
-            lolita::matrix::Vector<lolita::real, dim_structural_unknowns> structural_load_operator_;
-
-            /**
-             * @brief
-             */
-            lolita::matrix::Vector<lolita::real, dim_subsidiary_unknowns> subsidiary_load_operator_;
-
-        };
-
-        void
-        setIntegrationPoint()
-        {
-            auto const & behaviour = this->behaviour_->behaviour_;
-            for (auto & integration_point : this->integration_points_) {
-                integration_point.material_point_ = std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(behaviour));
-                integration_point.material_point_->K[0] = 4;
-            }
-        }
-
-        void
-        setGeneralizedGradients()
-        {
-            setIntegrationPoint();
-//            using t_Implementation = typename t_FiniteElementCellTraits::Implementation;
-//            static_cast<t_Implementation *>(this)->setGeneralizedGradients();
-        }
-
-        /**
-         * @brief
-         */
-        std::array<IntegrationPoint, t_Quadrature::dim_> integration_points_;
 
     };
 

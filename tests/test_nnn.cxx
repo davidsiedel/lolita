@@ -19,9 +19,9 @@
 
 TEST(test_lolita_nnn, test_lolita_nnn) {
 
-    std::cout << lolita::core2::finite_element::basis::FiniteElementBasisTraits<lolita::core2::geometry::Element::LinearTriangle(), lolita::core2::finite_element::basis::Basis::Monomial(), 4>::dim_ << std::endl;
+    // std::cout << lolita::core2::finite_element::basis::FiniteElementBasisTraits<lolita::core2::geometry::Element::LinearTriangle(), lolita::core2::finite_element::basis::Basis::Monomial(), 4>::dim_ << std::endl;
 
-    lolita::core2::finite_element::unknown::ABCD abcd{lolita::core2::finite_element::unknown::ABCD::A, 2};
+    // lolita::core2::finite_element::unknown::ABCD abcd{lolita::core2::finite_element::unknown::ABCD::A, 2};
 
     auto constexpr domain = lolita::domain::Domain("Middle", 2, lolita::domain::Frame::Cartesian());
     auto constexpr u_unknown = lolita::field::Unknown("Displacement", 1, lolita::field::Mapping::LargeStrain());
