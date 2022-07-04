@@ -42,50 +42,40 @@ if ( CYGWIN )
     find_library(MKL_iomp5_LIBRARY
             NAMES   libiomp5md
             PATHS	"/cygdrive/C/Program\ Files\ \(x86\)/Intel/Composer\ XE/redist/intel64/compiler/"
-        #     ${INTEL_MKL_HOME}/include
-            /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/include
+            ${INTEL_MKL_HOME}/include
             "${INTEL_MKL_LIB_SEARCH_DIRS}"
-            )
+)
 else ()
     find_library(MKL_iomp5_LIBRARY
             NAMES   iomp5
             PATHS	/opt/intel/lib
             /opt/intel/lib/intel64
             /opt/intel/lib/intel64_lin
-            /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/lib/intel64
-            /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/lib/intel64_lin
-        #     ${INTEL_MKL_HOME}/lib/intel64
-        #     ${INTEL_MKL_HOME}/lib/intel64_lin
+            ${INTEL_MKL_HOME}/lib/intel64
+            ${INTEL_MKL_HOME}/lib/intel64_lin
             "${INTEL_MKL_LIB_SEARCH_DIRS}"
-            )
+)
 endif()
 
 find_library(MKL_mkl_core_LIBRARY
         NAMES   mkl_core
         PATHS   /opt/intel/mkl/lib
         /opt/intel/mkl/lib/intel64
-        # ${INTEL_MKL_HOME}/mkl/lib/
-        # ${INTEL_MKL_HOME}/mkl/lib/intel64_lin
-        # 
-        /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/lib/
-        /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/lib/intel64_lin
+        ${INTEL_MKL_HOME}/mkl/lib/
+        ${INTEL_MKL_HOME}/mkl/lib/intel64_lin
         "/cygdrive/C/Program\ Files\ \(x86\)/Intel/Composer\ XE/redist/intel64/mkl/"
         "${INTEL_MKL_LIB_SEARCH_DIRS}"
-        )
+)
 find_library(MKL_mkl_intel_thread_LIBRARY
         NAMES   mkl_intel_thread
         PATHS   /opt/intel/mkl/lib
         /opt/intel/mkl/lib/intel64
-        # ${INTEL_MKL_HOME}/mkl/lib/
-        # ${INTEL_MKL_HOME}/mkl/lib/intel64
-        # ${INTEL_MKL_HOME}/mkl/lib/intel64_lin
-        # 
-        /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/lib/
-        /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/lib/intel64
-        /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/lib/intel64_lin
+        ${INTEL_MKL_HOME}/mkl/lib/
+        ${INTEL_MKL_HOME}/mkl/lib/intel64
+        ${INTEL_MKL_HOME}/mkl/lib/intel64_lin
         "/cygdrive/C/Program\ Files\ \(x86\)/Intel/Composer\ XE/redist/intel64/mkl/"
         "${INTEL_MKL_LIB_SEARCH_DIRS}"
-        )
+)
 
 if (APPLE)
     find_library(MKL_runtime_LIBRARY
@@ -93,34 +83,27 @@ if (APPLE)
             PATHS   /opt/intel/mkl/lib
             "/cygdrive/C/Program\ Files\ \(x86\)/Intel/Composer\ XE/redist/intel64/mkl/"
             "${INTEL_MKL_LIB_SEARCH_DIRS}"
-            )
+)
 else ()
     find_library(MKL_runtime_LIBRARY
             NAMES   mkl_rt
             PATHS   /opt/intel/mkl/lib
             /opt/intel/mkl/lib/intel64
-        #     ${INTEL_MKL_HOME}/mkl/lib/
-        #     ${INTEL_MKL_HOME}/mkl/lib/intel64
-        #     ${INTEL_MKL_HOME}/mkl/lib/intel64_lin
-        # 
-            /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/lib/
-            /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/lib/intel64
-            /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/lib/intel64_lin
+            ${INTEL_MKL_HOME}/mkl/lib/
+            ${INTEL_MKL_HOME}/mkl/lib/intel64
+            ${INTEL_MKL_HOME}/mkl/lib/intel64_lin
             "/cygdrive/C/Program\ Files\ \(x86\)/Intel/Composer\ XE/redist/intel64/mkl/"
             "${INTEL_MKL_LIB_SEARCH_DIRS}"
-            )
+)
 endif ()
 
 find_path(MKL_INCLUDE_DIRS
         NAMES   mkl.h
         PATHS   /opt/intel/mkl/include
-        # ${INTEL_MKL_HOME}/mkl/include/
-        # 
-        /home/dsiedel/spack_old/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-xs3sqtkncqi4rfvk7efy27hecwwt7hrk/mkl/include/
+        ${INTEL_MKL_HOME}/mkl/include/
         "/cygdrive/C/Program\ Files\ \(x86\)/Intel/Composer\ XE/mkl/include"
         "${INTEL_MKL_INCLUDE_SEARCH_DIRS}/include"
-        )
-
+)
 
 if (CYGWIN)
     SET(CMAKE_FIND_LIBRARY_PREFIXES "${_CFLP}")
