@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
 
     // Mesh
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
-    auto msh2 = lolita2::geometry::MeshParser<lolita2::MeshData::Format::Gmsh, domain>(file_path);
+    auto msh = lolita2::geometry::MeshParser<lolita2::MeshData::Format::Gmsh, domain>::makeMesh(file_path);
 
-    std::cout << msh2.mesh_data_ << std::endl;
+    std::cout << msh << std::endl;
 }

@@ -619,20 +619,10 @@ namespace lolita::utility
 
         explicit
         File(
-                std::basic_string_view<lolita::character> const & file_path_arg
+                std::basic_string_view<lolita::character> file_path
         )
         :
-        file_path_(file_path_arg)
-        {
-            readLines();
-        }
-
-        explicit
-        File(
-                std::basic_string_view<lolita::character> && file_path_arg
-        )
-        :
-        file_path_(std::forward<std::basic_string_view<lolita::character>>(file_path_arg))
+        file_path_(file_path)
         {
             readLines();
         }
