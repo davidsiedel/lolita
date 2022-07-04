@@ -16,28 +16,61 @@ namespace lolita::core::system
      * @brief 
      * 
      */
-    struct FiniteElementLinearSystem
+    struct SparseSystem
     {
 
         /**
          * @brief
+         * 
          */
         lolita::natural num_unknowns_ = 0;
 
         /**
          * @brief
+         * 
          */
         lolita::natural num_bindings_ = 0;
 
         /**
          * @brief
+         * 
          */
         Eigen::SparseMatrix<lolita::real> lhs_;
 
         /**
          * @brief
+         * 
          */
         lolita::matrix::Vector<lolita::real> rhs_;
+
+    };
+
+    /**
+     * @brief 
+     * 
+     * @tparam t_num_unknowns 
+     * @tparam t_num_bindings 
+     */
+    template<lolita::integer t_num_unknowns, lolita::integer t_num_bindings>
+    struct DenseSystem
+    {
+        /**
+         * @brief 
+         * 
+         */
+        lolita::integer static constexpr size_ = t_num_unknowns + t_num_bindings;
+
+        /**
+         * @brief 
+         * 
+         */
+        lolita::matrix::Matrix<lolita::real, size_, size_> lhs_;
+
+        /**
+         * @brief 
+         * 
+         */
+        lolita::matrix::Vector<lolita::real, size_> rhs_;
 
     };
 

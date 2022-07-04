@@ -753,7 +753,7 @@ namespace lolita::core::finite_element
          * @brief 
          * 
          */
-        std::shared_ptr<lolita::core::system::FiniteElementLinearSystem> system_;
+        std::shared_ptr<lolita::core::system::SparseSystem> system_;
 
     };
 

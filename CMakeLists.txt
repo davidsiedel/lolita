@@ -213,3 +213,5 @@ endif()
 if (TEST_MODE STREQUAL "test")
     add_subdirectory(tests)
 endif()
+
+add_subdirectory(applications)

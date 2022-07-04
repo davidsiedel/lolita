@@ -1,0 +1,40 @@
+{
+library : {
+name   : "Behaviour";
+type   : SHARED_LIBRARY;
+prefix : "lib";
+suffix : "so";
+install_path : "";
+sources : {
+"Voce-generic.cxx",
+"Voce.cxx"
+};
+cppflags : {
+"$(shell tfel-config --cppflags --compiler-flags)"
+};
+include_directories : {
+"$(shell tfel-config --include-path)"
+};
+link_directories : {
+"$(shell tfel-config --library-path)"
+};
+link_libraries : {
+"$(shell tfel-config --library-dependency --material --mfront-profiling)"
+};
+epts : {
+"Voce_AxisymmetricalGeneralisedPlaneStrain",
+"Voce_AxisymmetricalGeneralisedPlaneStress",
+"Voce_Axisymmetrical",
+"Voce_PlaneStress",
+"Voce_PlaneStrain",
+"Voce_GeneralisedPlaneStrain",
+"Voce_Tridimensional"
+};
+};
+headers : {
+"MFront/GenericBehaviour/Voce-generic.hxx",
+"TFEL/Material/Voce.hxx",
+"TFEL/Material/VoceBehaviourData.hxx",
+"TFEL/Material/VoceIntegrationData.hxx"
+};
+};

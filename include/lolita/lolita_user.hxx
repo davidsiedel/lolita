@@ -883,214 +883,109 @@ namespace lolita
 
         };
 
-        /**
-         * @brief
-         */
+        
+
         struct Basis
         {
 
         private:
 
+            /**
+             * @brief 
+             * 
+             */
             enum Type
             {
 
                 Monomial,
-                Lagrange
+                Lagrange,
 
             };
+
+            /**
+             * @brief 
+             * 
+             */
+            constexpr
+            Basis(
+                lolita::finite_element::Basis::Type type,
+                lolita::integer ord
+            )
+            :
+            type_(type),
+            ord_(ord)
+            {}
+            
+            /**
+             * @brief 
+             * 
+             * @param other 
+             * @return constexpr lolita::boolean 
+             */
+            constexpr
+            lolita::boolean
+            operator==(
+                    Basis const & other
+            )
+            const = default;
+            
+            /**
+             * @brief 
+             * 
+             * @param other 
+             * @return constexpr lolita::boolean 
+             */
+            constexpr
+            lolita::boolean
+            operator!=(
+                    Basis const & other
+            )
+            const = default;
 
         public:
 
             /**
-             * @brief
-             * @return
+             * @brief 
+             * 
+             * @param ord 
+             * @return constexpr lolita::finite_element::Basis
              */
             static constexpr
-            Basis
-            monomial()
+            lolita::finite_element::Basis
+            monomial(
+                lolita::integer ord
+            )
             {
-                return Basis{Monomial};
+                return Basis(lolita::finite_element::Basis::Type::Monomial, ord);
             }
 
             /**
-             * @brief
-             * @return
+             * @brief 
+             * 
+             * @return constexpr lolita::boolean 
              */
             constexpr
             lolita::boolean
             isMonomial()
             const
             {
-                return type_ == Monomial;
+                return type_ == lolita::finite_element::Basis::Type::Monomial;
             }
 
             /**
-             * @brief
-             * @return
+             * @brief 
+             * 
              */
-            constexpr
-            lolita::boolean
-            isLagrange()
-            const
-            {
-                return type_ == Lagrange;
-            }
-
             lolita::finite_element::Basis::Type type_;
 
-        };
-
-        /**
-         * @brief
-         */
-        struct Field
-        {
-
-            constexpr
-            Field(
-                    std::basic_string_view<lolita::character> tag,
-                    lolita::integer dim,
-                    lolita::finite_element::Basis basis,
-                    lolita::integer ord
-            )
-            :
-            tag_(tag),
-            dim_(dim),
-            basis_(basis),
-            ord_(ord)
-            {}
-
             /**
-             * @brief
-             */
-            lolita::utility::Labell tag_;
-
-            /**
-             * @brief
-             */
-            lolita::integer dim_;
-
-            /**
-             * @brief
-             */
-            lolita::finite_element::Basis basis_;
-
-            /**
-             * @brief
+             * @brief 
+             * 
              */
             lolita::integer ord_;
 
         };
-
-        /**
-         * @brief
-         */
-        struct Unknown : Field
-        {
-
-        private:
-
-            enum Location
-            {
-                Cell,
-                Face,
-                Edge,
-                Node
-            };
-
-            enum Role
-            {
-
-                Structural,
-                Subsidiary
-
-            };
-
-            constexpr
-            Unknown(
-                    std::basic_string_view<lolita::character> tag,
-                    lolita::integer dim,
-                    lolita::finite_element::Basis basis,
-                    lolita::integer ord,
-                    lolita::finite_element::Unknown::Location location,
-                    lolita::finite_element::Unknown::Role role
-            )
-            :
-            Field(tag, dim, basis, ord),
-            location_(location),
-            role_(role)
-            {}
-
-        public:
-
-            static constexpr
-            Unknown
-            cellField(
-                    std::basic_string_view<lolita::character> tag,
-                    lolita::integer dim,
-                    lolita::finite_element::Basis basis,
-                    lolita::integer ord
-            )
-            {
-                return Unknown(tag, dim, basis, ord, Location::Cell, Role::Subsidiary);
-            }
-
-            static constexpr
-            Unknown
-            faceField(
-                    std::basic_string_view<lolita::character> tag,
-                    lolita::integer dim,
-                    lolita::finite_element::Basis basis,
-                    lolita::integer ord
-            )
-            {
-                return Unknown(tag, dim, basis, ord, Location::Face, Role::Structural);
-            }
-
-            /**
-             * @brief
-             */
-            lolita::finite_element::Unknown::Role role_;
-
-            /**
-             * @brief
-             */
-            lolita::finite_element::Unknown::Location location_;
-
-        };
-
-        template<typename... t_T>
-        struct SubsidiaryField : Field
-        {
-
-            SubsidiaryField(
-                    std::basic_string_view<lolita::character> tag,
-                    lolita::integer dim,
-                    lolita::finite_element::Basis basis,
-                    lolita::integer ord,
-                    t_T const &... ukns
-            )
-            :
-            Field(tag, dim, basis, ord),
-            unknowns_({ukns...})
-            {}
-
-            std::array<Unknown, sizeof...(t_T)> unknowns_;
-
-        };
-
-        template<typename t_T>
-        struct MatBlock
-        {
-
-            MatBlock(
-                    t_T subsidiary_field,
-                    Unknown unknown
-            )
-            {}
-
-        };
-
+        
         /**
          * @brief
          */

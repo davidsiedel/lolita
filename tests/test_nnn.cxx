@@ -16,8 +16,31 @@
 //#include "lolita/lolita_core_5.hxx"
 
 #include "lolita/lolita_core_5_final.hxx"
+#include "lolita/lolita_defs.hxx"
+#include "lolita/lolita_core_n_0.hxx"
+#include "lolita/lolita_core_n_2.hxx"
+
+template<auto arg>
+struct Hello
+{
+    
+};
 
 TEST(test_lolita_nnn, test_lolita_nnn) {
+
+    // auto constexpr d_domain = lolita2::Domain(2, lolita2::Domain::Frame::Cartesian);
+    // auto constexpr cells_unknowns = lolita2::Unknown("Cell Field");
+    // auto constexpr faces_unknowns = lolita2::Unknown("Face Field");
+    // auto constexpr cell_basis = lolita2::FieldG(1, 2, lolita2::FieldG::Basis::Monomial, lolita2::FieldG::Frame::Cell);
+    // auto constexpr face_basis = lolita2::FieldG(1, 1, lolita2::FieldG::Basis::Monomial, lolita2::FieldG::Frame::Face);
+    // auto constexpr grad_basis = lolita2::FieldG(2, 1, lolita2::FieldG::Basis::Monomial, lolita2::FieldG::Frame::Cell);
+    // auto constexpr ghost = lolita2::Field<>("Cell Field", cell_basis);
+    // auto constexpr cell_field = lolita2::Field<cells_unknowns>("Cell Field", cell_basis);
+    // auto constexpr face_field = lolita2::Field<faces_unknowns>("Face Field", face_basis);
+    // auto constexpr grad_field = lolita2::Field<cell_field, face_field>("Gradient", grad_basis);
+    // auto constexpr stab_field = lolita2::Field<grad_field>("Stabilization", face_basis);
+
+    auto load_new = lolita2::Load([](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; });
 
     // std::cout << lolita::core::finite_element::basis::FiniteElementBasisTraits<lolita::core::geometry::Element::LinearTriangle(), lolita::core::finite_element::basis::Basis::Monomial(), 4>::dim_ << std::endl;
 
@@ -57,55 +80,9 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
                                                         lolita::finite_element::Load::Constraint());
     auto load_top_y = lolita::finite_element::LoadEntry("Displacement", "TOP", 1, 1, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
                                                         lolita::finite_element::Load::Constraint());
-
-    //    auto bhvholder = lolita::behaviour::BehaviourHolder(bhvvv);
-
-
-    /*
-     * 
-     */
     auto file_path = "";
     file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
 
-    auto constexpr node = lolita::core::geometry::Element::Node();
-    auto constexpr segment = lolita::core::geometry::Element::LinearSegment();
-    auto constexpr triangle = lolita::core::geometry::Element::LinearQuadrangle();
-    //    lolita::core::geometry::ElementGeometryTraits<node, domain>::getNeighbours<arg0, arg1>();
-    std::cout << "node with dim " << node.dim() << std::endl;
-    std::cout << lolita::core::geometry::DomainTraits<domain>::getElementCoordinates<node>() << std::endl;
-    std::cout << "segment with dim " << segment.dim() << std::endl;
-    std::cout << lolita::core::geometry::DomainTraits<domain>::getElementCoordinates<segment>() << std::endl;
-    std::cout << "triangle with dim " << triangle.dim() << std::endl;
-    std::cout << lolita::core::geometry::DomainTraits<domain>::getElementCoordinates<triangle>() << std::endl;
-
-    std::cout << "elements size : " << std::tuple_size_v<lolita::core::geometry::Elements<lolita::core::geometry::detail::ElementView, domain>> << std::endl;
-
     auto msh2 = lolita::core::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, mixed_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
-    //    auto msh1 = lolita::core::mesh::MeshParser<lolita::mesh::Format::Gmsh, domain, coupled_ud>(file_path, {load, load_top_x, load_top_y}, {bhv_u, bhv_d});
-
-//    std::cout << "num unknowns displacement : " << msh2.mesh_data_.systems_[0].num_unknowns_ << std::endl;
-//    std::cout << "num bindings displacement : " << msh2.mesh_data_.systems_[0].num_bindings_ << std::endl;
-//    std::cout << "num unknowns damage : " << msh2.mesh_data_.systems_[1].num_unknowns_ << std::endl;
-//    std::cout << "num bindings damage : " << msh2.mesh_data_.systems_[1].num_bindings_ << std::endl;
-//
-//    std::cout << "here : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearTriangle(), domain, hho_u>::template getNumUnknowns<lolita::core::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
-//    std::cout << "here : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearTriangle(), domain, hho_u>::getNumUnknowns() << std::endl;
-//    std::cout << "here cell structural : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core::finite_element::unknown::Unknown::Structural()>() << std::endl;
-//    std::cout << "here face structural : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core::finite_element::unknown::Unknown::Structural()>() << std::endl;
-//    std::cout << "here cell subsidiary : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearTriangle(), domain, hho_u>::getDimUnknowns<lolita::core::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
-//    std::cout << "here face subsidiary : " << lolita::core::finite_element::FiniteElementTraits<lolita::core::geometry::Element::LinearSegment(), domain, hho_u>::getDimUnknowns<lolita::core::finite_element::unknown::Unknown::Subsidiary()>() << std::endl;
-
-//    using HHH = lolita::matrix::Vector<lolita::integer, 0>;
-//    auto hhh_vec = HHH::LinSpaced(0, 0 + 0 - 1);
-//    std::cout << "hhh_vec : " << std::endl;
-//    std::cout << hhh_vec << std::endl;
-//    using HHH2 = lolita::matrix::Vector<lolita::integer>;
-//    auto hhh_vec2 = HHH2::LinSpaced(2, 0, 0 + 2 - 1);
-//    std::cout << "hhh_vec2 : " << std::endl;
-//    std::cout << hhh_vec2 << std::endl;
-//
-//    static_assert(lolita::core::finite_element::unknown::Unknown("Coucou", false) == lolita::core::finite_element::unknown::Unknown("Coucou", true));
-//
-   std::cout << msh2.mesh_data_ << std::endl;
 
 }

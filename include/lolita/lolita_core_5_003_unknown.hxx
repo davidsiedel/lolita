@@ -53,7 +53,7 @@ namespace lolita::core::finite_element
 
             lolita::integer binding_index_;
 
-            std::shared_ptr<lolita::core::system::FiniteElementLinearSystem> system_;
+            std::shared_ptr<lolita::core::system::SparseSystem> system_;
 
             /**
              * @brief The binding coefficient vector type

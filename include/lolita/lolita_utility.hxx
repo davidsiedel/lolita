@@ -465,7 +465,7 @@ namespace lolita::utility
 
     };
 
-    using Label = std::array<lolita::character, 150>;
+    using Label = std::array<lolita::character, 20>;
 
     template<typename... _U>
     static constexpr

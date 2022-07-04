@@ -175,7 +175,7 @@ namespace lolita::core::mesh
         /**
          * @brief The list of linear problems available
          */
-        std::array<lolita::core::system::FiniteElementLinearSystem, _finite_element.count()> systems_;
+        std::array<lolita::core::system::SparseSystem, _finite_element.count()> systems_;
 
         /**
          * @brief The mesh options, depending on the mesh format
