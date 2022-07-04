@@ -10,76 +10,36 @@ namespace lolita2::geometry
     template<Domain _domain>
     struct Mesh;
 
-    /**
-     * @brief
-     * @tparam t_element
-     */
-    template<Element t_element>
-    struct ElementInitializationData;
-
-    /**
-     * @brief
-     * @tparam t_element
-     */
-    template<Element t_element>
-    requires(t_element.isNode())
-    struct ElementInitializationData<t_element>
-    {
-        
-        lolita::natural tag_;
-        
-        lolita::domain::Point coordinates_;
-        
-        std::vector<std::shared_ptr<std::basic_string<lolita::character>>> domains_;
-
-    };
-    
-    template<Element t_element>
-    requires(!t_element.isNode())
-    struct ElementInitializationData<t_element>
-    {
-        
-        lolita::natural tag_;
-        
-        std::array<lolita::index, t_element.num_nodes_> node_tags_;
-
-    };
-
     template<Element t_element, Domain t_domain>
     struct FiniteElement : FiniteElementConnectivity<t_element, t_domain>
     {
 
+        // FiniteElement()
+        // {}
+
         FiniteElement()
+        requires(t_element.isNode())
         {}
 
-        
-
-        template<Element t__element = t_element>
-        static
-        void
-        makeElement(
-                ElementInitializationData<t_element> const & initialization_data,
-                Mesh<t_domain> & mesh_data
-        );
+        FiniteElement()
+        requires(!t_element.isNode())
+        {}
 
         template<Element ___element = t_element>
         static
         void
         makeElement(
-                ElementInitializationData<t_element> const & initialization_data,
+                std::array<lolita::index, ___element.num_nodes_> node_tags_,
                 Mesh<t_domain> & mesh_data
         )
         requires(!___element.isNode())
         {
-            /*
-             *
-             */
             auto get_element_hash = [&] <Element __element> (
                     std::array<lolita::index, __element.num_nodes_> node_tags
             )
             {
                 auto element_hash = std::basic_stringstream<lolita::character>();
-                if constexpr (node_tags.size() > 0) {
+                if (node_tags.size() > 0) {
                     std::sort(std::execution::par_unseq, node_tags.begin(), node_tags.end());
                 }
                 for (int i = 0; i < node_tags.size(); ++i) {
@@ -87,15 +47,38 @@ namespace lolita2::geometry
                 }
                 return element_hash.str();
             };
-            /*
-             * make element
-             */
+            auto init_elem = [&] <Element __element> (
+                    std::shared_ptr<FiniteElement<__element, t_domain>> & ptr_element,
+                    std::array<lolita::index, __element.num_nodes_> node_tags
+            )
+            {
+                using __ElementDescription = ElementTraits<__element, t_domain>;
+                using __MeshDescription = DomainTraits<t_domain>;
+                auto const constexpr _element_coordinates = __MeshDescription::template getElementCoordinates<__element>();
+                auto const constexpr _node_coordinates = __ElementDescription::template getComponentCoordinates<Element::node()>();
+                auto & elements = mesh_data.elements_.template getElements<_element_coordinates.dim_, _element_coordinates.tag_>();
+                auto const & nodes = ptr_element->template getComponents<_node_coordinates.dim_, _node_coordinates.tag_>();
+                auto domains = std::unordered_set<std::shared_ptr<std::basic_string<lolita::character>>>();
+                for (auto const & domain : nodes[0]->domains_) {
+                    auto has_domain = true;
+                    for (int j = 1; j < __element.num_nodes_; ++j) {
+                        has_domain = std::find(nodes[j]->domains_.begin(), nodes[j]->domains_.end(), domain) != nodes[j]->domains_.end();
+                    }
+                    if (has_domain) {
+                        domains.insert(domain);
+                    }
+                }
+                ptr_element->tag_ = elements.size();
+                ptr_element->domains_.assign(domains.begin(), domains.end());
+                auto element_hash = get_element_hash.template operator ()<__element>(node_tags);
+                elements.insert({element_hash, ptr_element});
+            };
             auto make_element = [&] <Element __element = t_element, lolita::index _i = 0, lolita::index _j = 0> (
                     std::shared_ptr<FiniteElement<__element, t_domain>> & ptr_element,
-                    ElementInitializationData<__element> const & element_initialization_data,
+                    std::array<lolita::index, __element.num_nodes_> node_tags,
                     auto & make_element_imp
             )
-                    mutable
+            mutable
             {
                 if constexpr (!__element.isNode()) {
                     using __ElementDescription = ElementTraits<__element, t_domain>;
@@ -105,8 +88,6 @@ namespace lolita2::geometry
                     auto const constexpr _component = __ElementDescription::template getComponent<_i, _j>();
                     auto const constexpr _component_coordinates = __MeshDescription::template getElementCoordinates<_component>();
                     auto const constexpr _neighbour_coordinates = __ComponentDescription::template getNeighbourCoordinates<__element>();
-                    auto const constexpr _element_coordinates = __MeshDescription::template getElementCoordinates<__element>();
-                    auto const constexpr _node_coordinates = __ElementDescription::template getComponentCoordinates<Element::node()>();
                     using __Component = FiniteElement<_component, t_domain>;
                     using __Self = FiniteElement<__element, t_domain>;
                     auto & components = mesh_data.elements_.template getElements<_component_coordinates.dim_, _component_coordinates.tag_>();
@@ -114,87 +95,68 @@ namespace lolita2::geometry
                     for (auto i = 0; i < element_component_array.size(); ++i) {
                         auto component_hash = std::basic_string<lolita::character>();
                         if constexpr(!_component.isNode()) {
-                            auto component_initialization_data = ElementInitializationData<_component>();
+                            auto component_node_tags = std::array<lolita::index, _component.num_nodes_>();
                             for (int j = 0; j < _component.num_nodes_; ++j) {
                                 auto const k = __Self::template getComponentNodeConnection<_i, _j>(i, j);
-                                component_initialization_data.node_tags_[j] = element_initialization_data.node_tags_[k];
+                                component_node_tags[j] = node_tags[k];
                             }
-                            component_initialization_data.tag_ = components.size();
-                            component_hash = get_element_hash.template operator ()<_component>(component_initialization_data.node_tags_);
+                            component_hash = get_element_hash.template operator ()<_component>(component_node_tags);
                             if (!components.contains(component_hash)) {
                                 auto ptr_component = std::make_shared<__Component>(__Component());
-                                make_element_imp.template operator ()<_component, 0, 0>(ptr_component, component_initialization_data, make_element_imp);
+                                make_element_imp.template operator ()<_component, 0, 0>(ptr_component, component_node_tags, make_element_imp);
                             }
                         }
                         else {
-                            component_hash = std::to_string(element_initialization_data.node_tags_[__Self::template getComponentNodeConnection<_i, _j>(i, 0)]);
+                            component_hash = std::to_string(node_tags[__Self::template getComponentNodeConnection<_i, _j>(i, 0)]);
                         }
                         element_component_array[i] = components[component_hash];
                         components[component_hash]->template getNeighbours<_neighbour_coordinates.dim_, _neighbour_coordinates.tag_>().push_back(ptr_element);
                     }
                     if constexpr (_j < __ElementDescription::template getNumComponents<_i>() - 1) {
-                        make_element_imp.template operator()<__element, _i, _j + 1u>(ptr_element, element_initialization_data, make_element_imp);
+                        make_element_imp.template operator()<__element, _i, _j + 1u>(ptr_element, node_tags, make_element_imp);
                     }
                     else if constexpr (_i < __ElementDescription::getNumComponents() - 1) {
-                        make_element_imp.template operator()<__element, _i + 1u, 0u>(ptr_element, element_initialization_data, make_element_imp);
+                        make_element_imp.template operator()<__element, _i + 1u, 0u>(ptr_element, node_tags, make_element_imp);
                     }
                     if constexpr (_is_initialized) {
-                        auto & elements = mesh_data.elements_.template getElements<_element_coordinates.dim_, _element_coordinates.tag_>();
-                        auto const & nodes = ptr_element->template getComponents<_node_coordinates.dim_, _node_coordinates.tag_>();
-                        auto domains = std::unordered_set<std::shared_ptr<std::basic_string<lolita::character>>>();
-                        for (auto const & domain : nodes[0]->domains_) {
-                            auto has_domain = true;
-                            for (int j = 1; j < __element.num_nodes_; ++j) {
-                                has_domain = std::find(nodes[j]->domains_.begin(), nodes[j]->domains_.end(), domain) != nodes[j]->domains_.end();
-                            }
-                            if (has_domain) {
-                                domains.insert(domain);
-                            }
-                        }
-                        ptr_element->tag_ = element_initialization_data.tag_;
-                        ptr_element->domains_.assign(domains.begin(), domains.end());
-                        // ptr_element->make();
-                        auto element_hash = get_element_hash.template operator ()<__element>(element_initialization_data.node_tags_);
-                        elements.insert({element_hash, ptr_element});
+                        init_elem.template operator ()<__element>(ptr_element, node_tags);
                     }
                 }
             };
-            /*
-             *
-             */
             auto ptr_element = std::make_shared<FiniteElement>(FiniteElement());
-            make_element(ptr_element, initialization_data, make_element);
+            make_element(ptr_element, node_tags_, make_element);
         }
 
         template<Element ___element = t_element>
         static
         void
         makeElement(
-                ElementInitializationData<t_element> const & initialization_data,
+                lolita::natural const & tag_,
+                lolita::domain::Point const & coordinates_,
+                std::vector<std::shared_ptr<std::basic_string<lolita::character>>> const & domains_,
+                // ElementInitializationData<t_element> const & initialization_data,
                 Mesh<t_domain> & mesh_data
         )
         requires(___element.isNode())
         {
-            /*
-             *
-             */
+            
             auto make_element = [&] (
                     std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
             )
-                    mutable
+            mutable
             {
                 auto const constexpr _element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
-                ptr_element->tag_ = initialization_data.tag_;
-                ptr_element->domains_ = initialization_data.domains_;
-                ptr_element->coordinates_ = std::make_shared<lolita::domain::Point>(initialization_data.coordinates_);
-//                ptr_element->coordinates_ = std::make_unique<lolita::domain::Point>(initialization_data.coordinates_);
-                // ptr_element->make();
-                auto elem_hash = std::to_string(initialization_data.tag_);
+                // ptr_element->tag_ = initialization_data.tag_;
+                // ptr_element->domains_ = initialization_data.domains_;
+                // ptr_element->coordinates_ = std::make_shared<lolita::domain::Point>(initialization_data.coordinates_);
+                // auto elem_hash = std::to_string(initialization_data.tag_);
+                // mesh_data.elements_.template getElements<_element_coordinates.dim_, _element_coordinates.tag_>().insert({elem_hash, ptr_element});
+                ptr_element->tag_ = tag_;
+                ptr_element->domains_ = domains_;
+                ptr_element->coordinates_ = std::make_shared<lolita::domain::Point>(coordinates_);
+                auto elem_hash = std::to_string(tag_);
                 mesh_data.elements_.template getElements<_element_coordinates.dim_, _element_coordinates.tag_>().insert({elem_hash, ptr_element});
             };
-            /*
-             *
-             */
             auto ptr_element = std::make_shared<FiniteElement>(FiniteElement());
             make_element(ptr_element);
         }

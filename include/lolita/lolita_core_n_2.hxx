@@ -727,13 +727,16 @@ namespace lolita2::geometry
                     line_stream >> entity_dim >> entity_tag >> parametric >> num_nodes_in_block;
                     offset += 1;
                     for (int j = 0; j < num_nodes_in_block; ++j) {
-                        auto element_initialization_data = ElementInitializationData<_element>();
+                        // auto element_initialization_data = ElementInitializationData<_element>();
+                        auto tag_ = lolita::natural();
+                        auto coordinates_ = lolita::domain::Point();
+                        auto domains_ = std::vector<std::shared_ptr<std::basic_string<lolita::character>>>();
                         line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                        line_stream >> element_initialization_data.tag_;
+                        line_stream >> tag_;
                         line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset + num_nodes_in_block]);
-                        element_initialization_data.coordinates_.setZero();
+                        coordinates_.setZero();
                         for (int k = 0; k < 3; ++k) {
-                            line_stream >> element_initialization_data.coordinates_(k);
+                            line_stream >> coordinates_(k);
                         }
                         for (int k = 0; k < physical_groups.size(); ++k) {
                             auto const & node_set_name = physical_groups[k].name_;
@@ -746,11 +749,11 @@ namespace lolita2::geometry
                                     auto const & domains = this->mesh_data_.domains_;
                                     auto domain_index = std::distance(domains.begin(), std::find_if(domains.begin(), domains.end(), is_equal));
 //                                    node_data2.domains_.push_back(node_set_name);
-                                    element_initialization_data.domains_.push_back(domains[domain_index]);
+                                    domains_.push_back(domains[domain_index]);
                                 }
                             }
                         }
-                        __Element::template makeElement<_element>(element_initialization_data, this->mesh_data_);
+                        __Element::template makeElement<_element>(tag_, coordinates_, domains_, this->mesh_data_);
                         offset += 1;
                     }
                     offset += num_nodes_in_block;
@@ -792,15 +795,17 @@ namespace lolita2::geometry
                     auto const element = getElemType(element_type_tag);
                     if (entity_dim == _domain.dim_ && element == _element) {
                         for (int j = 0; j < num_elements_in_block; ++j) {
-                            auto element_initialization_data = ElementInitializationData<_element>();
+                            // auto element_initialization_data = ElementInitializationData<_element>();
+                            auto node_tags = std::array<lolita::index, _element.num_nodes_>();
                             line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
                             auto tag = lolita::index();
                             line_stream >> tag;
                             for (lolita::index k = 0; k < element.num_nodes_; ++k) {
-                                line_stream >> element_initialization_data.node_tags_[k];
+                                // line_stream >> element_initialization_data.node_tags_[k];
+                                line_stream >> node_tags[k];
                             }
-                            element_initialization_data.tag_ = elements.size();
-                            __Element::template makeElement<_element>(element_initialization_data, this->mesh_data_);
+                            // element_initialization_data.tag_ = elements.size();
+                            __Element::template makeElement<_element>(node_tags, this->mesh_data_);
                             offset += 1;
                         }
                     }
