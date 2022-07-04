@@ -119,6 +119,30 @@ namespace lolita2::geometry
         {
             return * this == node();
         }
+        
+        constexpr
+        lolita::boolean
+        isCurve()
+        const
+        {
+            return dim_ == 1;
+        }
+        
+        constexpr
+        lolita::boolean
+        isFacet()
+        const
+        {
+            return dim_ == 2;
+        }
+        
+        constexpr
+        lolita::boolean
+        isSolid()
+        const
+        {
+            return dim_ == 3;
+        }
 
         static constexpr
         Element
@@ -785,7 +809,7 @@ namespace lolita2::geometry
 
         using ElementInnerNeighbourhoodT = typename ElementTraits<t_element, t_domain>::template InnerConnectivity<detail::ElementView>;
 
-        using ElementsT = lolita2::geometry::Elements<detail::ElementView, t_domain>;
+        using ElementsT = Elements<detail::ElementView, t_domain>;
 
     public:
     
@@ -806,10 +830,10 @@ namespace lolita2::geometry
         }
         
         static constexpr
-        lolita2::geometry::ElementCoordinates
+        ElementCoordinates
         getCoordinates()
         {
-            auto coordinates = lolita2::geometry::ElementCoordinates{0, 0};
+            auto coordinates = ElementCoordinates{0, 0};
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
                 using ElementT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>>;
                 if (ElementT::getElement() == t_element) {
@@ -829,11 +853,11 @@ namespace lolita2::geometry
         
         template<Element t_neighbour>
         static constexpr
-        lolita2::geometry::ElementCoordinates
+        ElementCoordinates
         getComponentCoordinates()
         requires(!t_element.isNode())
         {
-            auto coordinates = lolita2::geometry::ElementCoordinates{0, 0};
+            auto coordinates = ElementCoordinates{0, 0};
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
                 using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementInnerNeighbourhoodT>>::value_type;
                 if (NeighbourT::getElement() == t_neighbour) {
@@ -862,11 +886,11 @@ namespace lolita2::geometry
         
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita2::geometry::ElementTraits<getComponent<t_i, t_j>(), t_domain>
+        ElementTraits<getComponent<t_i, t_j>(), t_domain>
         getComponentDescription()
         requires(!t_element.isNode())
         {
-            return lolita2::geometry::ElementTraits<getComponent<t_i, t_j>(), t_domain>();
+            return ElementTraits<getComponent<t_i, t_j>(), t_domain>();
         }
         
         template<lolita::integer... t_i>
@@ -888,12 +912,12 @@ namespace lolita2::geometry
             }
         }
         
-        template<lolita2::geometry::Element t_neighbour>
+        template<Element t_neighbour>
         static constexpr
-        lolita2::geometry::ElementCoordinates
+        ElementCoordinates
         getNeighbourCoordinates()
         {
-            auto coordinates = lolita2::geometry::ElementCoordinates{0, 0};
+            auto coordinates = ElementCoordinates{0, 0};
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
                 using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementOuterNeighbourhoodT>>::value_type;
                 if (NeighbourT::getElement() == t_neighbour) {
@@ -913,7 +937,7 @@ namespace lolita2::geometry
         
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita2::geometry::Element
+        Element
         getNeighbour()
         {
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementOuterNeighbourhoodT>>::value_type::getElement();
@@ -921,10 +945,10 @@ namespace lolita2::geometry
         
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita2::geometry::ElementTraits<getNeighbour<t_i, t_j>(), t_domain>
+        ElementTraits<getNeighbour<t_i, t_j>(), t_domain>
         getNeighbourDescription()
         {
-            return lolita2::geometry::ElementTraits<getNeighbour<t_i, t_j>(), t_domain>();
+            return ElementTraits<getNeighbour<t_i, t_j>(), t_domain>();
         }
         
         template<lolita::integer... t_i>
@@ -950,7 +974,7 @@ namespace lolita2::geometry
 
     private:
 
-        using ElementsT = lolita2::geometry::Elements<detail::ElementView, t_domain>;
+        using ElementsT = Elements<detail::ElementView, t_domain>;
 
     public:
     
@@ -961,12 +985,12 @@ namespace lolita2::geometry
             return t_domain;
         }
         
-        template<lolita2::geometry::Element t_element>
+        template<Element t_element>
         static constexpr
-        lolita2::geometry::ElementCoordinates
+        ElementCoordinates
         getElementCoordinates()
         {
-            auto coordinates = lolita2::geometry::ElementCoordinates{t_element.dim_, 0};
+            auto coordinates = ElementCoordinates{t_element.dim_, 0};
             auto set_coordinates = [&] <lolita::integer t_i = 0> (auto & t_set_coordinates) constexpr mutable {
                 using ElementT = std::tuple_element_t<t_i, std::tuple_element_t<t_element.dim_, ElementsT>>;
                 if (ElementT::getElement() == t_element) {
@@ -982,7 +1006,7 @@ namespace lolita2::geometry
         
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
-        lolita2::geometry::Element
+        Element
         getElement()
         {
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>>::getElement();
@@ -1005,13 +1029,13 @@ namespace lolita2::geometry
 
     };
     
-    template<template<lolita2::geometry::Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
+    template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     struct ElementCollection
     {
 
     private:
 
-        using ElementsT = lolita2::geometry::Elements<t_T, t_domain, t_args...>;
+        using ElementsT = Elements<t_T, t_domain, t_args...>;
 
     public:
     

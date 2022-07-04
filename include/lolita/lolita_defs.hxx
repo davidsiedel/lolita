@@ -294,6 +294,15 @@ namespace lolita2
                 Quadrature const & other
         )
         const = default;
+
+        static constexpr
+        Quadrature
+        gauss(
+            lolita::integer ord
+        )
+        {
+            return Quadrature(Rule::Gauss, ord);
+        }
         
         constexpr
         lolita::boolean
