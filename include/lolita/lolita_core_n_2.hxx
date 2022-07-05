@@ -1,6 +1,11 @@
 #ifndef BC3CC377_0788_4FE2_B68B_684298E3EEEA
 #define BC3CC377_0788_4FE2_B68B_684298E3EEEA
 
+#include "lolita/lolita.hxx"
+#include "lolita/lolita_utility.hxx"
+#include "lolita/lolita_algebra.hxx"
+#include "lolita/lolita_defs.hxx"
+#include "lolita/lolita_core_n_0.hxx"
 #include "lolita/lolita_core_n_11.hxx"
 
 namespace lolita2::geometry
@@ -13,15 +18,20 @@ namespace lolita2::geometry
     private:
     
         template<Element t_element, Domain t__domain>
-        using _ElementPointerMap = std::unordered_map<std::basic_string<lolita::character>, std::shared_ptr<FiniteElement<t_element, t__domain>>>;
+        using t_ElementPointerMap = std::map<std::basic_string<lolita::character>, std::shared_ptr<FiniteElement<t_element, t__domain>>>;
+
+        // template<Element t_element, Domain t__domain>
+        // using HH = std::vector<std::shared_ptr<FiniteElement<t_element, t__domain>>>;
+
+        // ElementCollection<HH, t_domain> elements_2;
 
     public:
     
         friend
         std::ostream &
         operator<<(
-                std::ostream & os,
-                Mesh const & mesh
+            std::ostream & os,
+            Mesh const & mesh
         )
         {
             
@@ -110,24 +120,26 @@ namespace lolita2::geometry
             return os;
         }
         
-        ElementCollection<_ElementPointerMap, t_domain> elements_;
+        ElementCollection<t_ElementPointerMap, t_domain> elements_;
+        
+        std::map<std::basic_string<lolita::character>, ElementCollection<t_ElementPointerMap, t_domain>> sets_;
         
         std::vector<std::shared_ptr<std::basic_string<lolita::character>>> domains_;
 
     };
     
-    template<MeshData _mesh, Domain t_domain>
+    template<MeshData t_mesh, Domain t_domain>
     struct MeshParserModule;
     
-    template<MeshData _mesh, Domain t_domain>
+    template<MeshData t_mesh, Domain t_domain>
     struct MeshParser
     {
 
     private:
 
-        using t_Module = typename MeshParserModule<_mesh, t_domain>::Module;
+        using t_Module = typename MeshParserModule<t_mesh, t_domain>::Module;
 
-        using t_Implementation = typename MeshParserModule<_mesh, t_domain>::Implementation;
+        using t_Implementation = typename MeshParserModule<t_mesh, t_domain>::Implementation;
 
     public:
     
@@ -212,7 +224,7 @@ namespace lolita2::geometry
             auto const constexpr t_node_coordinates = t_ElementDescription::template getComponentCoordinates<Element::node()>();
             auto & elements = mesh_data_.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
             auto const & nodes = ptr_element->template getComponents<t_node_coordinates.dim_, t_node_coordinates.tag_>();
-            auto domains = std::unordered_set<std::shared_ptr<std::basic_string<lolita::character>>>();
+            auto domains = std::set<std::shared_ptr<std::basic_string<lolita::character>>>();
             for (auto const & domain : nodes[0]->domains_)
             {
                 auto has_domain = true;
@@ -228,6 +240,12 @@ namespace lolita2::geometry
             ptr_element->tag_ = elements.size();
             ptr_element->domains_.assign(domains.begin(), domains.end());
             elements.insert({getElementHash<t_element>(node_tags), ptr_element});
+            for (auto const & domain : domains)
+            {
+                auto & set = mesh_data_.sets_[* domain].template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
+                set.insert({getElementHash<t_element>(node_tags), ptr_element});
+            }
+            
         }
 
         template<Element t_element, lolita::integer t_i = 0, lolita::integer t_j = 0>
@@ -255,7 +273,7 @@ namespace lolita2::geometry
                 if constexpr(!_component.isNode())
                 {
                     auto component_node_tags = std::array<lolita::index, _component.num_nodes_>();
-                    for (int j = 0; j < _component.num_nodes_; ++j)
+                    for (lolita::integer j = 0; j < _component.num_nodes_; ++j)
                     {
                         auto const k = t_Element::template getComponentNodeConnection<t_i, t_j>(i, j);
                         component_node_tags[j] = node_tags[k];
@@ -304,7 +322,7 @@ namespace lolita2::geometry
         void
         makeElement2(
                 lolita::natural const & tag,
-                lolita::domain::Point const & coordinates,
+                Point const & coordinates,
                 std::vector<std::shared_ptr<std::basic_string<lolita::character>>> const & domains
         )
         requires(t_element.isNode())
@@ -314,9 +332,14 @@ namespace lolita2::geometry
             auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
             ptr_element->tag_ = tag;
             ptr_element->domains_ = domains;
-            ptr_element->coordinates_ = std::make_shared<lolita::domain::Point>(coordinates);
-            auto elem_hash = std::to_string(tag);
-            mesh_data_.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>().insert({elem_hash, ptr_element});
+            ptr_element->coordinates_ = std::make_shared<Point>(coordinates);
+            // auto elem_hash = std::to_string(tag);
+            mesh_data_.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>().insert({std::to_string(tag), ptr_element});
+            for (auto const & domain : domains)
+            {
+                auto & set = mesh_data_.sets_[* domain].template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
+                set.insert({std::to_string(tag), ptr_element});
+            }
         }
     
         void
@@ -348,7 +371,7 @@ namespace lolita2::geometry
                 if constexpr (!t_element.isNode())
                 {
                     auto const & element_nds = element->template getComponents<t_coordinates.dim_ - 1, 0>();
-                    for (int i = 0; i < element_nds.size(); ++i)
+                    for (lolita::integer i = 0; i < element_nds.size(); ++i)
                     {
                         auto const & nde = element_nds[i];
                         auto const & ngs = nde->template getNeighbours<t_coordinates.dim_ - 1, _k>();
@@ -387,9 +410,9 @@ namespace lolita2::geometry
 
     };
 
-    template<MeshData _mesh, Domain t_domain>
-    requires(_mesh.isGmsh())
-    struct MeshParserModule<_mesh, t_domain>
+    template<MeshData t_mesh, Domain t_domain>
+    requires(t_mesh.isGmsh())
+    struct MeshParserModule<t_mesh, t_domain>
     {
 
         lolita::integer static constexpr node_index_offset = 1;
@@ -415,15 +438,15 @@ namespace lolita2::geometry
 
                 lolita::boolean
                 operator==(
-                        PhysicalEntity const &
-                        other
+                    PhysicalEntity const &
+                    other
                 )
                 const = default;
 
                 lolita::boolean
                 operator!=(
-                        PhysicalEntity const &
-                        other
+                    PhysicalEntity const &
+                    other
                 )
                 const = default;
 
@@ -440,15 +463,15 @@ namespace lolita2::geometry
 
                 lolita::boolean
                 operator==(
-                        GeometricalEntity const &
-                        other
+                    GeometricalEntity const &
+                    other
                 )
                 const = default;
 
                 lolita::boolean
                 operator!=(
-                        GeometricalEntity const &
-                        other
+                    GeometricalEntity const &
+                    other
                 )
                 const = default;
 
@@ -467,15 +490,15 @@ namespace lolita2::geometry
 
                 lolita::boolean
                 operator==(
-                        PhysicalGroup const &
-                        other
+                    PhysicalGroup const &
+                    other
                 )
                 const = default;
 
                 lolita::boolean
                 operator!=(
-                        PhysicalGroup const &
-                        other
+                    PhysicalGroup const &
+                    other
                 )
                 const = default;
 
@@ -582,11 +605,11 @@ namespace lolita2::geometry
                 return physical_entities;
             }
 
-            std::array<std::unordered_set<lolita::index>, 4>
+            std::array<std::set<lolita::index>, 4>
             getSubGeometricalEntities(
-                    lolita::index d,
-                    lolita::index t,
-                    std::array<std::unordered_set<lolita::index>, 4> & a
+                lolita::index d,
+                lolita::index t,
+                std::array<std::set<lolita::index>, 4> & a
             )
             {
                 a[d].insert(t);
@@ -604,7 +627,7 @@ namespace lolita2::geometry
                 auto get_subs = [&] (
                         auto d,
                         auto t,
-                        std::array<std::unordered_set<lolita::index>, 4> & a,
+                        std::array<std::set<lolita::index>, 4> & a,
                         auto & self
                 )
                         mutable
@@ -620,7 +643,7 @@ namespace lolita2::geometry
                  */
                 auto physical_groups = std::vector<PhysicalGroup>();
                 for (lolita::index i = 0; i < physical_entities_.size(); ++i) {
-                    std::array<std::unordered_set<lolita::index>, 4> tags;
+                    std::array<std::set<lolita::index>, 4> tags;
                     for (lolita::index j = 0; j < 4; ++j) {
                         for (lolita::index k = 0; k < geometrical_entities_[j].size(); ++k) {
                             for (lolita::index l = 0; l < geometrical_entities_[j][k].physical_entities_tags_.size(); ++l) {
@@ -726,32 +749,14 @@ namespace lolita2::geometry
             void
             setPhysicalGroups()
             {
-                auto get_subs = [&] (
-                        auto d,
-                        auto t,
-                        std::array<std::unordered_set<lolita::index>, 4> & a,
-                        auto & self
-                )
-                        mutable
-                {
-                    a[d].insert(t);
-                    for (lolita::index i = 0; i < geometrical_entities_[d][t - 1].bounding_entities_tags.size(); ++i) {
-                        a = self(d - 1, geometrical_entities_[d][t - 1].bounding_entities_tags[i], a, self);
-                    }
-                    return a;
-                };
-                /*
-                 *
-                 */
                 for (lolita::index i = 0; i < physical_entities_.size(); ++i) {
-                    std::array<std::unordered_set<lolita::index>, 4> tags;
+                    std::array<std::set<lolita::index>, 4> tags;
                     for (lolita::index j = 0; j < 4; ++j) {
                         for (lolita::index k = 0; k < geometrical_entities_[j].size(); ++k) {
                             for (lolita::index l = 0; l < geometrical_entities_[j][k].physical_entities_tags_.size(); ++l) {
                                 lolita::index const & t0 = geometrical_entities_[j][k].physical_entities_tags_[l];
                                 lolita::index const & t1 = physical_entities_[i].tag_;
                                 if (t0 == t1) {
-//                                    tags = get_subs(j, k + 1, tags, get_subs);
                                     tags = getSubGeometricalEntities(j, k + 1, tags);
                                 }
                             }
@@ -775,12 +780,12 @@ namespace lolita2::geometry
 
         };
 
-        struct Implementation : public MeshParser<_mesh, t_domain>
+        struct Implementation : public MeshParser<t_mesh, t_domain>
         {
 
         private:
 
-            using t_MeshParser = MeshParser<_mesh, t_domain>;
+            using t_MeshParser = MeshParser<t_mesh, t_domain>;
 
         public:
 
@@ -790,7 +795,7 @@ namespace lolita2::geometry
             )
             {
                 auto const & physical_groups = module.physical_groups_;
-                for (int k = 0; k < physical_groups.size(); ++k) {
+                for (lolita::integer k = 0; k < physical_groups.size(); ++k) {
                     this->mesh_data_.domains_.push_back(std::make_shared<std::basic_string<lolita::character>>(physical_groups[k].name_));
                 }
             }
@@ -813,7 +818,7 @@ namespace lolita2::geometry
                 auto max_node_tag = lolita::index();
                 line_stream >> num_entity_block >> num_nodes >> min_node_tag >> max_node_tag;
                 offset += 1;
-                for (int i = 0; i < num_entity_block; ++i) {
+                for (lolita::integer i = 0; i < num_entity_block; ++i) {
                     line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
                     auto entity_dim = lolita::index();
                     auto entity_tag = lolita::index();
@@ -821,21 +826,21 @@ namespace lolita2::geometry
                     auto num_nodes_in_block = lolita::index();
                     line_stream >> entity_dim >> entity_tag >> parametric >> num_nodes_in_block;
                     offset += 1;
-                    for (int j = 0; j < num_nodes_in_block; ++j) {
+                    for (lolita::integer j = 0; j < num_nodes_in_block; ++j) {
                         auto tag_ = lolita::natural();
-                        auto coordinates_ = lolita::domain::Point();
+                        auto coordinates_ = Point();
                         auto domains_ = std::vector<std::shared_ptr<std::basic_string<lolita::character>>>();
                         line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
                         line_stream >> tag_;
                         tag_ --;
                         line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset + num_nodes_in_block]);
                         coordinates_.setZero();
-                        for (int k = 0; k < 3; ++k) {
+                        for (lolita::integer k = 0; k < 3; ++k) {
                             line_stream >> coordinates_(k);
                         }
-                        for (int k = 0; k < physical_groups.size(); ++k) {
+                        for (lolita::integer k = 0; k < physical_groups.size(); ++k) {
                             auto const & node_set_name = physical_groups[k].name_;
-                            for (int l = 0; l < physical_groups[k].geometrical_entities_tags_[entity_dim].size(); ++l) {
+                            for (lolita::integer l = 0; l < physical_groups[k].geometrical_entities_tags_[entity_dim].size(); ++l) {
                                 lolita::index tag = physical_groups[k].geometrical_entities_tags_[entity_dim][l];
                                 if (entity_tag == tag) {
                                     auto is_equal = [&] (std::shared_ptr<std::basic_string<lolita::character>> const & ptr_domain) {
@@ -874,7 +879,7 @@ namespace lolita2::geometry
                 auto max_element_tag = 0;
                 line_stream >> num_entity_blocks >> num_elements >> min_element_tag >> max_element_tag;
                 offset += 1;
-                for (int i = 0; i < num_entity_blocks; ++i) {
+                for (lolita::integer i = 0; i < num_entity_blocks; ++i) {
                     line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
                     auto entity_dim = 0;
                     auto entity_tag = 0;
@@ -884,7 +889,7 @@ namespace lolita2::geometry
                     offset += 1;
                     auto const element = getElemType(element_type_tag);
                     if (entity_dim == t_domain.dim_ && element == t_element) {
-                        for (int j = 0; j < num_elements_in_block; ++j) {
+                        for (lolita::integer j = 0; j < num_elements_in_block; ++j) {
                             auto node_tags = std::array<lolita::index, t_element.num_nodes_>();
                             line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
                             auto tag = lolita::index();

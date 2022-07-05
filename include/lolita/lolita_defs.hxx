@@ -352,6 +352,15 @@ namespace lolita2
                 Basis const & other
         )
         const = default;
+
+        static constexpr
+        Basis
+        monomial(
+            lolita::integer ord
+        )
+        {
+            return Basis(Polynomial::Monomial, ord);
+        }
         
         constexpr
         lolita::boolean

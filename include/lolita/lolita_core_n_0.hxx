@@ -1039,19 +1039,19 @@ namespace lolita2::geometry
 
     public:
     
-        template<lolita::index t_i, lolita::index _j>
-        std::tuple_element_t<_j, std::tuple_element_t<t_i, ElementsT>> const &
+        template<lolita::index t_i, lolita::index t_j>
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>> const &
         getElements()
         const
         {
-            return std::get<_j>(std::get<t_i>(elements_));
+            return std::get<t_j>(std::get<t_i>(elements_));
         }
         
-        template<lolita::index t_i, lolita::index _j>
-        std::tuple_element_t<_j, std::tuple_element_t<t_i, ElementsT>> &
+        template<lolita::index t_i, lolita::index t_j>
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>> &
         getElements()
         {
-            return std::get<_j>(std::get<t_i>(elements_));
+            return std::get<t_j>(std::get<t_i>(elements_));
         }
         
         ElementsT elements_;
