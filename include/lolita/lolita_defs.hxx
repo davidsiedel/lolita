@@ -119,7 +119,7 @@ namespace lolita2
         )
         {
             auto tag = Label::Tag();
-            auto count = lolita::index(0);
+            auto count = lolita::integer(0);
             for (auto c : str) {
                 tag[count] = c;
                 count ++;

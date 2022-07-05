@@ -12,12 +12,12 @@ namespace lolita2::geometry
     struct ElementCoordinates
     {
         
-        lolita::index dim_;
+        lolita::integer dim_;
         
-        lolita::index tag_;
+        lolita::integer tag_;
         
         constexpr
-        lolita::index
+        lolita::integer
         dim()
         const
         {
@@ -25,7 +25,7 @@ namespace lolita2::geometry
         }
         
         constexpr
-        lolita::index
+        lolita::integer
         tag()
         const
         {
@@ -427,7 +427,7 @@ namespace lolita2::geometry
         struct ElementInnerGeometryTraits;
         
         template<Element t_element, auto...>
-        using ElementNodeConnectivity = std::array<lolita::index, t_element.num_nodes_>;
+        using ElementNodeConnectivity = std::array<lolita::integer, t_element.num_nodes_>;
         
         template<Element t_element, Domain t_domain>
         requires (t_element.isNode())
@@ -458,7 +458,7 @@ namespace lolita2::geometry
             getShapeMappingDerivative(
                     lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
                     lolita2::Point const &reference_point,
-                    lolita::index derivative_direction
+                    lolita::integer derivative_direction
             )
             {
                 return lolita::real(0);
@@ -508,7 +508,7 @@ namespace lolita2::geometry
             getShapeMappingDerivative(
                     lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
                     lolita2::Point const &reference_point,
-                    lolita::index derivative_direction
+                    lolita::integer derivative_direction
             )
             {
                 assert(derivative_direction == 0);
@@ -574,7 +574,7 @@ namespace lolita2::geometry
             getShapeMappingDerivative(
                     lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
                     lolita2::Point const &reference_point,
-                    lolita::index derivative_direction
+                    lolita::integer derivative_direction
             )
             {
                 assert(0 <= derivative_direction <= 1);
@@ -657,7 +657,7 @@ namespace lolita2::geometry
             getShapeMappingDerivative(
                     lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
                     lolita2::Point const &reference_point,
-                    lolita::index derivative_direction
+                    lolita::integer derivative_direction
             )
             {
                 assert(0 <= derivative_direction <= 1);
@@ -745,7 +745,7 @@ namespace lolita2::geometry
             getShapeMappingDerivative(
                     lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
                     lolita2::Point const &reference_point,
-                    lolita::index derivative_direction
+                    lolita::integer derivative_direction
             )
             {
                 assert(0 <= derivative_direction <= 2);
@@ -895,16 +895,16 @@ namespace lolita2::geometry
         
         template<lolita::integer... t_i>
         static constexpr
-        lolita::index
+        lolita::integer
         getNumComponents()
         requires(!t_element.isNode() && 0 <= sizeof...(t_i) <= 2)
         {
             if constexpr (sizeof...(t_i) == 2) {
-                auto const constexpr t_coordinates = std::array<lolita::index, 2>{t_i...};
+                auto const constexpr t_coordinates = std::array<lolita::integer, 2>{t_i...};
                 return std::tuple_size_v<std::tuple_element_t<t_coordinates[1], std::tuple_element_t<t_coordinates[0], ElementInnerNeighbourhoodT>>>;
             }
             else if constexpr (sizeof...(t_i) == 1) {
-                auto const constexpr t_coordinates = std::array<lolita::index, 1>{t_i...};
+                auto const constexpr t_coordinates = std::array<lolita::integer, 1>{t_i...};
                 return std::tuple_size_v<std::tuple_element_t<t_coordinates[0], ElementInnerNeighbourhoodT>>;
             }
             else {
@@ -953,12 +953,12 @@ namespace lolita2::geometry
         
         template<lolita::integer... t_i>
         static constexpr
-        lolita::index
+        lolita::integer
         getNumNeighbours()
         requires(0 <= sizeof...(t_i) <= 1)
         {
             if constexpr (sizeof...(t_i) == 1) {
-                auto const constexpr _coordinates = std::array<lolita::index, 1>{t_i...};
+                auto const constexpr _coordinates = std::array<lolita::integer, 1>{t_i...};
                 return std::tuple_size_v<std::tuple_element_t<_coordinates[0], ElementOuterNeighbourhoodT>>;
             }
             else {
@@ -1012,14 +1012,14 @@ namespace lolita2::geometry
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>>::getElement();
         }
         
-        template<lolita::index... t_i>
+        template<lolita::integer... t_i>
         static constexpr
         lolita::integer
         getNumElements()
         requires(0 <= sizeof...(t_i) <= 1)
         {
             if constexpr (sizeof...(t_i) == 1) {
-                auto const constexpr _coordinates = std::array<lolita::index, 1>{t_i...};
+                auto const constexpr _coordinates = std::array<lolita::integer, 1>{t_i...};
                 return std::tuple_size_v<std::tuple_element_t<_coordinates[0], ElementsT>>;
             }
             else {
@@ -1039,7 +1039,7 @@ namespace lolita2::geometry
 
     public:
     
-        template<lolita::index t_i, lolita::index t_j>
+        template<lolita::integer t_i, lolita::integer t_j>
         std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>> const &
         getElements()
         const
@@ -1047,7 +1047,7 @@ namespace lolita2::geometry
             return std::get<t_j>(std::get<t_i>(elements_));
         }
         
-        template<lolita::index t_i, lolita::index t_j>
+        template<lolita::integer t_i, lolita::integer t_j>
         std::tuple_element_t<t_j, std::tuple_element_t<t_i, ElementsT>> &
         getElements()
         {
