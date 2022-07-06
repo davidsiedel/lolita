@@ -5,6 +5,7 @@
 #include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_algebra.hxx"
 #include "lolita/lolita_defs.hxx"
+#include "lolita/lolita_core_n_00.hxx"
 
 namespace lolita2::geometry
 {
@@ -61,6 +62,25 @@ namespace lolita2::geometry
 
         };
 
+        static constexpr
+        std::basic_string_view<lolita::character>
+        getShapeLabel(
+            Shape shape
+        )
+        noexcept
+        {
+            switch (shape)
+            {
+                case Shape::Point:          return "Point       ";
+                case Shape::Segment:        return "Segment     ";
+                case Shape::Triangle:       return "Triangle    ";
+                case Shape::Quadrangle:     return "Quadrangle  ";
+                case Shape::Polygon:        return "Polygon     ";
+                case Shape::Tetrahedron:    return "Tetrahedron ";
+                case Shape::Polyhedron:     return "Polyhedron  ";
+            }
+        }
+
         Shape shape_;
 
         lolita::integer dim_;
@@ -104,6 +124,14 @@ namespace lolita2::geometry
                 Element const & other
         )
         const = default;
+
+        constexpr
+        std::basic_string_view<lolita::character>
+        getShapeLabel()
+        const noexcept
+        {
+            return getShapeLabel(shape_);
+        }
         
         static constexpr
         Element
@@ -280,22 +308,10 @@ namespace lolita2::geometry
                 Element const & element
         )
         {
-            if (element.shape_ == Shape::Segment)
-            {
-                os << "Segment " << element.ord_;
-            }
-            else if (element.shape_ == Shape::Triangle)
-            {
-                os << "Triangle " << element.ord_;
-            }
-            else if (element.shape_ == Shape::Quadrangle)
-            {
-                os << "Quadrangle " << element.ord_;
-            }
-            else if (element.shape_ == Shape::Point)
-            {
-                os << "Node " << element.ord_;
-            }
+            os << "{ " << element.getShapeLabel() << " | ";
+            os << element.num_nodes_ << " nodes | ";
+            os << element.num_edges_ << " edges | ";
+            os << element.num_faces_ << " faces }";
             return os;
         }
 

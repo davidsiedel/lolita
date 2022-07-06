@@ -5,8 +5,9 @@
 #include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_algebra.hxx"
 #include "lolita/lolita_defs.hxx"
+#include "lolita/lolita_core_n_00.hxx"
 #include "lolita/lolita_core_n_0.hxx"
-#include "lolita/lolita_core_n_11.hxx"
+#include "lolita/lolita_core_n_1.hxx"
 
 namespace lolita2::geometry
 {
@@ -20,13 +21,194 @@ namespace lolita2::geometry
         template<Element t_element, Domain t__domain>
         using t_ElementPointerMap = std::map<std::basic_string<lolita::character>, std::shared_ptr<FiniteElement<t_element, t__domain>>>;
 
-        // template<Element t_element, Domain t__domain>
-        // using HH = std::vector<std::shared_ptr<FiniteElement<t_element, t__domain>>>;
+        template<template<Element, Domain, auto...> typename t_FiniteElement, auto... t_args>
+        struct FiniteElementsTraits
+        {
 
-        // ElementCollection<HH, t_domain> elements_2;
+        private:
+
+            template<Element t_element, Domain t__domain>
+            using t_FiniteElements = std::map<std::basic_string<lolita::character>, std::shared_ptr<t_FiniteElement<t_element, t__domain, t_args...>>>;
+
+        public:
+
+            using Type = ElementCollection<t_FiniteElements, t_domain>;
+
+        };
 
     public:
-    
+
+        /**
+         * @brief 
+         * 
+         * @tparam t_FiniteElement 
+         * @tparam t_args 
+         */
+        template<template<Element, Domain, auto...> typename t_FiniteElement, auto... t_args>
+        using FiniteElements = typename FiniteElementsTraits<t_FiniteElement, t_args...>::Type;
+
+        /**
+         * @brief 
+         * 
+         * @tparam t_i 
+         */
+        template<lolita::integer... t_i>
+        lolita::integer
+        getNumElements(
+            std::basic_string<lolita::character> && domain
+        )
+        const
+        requires(sizeof...(t_i) == 0)
+        {
+            auto count = lolita::integer(0);
+            auto fgt = [&] <lolita::integer t_dim = 0, lolita::integer t_tag = 0> (
+                auto & self
+            )
+            mutable
+            {
+                count += sets_.at(std::forward<std::basic_string<lolita::character>>(domain)).template getElements<t_dim, t_tag>().size();
+                if constexpr (t_tag < DomainTraits<t_domain>::template getNumElements<t_dim>() - 1)
+                {
+                    self.template operator()<t_dim, t_tag + 1>(self);
+                }
+                else if constexpr (t_dim < DomainTraits<t_domain>::template getNumElements<>() - 1)
+                {
+                    self.template operator()<t_dim + 1, 0>(self);
+                }
+            };
+            fgt(fgt);
+            return count;
+        }
+        
+        /**
+         * @brief 
+         * 
+         * @tparam t_i 
+         */
+        template<lolita::integer... t_i>
+        lolita::integer
+        getNumElements(
+            std::basic_string<lolita::character> && domain
+        )
+        const
+        requires(sizeof...(t_i) == 1)
+        {
+            auto count = lolita::integer(0);
+            auto fgt = [&] <lolita::integer t_tag = 0> (
+                auto & self
+            )
+            mutable
+            {
+                count += sets_.at(std::forward<std::basic_string<lolita::character>>(domain)).template getElements<t_i..., t_tag>().size();
+                if constexpr (t_tag < DomainTraits<t_domain>::template getNumElements<t_i...>() - 1)
+                {
+                    self.template operator()<t_tag + 1>(self);
+                }
+            };
+            fgt(fgt);
+            return count;
+        }
+
+        /**
+         * @brief 
+         * 
+         * @tparam t_i 
+         */
+        template<lolita::integer... t_i>
+        lolita::integer
+        getNumElements(
+            std::basic_string<lolita::character> && domain
+        )
+        const
+        requires(sizeof...(t_i) == 2)
+        {
+            return sets_.at(std::forward<std::basic_string<lolita::character>>(domain)).template getElements<t_i...>().size();
+        }
+
+        /**
+         * @brief 
+         * 
+         * @tparam t_FiniteElement 
+         * @tparam t_args 
+         * @param domain 
+         * @param arg 
+         * @return FiniteElementsTraits<t_FiniteElement, t_args...> 
+         */
+        template<template<Element, Domain, auto...> typename t_FiniteElement, auto... t_args>
+        FiniteElements<t_FiniteElement, t_args...>
+        make(
+            std::basic_string<lolita::character> && domain,
+            auto &&... args
+        )
+        const
+        {
+            auto elements = FiniteElements<t_FiniteElement, t_args...>();
+            auto fgt = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                using t__Element = t_FiniteElement<t_element, t_domain, t_args...>;
+                for (auto const & [hash, element] : sets_.at(std::forward<std::basic_string<lolita::character>>(domain)).template getElements<t_i, t_j>())
+                {
+                    // elements.template getElements<t_i, t_j>().insert({hash, std::make_shared<t__Element>(element, args...)});
+                    elements.template getElements<t_i, t_j>().insert({hash, std::make_shared<t__Element>(element, std::forward<decltype(args)>(args)...)});
+                    std::cout << "DONE : " << hash << std::endl;
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+                {
+                    self.template operator()<t_i + 1, 0>(self);
+                }
+            };
+            fgt(fgt);
+            return elements;
+        }
+
+        /**
+         * @brief 
+         * 
+         * @tparam t_i 
+         * @tparam t_FiniteElement 
+         * @tparam t_args 
+         * @param domain 
+         * @param arg 
+         * @return FiniteElements<t_FiniteElement, t_args...> 
+         */
+        template<lolita::integer t_i, template<Element, Domain, auto...> typename t_FiniteElement, auto... t_args>
+        FiniteElements<t_FiniteElement, t_args...>
+        make(
+            std::basic_string<lolita::character> && domain,
+            auto &&... args
+        )
+        const
+        {
+            auto elements = FiniteElements<t_FiniteElement, t_args...>();
+            auto fgt = [&] <lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                using t__Element = t_FiniteElement<t_element, t_domain, t_args...>;
+                for (auto const & [hash, element] : sets_.at(std::forward<std::basic_string<lolita::character>>(domain)).template getElements<t_i, t_j>())
+                {
+                    elements.template getElements<t_i, t_j>().insert({hash, std::make_shared<t__Element>(element, std::forward<decltype(args)>(args)...)});
+                    std::cout << "DONE : " << hash << std::endl;
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            };
+            fgt(fgt);
+            return elements;
+        }
+        
         friend
         std::ostream &
         operator<<(
@@ -118,9 +300,9 @@ namespace lolita2::geometry
             return os;
         }
         
-        ElementCollection<t_ElementPointerMap, t_domain> elements_;
+        FiniteElements<FiniteElement> elements_;
         
-        std::map<std::basic_string<lolita::character>, ElementCollection<t_ElementPointerMap, t_domain>> sets_;
+        std::map<std::basic_string<lolita::character>, FiniteElements<FiniteElement>> sets_;
         
         std::vector<std::shared_ptr<std::basic_string<lolita::character>>> domains_;
 
