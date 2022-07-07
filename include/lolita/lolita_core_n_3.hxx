@@ -41,7 +41,7 @@ namespace lolita2::geometry
         lolita::integer static constexpr num_unknown_ = dim_unknown_ * t_field.dim_;
 
         FiniteElementUnknown(
-            std::shared_ptr<FiniteElement<t_element, t_domain>> const & element,
+            std::shared_ptr<FiniteElementGeometry<t_element, t_domain>> const & element,
             std::shared_ptr<Unknown> const & unknown
         )
         :
@@ -58,7 +58,7 @@ namespace lolita2::geometry
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, num_unknown_> const>(unknown_->coefficients_.data() + 1);
         }
 
-        std::shared_ptr<FiniteElement<t_element, t_domain>> element_;
+        std::shared_ptr<FiniteElementGeometry<t_element, t_domain>> element_;
 
         std::shared_ptr<Unknown> unknown_;
 
@@ -94,31 +94,49 @@ namespace lolita2::geometry
 
     };
 
+    template<Element t_element, Domain t_domain>
+    struct FEBASE : FiniteElementConnectivity<FEBASE, t_element, t_domain>
+    {
+
+        FEBASE(
+            std::shared_ptr<FiniteElementGeometry<t_element, t_domain>> const & element,
+            auto &&... args
+        )
+        :
+        FiniteElementConnectivity<FEBASE, t_element, t_domain>(* element)
+        {}
+
+    };
+
     template<Element t_element, Domain t_domain, Field t_field, Basis t_cell_basis, Basis t_face_basis>
-    struct HybridDiscontinuousGalerkin;
+    struct HybridDiscontinuousGalerkin : FEBASE<t_element, t_domain> {};
 
     template<Element t_element, Domain t_domain, Field t_field, Basis t_cell_basis, Basis t_face_basis>
     requires(t_element.isSub(t_domain, 0))
-    struct HybridDiscontinuousGalerkin<t_element, t_domain, t_field, t_cell_basis, t_face_basis>
+    struct HybridDiscontinuousGalerkin<t_element, t_domain, t_field, t_cell_basis, t_face_basis> : FEBASE<t_element, t_domain>
     {
 
         HybridDiscontinuousGalerkin(
-            std::shared_ptr<FiniteElement<t_element, t_domain>> const & element,
+            std::shared_ptr<FiniteElementGeometry<t_element, t_domain>> const & element,
             lolita::integer const & a
         )
+        :
+        FEBASE<t_element, t_domain>(element)
         {}
 
     };
 
     template<Element t_element, Domain t_domain, Field t_field, Basis t_cell_basis, Basis t_face_basis>
     requires(t_element.isSub(t_domain, 1))
-    struct HybridDiscontinuousGalerkin<t_element, t_domain, t_field, t_cell_basis, t_face_basis>
+    struct HybridDiscontinuousGalerkin<t_element, t_domain, t_field, t_cell_basis, t_face_basis> : FEBASE<t_element, t_domain>
     {
 
         HybridDiscontinuousGalerkin(
-            std::shared_ptr<FiniteElement<t_element, t_domain>> const & element,
+            std::shared_ptr<FiniteElementGeometry<t_element, t_domain>> const & element,
             std::shared_ptr<Unknown> const & unknown
         )
+        :
+        FEBASE<t_element, t_domain>(element)
         {}
         
     };

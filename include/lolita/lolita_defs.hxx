@@ -17,7 +17,7 @@
 namespace lolita2
 {
 
-    struct MeshData
+    struct MeshFileFormat
     {
 
         enum Format
@@ -28,7 +28,7 @@ namespace lolita2
         };
 
         constexpr
-        MeshData(
+        MeshFileFormat(
             Format format
         )
         :
@@ -38,14 +38,14 @@ namespace lolita2
         constexpr
         lolita::boolean
         operator==(
-            MeshData const & other
+            MeshFileFormat const & other
         )
         const = default;
 
         constexpr
         lolita::boolean
         operator!=(
-            MeshData const & other
+            MeshFileFormat const & other
         )
         const = default;
 
@@ -226,6 +226,14 @@ namespace lolita2
             Domain const & other
         )
         const = default;
+
+        constexpr
+        Domain
+        getSubDomain()
+        const
+        {
+            return Domain(dim_ - 1, frame_);
+        }
 
         constexpr
         lolita::boolean
@@ -443,19 +451,6 @@ namespace lolita2
     struct Field
     {
         
-        // constexpr
-        // Field(
-        //     Basis::Polynomial polynomial,
-        //     lolita::integer ord,
-        //     lolita::integer dim
-        // )
-        // :
-        // basis_(polynomial, ord),
-        // dim_(dim)
-        // {}
-
-        // Basis basis_;
-        
         constexpr
         Field(
             lolita::integer dim
@@ -477,367 +472,98 @@ namespace lolita2
         lolita::integer dim_;
 
     };
+
+    template<typename... t_Mappings>
+    struct Unknown
+    {
+
+        constexpr
+        Unknown(
+            Field field,
+            t_Mappings... mappings
+        )
+        :
+        field_(field),
+        mappings_({mappings...})
+        {}
+
+        Field field_;
+
+        std::array<Mapping, sizeof...(t_Mappings)> mappings_;
+
+    };
+
+    template<typename UnknownT>
+    struct HybridDiscontinuousGalerkin
+    {
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            UnknownT unknown,
+            Basis cell_basis,
+            Basis face_basis
+        )
+        :
+        unknown_(unknown),
+        cell_basis_(cell_basis),
+        face_basis_(face_basis)
+        {}
+
+        UnknownT unknown_;
+
+        Basis cell_basis_;
+
+        Basis face_basis_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsHybridDiscontinuousGalerkin : std::true_type {};
+
+        template<typename t_T>
+        struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin<t_T>> : std::false_type {};
+
+    }
+
+    template<typename t_T>
+    concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
     
-    // struct Unknown
-    // {
-        
-    //     constexpr
-    //     Unknown(
-    //         std::basic_string_view<lolita::character> label
-    //     )
-    //     :
-    //     label_(label)
-    //     {}
+    template<auto... t_finite_elements>
+    struct ElementGroup
+    {
 
-    //     constexpr
-    //     lolita::boolean
-    //     operator==(
-    //             Unknown const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator!=(
-    //             Unknown const & other
-    //     )
-    //     const = default;
-
-    //     Label label_;
-
-    // };
-
-    // struct Fieldd
-    // {
-        
-    //     enum Frame
-    //     {
-
-    //         Cell,
-    //         Face,
-    //         Edge,
-    //         Node,
-
-    //     };
-        
-    //     constexpr
-    //     Fieldd(
-    //         std::basic_string_view<lolita::character> label,
-    //         Frame frame,
-    //         lolita::integer ord
-    //     )
-    //     :
-    //     label_(label),
-    //     frame_(frame),
-    //     ord_(ord)
-    //     {}
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator==(
-    //             Fieldd const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator!=(
-    //             Fieldd const & other
-    //     )
-    //     const = default;
-        
-    //     constexpr
-    //     lolita::boolean
-    //     isFaceField()
-    //     const
-    //     {
-    //         return frame_ == Frame::Face;
-    //     }
-        
-    //     constexpr
-    //     lolita::boolean
-    //     isCellField()
-    //     const
-    //     {
-    //         return frame_ == Frame::Cell;
-    //     }
-        
-    //     constexpr
-    //     lolita::boolean
-    //     isTensor(
-    //             lolita::integer ord
-    //     )
-    //     const
-    //     {
-    //         return ord_ == ord;
-    //     }
-
-    //     Label label_;
-
-    //     Frame frame_;
-        
-    //     lolita::integer ord_;
-
-    // };
+    private:
     
-    // namespace detail
-    // {
+        using t_FiniteElements = std::tuple<std::remove_cvref_t<decltype(t_finite_elements)>...>;
 
-    //     template<typename t_T>
-    //     struct IsUnknown : std::false_type {};
-
-    //     template<>
-    //     struct IsUnknown<Unknown> : std::true_type {};
-
-    // }
-
-    // template<typename t_T>
-    // concept UnknownConcept = detail::IsUnknown<std::remove_cvref_t<t_T>>::value;
-
-    // struct ElementaryUnknown
-    // {
-        
-    //     constexpr
-    //     ElementaryUnknown(
-    //         Basis const & basis,
-    //         Fieldd const & field
-    //     )
-    //     :
-    //     basis_(basis),
-    //     field_(field)
-    //     {}
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator==(
-    //             ElementaryUnknown const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator!=(
-    //             ElementaryUnknown const & other
-    //     )
-    //     const = default;
-
-    //     Basis basis_;
-
-    //     Fieldd field_;
-
-    // };
-
-    // template<ElementaryUnknown... t_elementary_unknowns>
-    // struct ElementaryField
-    // {
-
-
-
-    // };
-
-    // struct FieldG
-    // {
-        
-    //     enum Basis
-    //     {
-
-    //         Monomial,
-    //         Lagrange,
-
-    //     };
-        
-    //     enum Frame
-    //     {
-
-    //         Cell,
-    //         Face,
-    //         Edge,
-    //         Node,
-
-    //     };
-        
-    //     constexpr
-    //     FieldG(
-    //         lolita::integer ord_field,
-    //         lolita::integer ord_basis,
-    //         FieldG::Basis basis,
-    //         FieldG::Frame frame
-    //     )
-    //     :
-    //     ord_field_(ord_field),
-    //     ord_basis_(ord_basis),
-    //     basis_(basis),
-    //     frame_(frame)
-    //     {}
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator==(
-    //             FieldG const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator!=(
-    //             FieldG const & other
-    //     )
-    //     const = default;
-        
-    //     constexpr
-    //     lolita::boolean
-    //     isMonomial()
-    //     const
-    //     {
-    //         return basis_ == FieldG::Basis::Monomial;
-    //     }
-        
-    //     constexpr
-    //     lolita::boolean
-    //     isFaceField()
-    //     const
-    //     {
-    //         return frame_ == FieldG::Frame::Face;
-    //     }
-        
-    //     constexpr
-    //     lolita::boolean
-    //     isCellField()
-    //     const
-    //     {
-    //         return frame_ == FieldG::Frame::Cell;
-    //     }
-        
-    //     constexpr
-    //     lolita::boolean
-    //     isTensor(
-    //             lolita::integer ord
-    //     )
-    //     const
-    //     {
-    //         return ord_field_ == ord;
-    //     }
-        
-    //     lolita::integer ord_field_;
-        
-    //     lolita::integer ord_basis_;
-        
-    //     FieldG::Basis basis_;
-        
-    //     FieldG::Frame frame_;
-
-    // };
-
-    // template<auto...>
-    // struct Field;
-
-    // namespace detail
-    // {
-
-    //     template<typename t_T>
-    //     struct IsField : std::false_type {};
-
-    //     template<auto... t_args>
-    //     struct IsField<Field<t_args...>> : std::true_type {};
-
-    // }
-
-    // template<typename t_T>
-    // concept FieldConcept = detail::IsField<std::remove_cvref_t<t_T>>::value;
-
-    // template<UnknownConcept auto t_unknown>
-    // struct Field<t_unknown> : FieldG
-    // {
-
-    //     Unknown static constexpr unknown_ = t_unknown;
-        
-    //     constexpr
-    //     Field(
-    //         std::basic_string_view<lolita::character> label,
-    //         lolita::integer ord_field,
-    //         lolita::integer ord_basis,
-    //         FieldG::Basis basis,
-    //         FieldG::Frame frame
-    //     )
-    //     :
-    //     label_(label),
-    //     FieldG(ord_field, ord_basis, basis, frame)
-    //     {}
-        
-    //     constexpr
-    //     Field(
-    //         std::basic_string_view<lolita::character> label,
-    //         FieldG const & field
-    //     )
-    //     :
-    //     label_(label),
-    //     FieldG(field)
-    //     {}
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator==(
-    //             Field const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator!=(
-    //             Field const & other
-    //     )
-    //     const = default;
-
-    //     Label label_;
-
-    // };
-
-    // template<FieldConcept auto... t_fields>
-    // struct Field<t_fields...> : FieldG
-    // {
-        
-    //     constexpr
-    //     Field(
-    //         std::basic_string_view<lolita::character> label,
-    //         lolita::integer ord_field,
-    //         lolita::integer ord_basis,
-    //         FieldG::Basis basis,
-    //         FieldG::Frame frame
-    //     )
-    //     :
-    //     label_(label),
-    //     FieldG(ord_field, ord_basis, basis, frame)
-    //     {}
-        
-    //     constexpr
-    //     Field(
-    //         std::basic_string_view<lolita::character> label,
-    //         FieldG const & field
-    //     )
-    //     :
-    //     label_(label),
-    //     FieldG(field)
-    //     {}
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator==(
-    //             Field const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator!=(
-    //             Field const & other
-    //     )
-    //     const = default;
-
-    //     Label label_;
-
-    // };
-
+    public:
     
+        template<template<auto, auto, auto> typename t_T, auto t_element, auto t_domain>
+        using ElementPointers = std::tuple<std::shared_ptr<t_T<t_element, t_domain, t_finite_elements>>...>;
+        
+        template<template<auto, auto, auto> typename t_T, auto t_element, auto t_domain>
+        using Elements = std::tuple<t_T<t_element, t_domain, t_finite_elements>...>;
+    
+    };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsElementGroup : std::true_type {};
+
+        template<auto... t_args>
+        struct IsElementGroup<ElementGroup<t_args...>> : std::false_type {};
+
+    }
+
+    template<typename t_T>
+    concept ElementGroupConcept = detail::IsElementGroup<t_T>::value;
+
+
 
 }
 
