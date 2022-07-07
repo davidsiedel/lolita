@@ -11,47 +11,6 @@
 namespace lolita2::geometry
 {
 
-    struct NewGmsh
-    {
-
-        struct PhysicalEntity
-        {
-
-            lolita::integer dim_;
-
-            std::basic_string<lolita::character> name_;
-
-        };
-
-        struct GeometricalEntity
-        {
-
-            void
-            addPhysicalEntity(
-                std::shared_ptr<PhysicalEntity> const & pe
-            )
-            {
-                physical_entities_.push_back(pe);
-                for (auto & be : bounding_entities_)
-                {
-                    be->addPhysicalEntity(pe);
-                }
-            }
-
-            lolita::integer dim_;
-
-            std::vector<std::shared_ptr<PhysicalEntity>> physical_entities_;
-
-            std::vector<std::shared_ptr<GeometricalEntity>> bounding_entities_;
-
-        };
-
-        std::map<lolita::integer, std::shared_ptr<PhysicalEntity>> physical_entities_;
-
-        std::map<lolita::integer, std::shared_ptr<GeometricalEntity>> geometrical_entities_;
-
-    };
-
     struct MeshDomain
     {
 
@@ -423,6 +382,195 @@ namespace lolita2::geometry
         MeshDomains domains_;
 
     };    
+    
+    template<Domain t_domain>
+    struct MeshFileBase
+    {
+
+        MeshFileBase(
+            std::basic_string_view<lolita::character> str
+        )
+        :
+        file_(str)
+        {}
+
+        lolita::utility::File file_;
+        
+    };
+
+    struct NewGmsh
+    {
+
+        static constexpr
+        Element
+        getElemType(
+                lolita::integer tag
+        )
+        {
+            if (tag == 15) return Element::node();
+            else if (tag == 01) return Element::segment(1);
+            else if (tag == 02) return Element::triangle(1);
+            else if (tag == 03) return Element::quadrangle(1);
+            else return Element::node();
+        }
+
+        struct PhysicalEntity
+        {
+
+            PhysicalEntity(
+                std::basic_string<lolita::character> const & name
+            )
+            :
+            name_(name)
+            {}
+
+            std::basic_string<lolita::character> name_;
+
+        };
+
+        struct GeometricalEntity
+        {
+
+            GeometricalEntity()
+            :
+            physical_entities2_(),
+            bounding_entities_()
+            {}
+
+            void
+            addPhysicalEntity(
+                std::shared_ptr<PhysicalEntity> const & pe
+            )
+            {
+                physical_entities2_.insert(pe);
+                for (auto & be : bounding_entities_)
+                {
+                    be->addPhysicalEntity(pe);
+                }
+            }
+
+            void
+            addBoundingEntity(
+                std::shared_ptr<GeometricalEntity> & be
+            )
+            {
+                bounding_entities_.insert(be);
+                for (auto const & pe : physical_entities2_)
+                {
+                    be->addPhysicalEntity(pe);
+                }
+            }
+
+            std::set<std::shared_ptr<PhysicalEntity>> physical_entities2_;
+
+            std::set<std::shared_ptr<GeometricalEntity>> bounding_entities_;
+
+        };
+
+        NewGmsh(
+            std::basic_string_view<lolita::character> str
+        )
+        :
+        file_(str)
+        {
+            setPhysicalEntities();
+            setGeometricalEntities();
+        }
+
+        lolita::utility::File file_;
+
+        void
+        setPhysicalEntities()
+        {
+            auto const & file_lines = file_.lines_;
+            auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$PhysicalNames"));
+            auto offset = 1;
+            auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+            auto num_physical_names = lolita::integer();
+            line_stream >> num_physical_names;
+            offset += 1;
+            for (lolita::integer i = 0; i < num_physical_names; ++i)
+            {
+                line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+                auto dim = lolita::integer();
+                auto name = std::basic_string<lolita::character>();
+                auto physical_entity_tag = std::array<lolita::integer, 1>();
+                line_stream >> dim >> physical_entity_tag[0] >> name;
+                lolita::utility::removeCharacter(name, '"');
+                physical_entities_[physical_entity_tag] = std::make_shared<PhysicalEntity>(PhysicalEntity(name));
+                offset += 1;
+            }
+        }
+
+        void
+        setGeometricalEntities()
+        {
+            auto const & file_lines = file_.lines_;
+            auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Entities"));
+            auto offset = 1;
+            auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+            auto num_points = lolita::integer();
+            auto num_curves = lolita::integer();
+            auto num_surfaces = lolita::integer();
+            auto num_volumes = lolita::integer();
+            line_stream >> num_points >> num_curves >> num_surfaces >> num_volumes;
+            auto num_domains = std::array<lolita::integer, 4>{num_points, num_curves, num_surfaces, num_volumes};
+            offset += 1;
+            for (lolita::integer i = 0; i < 4; ++i)
+            {
+                for (lolita::integer j = 0; j < num_domains[i]; ++j)
+                {
+                    line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+                    auto geometrical_entity_tag = std::array<lolita::integer, 2>{i, lolita::integer()};
+                    line_stream >> geometrical_entity_tag[1];
+                    std::cout << "making entity " << geometrical_entity_tag[0] << geometrical_entity_tag[1] << std::endl;
+                    geometrical_entities_[geometrical_entity_tag] = std::make_shared<GeometricalEntity>(GeometricalEntity());
+                    if (i == 0)
+                    {
+                        for (lolita::integer k = 0; k < 3; ++k)
+                        {
+                            auto a = lolita::real();
+                            line_stream >> a;
+                        }
+                    }
+                    else
+                    {
+                        for (lolita::integer k = 0; k < 6; ++k)
+                        {
+                            auto a = lolita::real();
+                            line_stream >> a;
+                        }
+                    }
+                    auto num_physical_entities = lolita::integer();
+                    line_stream >> num_physical_entities;
+                    for (lolita::integer k = 0; k < num_physical_entities; ++k)
+                    {
+                        auto physical_entity_tag = std::array<lolita::integer, 1>();
+                        line_stream >> physical_entity_tag[0];
+                        geometrical_entities_[geometrical_entity_tag]->addPhysicalEntity(physical_entities_[physical_entity_tag]);
+                    }
+                    if (i > 0)
+                    {
+                        auto num_bounding_entities = lolita::integer();
+                        line_stream >> num_bounding_entities;
+                        for (lolita::integer k = 0; k < num_bounding_entities; ++k)
+                        {
+                            auto bounding_entity_tag = std::array<lolita::integer, 2>{i - 1, lolita::integer()};
+                            line_stream >> bounding_entity_tag[1];
+                            bounding_entity_tag[1] = std::abs(bounding_entity_tag[1]);
+                            geometrical_entities_[geometrical_entity_tag]->addBoundingEntity(geometrical_entities_[bounding_entity_tag]);
+                        }
+                    }
+                    offset += 1;
+                }
+            }
+        }
+
+        std::map<std::array<lolita::integer, 1>, std::shared_ptr<PhysicalEntity>> physical_entities_;
+
+        std::map<std::array<lolita::integer, 2>, std::shared_ptr<GeometricalEntity>> geometrical_entities_;
+
+    };
     
     template<MeshFileFormat t_mesh_data, Domain t_domain>
     struct MeshFileDataStructure;

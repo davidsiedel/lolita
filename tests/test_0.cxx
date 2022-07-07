@@ -52,10 +52,24 @@ TEST(t0, t0)
         std::cout << std::endl;
     }
 
+    auto gmshfile = lolita2::geometry::NewGmsh(file_path);
+
+    auto set = std::set<std::string>();
+
+    for (auto const & [h1, item] : gmshfile.geometrical_entities_)
+    {
+        std::cout << "---" << std::endl;
+        for (auto const & physent : item->physical_entities2_)
+        {
+            std::cout << physent->name_ << std::endl;
+        }
+    }
+    
+
     // auto kkk = lolita2::geometry::MeshSetBase2<lolita2::geometry::FiniteElementHolder, domain, fe1, fe2>(mshh);
     auto kkk = mshh.template make<lolita2::geometry::FiniteElementHolder, domain, fe1, fe2>();
 
-    std::cout << kkk << std::endl;
+    // std::cout << kkk << std::endl;
 
     // for (auto const & [hash, elem] : kkk.elements_.getElements<2, 0>())
     // {
