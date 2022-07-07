@@ -59,7 +59,7 @@ TEST(t0, t0)
     for (auto const & [h1, item] : gmshfile.geometrical_entities_)
     {
         std::cout << "---" << std::endl;
-        for (auto const & physent : item->physical_entities2_)
+        for (auto const & physent : item->physical_entities_)
         {
             std::cout << physent->name_ << std::endl;
         }

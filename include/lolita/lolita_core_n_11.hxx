@@ -417,6 +417,15 @@ namespace lolita2::geometry
         struct PhysicalEntity
         {
 
+            static
+            std::basic_string<lolita::character>
+            getHash(
+                lolita::integer tag
+            )
+            {
+                return std::to_string(tag);
+            }
+
             PhysicalEntity(
                 std::basic_string<lolita::character> const & name
             )
@@ -431,9 +440,22 @@ namespace lolita2::geometry
         struct GeometricalEntity
         {
 
+            static
+            std::basic_string<lolita::character>
+            getHash(
+                lolita::integer dim,
+                lolita::integer tag
+            )
+            {
+                auto hash = std::basic_stringstream<lolita::character>();
+                hash << dim;
+                hash << tag;
+                return hash.str();
+            }
+
             GeometricalEntity()
             :
-            physical_entities2_(),
+            physical_entities_(),
             bounding_entities_()
             {}
 
@@ -442,7 +464,7 @@ namespace lolita2::geometry
                 std::shared_ptr<PhysicalEntity> const & pe
             )
             {
-                physical_entities2_.insert(pe);
+                physical_entities_.insert(pe);
                 for (auto & be : bounding_entities_)
                 {
                     be->addPhysicalEntity(pe);
@@ -455,13 +477,13 @@ namespace lolita2::geometry
             )
             {
                 bounding_entities_.insert(be);
-                for (auto const & pe : physical_entities2_)
+                for (auto const & pe : physical_entities_)
                 {
                     be->addPhysicalEntity(pe);
                 }
             }
 
-            std::set<std::shared_ptr<PhysicalEntity>> physical_entities2_;
+            std::set<std::shared_ptr<PhysicalEntity>> physical_entities_;
 
             std::set<std::shared_ptr<GeometricalEntity>> bounding_entities_;
 
@@ -494,10 +516,11 @@ namespace lolita2::geometry
                 line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
                 auto dim = lolita::integer();
                 auto name = std::basic_string<lolita::character>();
-                auto physical_entity_tag = std::array<lolita::integer, 1>();
-                line_stream >> dim >> physical_entity_tag[0] >> name;
+                auto physical_entity_tag = lolita::integer();
+                line_stream >> dim >> physical_entity_tag >> name;
                 lolita::utility::removeCharacter(name, '"');
-                physical_entities_[physical_entity_tag] = std::make_shared<PhysicalEntity>(PhysicalEntity(name));
+                auto hash = PhysicalEntity::getHash(physical_entity_tag);
+                physical_entities_[hash] = std::make_shared<PhysicalEntity>(PhysicalEntity(name));
                 offset += 1;
             }
         }
@@ -521,10 +544,10 @@ namespace lolita2::geometry
                 for (lolita::integer j = 0; j < num_domains[i]; ++j)
                 {
                     line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                    auto geometrical_entity_tag = std::array<lolita::integer, 2>{i, lolita::integer()};
-                    line_stream >> geometrical_entity_tag[1];
-                    std::cout << "making entity " << geometrical_entity_tag[0] << geometrical_entity_tag[1] << std::endl;
-                    geometrical_entities_[geometrical_entity_tag] = std::make_shared<GeometricalEntity>(GeometricalEntity());
+                    auto tag = lolita::integer();
+                    line_stream >> tag;
+                    auto geometrical_entity_hash = GeometricalEntity::getHash(i, tag);
+                    geometrical_entities_[geometrical_entity_hash] = std::make_shared<GeometricalEntity>(GeometricalEntity());
                     if (i == 0)
                     {
                         for (lolita::integer k = 0; k < 3; ++k)
@@ -545,9 +568,10 @@ namespace lolita2::geometry
                     line_stream >> num_physical_entities;
                     for (lolita::integer k = 0; k < num_physical_entities; ++k)
                     {
-                        auto physical_entity_tag = std::array<lolita::integer, 1>();
-                        line_stream >> physical_entity_tag[0];
-                        geometrical_entities_[geometrical_entity_tag]->addPhysicalEntity(physical_entities_[physical_entity_tag]);
+                        auto physical_entity_tag = lolita::integer();
+                        line_stream >> physical_entity_tag;
+                        auto physical_entity_hash = PhysicalEntity::getHash(physical_entity_tag);
+                        geometrical_entities_[geometrical_entity_hash]->addPhysicalEntity(physical_entities_[physical_entity_hash]);
                     }
                     if (i > 0)
                     {
@@ -555,10 +579,10 @@ namespace lolita2::geometry
                         line_stream >> num_bounding_entities;
                         for (lolita::integer k = 0; k < num_bounding_entities; ++k)
                         {
-                            auto bounding_entity_tag = std::array<lolita::integer, 2>{i - 1, lolita::integer()};
-                            line_stream >> bounding_entity_tag[1];
-                            bounding_entity_tag[1] = std::abs(bounding_entity_tag[1]);
-                            geometrical_entities_[geometrical_entity_tag]->addBoundingEntity(geometrical_entities_[bounding_entity_tag]);
+                            auto bounding_entity_tag = lolita::integer();
+                            line_stream >> bounding_entity_tag;
+                            auto bounding_entity_hash = GeometricalEntity::getHash(i - 1, std::abs(bounding_entity_tag));
+                            geometrical_entities_[geometrical_entity_hash]->addBoundingEntity(geometrical_entities_[bounding_entity_hash]);
                         }
                     }
                     offset += 1;
@@ -566,9 +590,9 @@ namespace lolita2::geometry
             }
         }
 
-        std::map<std::array<lolita::integer, 1>, std::shared_ptr<PhysicalEntity>> physical_entities_;
+        std::map<std::basic_string<lolita::character>, std::shared_ptr<PhysicalEntity>> physical_entities_;
 
-        std::map<std::array<lolita::integer, 2>, std::shared_ptr<GeometricalEntity>> geometrical_entities_;
+        std::map<std::basic_string<lolita::character>, std::shared_ptr<GeometricalEntity>> geometrical_entities_;
 
     };
     
