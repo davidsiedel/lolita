@@ -21,7 +21,7 @@ TEST(t0, t0)
     
     // auto mshh = lolita2::geometry::MeshFileParser<mesh_fmt, domain>::readMesh(file_path);
 
-    // auto kkk = lolita2::geometry::MeshSetBase2<lolita2::geometry::FiniteElementHolder, domain, fe1, fe2>(mshh);
+    // auto kkk = lolita2::geometry::ElementSet<lolita2::geometry::FiniteElementHolder, domain, fe1, fe2>(mshh);
 
     // for (auto const & elem : mshh.elements_.getElements<0, 0>())
     // {
@@ -52,7 +52,7 @@ TEST(t0, t0)
     //     std::cout << std::endl;
     // }
 
-    auto gmshfile = lolita2::geometry::NewGmsh(file_path);
+    auto gmshfile = lolita2::geometry::GmshFileParser(file_path);
 
     // auto set = std::set<std::string>();
 
@@ -69,7 +69,7 @@ TEST(t0, t0)
     std::cout << lmpo << std::endl;
     
 
-    // auto kkk = lolita2::geometry::MeshSetBase2<lolita2::geometry::FiniteElementHolder, domain, fe1, fe2>(mshh);
+    // auto kkk = lolita2::geometry::ElementSet<lolita2::geometry::FiniteElementHolder, domain, fe1, fe2>(mshh);
     // auto kkk = mshh.template make<lolita2::geometry::FiniteElementHolder, domain, fe1, fe2>();
 
     // std::cout << kkk << std::endl;
