@@ -29,6 +29,34 @@ namespace lolita2::geometry
 
     };
 
+    using MeshDomains = std::vector<std::shared_ptr<MeshDomain>>;
+
+    template<template<Element, Domain, auto...> typename t_FiniteElement, Domain t_domain, auto... t_args>
+    struct MeshElementsTraits
+    {
+
+    private:
+
+        template<template<Element, Domain, auto...> typename t__FiniteElement, auto... t__args>
+        struct FiniteElementCollectionTraits
+        {
+
+            template<Element t_element, Domain t__domain>
+            using t_FiniteElements = std::map<std::basic_string<lolita::character>, std::shared_ptr<t__FiniteElement<t_element, t__domain, t__args...>>>;
+
+            using t_FiniteElementCollection = ElementCollection<t_FiniteElements, t_domain>;
+
+        };
+
+    public:
+
+        using MeshElements = typename FiniteElementCollectionTraits<t_FiniteElement, t_args...>::MeshElements;
+
+    };
+
+    template<template<Element, Domain, auto...> typename t_FiniteElement, Domain t_domain, auto... t_args>
+    using MeshElements = typename MeshElementsTraits<t_FiniteElement, t_args...>::t_FiniteElementCollection;
+
     template<template<Element, Domain, auto...> typename t_FiniteElement, Domain t_domain, auto... t_args>
     struct MeshSetBase2
     {
@@ -270,6 +298,57 @@ namespace lolita2::geometry
             setFiniteElement<0, 0, t_FiniteElement, t_domain, t_args...>(list, ptr_element);
         }
 
+        template<lolita::integer _k, template<Element, Domain, auto...> typename t_FiniteElement, Domain t_domain, auto... t_args>
+        static
+        void
+        buildElementNN(
+            std::shared_ptr<t_FiniteElement<t_element, t_domain, t_args...>> & ptr_element
+        )
+        {
+            auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
+            auto const constexpr t_node_coordinates = ElementTraits<t_element, t_domain>::template getComponentCoordinates<Element::node()>();
+            auto const & element_nds = ptr_element->template getComponents<t_node_coordinates.dim_, t_node_coordinates.tag_>();
+            for (auto i = 0; i < ElementTraits<t_element, t_domain>::template getNumComponents<t_node_coordinates.dim_, t_node_coordinates.tag_>(); ++i)
+            {
+                auto const & nde = element_nds[i];
+                auto const & ngs = nde->template getNeighbours<t_element_coordinates.dim_ - 1, _k>();
+                for (auto const & neighbour : ngs)
+                {
+                    if (((neighbour->tag_ != ptr_element->tag_) && _k == t_element_coordinates.tag_) || (_k != t_element_coordinates.tag_))
+                    {
+                        auto & element_ngs = ptr_element->template getNeighbours<0, _k>();
+                        auto found = false;
+                        for (auto const & ngb: element_ngs)
+                        {
+                            if (ngb->tag_ == neighbour->tag_)
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                        {
+                            element_ngs.push_back(neighbour);
+                        }
+                    }
+                }
+            }
+            if constexpr (_k < DomainTraits<t_domain>::template getNumElements<t_element_coordinates.dim_>() - 1)
+            {
+                buildElementNN<_k + 1, t_FiniteElement, t_domain, t_args...>(ptr_element);
+            }
+        }
+
+        template<template<Element, Domain, auto...> typename t_FiniteElement, Domain t_domain, auto... t_args>
+        static
+        void
+        buildElementN(
+            std::shared_ptr<t_FiniteElement<t_element, t_domain, t_args...>> & ptr_element
+        )
+        {
+            buildElementNN<0, t_FiniteElement, t_domain, t_args...>(ptr_element);
+        }
+
         std::array<lolita::natural, t_element.num_nodes_> node_tags_;
 
     };
@@ -319,7 +398,15 @@ namespace lolita2::geometry
         {
             auto ptr_element = std::make_shared<t_FiniteElement<t_element, t_domain, t_args...>>(t_FiniteElement<t_element, t_domain, t_args...>());
             setFiniteElement<t_FiniteElement, t_domain, t_args...>(list, ptr_element);
-        }        
+        }
+
+        template<template<Element, Domain, auto...> typename t_FiniteElement, Domain t_domain, auto... t_args>
+        static
+        void
+        buildElementN(
+            std::shared_ptr<t_FiniteElement<t_element, t_domain, t_args...>> & ptr_element
+        )
+        {}
         
         lolita::natural tag_;
         
@@ -336,7 +423,10 @@ namespace lolita2::geometry
     private:
 
         template<Element t_element, Domain>
-        using t_MeshElements = std::vector<MeshElement<t_element>>;
+        // using t_MeshElements = std::vector<MeshElement<t_element>>;
+        using t_MeshElements = std::map<std::basic_string<lolita::character>, MeshElement<t_element>>;
+
+        using MeshElements = ElementCollection<t_MeshElements, t_domain>;
 
     public:
 
@@ -353,8 +443,7 @@ namespace lolita2::geometry
             {
                 for (auto const & element : elements_.template getElements<t_i, t_j>())
                 {
-                    auto k = 9;
-                    element.template makeElement<t_FiniteElement, t_domain, t_args...>(mmm);
+                    element.second.template makeElement<t_FiniteElement, t_domain, t_args...>(mmm);
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
                 {
@@ -366,6 +455,26 @@ namespace lolita2::geometry
                 }
             };
             mkl(mkl);
+            auto make_elements = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto const constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto & element : mmm.elements_.template getElements<t_i, t_j>())
+                {
+                    MeshElement<t_element>::template buildElementN<t_FiniteElement, t_domain, t_args...>(element.second);
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < DomainTraits<t_domain>::getNumElements() - 1)
+                {
+                    self.template operator()<t_i + 1, 0>(self);
+                }
+            };
+            make_elements(make_elements);
             mmm.domains_ = domains_;
             return mmm;
         }
@@ -373,17 +482,12 @@ namespace lolita2::geometry
         MeshData()
         {}
 
-        using MeshElements = ElementCollection<t_MeshElements, t_domain>;
-
-        using MeshDomains = std::vector<std::shared_ptr<MeshDomain>>;
-
         MeshElements elements_;
 
         MeshDomains domains_;
 
     };    
     
-    template<Domain t_domain>
     struct MeshFileBase
     {
 
@@ -398,8 +502,10 @@ namespace lolita2::geometry
         
     };
 
-    struct NewGmsh
+    struct NewGmsh : MeshFileBase
     {
+
+    private:
 
         static constexpr
         Element
@@ -427,13 +533,14 @@ namespace lolita2::geometry
             }
 
             PhysicalEntity(
-                std::basic_string<lolita::character> const & name
+                std::basic_string<lolita::character> const & name,
+                lolita::integer dim
             )
             :
-            name_(name)
+            mesh_domain_(std::make_shared<MeshDomain>(dim, name))
             {}
 
-            std::basic_string<lolita::character> name_;
+            std::shared_ptr<MeshDomain> mesh_domain_;
 
         };
 
@@ -461,25 +568,25 @@ namespace lolita2::geometry
 
             void
             addPhysicalEntity(
-                std::shared_ptr<PhysicalEntity> const & pe
+                std::shared_ptr<PhysicalEntity> const & physical_entity
             )
             {
-                physical_entities_.insert(pe);
-                for (auto & be : bounding_entities_)
+                physical_entities_.insert(physical_entity);
+                for (auto & bounding_entity : bounding_entities_)
                 {
-                    be->addPhysicalEntity(pe);
+                    bounding_entity->addPhysicalEntity(physical_entity);
                 }
             }
 
             void
             addBoundingEntity(
-                std::shared_ptr<GeometricalEntity> & be
+                std::shared_ptr<GeometricalEntity> & bounding_entity
             )
             {
-                bounding_entities_.insert(be);
-                for (auto const & pe : physical_entities_)
+                bounding_entities_.insert(bounding_entity);
+                for (auto const & physical_entity : physical_entities_)
                 {
-                    be->addPhysicalEntity(pe);
+                    bounding_entity->addPhysicalEntity(physical_entity);
                 }
             }
 
@@ -488,23 +595,11 @@ namespace lolita2::geometry
             std::set<std::shared_ptr<GeometricalEntity>> bounding_entities_;
 
         };
-
-        NewGmsh(
-            std::basic_string_view<lolita::character> str
-        )
-        :
-        file_(str)
-        {
-            setPhysicalEntities();
-            setGeometricalEntities();
-        }
-
-        lolita::utility::File file_;
-
+        
         void
         setPhysicalEntities()
         {
-            auto const & file_lines = file_.lines_;
+            auto const & file_lines = this->file_.lines_;
             auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$PhysicalNames"));
             auto offset = 1;
             auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
@@ -520,7 +615,7 @@ namespace lolita2::geometry
                 line_stream >> dim >> physical_entity_tag >> name;
                 lolita::utility::removeCharacter(name, '"');
                 auto hash = PhysicalEntity::getHash(physical_entity_tag);
-                physical_entities_[hash] = std::make_shared<PhysicalEntity>(PhysicalEntity(name));
+                physical_entities_[hash] = std::make_shared<PhysicalEntity>(PhysicalEntity(name, dim));
                 offset += 1;
             }
         }
@@ -528,7 +623,7 @@ namespace lolita2::geometry
         void
         setGeometricalEntities()
         {
-            auto const & file_lines = file_.lines_;
+            auto const & file_lines = this->file_.lines_;
             auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Entities"));
             auto offset = 1;
             auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
@@ -590,457 +685,631 @@ namespace lolita2::geometry
             }
         }
 
+    public:
+
+        NewGmsh(
+            std::basic_string_view<lolita::character> str
+        )
+        :
+        MeshFileBase(str)
+        {
+            setPhysicalEntities();
+            setGeometricalEntities();
+        }
+
+        template<Domain t_domain>
+        void
+        setMeshDomains(
+            MeshData<t_domain> & mesh_data
+        )
+        const
+        {
+            for (auto const & physical_entity : physical_entities_)
+            {
+                mesh_data.domains_.push_back(physical_entity.second->mesh_domain_);
+            }
+        }
+
+        template<Domain t_domain, Element t_element>
+        void
+        setMeshNodes(
+            MeshData<t_domain> & mesh_data
+        )
+        const
+        requires(t_element.isNode())
+        {
+            auto constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
+            auto & elements = mesh_data.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
+            auto const & file_lines = this->file_.lines_;
+            auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Nodes"));
+            auto offset = 1;
+            auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+            auto num_entity_block = lolita::integer();
+            auto num_nodes = lolita::integer();
+            auto min_node_tag = lolita::integer();
+            auto max_node_tag = lolita::integer();
+            line_stream >> num_entity_block >> num_nodes >> min_node_tag >> max_node_tag;
+            offset += 1;
+            for (lolita::integer i = 0; i < num_entity_block; ++i)
+            {
+                line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+                auto entity_dim = lolita::integer();
+                auto entity_tag = lolita::integer();
+                auto parametric = lolita::integer();
+                auto num_nodes_in_block = lolita::integer();
+                line_stream >> entity_dim >> entity_tag >> parametric >> num_nodes_in_block;
+                auto const entity_hash = GeometricalEntity::getHash(entity_dim, entity_tag);
+                offset += 1;
+                for (lolita::integer j = 0; j < num_nodes_in_block; ++j)
+                {
+                    auto mesh_element = MeshElement<t_element>();
+                    auto tag = lolita::natural();
+                    auto coordinates_ = Point();
+                    auto domains_ = std::vector<std::shared_ptr<std::basic_string<lolita::character>>>();
+                    line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+                    line_stream >> tag;
+                    mesh_element.tag_ = tag - 1;
+                    line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset + num_nodes_in_block]);
+                    for (lolita::integer k = 0; k < 3; ++k)
+                    {
+                        line_stream >> mesh_element.coordinates_->operator()(k);
+                    }
+                    for (auto const & physical_entity : geometrical_entities_.at(entity_hash)->physical_entities_)
+                    {
+                        mesh_element.domains_.push_back(physical_entity->mesh_domain_);
+                    }
+                    auto const element_hash = MeshElement<t_element>::getHash(mesh_element.tag_);
+                    elements[element_hash] = mesh_element;
+                    offset += 1;
+                }
+                offset += num_nodes_in_block;
+            }
+        }
+        
+        template<Domain t_domain, Element t_element>
+        void
+        setMeshNodes(
+            MeshData<t_domain> & mesh_data
+        )
+        const
+        requires(!t_element.isNode())
+        {
+            auto constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
+            auto & elements = mesh_data.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
+            auto const & file_lines = this->file_.lines_;
+            auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Elements"));
+            auto offset = 1;
+            auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+            auto num_entity_blocks = 0;
+            auto num_elements = 0;
+            auto min_element_tag = 0;
+            auto max_element_tag = 0;
+            line_stream >> num_entity_blocks >> num_elements >> min_element_tag >> max_element_tag;
+            offset += 1;
+            for (lolita::integer i = 0; i < num_entity_blocks; ++i)
+            {
+                line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+                auto entity_dim = 0;
+                auto entity_tag = 0;
+                auto element_type_tag = 0;
+                auto num_elements_in_block = 0;
+                line_stream >> entity_dim >> entity_tag >> element_type_tag >> num_elements_in_block;
+                offset += 1;
+                auto const element = getElemType(element_type_tag);
+                if (element == t_element)
+                {
+                    for (lolita::integer j = 0; j < num_elements_in_block; ++j)
+                    {
+                        auto mesh_element = MeshElement<t_element>();
+                        line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+                        auto tag = lolita::integer();
+                        line_stream >> tag;
+                        for (lolita::integer k = 0; k < t_element.num_nodes_; ++k)
+                        {
+                            auto node_tag = lolita::integer();
+                            line_stream >> node_tag;
+                            mesh_element.node_tags_[k] = node_tag - 1;
+                        }
+                        auto const element_hash = MeshElement<t_element>::getHash(mesh_element.node_tags_);
+                        elements[element_hash] = mesh_element;
+                        offset += 1;
+                    }
+                }
+                else
+                {
+                    offset += num_elements_in_block;
+                }
+            }
+        }
+        
+    private:
+        
         std::map<std::basic_string<lolita::character>, std::shared_ptr<PhysicalEntity>> physical_entities_;
 
         std::map<std::basic_string<lolita::character>, std::shared_ptr<GeometricalEntity>> geometrical_entities_;
 
     };
     
-    template<MeshFileFormat t_mesh_data, Domain t_domain>
-    struct MeshFileDataStructure;
-    
-    template<MeshFileFormat t_mesh_data, Domain t_domain>
-    struct MeshFileParser
+    template<template<Element, Domain, auto...> typename t_FiniteElement, Domain t_domain, auto... t_args>
+    struct ICI
     {
 
-        using t_Implementation = typename MeshFileDataStructure<t_mesh_data, t_domain>::Implementation;
-
-        using t_Module = typename MeshFileDataStructure<t_mesh_data, t_domain>::Module;
-
-        MeshFileParser(
-            std::basic_string_view<lolita::character> mesh_file_path
+        static
+        MeshSetBase2<t_FiniteElement, t_domain, t_args...>
+        makeIt(
+            std::basic_string_view<lolita::character> str
         )
-        :
-        file_(mesh_file_path)
         {
-            auto const module = t_Module(file_);
-            makeDomains(module);
-            auto set_elements = [&] <lolita::integer t_i = 0u, lolita::integer t_j = 0u> (
-                auto & set_elements_imp
+            auto gmsh = NewGmsh(str);
+            auto mshh = MeshData<t_domain>();
+            gmsh.setMeshDomains(mshh);
+            auto mkl = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                auto & self
             )
             mutable
             {
                 auto const constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                makeElement<t_element>(module);
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1) {
-                    set_elements_imp.template operator()<t_i, t_j + 1u>(set_elements_imp);
+                gmsh.template setMeshNodes<t_domain, t_element>(mshh);
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_i, t_j + 1>(self);
                 }
-                else if constexpr (t_i < DomainTraits<t_domain>::getNumElements() - 1) {
-                    set_elements_imp.template operator()<t_i + 1u, 0u>(set_elements_imp);
+                else if constexpr (t_i < DomainTraits<t_domain>::getNumElements() - 1)
+                {
+                    self.template operator()<t_i + 1, 0>(self);
                 }
             };
-            set_elements(set_elements);
+            mkl(mkl);
+            return mshh.template make<t_FiniteElement, t_args...>();
         }
-
-        static
-        MeshData<t_domain>
-        readMesh(
-            std::basic_string_view<lolita::character> mesh_file_path
-        )
-        {
-            return MeshFileParser(mesh_file_path).mesh_data_;
-        }
-    
-        void
-        makeDomains(
-            t_Module const & module
-        )
-        {
-            static_cast<t_Implementation *>(this)->makeDomains(module);
-        }
-        
-        template<Element t_element>
-        void
-        makeElement(
-            t_Module const & module
-        )
-        {
-            static_cast<t_Implementation *>(this)->template makeElement<t_element>(module);
-        }
-
-        lolita::utility::File file_;
-
-        MeshData<t_domain> mesh_data_;
 
     };
     
-    template<MeshFileFormat t_mesh_data, Domain t_domain>
-    requires(t_mesh_data.isGmsh())
-    struct MeshFileDataStructure<t_mesh_data, t_domain>
-    {
+    // template<MeshFileFormat t_mesh_data, Domain t_domain>
+    // struct MeshFileDataStructure;
+    
+    // template<MeshFileFormat t_mesh_data, Domain t_domain>
+    // struct MeshFileParser
+    // {
 
-        lolita::integer static constexpr node_index_offset = 1;
+    //     using t_Implementation = typename MeshFileDataStructure<t_mesh_data, t_domain>::Implementation;
 
-        static constexpr
-        Element
-        getElemType(
-            lolita::integer tag
-        )
-        {
-            if (tag == 15) return Element::node();
-            else if (tag == 01) return Element::segment(1);
-            else if (tag == 02) return Element::triangle(1);
-            else if (tag == 03) return Element::quadrangle(1);
-            else return Element::node();
-        }
+    //     using t_Module = typename MeshFileDataStructure<t_mesh_data, t_domain>::Module;
 
-        struct Module
-        {
+    //     MeshFileParser(
+    //         std::basic_string_view<lolita::character> mesh_file_path
+    //     )
+    //     :
+    //     file_(mesh_file_path)
+    //     {
+    //         auto const module = t_Module(file_);
+    //         makeDomains(module);
+    //         auto set_elements = [&] <lolita::integer t_i = 0u, lolita::integer t_j = 0u> (
+    //             auto & set_elements_imp
+    //         )
+    //         mutable
+    //         {
+    //             auto const constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+    //             makeElement<t_element>(module);
+    //             if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1) {
+    //                 set_elements_imp.template operator()<t_i, t_j + 1u>(set_elements_imp);
+    //             }
+    //             else if constexpr (t_i < DomainTraits<t_domain>::getNumElements() - 1) {
+    //                 set_elements_imp.template operator()<t_i + 1u, 0u>(set_elements_imp);
+    //             }
+    //         };
+    //         set_elements(set_elements);
+    //     }
 
-            lolita::integer static constexpr size_ = 4;
+    //     static
+    //     MeshData<t_domain>
+    //     readMesh(
+    //         std::basic_string_view<lolita::character> mesh_file_path
+    //     )
+    //     {
+    //         return MeshFileParser(mesh_file_path).mesh_data_;
+    //     }
+    
+    //     void
+    //     makeDomains(
+    //         t_Module const & module
+    //     )
+    //     {
+    //         static_cast<t_Implementation *>(this)->makeDomains(module);
+    //     }
+        
+    //     template<Element t_element>
+    //     void
+    //     makeElement(
+    //         t_Module const & module
+    //     )
+    //     {
+    //         static_cast<t_Implementation *>(this)->template makeElement<t_element>(module);
+    //     }
 
-            struct PhysicalEntity
-            {
+    //     lolita::utility::File file_;
 
-                lolita::boolean
-                operator==(
-                    PhysicalEntity const &
-                    other
-                )
-                const = default;
+    //     MeshData<t_domain> mesh_data_;
 
-                lolita::boolean
-                operator!=(
-                    PhysicalEntity const &
-                    other
-                )
-                const = default;
+    // };
+    
+    // template<MeshFileFormat t_mesh_data, Domain t_domain>
+    // requires(t_mesh_data.isGmsh())
+    // struct MeshFileDataStructure<t_mesh_data, t_domain>
+    // {
 
-                lolita::integer tag_;
+    //     lolita::integer static constexpr node_index_offset = 1;
 
-                lolita::integer dim_;
+    //     static constexpr
+    //     Element
+    //     getElemType(
+    //         lolita::integer tag
+    //     )
+    //     {
+    //         if (tag == 15) return Element::node();
+    //         else if (tag == 01) return Element::segment(1);
+    //         else if (tag == 02) return Element::triangle(1);
+    //         else if (tag == 03) return Element::quadrangle(1);
+    //         else return Element::node();
+    //     }
 
-                std::basic_string<lolita::character> name_;
+    //     struct Module
+    //     {
 
-            };
+    //         lolita::integer static constexpr size_ = 4;
 
-            struct GeometricalEntity
-            {
+    //         struct PhysicalEntity
+    //         {
 
-                lolita::boolean
-                operator==(
-                    GeometricalEntity const &
-                    other
-                )
-                const = default;
+    //             lolita::boolean
+    //             operator==(
+    //                 PhysicalEntity const &
+    //                 other
+    //             )
+    //             const = default;
 
-                lolita::boolean
-                operator!=(
-                    GeometricalEntity const &
-                    other
-                )
-                const = default;
+    //             lolita::boolean
+    //             operator!=(
+    //                 PhysicalEntity const &
+    //                 other
+    //             )
+    //             const = default;
 
-                lolita::integer tag_;
+    //             lolita::integer tag_;
 
-                lolita::integer dim_;
+    //             lolita::integer dim_;
 
-                std::vector<lolita::integer> physical_entities_tags_;
+    //             std::basic_string<lolita::character> name_;
 
-                std::vector<lolita::integer> bounding_entities_tags_;
+    //         };
 
-            };
+    //         struct GeometricalEntity
+    //         {
 
-            struct PhysicalGroup
-            {
+    //             lolita::boolean
+    //             operator==(
+    //                 GeometricalEntity const &
+    //                 other
+    //             )
+    //             const = default;
 
-                lolita::boolean
-                operator==(
-                    PhysicalGroup const &
-                    other
-                )
-                const = default;
+    //             lolita::boolean
+    //             operator!=(
+    //                 GeometricalEntity const &
+    //                 other
+    //             )
+    //             const = default;
 
-                lolita::boolean
-                operator!=(
-                    PhysicalGroup const &
-                    other
-                )
-                const = default;
+    //             lolita::integer tag_;
 
-                std::basic_string<lolita::character> name_;
+    //             lolita::integer dim_;
 
-                lolita::integer dim_;
+    //             std::vector<lolita::integer> physical_entities_tags_;
 
-                std::array<std::vector<lolita::integer>, size_> geometrical_entities_tags_;
+    //             std::vector<lolita::integer> bounding_entities_tags_;
 
-            };
+    //         };
 
-            explicit
-            Module(
-                lolita::utility::File const & file
-            )
-            {
-                setGeometricalEntities(file);
-                setPhysicalEntities(file);
-                setPhysicalGroups();
-            }
+    //         struct PhysicalGroup
+    //         {
 
-            std::array<std::set<lolita::integer>, size_>
-            getSubGeometricalEntities(
-                lolita::integer d,
-                lolita::integer t,
-                std::array<std::set<lolita::integer>, size_> & a
-            )
-            {
-                a[d].insert(t);
-                for (lolita::integer i = 0; i < geometrical_entities_[d][t - 1].bounding_entities_tags_.size(); ++i) {
-                    lolita::integer const d2 = d - 1;
-                    lolita::integer const t2 = geometrical_entities_[d][t - 1].bounding_entities_tags_[i];
-                    a = getSubGeometricalEntities(d2, t2, a);
-                }
-                return a;
-            }
+    //             lolita::boolean
+    //             operator==(
+    //                 PhysicalGroup const &
+    //                 other
+    //             )
+    //             const = default;
 
-            void
-            setGeometricalEntities(
-                lolita::utility::File const & file_
-            )
-            {
-                auto const & file_lines = file_.lines_;
-                lolita::integer line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Entities"));
-                lolita::integer offset = 1;
-                std::basic_stringstream<lolita::character> line_stream(file_lines[line_start + offset]);
-                lolita::integer num_points;
-                lolita::integer num_curves;
-                lolita::integer num_surfaces;
-                lolita::integer num_volumes;
-                line_stream >> num_points >> num_curves >> num_surfaces >> num_volumes;
-                auto num_domains = std::array<lolita::integer, size_>{num_points, num_curves, num_surfaces, num_volumes};
-                offset += 1;
-                for (lolita::integer i = 0; i < size_; ++i) {
-                    for (lolita::integer j = 0; j < num_domains[i]; ++j) {
-                        line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                        lolita::integer tag;
-                        line_stream >> tag;
-                        if (i == 0) {
-                            for (lolita::integer k = 0; k < 3; ++k) {
-                                lolita::real a;
-                                line_stream >> a;
-                            }
-                        } else {
-                            for (lolita::integer k = 0; k < 6; ++k) {
-                                lolita::real a;
-                                line_stream >> a;
-                            }
-                        }
-                        lolita::integer num_physical_entities;
-                        line_stream >> num_physical_entities;
-                        std::vector<lolita::integer> physical_entities_tags;
-                        for (lolita::integer k = 0; k < num_physical_entities; ++k) {
-                            lolita::integer physical_entity_tag;
-                            line_stream >> physical_entity_tag;
-                            physical_entities_tags.push_back(physical_entity_tag);
-                        }
-                        std::vector<lolita::integer> bounding_entities_tags = {};
-                        if (i > 0) {
-                            lolita::integer num_bounding_entities;
-                            line_stream >> num_bounding_entities;
-                            for (lolita::integer k = 0; k < num_bounding_entities; ++k) {
-                                lolita::integer bounding_entity_tag;
-                                line_stream >> bounding_entity_tag;
-                                bounding_entities_tags.push_back(std::abs(bounding_entity_tag));
-                            }
-                        }
-                        geometrical_entities_[i].push_back(GeometricalEntity{
-                                tag,
-                                i,
-                                physical_entities_tags,
-                                bounding_entities_tags
-                        });
-                        offset += 1;
-                    }
-                }
-            }
+    //             lolita::boolean
+    //             operator!=(
+    //                 PhysicalGroup const &
+    //                 other
+    //             )
+    //             const = default;
 
-            void
-            setPhysicalEntities(
-                lolita::utility::File const & file_
-            )
-            {
-                auto const & file_lines = file_.lines_;
-                lolita::integer line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$PhysicalNames"));
-                lolita::integer offset = 1;
-                std::basic_stringstream<lolita::character> line_stream(file_lines[line_start + offset]);
-                lolita::integer num_physical_names;
-                line_stream >> num_physical_names;
-                offset += 1;
-                for (lolita::integer i = 0; i < num_physical_names; ++i) {
-                    line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                    lolita::integer dim;
-                    lolita::integer tag;
-                    std::basic_string<lolita::character> name;
-                    line_stream >> dim >> tag >> name;
-                    lolita::utility::removeCharacter(name, '"');
-                    physical_entities_.push_back(PhysicalEntity{tag, dim, name});
-                    offset += 1;
-                }
-            }
+    //             std::basic_string<lolita::character> name_;
 
-            void
-            setPhysicalGroups()
-            {
-                for (lolita::integer i = 0; i < physical_entities_.size(); ++i) {
-                    std::array<std::set<lolita::integer>, size_> tags;
-                    for (lolita::integer j = 0; j < size_; ++j) {
-                        for (lolita::integer k = 0; k < geometrical_entities_[j].size(); ++k) {
-                            for (lolita::integer l = 0; l < geometrical_entities_[j][k].physical_entities_tags_.size(); ++l) {
-                                lolita::integer const & t0 = geometrical_entities_[j][k].physical_entities_tags_[l];
-                                lolita::integer const & t1 = physical_entities_[i].tag_;
-                                if (t0 == t1) {
-                                    tags = getSubGeometricalEntities(j, k + 1, tags);
-                                }
-                            }
-                        }
-                    }
-                    std::array<std::vector<lolita::integer>, size_> group_tags;
-                    for (lolita::integer j = 0; j < size_; ++j) {
-                        group_tags[j].assign(tags[j].begin(), tags[j].end());
-                    }
-                    physical_groups_.push_back(PhysicalGroup{physical_entities_[i].name_, physical_entities_[i].dim_, group_tags});
-                }
-            }
+    //             lolita::integer dim_;
+
+    //             std::array<std::vector<lolita::integer>, size_> geometrical_entities_tags_;
+
+    //         };
+
+    //         explicit
+    //         Module(
+    //             lolita::utility::File const & file
+    //         )
+    //         {
+    //             setGeometricalEntities(file);
+    //             setPhysicalEntities(file);
+    //             setPhysicalGroups();
+    //         }
+
+    //         std::array<std::set<lolita::integer>, size_>
+    //         getSubGeometricalEntities(
+    //             lolita::integer d,
+    //             lolita::integer t,
+    //             std::array<std::set<lolita::integer>, size_> & a
+    //         )
+    //         {
+    //             a[d].insert(t);
+    //             for (lolita::integer i = 0; i < geometrical_entities_[d][t - 1].bounding_entities_tags_.size(); ++i) {
+    //                 lolita::integer const d2 = d - 1;
+    //                 lolita::integer const t2 = geometrical_entities_[d][t - 1].bounding_entities_tags_[i];
+    //                 a = getSubGeometricalEntities(d2, t2, a);
+    //             }
+    //             return a;
+    //         }
+
+    //         void
+    //         setGeometricalEntities(
+    //             lolita::utility::File const & file_
+    //         )
+    //         {
+    //             auto const & file_lines = file_.lines_;
+    //             lolita::integer line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Entities"));
+    //             lolita::integer offset = 1;
+    //             std::basic_stringstream<lolita::character> line_stream(file_lines[line_start + offset]);
+    //             lolita::integer num_points;
+    //             lolita::integer num_curves;
+    //             lolita::integer num_surfaces;
+    //             lolita::integer num_volumes;
+    //             line_stream >> num_points >> num_curves >> num_surfaces >> num_volumes;
+    //             auto num_domains = std::array<lolita::integer, size_>{num_points, num_curves, num_surfaces, num_volumes};
+    //             offset += 1;
+    //             for (lolita::integer i = 0; i < size_; ++i) {
+    //                 for (lolita::integer j = 0; j < num_domains[i]; ++j) {
+    //                     line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+    //                     lolita::integer tag;
+    //                     line_stream >> tag;
+    //                     if (i == 0) {
+    //                         for (lolita::integer k = 0; k < 3; ++k) {
+    //                             lolita::real a;
+    //                             line_stream >> a;
+    //                         }
+    //                     } else {
+    //                         for (lolita::integer k = 0; k < 6; ++k) {
+    //                             lolita::real a;
+    //                             line_stream >> a;
+    //                         }
+    //                     }
+    //                     lolita::integer num_physical_entities;
+    //                     line_stream >> num_physical_entities;
+    //                     std::vector<lolita::integer> physical_entities_tags;
+    //                     for (lolita::integer k = 0; k < num_physical_entities; ++k) {
+    //                         lolita::integer physical_entity_tag;
+    //                         line_stream >> physical_entity_tag;
+    //                         physical_entities_tags.push_back(physical_entity_tag);
+    //                     }
+    //                     std::vector<lolita::integer> bounding_entities_tags = {};
+    //                     if (i > 0) {
+    //                         lolita::integer num_bounding_entities;
+    //                         line_stream >> num_bounding_entities;
+    //                         for (lolita::integer k = 0; k < num_bounding_entities; ++k) {
+    //                             lolita::integer bounding_entity_tag;
+    //                             line_stream >> bounding_entity_tag;
+    //                             bounding_entities_tags.push_back(std::abs(bounding_entity_tag));
+    //                         }
+    //                     }
+    //                     geometrical_entities_[i].push_back(GeometricalEntity{
+    //                             tag,
+    //                             i,
+    //                             physical_entities_tags,
+    //                             bounding_entities_tags
+    //                     });
+    //                     offset += 1;
+    //                 }
+    //             }
+    //         }
+
+    //         void
+    //         setPhysicalEntities(
+    //             lolita::utility::File const & file_
+    //         )
+    //         {
+    //             auto const & file_lines = file_.lines_;
+    //             lolita::integer line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$PhysicalNames"));
+    //             lolita::integer offset = 1;
+    //             std::basic_stringstream<lolita::character> line_stream(file_lines[line_start + offset]);
+    //             lolita::integer num_physical_names;
+    //             line_stream >> num_physical_names;
+    //             offset += 1;
+    //             for (lolita::integer i = 0; i < num_physical_names; ++i) {
+    //                 line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+    //                 lolita::integer dim;
+    //                 lolita::integer tag;
+    //                 std::basic_string<lolita::character> name;
+    //                 line_stream >> dim >> tag >> name;
+    //                 lolita::utility::removeCharacter(name, '"');
+    //                 physical_entities_.push_back(PhysicalEntity{tag, dim, name});
+    //                 offset += 1;
+    //             }
+    //         }
+
+    //         void
+    //         setPhysicalGroups()
+    //         {
+    //             for (lolita::integer i = 0; i < physical_entities_.size(); ++i) {
+    //                 std::array<std::set<lolita::integer>, size_> tags;
+    //                 for (lolita::integer j = 0; j < size_; ++j) {
+    //                     for (lolita::integer k = 0; k < geometrical_entities_[j].size(); ++k) {
+    //                         for (lolita::integer l = 0; l < geometrical_entities_[j][k].physical_entities_tags_.size(); ++l) {
+    //                             lolita::integer const & t0 = geometrical_entities_[j][k].physical_entities_tags_[l];
+    //                             lolita::integer const & t1 = physical_entities_[i].tag_;
+    //                             if (t0 == t1) {
+    //                                 tags = getSubGeometricalEntities(j, k + 1, tags);
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //                 std::array<std::vector<lolita::integer>, size_> group_tags;
+    //                 for (lolita::integer j = 0; j < size_; ++j) {
+    //                     group_tags[j].assign(tags[j].begin(), tags[j].end());
+    //                 }
+    //                 physical_groups_.push_back(PhysicalGroup{physical_entities_[i].name_, physical_entities_[i].dim_, group_tags});
+    //             }
+    //         }
             
-            std::array<std::vector<GeometricalEntity>, size_> geometrical_entities_;
+    //         std::array<std::vector<GeometricalEntity>, size_> geometrical_entities_;
 
-            std::vector<PhysicalEntity> physical_entities_;
+    //         std::vector<PhysicalEntity> physical_entities_;
 
-            std::vector<PhysicalGroup> physical_groups_;
+    //         std::vector<PhysicalGroup> physical_groups_;
 
-        };
+    //     };
         
-        struct Implementation : MeshFileParser<t_mesh_data, t_domain>
-        {
+    //     struct Implementation : MeshFileParser<t_mesh_data, t_domain>
+    //     {
 
-        private:
+    //     private:
 
-            using t_MeshParser = MeshFileParser<t_mesh_data, t_domain>;
+    //         using t_MeshParser = MeshFileParser<t_mesh_data, t_domain>;
 
-        public:
+    //     public:
 
-            void
-            makeDomains(
-                Module const & module
-            )
-            {
-                auto const & physical_groups = module.physical_groups_;
-                for (lolita::integer k = 0; k < physical_groups.size(); ++k) {
-                    this->mesh_data_.domains_.push_back(std::make_shared<MeshDomain>(
-                        MeshDomain(physical_groups[k].dim_, physical_groups[k].name_)
-                    ));
-                }
-            }
+    //         void
+    //         makeDomains(
+    //             Module const & module
+    //         )
+    //         {
+    //             auto const & physical_groups = module.physical_groups_;
+    //             for (lolita::integer k = 0; k < physical_groups.size(); ++k) {
+    //                 this->mesh_data_.domains_.push_back(std::make_shared<MeshDomain>(
+    //                     MeshDomain(physical_groups[k].dim_, physical_groups[k].name_)
+    //                 ));
+    //             }
+    //         }
 
-            template<Element t_element>
-            void
-            makeElement(
-                Module const & module
-            )
-            requires(t_element.isNode())
-            {
-                auto constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
-                auto const & file_lines = this->file_.lines_;
-                auto const & physical_groups = module.physical_groups_;
-                auto & elements = this->mesh_data_.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
-                auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Nodes"));
-                auto offset = 1;
-                auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                auto num_entity_block = lolita::integer();
-                auto num_nodes = lolita::integer();
-                auto min_node_tag = lolita::integer();
-                auto max_node_tag = lolita::integer();
-                line_stream >> num_entity_block >> num_nodes >> min_node_tag >> max_node_tag;
-                offset += 1;
-                for (lolita::integer i = 0; i < num_entity_block; ++i) {
-                    line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                    auto entity_dim = lolita::integer();
-                    auto entity_tag = lolita::integer();
-                    auto parametric = lolita::integer();
-                    auto num_nodes_in_block = lolita::integer();
-                    line_stream >> entity_dim >> entity_tag >> parametric >> num_nodes_in_block;
-                    offset += 1;
-                    for (lolita::integer j = 0; j < num_nodes_in_block; ++j) {
-                        auto mesh_element = MeshElement<t_element>();
-                        line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                        line_stream >> mesh_element.tag_;
-                        mesh_element.tag_ --;
-                        line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset + num_nodes_in_block]);
-                        for (lolita::integer k = 0; k < 3; ++k) {
-                            line_stream >> mesh_element.coordinates_->operator ()(k);
-                        }
-                        for (lolita::integer k = 0; k < physical_groups.size(); ++k) {
-                            auto const & node_set_name = physical_groups[k].name_;
-                            for (lolita::integer l = 0; l < physical_groups[k].geometrical_entities_tags_[entity_dim].size(); ++l) {
-                                lolita::integer tag = physical_groups[k].geometrical_entities_tags_[entity_dim][l];
-                                if (entity_tag == tag) {
-                                    auto is_equal = [&] (std::shared_ptr<MeshDomain> const & ptr_domain) {
-                                        return ptr_domain->tag_ == node_set_name;
-                                    };
-                                    auto const & domains = this->mesh_data_.domains_;
-                                    auto domain_index = std::distance(domains.begin(), std::find_if(domains.begin(), domains.end(), is_equal));
-                                    mesh_element.domains_.push_back(domains[domain_index]);
-                                }
-                            }
-                        }
-                        elements.push_back(mesh_element);
-                        offset += 1;
-                    }
-                    offset += num_nodes_in_block;
-                }
-            }
+    //         template<Element t_element>
+    //         void
+    //         makeElement(
+    //             Module const & module
+    //         )
+    //         requires(t_element.isNode())
+    //         {
+    //             auto constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
+    //             auto const & file_lines = this->file_.lines_;
+    //             auto const & physical_groups = module.physical_groups_;
+    //             auto & elements = this->mesh_data_.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
+    //             auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Nodes"));
+    //             auto offset = 1;
+    //             auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+    //             auto num_entity_block = lolita::integer();
+    //             auto num_nodes = lolita::integer();
+    //             auto min_node_tag = lolita::integer();
+    //             auto max_node_tag = lolita::integer();
+    //             line_stream >> num_entity_block >> num_nodes >> min_node_tag >> max_node_tag;
+    //             offset += 1;
+    //             for (lolita::integer i = 0; i < num_entity_block; ++i) {
+    //                 line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+    //                 auto entity_dim = lolita::integer();
+    //                 auto entity_tag = lolita::integer();
+    //                 auto parametric = lolita::integer();
+    //                 auto num_nodes_in_block = lolita::integer();
+    //                 line_stream >> entity_dim >> entity_tag >> parametric >> num_nodes_in_block;
+    //                 offset += 1;
+    //                 for (lolita::integer j = 0; j < num_nodes_in_block; ++j) {
+    //                     auto mesh_element = MeshElement<t_element>();
+    //                     line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+    //                     line_stream >> mesh_element.tag_;
+    //                     mesh_element.tag_ --;
+    //                     line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset + num_nodes_in_block]);
+    //                     for (lolita::integer k = 0; k < 3; ++k) {
+    //                         line_stream >> mesh_element.coordinates_->operator ()(k);
+    //                     }
+    //                     for (lolita::integer k = 0; k < physical_groups.size(); ++k) {
+    //                         auto const & node_set_name = physical_groups[k].name_;
+    //                         for (lolita::integer l = 0; l < physical_groups[k].geometrical_entities_tags_[entity_dim].size(); ++l) {
+    //                             lolita::integer tag = physical_groups[k].geometrical_entities_tags_[entity_dim][l];
+    //                             if (entity_tag == tag) {
+    //                                 auto is_equal = [&] (std::shared_ptr<MeshDomain> const & ptr_domain) {
+    //                                     return ptr_domain->tag_ == node_set_name;
+    //                                 };
+    //                                 auto const & domains = this->mesh_data_.domains_;
+    //                                 auto domain_index = std::distance(domains.begin(), std::find_if(domains.begin(), domains.end(), is_equal));
+    //                                 mesh_element.domains_.push_back(domains[domain_index]);
+    //                             }
+    //                         }
+    //                     }
+    //                     elements.push_back(mesh_element);
+    //                     offset += 1;
+    //                 }
+    //                 offset += num_nodes_in_block;
+    //             }
+    //         }
 
-            template<Element t_element>
-            void
-            makeElement(
-                Module const & module
-            )
-            requires(!t_element.isNode())
-            {
-                auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
-                auto const & file_lines = this->file_.lines_;
-                auto & elements = this->mesh_data_.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
-                auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Elements"));
-                auto offset = 1;
-                auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                auto num_entity_blocks = 0;
-                auto num_elements = 0;
-                auto min_element_tag = 0;
-                auto max_element_tag = 0;
-                line_stream >> num_entity_blocks >> num_elements >> min_element_tag >> max_element_tag;
-                offset += 1;
-                for (lolita::integer i = 0; i < num_entity_blocks; ++i) {
-                    line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                    auto entity_dim = 0;
-                    auto entity_tag = 0;
-                    auto element_type_tag = 0;
-                    auto num_elements_in_block = 0;
-                    line_stream >> entity_dim >> entity_tag >> element_type_tag >> num_elements_in_block;
-                    offset += 1;
-                    auto const element = getElemType(element_type_tag);
-                    if (entity_dim == t_domain.dim_ && element == t_element) {
-                        for (lolita::integer j = 0; j < num_elements_in_block; ++j) {
-                            auto mesh_element = MeshElement<t_element>();
-                            line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
-                            auto tag = lolita::integer();
-                            line_stream >> tag;
-                            for (lolita::integer k = 0; k < element.num_nodes_; ++k) {
-                                auto node_tag = lolita::natural();
-                                line_stream >> node_tag;
-                                mesh_element.node_tags_[k] = node_tag - 1;
-                            }
-                            elements.push_back(mesh_element);
-                            offset += 1;
-                        }
-                    }
-                    else {
-                        offset += num_elements_in_block;
-                    }
-                }
-            }
+    //         template<Element t_element>
+    //         void
+    //         makeElement(
+    //             Module const & module
+    //         )
+    //         requires(!t_element.isNode())
+    //         {
+    //             auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
+    //             auto const & file_lines = this->file_.lines_;
+    //             auto & elements = this->mesh_data_.elements_.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>();
+    //             auto line_start = std::distance(file_lines.begin(), std::find(file_lines.begin(), file_lines.end(), "$Elements"));
+    //             auto offset = 1;
+    //             auto line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+    //             auto num_entity_blocks = 0;
+    //             auto num_elements = 0;
+    //             auto min_element_tag = 0;
+    //             auto max_element_tag = 0;
+    //             line_stream >> num_entity_blocks >> num_elements >> min_element_tag >> max_element_tag;
+    //             offset += 1;
+    //             for (lolita::integer i = 0; i < num_entity_blocks; ++i) {
+    //                 line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+    //                 auto entity_dim = 0;
+    //                 auto entity_tag = 0;
+    //                 auto element_type_tag = 0;
+    //                 auto num_elements_in_block = 0;
+    //                 line_stream >> entity_dim >> entity_tag >> element_type_tag >> num_elements_in_block;
+    //                 offset += 1;
+    //                 auto const element = getElemType(element_type_tag);
+    //                 if (entity_dim == t_domain.dim_ && element == t_element) {
+    //                     for (lolita::integer j = 0; j < num_elements_in_block; ++j) {
+    //                         auto mesh_element = MeshElement<t_element>();
+    //                         line_stream = std::basic_stringstream<lolita::character>(file_lines[line_start + offset]);
+    //                         auto tag = lolita::integer();
+    //                         line_stream >> tag;
+    //                         for (lolita::integer k = 0; k < element.num_nodes_; ++k) {
+    //                             auto node_tag = lolita::natural();
+    //                             line_stream >> node_tag;
+    //                             mesh_element.node_tags_[k] = node_tag - 1;
+    //                         }
+    //                         elements.push_back(mesh_element);
+    //                         offset += 1;
+    //                     }
+    //                 }
+    //                 else {
+    //                     offset += num_elements_in_block;
+    //                 }
+    //             }
+    //         }
 
-        };
+    //     };
 
-    };
+    // };
 
 
 
@@ -2286,6 +2555,9 @@ namespace lolita2::geometry
 
     template<MeshFileFormat t_mesh, Domain t_domain, auto... t_args>
     using MyMeshParser = MeshParser<FiniteElementHolder, t_mesh, t_domain, t_args...>;
+
+    template<Domain t_domain, auto... t_args>
+    using ICILA = ICI<FiniteElementHolder, t_domain, t_args...>;
 
 }
 
