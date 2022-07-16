@@ -8,7 +8,6 @@
 #include "lolita/lolita_core_n_00.hxx"
 #include "lolita/lolita_core_n_0.hxx"
 #include "lolita/lolita_core_n_1.hxx"
-#include "lolita/lolita_core_n_2.hxx"
 
 namespace lolita2::geometry
 {

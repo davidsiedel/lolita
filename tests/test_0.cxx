@@ -65,7 +65,8 @@ TEST(t0, t0)
     //     }
     // }
 
-    auto lmpo = lolita2::geometry::ICILA<domain, fe1, fe2>::makeIt(file_path);
+    // auto lmpo = lolita2::geometry::FiniteElementSet<domain, fe1, fe2>::makeIt(file_path);
+    auto lmpo = lolita2::geometry::FiniteElementSet<domain, fe1, fe2>(file_path);
     std::cout << lmpo << std::endl;
     
 

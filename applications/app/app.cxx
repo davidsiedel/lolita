@@ -8,22 +8,22 @@ int main(int argc, char** argv)
 
     // Mesh
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
-    auto msh = lolita2::geometry::MeshParser<lolita2::MeshFileFormat::Gmsh, domain>::makeMesh(file_path);
+    // auto msh = lolita2::geometry::MeshParser<lolita2::MeshFileFormat::Gmsh, domain>::makeMesh(file_path);
 
-    // for (auto const & element : msh.sets_[* msh.domains_[5]].getElements<domain.dim_, 0>())
-    // {
-    //     std::cout << element.second->tag_ << std::endl;
-    // }
+    // // for (auto const & element : msh.sets_[* msh.domains_[5]].getElements<domain.dim_, 0>())
+    // // {
+    // //     std::cout << element.second->tag_ << std::endl;
+    // // }
 
-    auto constexpr field = lolita2::Field(2);
+    // auto constexpr field = lolita2::Field(2);
 
-    auto constexpr basis = lolita2::Basis(lolita2::Basis::Monomial, 2);
+    // auto constexpr basis = lolita2::Basis(lolita2::Basis::Monomial, 2);
     
-    std::cout << msh << std::endl;
+    // std::cout << msh << std::endl;
 
-    auto faces_unknown = std::make_shared<lolita2::geometry::Unknown>(lolita2::geometry::Unknown());
+    // auto faces_unknown = std::make_shared<lolita2::geometry::Unknown>(lolita2::geometry::Unknown());
     
-    auto faces_unknowns = msh.template make<lolita2::geometry::FiniteElementUnknown, field, basis>(faces_unknown);
+    // auto faces_unknowns = msh.template make<lolita2::geometry::FiniteElementUnknown, field, basis>(faces_unknown);
 
     // auto value = lolita::integer(5);
 
