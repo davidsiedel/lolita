@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "lolita/lolita_core_n_11.hxx"
+#include "lolita/lolita_core_n_111.hxx"
 
 TEST(t0, t0)
 {
@@ -23,7 +23,7 @@ TEST(t0, t0)
     {
         std::cout << elem.second->getHash() << std::endl;
         // std::cout << elem.second->template getElement<0>()->template getOuterNeighbors<0, 0>().size() << std::endl;
-        for (auto const & domain : elem.second->template getElement<0>()->domains_)
+        for (auto const & domain : elem.second->template getFiniteElement<0>()->domains_)
         {
             std::cout << domain->tag_ << std::endl;
         }
