@@ -12,10 +12,23 @@ namespace lolita2::geometry
     
     struct ElementCoordinates
     {
+
+        constexpr
+        ElementCoordinates()
+        :
+        dim_(-1),
+        tag_(-1)
+        {}
         
-        lolita::integer dim_;
-        
-        lolita::integer tag_;
+        constexpr
+        ElementCoordinates(
+            lolita::integer dim,
+            lolita::integer tag
+        )
+        :
+        dim_(dim),
+        tag_(tag)
+        {}
         
         constexpr
         lolita::integer
@@ -43,6 +56,10 @@ namespace lolita2::geometry
             os << "c0 : " << coordinates.dim_ << ", c1 : " << coordinates.tag_;
             return os;
         }
+        
+        lolita::integer dim_;
+        
+        lolita::integer tag_;
 
     };
 
@@ -860,7 +877,7 @@ namespace lolita2::geometry
         ElementCoordinates
         getCoordinates()
         {
-            auto coordinates = ElementCoordinates{0, 0};
+            auto coordinates = ElementCoordinates();
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
                 auto & t_set_coordinates
             )
@@ -891,7 +908,7 @@ namespace lolita2::geometry
         getInnerNeighborCoordinates()
         requires(!t_element.isNode())
         {
-            auto coordinates = ElementCoordinates{0, 0};
+            auto coordinates = ElementCoordinates();
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
                 auto & t_set_coordinates
             )
@@ -968,7 +985,7 @@ namespace lolita2::geometry
         ElementCoordinates
         getOuterNeighborCoordinates()
         {
-            auto coordinates = ElementCoordinates{0, 0};
+            auto coordinates = ElementCoordinates();
             auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
                 auto & t_set_coordinates
             )
@@ -1052,7 +1069,7 @@ namespace lolita2::geometry
         ElementCoordinates
         getElementCoordinates()
         {
-            auto coordinates = ElementCoordinates{t_element.dim_, 0};
+            auto coordinates = ElementCoordinates(t_element.dim_, -1);
             auto set_coordinates = [&] <lolita::integer t_i = 0> (
                 auto & t_set_coordinates
             )
@@ -1096,6 +1113,24 @@ namespace lolita2::geometry
                 return std::tuple_size_v<t_Elements>;
             }
         }
+
+    };
+
+    struct MeshDomain
+    {
+
+        MeshDomain(
+            lolita::integer dim,
+            std::basic_string<lolita::character> const & tag
+        )
+        :
+        dim_(dim),
+        tag_(tag)
+        {}
+
+        lolita::integer dim_;
+
+        std::basic_string<lolita::character> tag_;
 
     };
     

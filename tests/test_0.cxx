@@ -16,7 +16,7 @@ TEST(t0, t0)
     auto constexpr fe2 =  lolita2::HybridDiscontinuousGalerkin(u2, basis, basis);
     
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
-    auto elements = lolita2::geometry::FiniteElementSet<domain, fe1, fe2>(file_path);
+    auto elements = lolita2::geometry::MeshFileParser(file_path).template makeFiniteElementSet<domain, fe1, fe2>();
     // std::cout << elements << std::endl;
     
     for (auto const & elem : elements.getElements<1, 0>())
