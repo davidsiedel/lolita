@@ -78,6 +78,7 @@ namespace lolita2::geometry
                 case Shape::Polygon:        return "Polygon     ";
                 case Shape::Tetrahedron:    return "Tetrahedron ";
                 case Shape::Polyhedron:     return "Polyhedron  ";
+                default : return "";
             }
         }
 
@@ -860,7 +861,11 @@ namespace lolita2::geometry
         getCoordinates()
         {
             auto coordinates = ElementCoordinates{0, 0};
-            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
+            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                auto & t_set_coordinates
+            )
+            constexpr mutable
+            {
                 using ElementT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>>;
                 if (ElementT::getElement() == t_element)
                 {
@@ -883,11 +888,15 @@ namespace lolita2::geometry
         template<Element t_neighbour>
         static constexpr
         ElementCoordinates
-        getComponentCoordinates()
+        getInnerNeighborCoordinates()
         requires(!t_element.isNode())
         {
             auto coordinates = ElementCoordinates{0, 0};
-            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
+            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                auto & t_set_coordinates
+            )
+            constexpr mutable
+            {
                 using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementInnerNeighborhood>>::value_type;
                 if (NeighbourT::getElement() == t_neighbour)
                 {
@@ -910,50 +919,61 @@ namespace lolita2::geometry
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
         Element
-        getComponent()
+        getInnerNeighbor()
         requires(!t_element.isNode())
         {
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementInnerNeighborhood>>::value_type::getElement();
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        // template<lolita::integer t_i, lolita::integer t_j>
+        // static constexpr
+        // ElementTraits<getInnerNeighbor<t_i, t_j>(), t_domain>
+        // getInnerNeighborDescription()
+        // requires(!t_element.isNode())
+        // {
+        //     return ElementTraits<getInnerNeighbor<t_i, t_j>(), t_domain>();
+        // }
+        
+        template<lolita::integer... t_i>
         static constexpr
-        ElementTraits<getComponent<t_i, t_j>(), t_domain>
-        getComponentDescription()
-        requires(!t_element.isNode())
+        lolita::integer
+        getNumInnerNeighbors()
+        requires(!t_element.isNode() && sizeof...(t_i) == 2)
         {
-            return ElementTraits<getComponent<t_i, t_j>(), t_domain>();
+            auto const constexpr t_coordinates = std::array<lolita::integer, 2>{t_i...};
+            return std::tuple_size_v<std::tuple_element_t<t_coordinates[1], std::tuple_element_t<t_coordinates[0], t_ElementInnerNeighborhood>>>;
         }
         
         template<lolita::integer... t_i>
         static constexpr
         lolita::integer
-        getNumComponents()
-        requires(!t_element.isNode() && 0 <= sizeof...(t_i) <= 2)
+        getNumInnerNeighbors()
+        requires(!t_element.isNode() && sizeof...(t_i) == 1)
         {
-            if constexpr (sizeof...(t_i) == 2)
-            {
-                auto const constexpr t_coordinates = std::array<lolita::integer, 2>{t_i...};
-                return std::tuple_size_v<std::tuple_element_t<t_coordinates[1], std::tuple_element_t<t_coordinates[0], t_ElementInnerNeighborhood>>>;
-            }
-            else if constexpr (sizeof...(t_i) == 1)
-            {
-                auto const constexpr t_coordinates = std::array<lolita::integer, 1>{t_i...};
-                return std::tuple_size_v<std::tuple_element_t<t_coordinates[0], t_ElementInnerNeighborhood>>;
-            }
-            else
-            {
-                return std::tuple_size_v<t_ElementInnerNeighborhood>;
-            }
+            auto const constexpr t_coordinates = std::array<lolita::integer, 1>{t_i...};
+            return std::tuple_size_v<std::tuple_element_t<t_coordinates[0], t_ElementInnerNeighborhood>>;
+        }
+        
+        template<lolita::integer... t_i>
+        static constexpr
+        lolita::integer
+        getNumInnerNeighbors()
+        requires(!t_element.isNode() && sizeof...(t_i) == 0)
+        {
+            return std::tuple_size_v<t_ElementInnerNeighborhood>;
         }
         
         template<Element t_neighbour>
         static constexpr
         ElementCoordinates
-        getNeighbourCoordinates()
+        getOuterNeighborCoordinates()
         {
             auto coordinates = ElementCoordinates{0, 0};
-            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (auto & t_set_coordinates) constexpr mutable {
+            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                auto & t_set_coordinates
+            )
+            constexpr mutable
+            {
                 using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood>>::value_type;
                 if (NeighbourT::getElement() == t_neighbour)
                 {
@@ -976,33 +996,36 @@ namespace lolita2::geometry
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
         Element
-        getNeighbour()
+        getOuterNeighbor()
         {
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood>>::value_type::getElement();
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        // template<lolita::integer t_i, lolita::integer t_j>
+        // static constexpr
+        // ElementTraits<getOuterNeighbor<t_i, t_j>(), t_domain>
+        // getOuterNeighborDescription()
+        // {
+        //     return ElementTraits<getOuterNeighbor<t_i, t_j>(), t_domain>();
+        // }
+        
+        template<lolita::integer... t_i>
         static constexpr
-        ElementTraits<getNeighbour<t_i, t_j>(), t_domain>
-        getNeighbourDescription()
+        lolita::integer
+        getNumOuterNeighbors()
+        requires(sizeof...(t_i) == 1)
         {
-            return ElementTraits<getNeighbour<t_i, t_j>(), t_domain>();
+            auto const constexpr _coordinates = std::array<lolita::integer, 1>{t_i...};
+            return std::tuple_size_v<std::tuple_element_t<_coordinates[0], t_ElementOuterNeighborhood>>;
         }
         
         template<lolita::integer... t_i>
         static constexpr
         lolita::integer
-        getNumNeighbours()
-        requires(0 <= sizeof...(t_i) <= 1)
+        getNumOuterNeighbors()
+        requires(sizeof...(t_i) == 0)
         {
-            if constexpr (sizeof...(t_i) == 1)
-            {
-                auto const constexpr _coordinates = std::array<lolita::integer, 1>{t_i...};
-                return std::tuple_size_v<std::tuple_element_t<_coordinates[0], t_ElementOuterNeighborhood>>;
-            }
-            else {
-                return std::tuple_size_v<t_ElementOuterNeighborhood>;
-            }
+            return std::tuple_size_v<t_ElementOuterNeighborhood>;
         }
 
     };
@@ -1030,7 +1053,11 @@ namespace lolita2::geometry
         getElementCoordinates()
         {
             auto coordinates = ElementCoordinates{t_element.dim_, 0};
-            auto set_coordinates = [&] <lolita::integer t_i = 0> (auto & t_set_coordinates) constexpr mutable {
+            auto set_coordinates = [&] <lolita::integer t_i = 0> (
+                auto & t_set_coordinates
+            )
+            constexpr mutable
+            {
                 using ElementT = std::tuple_element_t<t_i, std::tuple_element_t<t_element.dim_, t_Elements>>;
                 if (ElementT::getElement() == t_element)
                 {

@@ -25,15 +25,15 @@ namespace lolita2::geometry
 
     public:
     
-        using Components = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer>;
+        using InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer>;
         
-        using Neighbours = typename t_ElementTraits::template OuterConnectivity<t_ElementPointer>;
+        using OuterNeighbors = typename t_ElementTraits::template OuterConnectivity<t_ElementPointer>;
         
         lolita::natural tag_;
         
-        Neighbours neighbours_;
+        OuterNeighbors outer_neighbors_;
         
-        Components components_;
+        InnerNeighbors inner_neighbors_;
 
         std::vector<std::shared_ptr<MeshDomain>> domains_;
         
@@ -52,7 +52,7 @@ namespace lolita2::geometry
         const = default;
         
         std::basic_string<lolita::character>
-        hash()
+        getHash()
         const
         requires(t_element.isNode())
         {
@@ -60,14 +60,14 @@ namespace lolita2::geometry
         }
         
         std::basic_string<lolita::character>
-        hash()
+        getHash()
         const
         {
             std::basic_stringstream<lolita::character> hash;
-            auto const & nodes = getComponents<t_element.dim_ - 1, 0>();
+            auto const & nodes = getInnerNeighbors<t_element.dim_ - 1, 0>();
             for (auto const & node : nodes)
             {
-                hash << node->hash();
+                hash << node->getHash();
             }
             return hash.str();
         }
@@ -75,7 +75,7 @@ namespace lolita2::geometry
         template<lolita::integer t_i, lolita::integer t_j>
         static constexpr
         lolita::integer
-        getComponentNodeConnection(
+        getInnerNeighborNodeConnection(
             lolita::integer i,
             lolita::integer j
         )
@@ -85,49 +85,49 @@ namespace lolita2::geometry
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, Neighbours>> &
-        getNeighbours()
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighbors>> &
+        getOuterNeighbors()
         {
-            return std::get<t_j>(std::get<t_i>(neighbours_));
+            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, Neighbours>> const &
-        getNeighbours()
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighbors>> const &
+        getOuterNeighbors()
         const
         {
-            return std::get<t_j>(std::get<t_i>(neighbours_));
+            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, Components>> &
-        getComponents()
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, InnerNeighbors>> &
+        getInnerNeighbors()
         requires(!t_element.isNode())
         {
-            return std::get<t_j>(std::get<t_i>(components_));
+            return std::get<t_j>(std::get<t_i>(inner_neighbors_));
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, Components>> const &
-        getComponents()
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, InnerNeighbors>> const &
+        getInnerNeighbors()
         const
         requires(!t_element.isNode())
         {
-            return std::get<t_j>(std::get<t_i>(components_));
+            return std::get<t_j>(std::get<t_i>(inner_neighbors_));
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
         lolita::integer
-        getComponentIndex(
+        getInnerNeighborIndex(
             lolita::integer i
         )
         const
         requires(!t_element.isNode())
         {
-            auto constexpr t_component = t_ElementTraits::template getComponent<t_i, t_j>();
+            auto constexpr t_component = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
             using t_NeighbourTraits = ElementTraits<t_component, t_domain>;
-            auto constexpr t_coordinates = t_NeighbourTraits::template getNeighbourCoordinates<t_element>();
-            auto const & items = getComponents<t_i, t_j>()[i]->template getNeighbours<t_coordinates.dim_, t_coordinates.tag_>();
+            auto constexpr t_coordinates = t_NeighbourTraits::template getOuterNeighborCoordinates<t_element>();
+            auto const & items = getInnerNeighbors<t_i, t_j>()[i]->template getOuterNeighbors<t_coordinates.dim_, t_coordinates.tag_>();
             auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
             {
                 return * ptr_element == * this;
@@ -137,13 +137,13 @@ namespace lolita2::geometry
         
         template<lolita::integer t_i, lolita::integer t_j>
         lolita::integer
-        getComponentOrientation(
+        getInnerNeighborOrientation(
             lolita::integer i
         )
         const
         requires(!t_element.isNode())
         {
-            return getComponentIndex<t_i, t_j>(i) == 0 ? 1 : -1;
+            return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
         }
 
     };
@@ -160,14 +160,15 @@ namespace lolita2::geometry
 
     };
 
-    template<Element t_element, Domain t_domain, ElementGroupConcept auto... t_element_group>
+    template<Element t_element, Domain t_domain, auto... t_element_group>
     struct FiniteElementHolder : FiniteElementConnectivity<FiniteElementHolder, t_element, t_domain, t_element_group...>
     {
 
         using Elements = std::tuple<std::shared_ptr<Fefinal<t_element, t_domain, t_element_group>>...>;
 
-        Elements elements_;
-    
+        template<lolita::integer t_i>
+        using Element = typename std::tuple_element_t<t_i, Elements>::element_type
+          
         template<lolita::integer t_i>
         std::tuple_element_t<t_i, Elements> const &
         getElement()
@@ -183,6 +184,8 @@ namespace lolita2::geometry
             return std::get<t_i>(elements_);
         }
 
+        Elements elements_;
+
     };
 
     template<Domain t_domain, auto... t_args>
@@ -193,67 +196,76 @@ namespace lolita2::geometry
             std::basic_string_view<lolita::character> str
         )
         :
-        ElementSet<FiniteElementHolder, t_domain, t_args...>(MeshFileParser<FiniteElementHolder, t_domain, t_args...>::makeIt(str))
+        ElementSet<FiniteElementHolder, t_domain, t_args...>(MeshFileParser<FiniteElementHolder, t_domain, t_args...>::makeElementSet(str))
         {}
+
+        template<lolita::integer... t_i>
+        void
+        getEl(
+            std::basic_string_view<lolita::character> domain
+        )
+        {
+
+        }
         
         friend
         std::ostream &
         operator<<(
             std::ostream & os,
-            FiniteElementSet const & mesh
+            FiniteElementSet const & finite_element_set
         )
         {
-            auto print_element_components = [&] <Element t_element, lolita::integer t_i = 0, lolita::integer t_j = 0> (
-                    auto const & elem_arg,
+            auto print_element_inner_neighbors = [&] <Element t_element, lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                    auto const & element,
                     auto & self
             )
             mutable
             {
                 if constexpr (!t_element.isNode())
                 {
-                    auto const constexpr _component = ElementTraits<t_element, t_domain>::template getComponent<t_i, t_j>();
-                    for (auto const & c_ : elem_arg->template getComponents<t_i, t_j>())
+                    auto const constexpr t_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
+                    for (auto const & c_ : element->template getInnerNeighbors<t_i, t_j>())
                     {
-                        os << "layer : " << t_i << " type : " << t_j << " <-- " << _component << " " << c_->hash() << std::endl;
+                        os << "layer : " << t_i << " type : " << t_j << " <-- " << t_neighbor << " " << c_->getHash() << std::endl;
                     }
-                    if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumComponents<t_i>() - 1)
+                    if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<t_i>() - 1)
                     {
-                        self.template operator()<t_element, t_i, t_j + 1>(elem_arg, self);
+                        self.template operator()<t_element, t_i, t_j + 1>(element, self);
                     }
-                    else if constexpr (t_i < ElementTraits<t_element, t_domain>::getNumComponents() - 1)
+                    else if constexpr (t_i < ElementTraits<t_element, t_domain>::getNumInnerNeighbors() - 1)
                     {
-                        self.template operator()<t_element, t_i + 1, 0>(elem_arg, self);
+                        self.template operator()<t_element, t_i + 1, 0>(element, self);
                     }
                 }
             };
-            auto print_element_neighbours = [&] <Element t_element, lolita::integer t_i = 0, lolita::integer t_j = 0> (
-                    auto const & elem_arg,
+            auto print_element_outer_neighbors = [&] <Element t_element, lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                    auto const & element,
                     auto & self
             )
             mutable
             {
-                auto const constexpr _neighbour = ElementTraits<t_element, t_domain>::template getNeighbour<t_i, t_j>();
-                for (auto const & c_ : elem_arg->template getNeighbours<t_i, t_j>())
+                auto const constexpr t_neighbor = ElementTraits<t_element, t_domain>::template getOuterNeighbor<t_i, t_j>();
+                for (auto const & c_ : element->template getOuterNeighbors<t_i, t_j>())
                 {
                     if constexpr (!t_element.isNode() && t_i == 0)
                     {
-                        os << "layer : " << t_i << " type : " << t_j << " <-> " << _neighbour << " " << c_->hash() << std::endl;
+                        os << "layer : " << t_i << " type : " << t_j << " <-> " << t_neighbor << " " << c_->getHash() << std::endl;
                     }
                     else
                     {
-                        os << "layer : " << t_i << " type : " << t_j << " --> " << _neighbour << " " << c_->hash() << std::endl;
+                        os << "layer : " << t_i << " type : " << t_j << " --> " << t_neighbor << " " << c_->getHash() << std::endl;
                     }
                 }
-                if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumNeighbours<t_i>() - 1)
+                if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumOuterNeighbors<t_i>() - 1)
                 {
-                    self.template operator()<t_element, t_i, t_j + 1>(elem_arg, self);
+                    self.template operator()<t_element, t_i, t_j + 1>(element, self);
                 }
-                else if constexpr (t_i < ElementTraits<t_element, t_domain>::getNumNeighbours() - 1)
+                else if constexpr (t_i < ElementTraits<t_element, t_domain>::getNumOuterNeighbors() - 1)
                 {
-                    self.template operator()<t_element, t_i + 1, 0>(elem_arg, self);
+                    self.template operator()<t_element, t_i + 1, 0>(element, self);
                 }
             };
-            auto print_elements2 = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+            auto print_elements = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
                 auto & self
             )
             mutable
@@ -263,17 +275,17 @@ namespace lolita2::geometry
                 {
                     os << "*** Elements : " << std::endl;
                 }
-                for (auto const & element : mesh.template getElements<t_i, t_j>())
+                for (auto const & element : finite_element_set.template getElements<t_i, t_j>())
                 {
-                    os << "* Element : " << t_element << " " << element.second->hash() << std::endl;
-                    os << "domains : ";
+                    os << "* Element : " << t_element << " " << element.second->getHash() << std::endl;
+                    os << "* Domains : ";
                     for (auto const & domain : element.second->domains_)
                     {
                         os << domain->tag_ << " ";
                     }
                     os << std::endl;
-                    print_element_components.template operator()<t_element>(element.second, print_element_components);
-                    print_element_neighbours.template operator()<t_element>(element.second, print_element_neighbours);
+                    print_element_inner_neighbors.template operator()<t_element>(element.second, print_element_inner_neighbors);
+                    print_element_outer_neighbors.template operator()<t_element>(element.second, print_element_outer_neighbors);
                 }                
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
                 {
@@ -284,7 +296,7 @@ namespace lolita2::geometry
                     self.template operator()<t_i + 1, 0>(self);
                 }
             };
-            print_elements2(print_elements2);
+            print_elements(print_elements);
             return os;
         }
 

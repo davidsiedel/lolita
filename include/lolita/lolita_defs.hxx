@@ -531,37 +531,37 @@ namespace lolita2
     template<typename t_T>
     concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
     
-    template<auto... t_finite_elements>
-    struct ElementGroup
-    {
+    // template<auto... t_finite_elements>
+    // struct ElementGroup
+    // {
 
-    private:
+    // private:
     
-        using t_FiniteElements = std::tuple<std::remove_cvref_t<decltype(t_finite_elements)>...>;
+    //     using t_FiniteElements = std::tuple<std::remove_cvref_t<decltype(t_finite_elements)>...>;
 
-    public:
+    // public:
     
-        template<template<auto, auto, auto> typename t_T, auto t_element, auto t_domain>
-        using ElementPointers = std::tuple<std::shared_ptr<t_T<t_element, t_domain, t_finite_elements>>...>;
+    //     template<template<auto, auto, auto> typename t_T, auto t_element, auto t_domain>
+    //     using ElementPointers = std::tuple<std::shared_ptr<t_T<t_element, t_domain, t_finite_elements>>...>;
         
-        template<template<auto, auto, auto> typename t_T, auto t_element, auto t_domain>
-        using Elements = std::tuple<t_T<t_element, t_domain, t_finite_elements>...>;
+    //     template<template<auto, auto, auto> typename t_T, auto t_element, auto t_domain>
+    //     using Elements = std::tuple<t_T<t_element, t_domain, t_finite_elements>...>;
     
-    };
+    // };
 
-    namespace detail
-    {
+    // namespace detail
+    // {
 
-        template<typename t_T>
-        struct IsElementGroup : std::true_type {};
+    //     template<typename t_T>
+    //     struct IsElementGroup : std::true_type {};
 
-        template<auto... t_args>
-        struct IsElementGroup<ElementGroup<t_args...>> : std::false_type {};
+    //     template<auto... t_args>
+    //     struct IsElementGroup<ElementGroup<t_args...>> : std::false_type {};
 
-    }
+    // }
 
-    template<typename t_T>
-    concept ElementGroupConcept = detail::IsElementGroup<t_T>::value;
+    // template<typename t_T>
+    // concept ElementGroupConcept = detail::IsElementGroup<t_T>::value;
 
 
 
