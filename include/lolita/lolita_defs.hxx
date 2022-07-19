@@ -17,49 +17,49 @@
 namespace lolita2
 {
 
-    struct MeshFileFormat
-    {
+    // struct MeshFileFormat
+    // {
 
-        enum Format
-        {
+    //     enum Format
+    //     {
 
-            Gmsh,
+    //         Gmsh,
 
-        };
+    //     };
 
-        constexpr
-        MeshFileFormat(
-            Format format
-        )
-        :
-        format_(format)
-        {}
+    //     constexpr
+    //     MeshFileFormat(
+    //         Format format
+    //     )
+    //     :
+    //     format_(format)
+    //     {}
 
-        constexpr
-        lolita::boolean
-        operator==(
-            MeshFileFormat const & other
-        )
-        const = default;
+    //     constexpr
+    //     lolita::boolean
+    //     operator==(
+    //         MeshFileFormat const & other
+    //     )
+    //     const = default;
 
-        constexpr
-        lolita::boolean
-        operator!=(
-            MeshFileFormat const & other
-        )
-        const = default;
+    //     constexpr
+    //     lolita::boolean
+    //     operator!=(
+    //         MeshFileFormat const & other
+    //     )
+    //     const = default;
 
-        constexpr
-        lolita::boolean
-        isGmsh()
-        const
-        {
-            return format_ == Format::Gmsh;
-        }
+    //     constexpr
+    //     lolita::boolean
+    //     isGmsh()
+    //     const
+    //     {
+    //         return format_ == Format::Gmsh;
+    //     }
 
-        Format format_;
+    //     Format format_;
 
-    };
+    // };
     
     using Point = lolita::matrix::Vector<lolita::real, 3>;
 
@@ -406,6 +406,20 @@ namespace lolita2
 
         constexpr
         lolita::boolean
+        operator==(
+            Mapping const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+            Mapping const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
         isGradient()
         const
         {
@@ -461,6 +475,20 @@ namespace lolita2
 
         constexpr
         lolita::boolean
+        operator==(
+            Field const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+            Field const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
         isTensor(
             lolita::integer dim
         )
@@ -487,33 +515,137 @@ namespace lolita2
         mappings_({mappings...})
         {}
 
+        constexpr
+        lolita::boolean
+        operator==(
+            Unknown const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+            Unknown const & other
+        )
+        const = default;
+
         Field field_;
 
         std::array<Mapping, sizeof...(t_Mappings)> mappings_;
 
     };
 
-    template<typename UnknownT>
-    struct HybridDiscontinuousGalerkin
+    namespace discretization
+    {
+
+        struct HybridDiscontinuousGalerkin
+        {
+
+            enum Stabilization
+            {
+
+                Hdg,
+                Hho,
+
+            };
+
+            constexpr
+            HybridDiscontinuousGalerkin(
+                Basis cell_basis,
+                Basis face_basis,
+                Stabilization stabilization
+            )
+            :
+            cell_basis_(cell_basis),
+            face_basis_(face_basis),
+            stabilization_(stabilization)
+            {}
+
+            constexpr
+            lolita::boolean
+            operator==(
+                HybridDiscontinuousGalerkin const & other
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                HybridDiscontinuousGalerkin const & other
+            )
+            const = default;
+
+            Basis cell_basis_;
+
+            Basis face_basis_;
+
+            Stabilization stabilization_;
+
+        };
+
+    }
+
+    template<typename t_Unknown, typename t_Discretization>
+    struct FiniteElementMethod
     {
 
         constexpr
-        HybridDiscontinuousGalerkin(
-            UnknownT unknown,
-            Basis cell_basis,
-            Basis face_basis
+        FiniteElementMethod(
+            t_Unknown unknown,
+            t_Discretization discretization,
+            Quadrature quadrature
         )
         :
         unknown_(unknown),
-        cell_basis_(cell_basis),
-        face_basis_(face_basis)
+        discretization_(discretization),
+        quadrature_(quadrature)
         {}
 
-        UnknownT unknown_;
+        t_Unknown unknown_;
+
+        t_Discretization discretization_;
+
+        Quadrature quadrature_;
+
+    };
+
+    template<typename t_Unknown>
+    struct HybridDiscontinuousGalerkin
+    {
+
+        enum Stabilization
+        {
+
+            Hdg,
+            Hho,
+
+        };
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            t_Unknown unknown,
+            Quadrature quadrature,
+            Basis cell_basis,
+            Basis face_basis
+            // Stabilization stabilization
+        )
+        :
+        unknown_(unknown),
+        quadrature_(quadrature),
+        cell_basis_(cell_basis),
+        face_basis_(face_basis)
+        // stabilization_(stabilization)
+        {}
+
+        t_Unknown unknown_;
+
+        Quadrature quadrature_;
 
         Basis cell_basis_;
 
         Basis face_basis_;
+
+        // Stabilization stabilization_;
 
     };
 

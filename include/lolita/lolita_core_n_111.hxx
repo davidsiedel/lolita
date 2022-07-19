@@ -230,7 +230,6 @@ namespace lolita2::geometry
                 mutable
                 {
                     using t_FiniteElement = typename FiniteElementHolder<t_element, t_domain, t_args...>::template t_FiniteElement<t_k>;
-                    // using HHH = std::tuple_element_t<t_i, typename FiniteElementHolder<t_element, t_domain, t_args...>::FiniteElements>
                     ptr_element->template getFiniteElement<t_k>() = std::make_shared<t_FiniteElement>(t_FiniteElement());
                     if constexpr (t_k < std::tuple_size_v<typename FiniteElementHolder<t_element, t_domain, t_args...>::t_FiniteElements> - 1)
                     {
@@ -484,11 +483,11 @@ namespace lolita2::geometry
         {}
 
         template<auto... t_args>
-        FiniteElementSet<t_domain, t_args...>
+        std::unique_ptr<FiniteElementSet<t_domain, t_args...>>
         makeFiniteElementSet()
         const
         {
-            auto element_set = FiniteElementSet<t_domain, t_args...>();
+            auto element_set = std::make_unique<FiniteElementSet<t_domain, t_args...>>(FiniteElementSet<t_domain, t_args...>());
             auto make_elements = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
                 auto & self
             )
@@ -496,7 +495,7 @@ namespace lolita2::geometry
             {
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    element.second->template makeElement<t_args...>(element_set);
+                    element.second->template makeElement<t_args...>(* element_set);
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
                 {
@@ -514,7 +513,7 @@ namespace lolita2::geometry
             mutable
             {
                 auto const constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto & element : element_set.template getElements<t_i, t_j>())
+                for (auto & element : element_set->template getElements<t_i, t_j>())
                 {
                     MeshElement<t_element, t_domain>::template initialize<t_args...>(element.second);
                 }
@@ -873,7 +872,7 @@ namespace lolita2::geometry
         {}
 
         template<Domain t_domain, auto... t_args>
-        FiniteElementSet<t_domain, t_args...>
+        std::unique_ptr<FiniteElementSet<t_domain, t_args...>>
         makeFiniteElementSet()
         const
         {
