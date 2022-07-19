@@ -7,12 +7,9 @@
 #include "lolita/lolita_defs.hxx"
 #include "lolita/lolita_core_n_00.hxx"
 #include "lolita/lolita_core_n_0.hxx"
-// #include "lolita/lolita_core_n_111.hxx"
 
 namespace lolita2::geometry
 {
-
-    struct MeshDomain;
 
     template<template<Element, Domain, auto...> typename t_T, Element t_element, Domain t_domain, auto... t_args>
     struct FiniteElementConnectivity
@@ -27,15 +24,15 @@ namespace lolita2::geometry
 
     public:
     
-        using InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer>;
+        using t_InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer>;
         
-        using OuterNeighbors = typename t_ElementTraits::template OuterConnectivity<t_ElementPointer>;
+        using t_OuterNeighbors = typename t_ElementTraits::template OuterConnectivity<t_ElementPointer>;
+        
+        t_OuterNeighbors outer_neighbors_;
+        
+        t_InnerNeighbors inner_neighbors_;
         
         lolita::natural tag_;
-        
-        OuterNeighbors outer_neighbors_;
-        
-        InnerNeighbors inner_neighbors_;
 
         std::vector<std::shared_ptr<MeshDomain>> domains_;
         
@@ -87,14 +84,14 @@ namespace lolita2::geometry
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighbors>> &
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_OuterNeighbors>> &
         getOuterNeighbors()
         {
             return std::get<t_j>(std::get<t_i>(outer_neighbors_));
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighbors>> const &
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_OuterNeighbors>> const &
         getOuterNeighbors()
         const
         {
@@ -102,7 +99,7 @@ namespace lolita2::geometry
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, InnerNeighbors>> &
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_InnerNeighbors>> &
         getInnerNeighbors()
         requires(!t_element.isNode())
         {
@@ -110,7 +107,7 @@ namespace lolita2::geometry
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, InnerNeighbors>> const &
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_InnerNeighbors>> const &
         getInnerNeighbors()
         const
         requires(!t_element.isNode())
@@ -151,7 +148,7 @@ namespace lolita2::geometry
     };
 
     template<Element t_element, Domain t_domain, auto t_arg>
-    struct Fefinal : FiniteElementConnectivity<Fefinal, t_element, t_domain, t_arg>
+    struct FiniteElement : FiniteElementConnectivity<FiniteElement, t_element, t_domain, t_arg>
     {
 
         void
@@ -162,17 +159,17 @@ namespace lolita2::geometry
 
     };
 
-    template<Element t_element, Domain t_domain, auto... t_element_group>
-    struct FiniteElementHolder : FiniteElementConnectivity<FiniteElementHolder, t_element, t_domain, t_element_group...>
+    template<Element t_element, Domain t_domain, auto... t_args>
+    struct FiniteElementHolder : FiniteElementConnectivity<FiniteElementHolder, t_element, t_domain, t_args...>
     {
 
-        using FiniteElements = std::tuple<std::shared_ptr<Fefinal<t_element, t_domain, t_element_group>>...>;
+        using t_FiniteElements = std::tuple<std::shared_ptr<FiniteElement<t_element, t_domain, t_args>>...>;
 
         template<lolita::integer t_i>
-        using FiniteElement = typename std::tuple_element_t<t_i, FiniteElements>::element_type;
+        using t_FiniteElement = typename std::tuple_element_t<t_i, t_FiniteElements>::element_type;
           
         template<lolita::integer t_i>
-        std::tuple_element_t<t_i, FiniteElements> const &
+        std::tuple_element_t<t_i, t_FiniteElements> const &
         getFiniteElement()
         const
         {
@@ -180,13 +177,13 @@ namespace lolita2::geometry
         }
         
         template<lolita::integer t_i>
-        std::tuple_element_t<t_i, FiniteElements> &
+        std::tuple_element_t<t_i, t_FiniteElements> &
         getFiniteElement()
         {
             return std::get<t_i>(finite_elements_);
         }
 
-        FiniteElements finite_elements_;
+        t_FiniteElements finite_elements_;
 
     };
 
