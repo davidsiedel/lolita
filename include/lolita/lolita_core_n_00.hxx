@@ -22,23 +22,7 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 0)
         };
 
-        lolita::index static constexpr num_components_ = shape_.size_;
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return {1, 1};
-        }
-
-        static constexpr
-        lolita::integer
-        size()
-        {
-            return shape().size();
-        }
+        lolita::index static constexpr size__ = shape_.size__;
 
     };
 
@@ -52,23 +36,7 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 1)
         };
 
-        lolita::index static constexpr num_components_ = shape_.size_;
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return {1, t_domain.dim_};
-        }
-
-        static constexpr
-        lolita::integer
-        size()
-        {
-            return shape().size();
-        }
+        lolita::index static constexpr size__ = shape_.size__;
 
     };
 
@@ -82,23 +50,7 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 1)
         };
 
-        lolita::index static constexpr num_components_ = shape_.size_;
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return {t_domain.dim_, t_domain.dim_};
-        }
-
-        static constexpr
-        lolita::integer
-        size()
-        {
-            return shape().size();
-        }
+        lolita::index static constexpr size__ = shape_.size__;
 
     };
 
@@ -112,23 +64,7 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 2)
         };
 
-        lolita::index static constexpr num_components_ = shape_.size_;
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return {t_domain.dim_, t_domain.dim_ * t_domain.dim_};
-        }
-
-        static constexpr
-        lolita::integer
-        size()
-        {
-            return shape().size();
-        }
+        lolita::index static constexpr size__ = shape_.size__;
 
     };
 
@@ -142,23 +78,7 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 2)
         };
 
-        lolita::index static constexpr num_components_ = shape_.size_;
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return {t_domain.dim_ * t_domain.dim_, t_domain.dim_ * t_domain.dim_};
-        }
-
-        static constexpr
-        lolita::integer
-        size()
-        {
-            return shape().size();
-        }
+        lolita::index static constexpr size__ = shape_.size__;
 
     };
 
@@ -221,7 +141,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {1, 1};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
         };
 
@@ -233,10 +153,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -255,7 +175,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {2, 1};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
         };
@@ -268,10 +188,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -290,7 +210,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {3, 1};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
                 MappingValues{0, 2, 2, 1},
@@ -304,10 +224,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -330,7 +250,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {2, 1};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
         };
@@ -343,10 +263,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -365,7 +285,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {3, 1};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
                 MappingValues{0, 2, 2, 1},
@@ -379,10 +299,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -401,7 +321,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {2, 2};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
                 MappingValues{1, 0, 2, 1},
@@ -416,10 +336,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -438,7 +358,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {3, 3};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
                 MappingValues{0, 2, 2, 1},
@@ -458,10 +378,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -480,7 +400,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {1, 4};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
                 MappingValues{0, 0, 2, 0},
@@ -495,10 +415,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -517,7 +437,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {1, 6};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
                 MappingValues{2, 2, 2, 0},
@@ -534,10 +454,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
         }
 
         static
@@ -556,7 +476,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {1, 5};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
                 MappingValues{0, 0, 2, 0},
@@ -572,10 +492,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            auto res = lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            auto res = lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
             res(0) += 1.0;
             res(1) += 1.0;
             res(2) += 1.0;
@@ -602,7 +522,7 @@ namespace lolita2::geometry
 
         lolita::matrix::Shape static constexpr shape_ = {1, 9};
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        std::array<MappingValues, shape_.size__> static constexpr values_ = {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
                 MappingValues{2, 2, 2, 0},
@@ -622,10 +542,10 @@ namespace lolita2::geometry
         }
 
         static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
+        lolita::matrix::Vector<lolita::real, shape_.size__>
         non_linear()
         {
-            auto res = lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            auto res = lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size__>>();
             res(0) += 1.0;
             res(1) += 1.0;
             res(2) += 1.0;

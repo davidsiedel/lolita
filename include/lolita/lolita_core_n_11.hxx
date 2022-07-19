@@ -54,6 +54,8 @@ namespace lolita2::geometry
             
             lolita::integer static constexpr num_components_ = lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
             
+            lolita::integer static constexpr size_ = lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
+            
             template<template<Element, Domain, auto...> typename t_FiniteElement, Element t_element, Domain t_domain, auto... t_args>
             struct Implementation : FiniteElementGeometry<t_FiniteElement, t_element, t_domain, t_args...>
             {
@@ -193,14 +195,80 @@ namespace lolita2::geometry
 
     }
 
-    namespace operatorg
+    namespace discretization
     {
 
-        template<template<Element, Domain, auto...> typename t_FiniteElement, Element t_element, Domain t_domain, auto... t_args>
-        struct HDGGrad
+        namespace hybrid_discontinuous_galerkin
         {
 
-        };
+            struct Stabilization
+            {
+
+                enum Type{
+
+                    Hdg,
+                    Hho,
+
+                };
+
+                constexpr
+                Stabilization(
+                    Type type
+                )
+                :
+                type_(type)
+                {}
+
+                constexpr
+                lolita::boolean
+                operator==(
+                    Stabilization const & other
+                )
+                const = default;
+
+                constexpr
+                lolita::boolean
+                operator!=(
+                    Stabilization const & other
+                )
+                const = default;
+
+                constexpr
+                lolita::boolean
+                isHdg()
+                const
+                {
+                    return type_ == Type::Hdg;
+                }
+
+                constexpr
+                lolita::boolean
+                isHho()
+                const
+                {
+                    return type_ == Type::Hho;
+                }
+
+                Type type_;
+
+            };
+
+            template<Basis t_cell_basis, Basis t_face_basis>
+            struct HybridDiscontinuousGalerkinElementTraits
+            {
+
+                template<Element t_element, Domain t_domain, Field t_field>
+                static constexpr
+                lolita::integer
+                getNumUnknowns()
+                {
+                    // FieldTraits<t_domain, t_field>::size_;
+                    return 0;
+                }
+
+            };
+
+        }
 
     }
     
@@ -744,29 +812,50 @@ namespace lolita2::geometry
             return p;
         }
         
-        template<Basis t_basis, auto... t__args>
-        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t__args...>::dim_>
+        template<Basis t_basis, auto t_arg>
+        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t_arg>::dim_>
         getBasisEvaluation(
             Point const & point
         )
         const
         {
-            using t_FiniteElementBasisTraits = typename basis::FiniteElementBasisTraits<t_basis, t__args...>;
+            using t_FiniteElementBasisTraits = typename basis::FiniteElementBasisTraits<t_basis, t_arg>;
             using t_Implementation = t_FiniteElementBasisTraits::template Implementation<lolita2::geometry::FiniteElementGeometry, t_element, t_domain>;
             return static_cast<t_Implementation const *>(this)->getBasisEvaluation(point);
         }
         
-        template<Basis t_basis, auto... t__args>
-        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t__args...>::dim_>
+        template<Basis t_basis, auto t_arg>
+        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t_arg>::dim_>
         getBasisDerivative(
             Point const & point,
             lolita::integer derivative_direction
         )
         const
         {
-            using t_FiniteElementBasisTraits = typename basis::FiniteElementBasisTraits<t_basis, t__args...>;
+            using t_FiniteElementBasisTraits = typename basis::FiniteElementBasisTraits<t_basis, t_arg>;
             using t_Implementation = t_FiniteElementBasisTraits::template Implementation<lolita2::geometry::FiniteElementGeometry, t_element, t_domain>;
             return static_cast<t_Implementation const *>(this)->getBasisDerivative(point, derivative_direction);
+        }
+        
+        template<Basis t_basis>
+        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t_element>::dim_>
+        getBasisEvaluation(
+            Point const & point
+        )
+        const
+        {
+            return getBasisEvaluation<t_basis, t_element>(point);
+        }
+        
+        template<Basis t_basis>
+        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t_element>::dim_>
+        getBasisDerivative(
+            Point const & point,
+            lolita::integer derivative_direction
+        )
+        const
+        {
+            return getBasisDerivative<t_basis, t_element>(point, derivative_direction);
         }
         
         t_OuterNeighbors outer_neighbors_;
@@ -787,7 +876,7 @@ namespace lolita2::geometry
 
         lolita::integer static constexpr num_basis_components_ = basis::FiniteElementBasisTraits<t_basis, t_element>::dim_;
 
-        lolita::integer static constexpr num_field_components_ = FieldTraits<t_field, t_domain>::num_components_;
+        lolita::integer static constexpr num_field_components_ = FieldTraits<t_field, t_domain>::size__;
 
         lolita::integer static constexpr num_unknown_components_ = num_basis_components_ * num_field_components_;
 
