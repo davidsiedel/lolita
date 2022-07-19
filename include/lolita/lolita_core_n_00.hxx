@@ -22,6 +22,8 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 0)
         };
 
+        lolita::index static constexpr num_components_ = shape_.size_;
+
         lolita::index static constexpr size_ = shape_.size_;
 
         static constexpr
@@ -49,6 +51,8 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 0),
                 lolita::numerics::pow(t_domain.dim_, 1)
         };
+
+        lolita::index static constexpr num_components_ = shape_.size_;
 
         lolita::index static constexpr size_ = shape_.size_;
 
@@ -78,6 +82,8 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 1)
         };
 
+        lolita::index static constexpr num_components_ = shape_.size_;
+
         lolita::index static constexpr size_ = shape_.size_;
 
         static constexpr
@@ -106,6 +112,8 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 2)
         };
 
+        lolita::index static constexpr num_components_ = shape_.size_;
+
         lolita::index static constexpr size_ = shape_.size_;
 
         static constexpr
@@ -133,6 +141,8 @@ namespace lolita2::geometry
                 lolita::numerics::pow(t_domain.dim_, 2),
                 lolita::numerics::pow(t_domain.dim_, 2)
         };
+
+        lolita::index static constexpr num_components_ = shape_.size_;
 
         lolita::index static constexpr size_ = shape_.size_;
 

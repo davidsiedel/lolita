@@ -165,10 +165,8 @@ namespace lolita::numerics
     static constexpr
     T
     pow(
-            T
-            x,
-            U
-            n
+        T x,
+        U n
     )
     {
         return n == 0 ? T(1) : x * pow(x, n - 1);
@@ -181,22 +179,22 @@ namespace lolita::numerics
         static constexpr
         T
         sqrt(
-                T
-                x,
-                T
-                lo,
-                T
-                hi
+            T x,
+            T lo,
+            T hi
         )
         {
-            if (lo == hi) {
+            if (lo == hi)
+            {
                 return lo;
             }
             const auto mid = T((lo + hi + 1) / 2);
-            if (x / mid < mid) {
+            if (x / mid < mid)
+            {
                 return sqrt<T>(x, lo, mid - 1);
             }
-            else {
+            else
+            {
                 return sqrt(x, mid, hi);
             }
         }
@@ -207,8 +205,7 @@ namespace lolita::numerics
     static constexpr
     auto
     sqrt(
-            T
-            x
+        T x
     )
     {
         return detail::sqrt<T>(x, T(0), x / T(2) + T(1));
@@ -218,8 +215,7 @@ namespace lolita::numerics
     static constexpr
     T
     abs(
-            T
-            x
+        T x
     )
     {
         return x < T(0) ? -x : x;
@@ -229,8 +225,7 @@ namespace lolita::numerics
     static constexpr
     T
     max(
-            T
-            x
+        T x
     )
     {
         return x;
@@ -240,10 +235,8 @@ namespace lolita::numerics
     static constexpr
     T
     max(
-            T
-            x,
-            T
-            y
+        T x,
+        T y
     )
     {
         return x < y ? y : x;
@@ -253,10 +246,8 @@ namespace lolita::numerics
     static constexpr
     T
     max(
-            T
-            x,
-            U...
-            y
+        T x,
+        U... y
     )
     {
         return max(x, max(static_cast<T>(y)...));
@@ -266,8 +257,7 @@ namespace lolita::numerics
     static constexpr
     T
     prod(
-            T
-            x
+        T x
     )
     {
         return x;
@@ -277,10 +267,8 @@ namespace lolita::numerics
     static constexpr
     T
     prod(
-            T
-            x,
-            T
-            y
+        T x,
+        T y
     )
     {
         return x * y;
@@ -290,10 +278,8 @@ namespace lolita::numerics
     static constexpr
     T
     prod(
-            T
-            x,
-            U...
-            y
+        T x,
+        U... y
     )
     {
         return prod(x, prod(static_cast<T>(y)...));
@@ -303,8 +289,7 @@ namespace lolita::numerics
     static constexpr
     T
     sum(
-            T
-            x
+        T x
     )
     {
         return x;
@@ -314,10 +299,8 @@ namespace lolita::numerics
     static constexpr
     T
     sum(
-            T
-            x,
-            T
-            y
+        T x,
+        T y
     )
     {
         return x + y;
@@ -327,10 +310,8 @@ namespace lolita::numerics
     static constexpr
     T
     sum(
-            T
-            x,
-            U...
-            y
+        T x,
+        U... y
     )
     {
         return sum(x, sum(static_cast<T>(y)...));
@@ -340,10 +321,8 @@ namespace lolita::numerics
     static constexpr
     T
     binomial(
-            T
-            n,
-            U
-            k
+        T n,
+        U k
     )
     {
         //        return
@@ -360,10 +339,7 @@ namespace lolita::numerics
 
 namespace lolita::matrix
 {
-
-    /**
-     * @brief
-     */
+    
     struct VectorBlock
     {
 
@@ -384,8 +360,8 @@ namespace lolita::matrix
          */
         constexpr
         VectorBlock(
-                lolita::integer i,
-                lolita::integer j
+            lolita::integer i,
+            lolita::integer j
         )
         :
         i_(i),
@@ -453,10 +429,10 @@ namespace lolita::matrix
          */
         constexpr
         MatrixBlock(
-                lolita::integer i,
-                lolita::integer j,
-                lolita::integer k,
-                lolita::integer l
+            lolita::integer i,
+            lolita::integer j,
+            lolita::integer k,
+            lolita::integer l
         )
         :
         row_block_(i, j),
@@ -511,8 +487,8 @@ namespace lolita::matrix
 
         constexpr
         Coordinates(
-                lolita::integer row,
-                lolita::integer col
+            lolita::integer row,
+            lolita::integer col
         )
         :
         row_(row),
@@ -553,8 +529,8 @@ namespace lolita::matrix
 
         constexpr
         SparseVectorInput(
-                lolita::integer row,
-                lolita::real value
+            lolita::integer row,
+            lolita::real value
         )
         :
         row_(row),
@@ -643,11 +619,11 @@ namespace lolita::matrix
 
         constexpr
         Shape(
-                lolita::index rows,
-                lolita::index cols
+            lolita::index rows,
+            lolita::index cols
         )
         :
-        rows_(rows),
+        num_rows_(rows),
         cols_(cols),
         size_(rows * cols)
         {}
@@ -657,7 +633,7 @@ namespace lolita::matrix
         rows()
         const
         {
-            return rows_;
+            return num_rows_;
         }
 
         constexpr
@@ -673,10 +649,10 @@ namespace lolita::matrix
         size()
         const
         {
-            return rows_ * cols_;
+            return num_rows_ * cols_;
         }
 
-        lolita::index rows_;
+        lolita::index num_rows_;
 
         lolita::index cols_;
 
@@ -724,10 +700,8 @@ namespace lolita::matrix
     static constexpr
     lolita::matrix::StorageOption
     storageOption(
-            lolita::numerics::IntegerConcept auto
-            num_rows,
-            lolita::numerics::IntegerConcept auto
-            num_cols
+        lolita::numerics::IntegerConcept auto num_rows,
+        lolita::numerics::IntegerConcept auto num_cols
     )
     {
         return num_rows != 1 && num_cols == 1 ? col_major : row_major;
@@ -736,12 +710,9 @@ namespace lolita::matrix
     static constexpr
     lolita::matrix::StorageOption
     storageOption(
-            lolita::matrix::StorageOption
-            storage_option,
-            lolita::numerics::IntegerConcept auto
-            num_rows,
-            lolita::numerics::IntegerConcept auto
-            num_cols
+        lolita::matrix::StorageOption storage_option,
+        lolita::numerics::IntegerConcept auto num_rows,
+        lolita::numerics::IntegerConcept auto num_cols
     )
     {
         return num_rows != 1 && num_cols == 1 ? col_major : num_rows == 1 && num_cols != 1 ? row_major : storage_option;

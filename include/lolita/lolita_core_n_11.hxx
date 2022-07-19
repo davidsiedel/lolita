@@ -52,6 +52,8 @@ namespace lolita2::geometry
             
             lolita::integer static constexpr dim_ = lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
             
+            lolita::integer static constexpr num_components_ = lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
+            
             template<template<Element, Domain, auto...> typename t_FiniteElement, Element t_element, Domain t_domain, auto... t_args>
             struct Implementation : FiniteElementGeometry<t_FiniteElement, t_element, t_domain, t_args...>
             {
@@ -191,6 +193,17 @@ namespace lolita2::geometry
 
     }
 
+    namespace operatorg
+    {
+
+        template<template<Element, Domain, auto...> typename t_FiniteElement, Element t_element, Domain t_domain, auto... t_args>
+        struct HDGGrad
+        {
+
+        };
+
+    }
+    
     template<template<Element, Domain, auto...> typename t_T, Element t_element, Domain t_domain, auto... t_args>
     struct FiniteElementGeometry
     {
@@ -772,11 +785,11 @@ namespace lolita2::geometry
     struct FiniteElementUnknown
     {
 
-        lolita::integer static constexpr dim_basis_ = basis::FiniteElementBasisTraits<t_basis, t_element>::dim_;
+        lolita::integer static constexpr num_basis_components_ = basis::FiniteElementBasisTraits<t_basis, t_element>::dim_;
 
-        lolita::integer static constexpr dim_field_ = FieldTraits<t_field, t_domain>::shape_.size_;
+        lolita::integer static constexpr num_field_components_ = FieldTraits<t_field, t_domain>::num_components_;
 
-        lolita::integer static constexpr size_ = dim_basis_ * dim_field_;
+        lolita::integer static constexpr num_unknown_components_ = num_basis_components_ * num_field_components_;
 
         void
         setUnknown(
@@ -785,14 +798,14 @@ namespace lolita2::geometry
         {
             unknown_ = unknown;
             index_ = unknown->size();
-            unknown->resize(unknown->size() + size_);
+            unknown->resize(unknown->size() + num_unknown_components_);
         }
 
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size_> const>
+        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, num_unknown_components_> const>
         getCoefficients()
         const
         {
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size_> const>(unknown_->data() + 1);
+            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, num_unknown_components_> const>(unknown_->data() + 1);
         }
 
         std::shared_ptr<lolita::matrix::Vector<lolita::real>> unknown_;
