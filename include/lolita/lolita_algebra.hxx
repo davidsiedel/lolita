@@ -439,14 +439,14 @@ namespace lolita::matrix
         :
         num_rows_(rows),
         num_cols_(cols),
-        size__(rows * cols)
+        size_(rows * cols)
         {}
 
         lolita::index num_rows_;
 
         lolita::index num_cols_;
 
-        lolita::index size__;
+        lolita::index size_;
 
     };
 

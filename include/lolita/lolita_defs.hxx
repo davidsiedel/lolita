@@ -535,55 +535,146 @@ namespace lolita2
 
     };
 
-    namespace discretization
+    // namespace discretization
+    // {
+
+    //     namespace hybrid_discontinuous_galerkin
+    //     {
+
+    //         struct Stabilization
+    //         {
+
+    //             enum Type
+    //             {
+
+    //                 Hdg,
+    //                 Hho,
+
+    //             };
+
+    //             constexpr
+    //             Stabilization(
+    //                 Type type
+    //             )
+    //             :
+    //             type_(type)
+    //             {}
+
+    //             constexpr
+    //             lolita::boolean
+    //             operator==(
+    //                 Stabilization const & other
+    //             )
+    //             const = default;
+
+    //             constexpr
+    //             lolita::boolean
+    //             operator!=(
+    //                 Stabilization const & other
+    //             )
+    //             const = default;
+
+    //             constexpr
+    //             lolita::boolean
+    //             isHdg()
+    //             const
+    //             {
+    //                 return type_ == Type::Hdg;
+    //             }
+
+    //             constexpr
+    //             lolita::boolean
+    //             isHho()
+    //             const
+    //             {
+    //                 return type_ == Type::Hho;
+    //             }
+
+    //             Type type_;
+
+    //         };
+
+    //     }
+
+    // }
+
+    struct HybridDiscontinuousGalerkin
     {
 
-        struct HybridDiscontinuousGalerkin
+        enum Stabilization
         {
 
-            enum Stabilization
-            {
-
-                Hdg,
-                Hho,
-
-            };
-
-            constexpr
-            HybridDiscontinuousGalerkin(
-                Basis cell_basis,
-                Basis face_basis,
-                Stabilization stabilization
-            )
-            :
-            cell_basis_(cell_basis),
-            face_basis_(face_basis),
-            stabilization_(stabilization)
-            {}
-
-            constexpr
-            lolita::boolean
-            operator==(
-                HybridDiscontinuousGalerkin const & other
-            )
-            const = default;
-
-            constexpr
-            lolita::boolean
-            operator!=(
-                HybridDiscontinuousGalerkin const & other
-            )
-            const = default;
-
-            Basis cell_basis_;
-
-            Basis face_basis_;
-
-            Stabilization stabilization_;
+            Hdg,
+            Hho,
 
         };
 
+        constexpr
+        HybridDiscontinuousGalerkin(
+            Basis cell_basis,
+            Basis face_basis,
+            Stabilization stabilization
+        )
+        :
+        cell_basis_(cell_basis),
+        face_basis_(face_basis),
+        grad_basis_(face_basis),
+        stabilization_(stabilization)
+        {}
+
+        constexpr
+        lolita::boolean
+        operator==(
+            HybridDiscontinuousGalerkin const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+            HybridDiscontinuousGalerkin const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        isHdg()
+        const
+        {
+            return stabilization_ == Stabilization::Hdg;
+        }
+
+        constexpr
+        lolita::boolean
+        isHho()
+        const
+        {
+            return stabilization_ == Stabilization::Hho;
+        }
+
+        Basis cell_basis_;
+
+        Basis face_basis_;
+
+        Basis grad_basis_;
+
+        Stabilization stabilization_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsHybridDiscontinuousGalerkin : std::false_type {};
+        
+        template<>
+        struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin> : std::true_type {};
+
     }
+
+    template<typename t_T>
+    concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
 
     template<typename t_Unknown, typename t_Discretization>
     struct FiniteElementMethod
@@ -601,6 +692,28 @@ namespace lolita2
         quadrature_(quadrature)
         {}
 
+        constexpr
+        lolita::boolean
+        operator==(
+            FiniteElementMethod const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+            FiniteElementMethod const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        isHdg()
+        const
+        {
+            return HybridDiscontinuousGalerkinConcept<t_Discretization>;
+        }
+
         t_Unknown unknown_;
 
         t_Discretization discretization_;
@@ -609,59 +722,59 @@ namespace lolita2
 
     };
 
-    template<typename t_Unknown>
-    struct HybridDiscontinuousGalerkin
-    {
+    // template<typename t_Unknown>
+    // struct HybridDiscontinuousGalerkin
+    // {
 
-        enum Stabilization
-        {
+    //     enum Stabilization
+    //     {
 
-            Hdg,
-            Hho,
+    //         Hdg,
+    //         Hho,
 
-        };
+    //     };
 
-        constexpr
-        HybridDiscontinuousGalerkin(
-            t_Unknown unknown,
-            Quadrature quadrature,
-            Basis cell_basis,
-            Basis face_basis
-            // Stabilization stabilization
-        )
-        :
-        unknown_(unknown),
-        quadrature_(quadrature),
-        cell_basis_(cell_basis),
-        face_basis_(face_basis)
-        // stabilization_(stabilization)
-        {}
+    //     constexpr
+    //     HybridDiscontinuousGalerkin(
+    //         t_Unknown unknown,
+    //         Quadrature quadrature,
+    //         Basis cell_basis,
+    //         Basis face_basis
+    //         // Stabilization stabilization
+    //     )
+    //     :
+    //     unknown_(unknown),
+    //     quadrature_(quadrature),
+    //     cell_basis_(cell_basis),
+    //     face_basis_(face_basis)
+    //     // stabilization_(stabilization)
+    //     {}
 
-        t_Unknown unknown_;
+    //     t_Unknown unknown_;
 
-        Quadrature quadrature_;
+    //     Quadrature quadrature_;
 
-        Basis cell_basis_;
+    //     Basis cell_basis_;
 
-        Basis face_basis_;
+    //     Basis face_basis_;
 
-        // Stabilization stabilization_;
+    //     // Stabilization stabilization_;
 
-    };
+    // };
 
-    namespace detail
-    {
+    // namespace detail
+    // {
 
-        template<typename t_T>
-        struct IsHybridDiscontinuousGalerkin : std::true_type {};
+    //     template<typename t_T>
+    //     struct IsHybridDiscontinuousGalerkin : std::true_type {};
 
-        template<typename t_T>
-        struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin<t_T>> : std::false_type {};
+    //     template<typename t_T>
+    //     struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin<t_T>> : std::false_type {};
 
-    }
+    // }
 
-    template<typename t_T>
-    concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
+    // template<typename t_T>
+    // concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
     
     // template<auto... t_finite_elements>
     // struct ElementGroup

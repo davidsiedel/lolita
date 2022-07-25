@@ -13,264 +13,251 @@ namespace lolita2::geometry
 
     template<template<Element, Domain, auto...> typename t_FiniteElement, Element t_element, Domain t_domain, auto... t_args>
     struct FiniteElementGeometry;
-
-    namespace quadrature
-    {
     
-        template<Element t_element, Quadrature t_quadrature>
-        struct ElementQuadratureRuleTraits;
+    template<Element t_element, Quadrature t_quadrature>
+    struct ElementQuadratureRuleTraits;
+    
+    template<Element t_element, Quadrature t_quadrature>
+    requires(t_element.isNode() || !t_element.isNode())
+    struct ElementQuadratureRuleTraits<t_element, t_quadrature>
+    {
         
-        template<Element t_element, Quadrature t_quadrature>
-        requires(t_element.isNode() || !t_element.isNode())
-        struct ElementQuadratureRuleTraits<t_element, t_quadrature>
-        {
-            
-            lolita::integer static constexpr dim_ = 1;
+        lolita::integer static constexpr dim_ = 1;
 
-            std::array<std::array<lolita::real, 3>, dim_> static constexpr reference_points_ = {
-                    +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
-            };
-            
-            std::array<lolita::real, dim_> static constexpr reference_weights_ = {
-                    +1.0000000000000000
-            };
-
+        std::array<std::array<lolita::real, 3>, dim_> static constexpr reference_points_ = {
+                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
+        };
+        
+        std::array<lolita::real, dim_> static constexpr reference_weights_ = {
+                +1.0000000000000000
         };
 
-    }
-
-    namespace basis
-    {
+    };
         
-        template<Basis t_basis, auto t_arg>
-        struct FiniteElementBasisTraits;
+    template<Basis t_basis>
+    struct FiniteElementBasisTraits;
 
-        template<Basis t_basis, lolita::integer t_dim>
-        requires(t_basis.isMonomial())
-        struct FiniteElementBasisTraits<t_basis, t_dim>
+    template<Basis t_basis>
+    requires(t_basis.isMonomial())
+    struct FiniteElementBasisTraits<t_basis>
+    {
+
+        template<lolita::integer t_dim>
+        static constexpr
+        lolita::integer
+        size()
         {
-            
-            lolita::integer static constexpr dim_ = lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
-            
-            lolita::integer static constexpr num_components_ = lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
-            
-            lolita::integer static constexpr size_ = lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
-            
-            template<template<Element, Domain, auto...> typename t_FiniteElement, Element t_element, Domain t_domain, auto... t_args>
-            struct Implementation : FiniteElementGeometry<t_FiniteElement, t_element, t_domain, t_args...>
-            {
+            return lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
+        }
 
-            private:
-            
-                static constexpr
-                std::array<std::array<lolita::integer, 3>, dim_>
-                getExponents()
+        template<Element t_element>
+        static constexpr
+        lolita::integer
+        size()
+        {
+            return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
+        }
+        
+        template<template<Element, Domain, auto...> typename t_FiniteElement, Element t_element, Domain t_domain, auto... t_args>
+        struct Implementation : FiniteElementGeometry<t_FiniteElement, t_element, t_domain, t_args...>
+        {
+
+        private:
+
+            lolita::integer static constexpr size_ = size<t_element>();
+        
+            static constexpr
+            std::array<std::array<lolita::integer, 3>, size_>
+            getExponents()
+            {
+                auto exponents = std::array<std::array<lolita::integer, 3>, size_>();
+                auto row = lolita::integer(0);
+                if constexpr (t_element.dim_ == 0)
                 {
-                    auto exponents = std::array<std::array<lolita::integer, 3>, dim_>();
-                    auto row = lolita::integer(0);
-                    if constexpr (t_dim == 0)
+                    exponents[row][0] = 0;
+                    exponents[row][1] = 0;
+                    exponents[row][2] = 0;
+                }
+                else if constexpr (t_element.dim_ == 1)
+                {
+                    for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
                     {
-                        exponents[row][0] = 0;
+                        exponents[row][0] = i;
                         exponents[row][1] = 0;
                         exponents[row][2] = 0;
+                        row += 1;
                     }
-                    else if constexpr (t_dim == 1)
+                }
+                else if constexpr (t_element.dim_ == 2)
+                {
+                    for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
                     {
-                        for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
+                        for (lolita::integer j = 0; j < i + 1; ++j)
                         {
-                            exponents[row][0] = i;
-                            exponents[row][1] = 0;
+                            exponents[row][0] = i - j;
+                            exponents[row][1] = j;
                             exponents[row][2] = 0;
                             row += 1;
                         }
                     }
-                    else if constexpr (t_dim == 2)
+                }
+                else if constexpr (t_element.dim_ == 3)
+                {
+                    for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
                     {
-                        for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
+                        for (lolita::integer j = 0; j < i + 1; ++j)
                         {
-                            for (lolita::integer j = 0; j < i + 1; ++j)
+                            for (lolita::integer k = 0; k < i + 1; ++k)
                             {
-                                exponents[row][0] = i - j;
-                                exponents[row][1] = j;
-                                exponents[row][2] = 0;
-                                row += 1;
-                            }
-                        }
-                    }
-                    else if constexpr (t_dim == 3)
-                    {
-                        for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
-                        {
-                            for (lolita::integer j = 0; j < i + 1; ++j)
-                            {
-                                for (lolita::integer k = 0; k < i + 1; ++k)
+                                if (j + k < i + 1)
                                 {
-                                    if (j + k < i + 1)
-                                    {
-                                        exponents[row][0] = i - (j + k);
-                                        exponents[row][1] = k;
-                                        exponents[row][2] = j;
-                                        row += 1;
-                                    }
+                                    exponents[row][0] = i - (j + k);
+                                    exponents[row][1] = k;
+                                    exponents[row][2] = j;
+                                    row += 1;
                                 }
                             }
                         }
                     }
-                    return exponents;
                 }
-                
-                std::array<std::array<lolita::integer, 3>, dim_> static constexpr exponents_ = getExponents();
-
-            public:
+                return exponents;
+            }
             
-                lolita::matrix::Vector<lolita::real, dim_>
-                getBasisEvaluation(
-                    Point const & point
-                )
-                const
+            std::array<std::array<lolita::integer, 3>, size_> static constexpr exponents_ = getExponents();
+
+        public:
+        
+            lolita::matrix::Vector<lolita::real, size_>
+            getBasisEvaluation(
+                Point const & point
+            )
+            const
+            {
+                auto basis_vector_values = lolita::matrix::Vector<lolita::real, size_>();
+                auto const centroid = this->getReferenceCentroid();
+                auto const diameters = this->getCurrentDiameters();
+                for (lolita::integer i = 0; i < size_; ++i)
                 {
-                    auto basis_vector_values = lolita::matrix::Vector<lolita::real, dim_>();
-                    auto const centroid = this->getReferenceCentroid();
-                    auto const diameters = this->getCurrentDiameters();
-                    for (lolita::integer i = 0; i < dim_; ++i)
+                    auto value = lolita::real(1);
+                    for (lolita::integer j = 0; j < t_element.dim_; ++j)
                     {
-                        auto value = lolita::real(1);
-                        for (lolita::integer j = 0; j < t_dim; ++j)
+                        auto dist = this->getRiemannianDistance(centroid, point, j);
+                        value *= std::pow(2.0 * dist / diameters(j), exponents_[i][j]);
+                    }
+                    basis_vector_values(i) = value;
+                }
+                return basis_vector_values;
+            }
+            
+            lolita::matrix::Vector<lolita::real, size_>
+            getBasisDerivative(
+                Point const & point,
+                lolita::integer derivative_direction
+            )
+            const
+            {
+                auto basis_vector_values = lolita::matrix::Vector<lolita::real, size_>();
+                auto const centroid = this->getReferenceCentroid();
+                auto const diameters = this->getCurrentDiameters();
+                for (lolita::integer i = 0; i < size_; ++i)
+                {
+                    auto value = lolita::real(1);
+                    for (lolita::integer j = 0; j < t_element.dim_; ++j)
+                    {
+                        if (j != derivative_direction)
                         {
                             auto dist = this->getRiemannianDistance(centroid, point, j);
-                            value *= std::pow(2.0 * dist / diameters(j), exponents_[i][j]);
+                            value *= std::pow(2.0 * (dist) / diameters(j), exponents_[i][j]);
                         }
-                        basis_vector_values(i) = value;
-                    }
-                    return basis_vector_values;
-                }
-                
-                lolita::matrix::Vector<lolita::real, dim_>
-                getBasisDerivative(
-                    Point const & point,
-                    lolita::integer derivative_direction
-                )
-                const
-                {
-                    auto basis_vector_values = lolita::matrix::Vector<lolita::real, dim_>();
-                    auto const centroid = this->getReferenceCentroid();
-                    auto const diameters = this->getCurrentDiameters();
-                    for (lolita::integer i = 0; i < dim_; ++i)
-                    {
-                        auto value = lolita::real(1);
-                        for (lolita::integer j = 0; j < t_dim; ++j)
+                        else
                         {
-                            if (j != derivative_direction)
+                            if (exponents_[i][j] > 0)
                             {
+                                auto c = 2.0 * exponents_[i][j] / diameters(j);
                                 auto dist = this->getRiemannianDistance(centroid, point, j);
-                                value *= std::pow(2.0 * (dist) / diameters(j), exponents_[i][j]);
+                                value *= c * std::pow(2.0 * (dist) / diameters(j), exponents_[i][j] - 1);
                             }
                             else
                             {
-                                if (exponents_[i][j] > 0)
-                                {
-                                    auto c = 2.0 * exponents_[i][j] / diameters(j);
-                                    auto dist = this->getRiemannianDistance(centroid, point, j);
-                                    value *= c * std::pow(2.0 * (dist) / diameters(j), exponents_[i][j] - 1);
-                                }
-                                else
-                                {
-                                    value *= 0.0;
-                                }
+                                value *= 0.0;
                             }
                         }
-                        basis_vector_values(i) = value;
                     }
-                    return basis_vector_values;
+                    basis_vector_values(i) = value;
                 }
-
-            };
+                return basis_vector_values;
+            }
 
         };
 
-        template<Basis t_basis, Element t_element>
-        requires(t_basis.isMonomial())
-        struct FiniteElementBasisTraits<t_basis, t_element> : FiniteElementBasisTraits<t_basis, t_element.dim_>
-        {};
+    };
 
-    }
+    template<auto t_arg>
+    struct Traits;
 
-    namespace discretization
+    template<auto t_arg>
+    requires(t_arg.isHdg())
+    struct Traits<t_arg>
     {
 
-        namespace hybrid_discontinuous_galerkin
+        template<Element t_element, Domain t_domain>
+        static constexpr
+        lolita::integer
+        getNumCellUnknowns()
         {
-
-            struct Stabilization
-            {
-
-                enum Type{
-
-                    Hdg,
-                    Hho,
-
-                };
-
-                constexpr
-                Stabilization(
-                    Type type
-                )
-                :
-                type_(type)
-                {}
-
-                constexpr
-                lolita::boolean
-                operator==(
-                    Stabilization const & other
-                )
-                const = default;
-
-                constexpr
-                lolita::boolean
-                operator!=(
-                    Stabilization const & other
-                )
-                const = default;
-
-                constexpr
-                lolita::boolean
-                isHdg()
-                const
-                {
-                    return type_ == Type::Hdg;
-                }
-
-                constexpr
-                lolita::boolean
-                isHho()
-                const
-                {
-                    return type_ == Type::Hho;
-                }
-
-                Type type_;
-
-            };
-
-            template<Basis t_cell_basis, Basis t_face_basis>
-            struct HybridDiscontinuousGalerkinElementTraits
-            {
-
-                template<Element t_element, Domain t_domain, Field t_field>
-                static constexpr
-                lolita::integer
-                getNumUnknowns()
-                {
-                    // FieldTraits<t_domain, t_field>::size_;
-                    return 0;
-                }
-
-            };
-
+            auto constexpr field_size = FieldTraits2<t_arg.unknown_.field_>::template size<t_domain>();
+            auto constexpr basis_size = FiniteElementBasisTraits<t_arg.discretization_.cell_basis_>::template size<t_element>();
+            return field_size * basis_size;
         }
 
-    }
+        template<Element t_element, Domain t_domain>
+        static constexpr
+        lolita::integer
+        getNumFaceUnknowns()
+        {
+            auto constexpr field_size = FieldTraits2<t_arg.unknown_.field_>::template size<t_domain>();
+            auto constexpr basis_size = FiniteElementBasisTraits<t_arg.discretization_.face_basis_>::template size<t_element>();
+            return field_size * basis_size;
+        }
+
+        template<Element t_element, Domain t_domain>
+        static constexpr
+        lolita::integer
+        getNumElementUnknowns()
+        {
+            auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain>();
+            auto set_num_faces_unknowns = [&] <lolita::integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_i>();
+                auto constexpr t_num_inner_neighbors = ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0, t_i>();
+                num_element_unknowns += getNumFaceUnknowns<t_inner_neighbor, t_domain>() * t_num_inner_neighbors;
+                if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_num_faces_unknowns(set_num_faces_unknowns);
+            return num_element_unknowns;
+        }
+
+        template<Element t_element, Domain t_domain>
+        struct Cell
+        {
+
+            lolita::matrix::Matrix<lolita::real, getNumElementUnknowns<t_element, t_domain>(), getNumElementUnknowns<t_element, t_domain>()> stabilization_;
+
+        };
+        
+        template<template<Element, Domain, auto...> typename t_FiniteElement, Element t_element, Domain t_domain>
+        struct Implementation : FiniteElementGeometry<t_FiniteElement, t_element, t_domain, t_arg>
+        {
+
+        };
+
+    };
     
     template<template<Element, Domain, auto...> typename t_T, Element t_element, Domain t_domain, auto... t_args>
     struct FiniteElementGeometry
@@ -520,7 +507,7 @@ namespace lolita2::geometry
             }
             else
             {
-                using SegmentQuadrature = quadrature::ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+                using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
                 auto distance = lolita::real(0);
                 auto dt = lolita::real();
                 auto const current_nodes_coordinates = this->getCurrentCoordinates();
@@ -698,7 +685,7 @@ namespace lolita2::geometry
             lolita::integer index
         )
         {
-            return quadrature::ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_weights_[index];
+            return ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_weights_[index];
         }
         
         template<Quadrature t_quadrature>
@@ -708,9 +695,7 @@ namespace lolita2::geometry
             lolita::integer index
         )
         {
-            return lolita::matrix::Span<Point const>(
-                    quadrature::ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_points_[index].begin()
-            );
+            return lolita::matrix::Span<Point const>(ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_points_[index].begin());
         }
         
         template<Quadrature t_quadrature>
@@ -812,50 +797,77 @@ namespace lolita2::geometry
             return p;
         }
         
-        template<Basis t_basis, auto t_arg>
-        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t_arg>::dim_>
+        // template<Basis t_basis, auto t_arg>
+        // lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis, t_arg>::size_>
+        // getBasisEvaluation(
+        //     Point const & point
+        // )
+        // const
+        // {
+        //     using t_FiniteElementBasisTraits = FiniteElementBasisTraits<t_basis, t_arg>;
+        //     using t_Implementation = t_FiniteElementBasisTraits::template Implementation<lolita2::geometry::FiniteElementGeometry, t_element, t_domain>;
+        //     return static_cast<t_Implementation const *>(this)->getBasisEvaluation(point);
+        // }
+        
+        // template<Basis t_basis, auto t_arg>
+        // lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis, t_arg>::size_>
+        // getBasisDerivative(
+        //     Point const & point,
+        //     lolita::integer derivative_direction
+        // )
+        // const
+        // {
+        //     using t_FiniteElementBasisTraits = FiniteElementBasisTraits<t_basis, t_arg>;
+        //     using t_Implementation = t_FiniteElementBasisTraits::template Implementation<lolita2::geometry::FiniteElementGeometry, t_element, t_domain>;
+        //     return static_cast<t_Implementation const *>(this)->getBasisDerivative(point, derivative_direction);
+        // }
+        
+        // template<Basis t_basis>
+        // lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis, t_element>::size_>
+        // getBasisEvaluation(
+        //     Point const & point
+        // )
+        // const
+        // {
+        //     return getBasisEvaluation<t_basis, t_element>(point);
+        // }
+        
+        // template<Basis t_basis>
+        // lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis, t_element>::size_>
+        // getBasisDerivative(
+        //     Point const & point,
+        //     lolita::integer derivative_direction
+        // )
+        // const
+        // {
+        //     return getBasisDerivative<t_basis, t_element>(point, derivative_direction);
+        // }
+        
+        template<Basis t_basis>
+        lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis>::template size<t_element>()>
         getBasisEvaluation(
             Point const & point
         )
         const
         {
-            using t_FiniteElementBasisTraits = typename basis::FiniteElementBasisTraits<t_basis, t_arg>;
+            // return getBasisEvaluation<t_basis, t_element>(point);
+            using t_FiniteElementBasisTraits = FiniteElementBasisTraits<t_basis>;
             using t_Implementation = t_FiniteElementBasisTraits::template Implementation<lolita2::geometry::FiniteElementGeometry, t_element, t_domain>;
             return static_cast<t_Implementation const *>(this)->getBasisEvaluation(point);
         }
         
-        template<Basis t_basis, auto t_arg>
-        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t_arg>::dim_>
+        template<Basis t_basis>
+        lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis>::template size<t_element>()>
         getBasisDerivative(
             Point const & point,
             lolita::integer derivative_direction
         )
         const
         {
-            using t_FiniteElementBasisTraits = typename basis::FiniteElementBasisTraits<t_basis, t_arg>;
+            // return getBasisDerivative<t_basis, t_element>(point, derivative_direction);
+            using t_FiniteElementBasisTraits = FiniteElementBasisTraits<t_basis>;
             using t_Implementation = t_FiniteElementBasisTraits::template Implementation<lolita2::geometry::FiniteElementGeometry, t_element, t_domain>;
             return static_cast<t_Implementation const *>(this)->getBasisDerivative(point, derivative_direction);
-        }
-        
-        template<Basis t_basis>
-        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t_element>::dim_>
-        getBasisEvaluation(
-            Point const & point
-        )
-        const
-        {
-            return getBasisEvaluation<t_basis, t_element>(point);
-        }
-        
-        template<Basis t_basis>
-        lolita::matrix::Vector<lolita::real, basis::FiniteElementBasisTraits<t_basis, t_element>::dim_>
-        getBasisDerivative(
-            Point const & point,
-            lolita::integer derivative_direction
-        )
-        const
-        {
-            return getBasisDerivative<t_basis, t_element>(point, derivative_direction);
         }
         
         t_OuterNeighbors outer_neighbors_;
@@ -870,38 +882,38 @@ namespace lolita2::geometry
 
     };
 
-    template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
-    struct FiniteElementUnknown
-    {
+    // template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
+    // struct FiniteElementUnknown
+    // {
 
-        lolita::integer static constexpr num_basis_components_ = basis::FiniteElementBasisTraits<t_basis, t_element>::dim_;
+    //     lolita::integer static constexpr num_basis_components_ = FiniteElementBasisTraits<t_basis, t_element>::dim_;
 
-        lolita::integer static constexpr num_field_components_ = FieldTraits<t_field, t_domain>::size__;
+    //     lolita::integer static constexpr num_field_components_ = FieldTraits<t_domain, t_field>::size__;
 
-        lolita::integer static constexpr num_unknown_components_ = num_basis_components_ * num_field_components_;
+    //     lolita::integer static constexpr num_unknown_components_ = num_basis_components_ * num_field_components_;
 
-        void
-        setUnknown(
-            std::shared_ptr<lolita::matrix::Vector<lolita::real>> & unknown
-        )
-        {
-            unknown_ = unknown;
-            index_ = unknown->size();
-            unknown->resize(unknown->size() + num_unknown_components_);
-        }
+    //     void
+    //     setUnknown(
+    //         std::shared_ptr<lolita::matrix::Vector<lolita::real>> & unknown
+    //     )
+    //     {
+    //         unknown_ = unknown;
+    //         index_ = unknown->size();
+    //         unknown->resize(unknown->size() + num_unknown_components_);
+    //     }
 
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, num_unknown_components_> const>
-        getCoefficients()
-        const
-        {
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, num_unknown_components_> const>(unknown_->data() + 1);
-        }
+    //     lolita::matrix::Span<lolita::matrix::Vector<lolita::real, num_unknown_components_> const>
+    //     getCoefficients()
+    //     const
+    //     {
+    //         return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, num_unknown_components_> const>(unknown_->data() + 1);
+    //     }
 
-        std::shared_ptr<lolita::matrix::Vector<lolita::real>> unknown_;
+    //     std::shared_ptr<lolita::matrix::Vector<lolita::real>> unknown_;
 
-        lolita::integer index_;
+    //     lolita::integer index_;
 
-    };
+    // };
 
     template<Element t_element, Domain t_domain, auto t_arg>
     struct FiniteElement : FiniteElementGeometry<FiniteElement, t_element, t_domain, t_arg>
