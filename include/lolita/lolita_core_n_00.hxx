@@ -10,7 +10,7 @@ namespace lolita2::geometry
 {
 
     template<Field t_field>
-    struct FieldTraits2
+    struct FieldTraits
     {
 
         template<Domain t_domain>
@@ -83,81 +83,22 @@ namespace lolita2::geometry
 
     };
 
-    template<Domain t_domain, Field t_field>
-    struct FieldTraits;
-
-    template<Domain t_domain, Field t_field>
-    requires(t_field.isTensor(0))
-    struct FieldTraits<t_domain, t_field>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {
-                lolita::numerics::pow(t_domain.dim_, 0),
-                lolita::numerics::pow(t_domain.dim_, 0)
-        };
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-    };
-
-    template<Domain t_domain, Field t_field>
-    requires(t_field.isTensor(1))
-    struct FieldTraits<t_domain, t_field>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {
-                lolita::numerics::pow(t_domain.dim_, 0),
-                lolita::numerics::pow(t_domain.dim_, 1)
-        };
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-    };
-
-    template<Domain t_domain, Field t_field>
-    requires(t_field.isTensor(2))
-    struct FieldTraits<t_domain, t_field>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {
-                lolita::numerics::pow(t_domain.dim_, 1),
-                lolita::numerics::pow(t_domain.dim_, 1)
-        };
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-    };
-
-    template<Domain t_domain, Field t_field>
-    requires(t_field.isTensor(3))
-    struct FieldTraits<t_domain, t_field>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {
-                lolita::numerics::pow(t_domain.dim_, 1),
-                lolita::numerics::pow(t_domain.dim_, 2)
-        };
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-    };
-
-    template<Domain t_domain, Field t_field>
-    requires(t_field.isTensor(4))
-    struct FieldTraits<t_domain, t_field>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {
-                lolita::numerics::pow(t_domain.dim_, 2),
-                lolita::numerics::pow(t_domain.dim_, 2)
-        };
-
-        lolita::index static constexpr size_ = shape_.size_;
-
-    };
-
     struct MappingValues
     {
+
+        constexpr
+        MappingValues(
+            lolita::index row,
+            lolita::index col,
+            lolita::index position,
+            lolita::real coefficient
+        )
+        :
+        row_(row),
+        col_(col),
+        position_(position),
+        coefficient_(coefficient)
+        {}
 
         constexpr
         lolita::integer
@@ -201,238 +142,153 @@ namespace lolita2::geometry
 
     };
 
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    struct MappingPolicy;
+    template<Mapping t_mapping>
+    struct MappingTraits;
 
-    /*
-     * SCALAR
-     */
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(0) && t_mapping.isIdentity())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
+    template<Mapping t_mapping>
+    requires(t_mapping.isIdentity())
+    struct MappingTraits<t_mapping>
     {
 
-        lolita::matrix::Shape static constexpr shape_ = {1, 1};
-
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
-                MappingValues{0, 0, 0, 1},
-        };
-
+        template<Domain t_domain, Field t_field>
         static constexpr
         lolita::matrix::Shape
         shape()
         {
-            return lolita::matrix::Shape{1, 1};
+            return FieldTraits<t_field>::template shape<t_domain>();
         }
 
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::integer
+        size()
         {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
+            return shape<t_domain, t_field>().size_;
         }
 
-        static
-        void
-        non_linear(
-                auto & gradient
-        )
-        {}
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(0))
+        {
+            return {
+                MappingValues{0, 0, 0, 1},
+            };
+        }
 
-    };
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(0) && t_domain.hasDim(2) && t_mapping.isGradient())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {2, 1};
-
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
-        };
+            };
+        }
 
+        template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        shape()
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
-            return lolita::matrix::Shape{2, 1};
-        }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-        }
-
-        static
-        void
-        non_linear(
-                auto & gradient
-        )
-        {}
-
-    };
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(0) && t_domain.hasDim(3) && t_mapping.isGradient())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {3, 1};
-
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
                 MappingValues{0, 2, 2, 1},
-        };
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return lolita::matrix::Shape{3, 1};
+            };
         }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-        }
-
+        
         static
         void
         non_linear(
                 auto & gradient
         )
         {}
-
+        
     };
 
-    /*
-     * VECTOR
-     */
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(1) && t_domain.hasDim(2) && t_mapping.isIdentity())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
+    template<Mapping t_mapping>
+    requires(t_mapping.isGradient())
+    struct MappingTraits<t_mapping>
     {
 
-        lolita::matrix::Shape static constexpr shape_ = {2, 1};
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::matrix::Shape
+        shape()
+        {
+            return FieldTraits<Field(t_field.dim_ + 1)>::template shape<t_domain>();
+        }
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::integer
+        size()
+        {
+            return shape<t_domain, t_field>().size_;
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(0) && t_domain.hasDim(1))
+        {
+            return {
+                MappingValues{0, 0, 0, 1},
+            };
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(0) && t_domain.hasDim(2))
+        {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
-        };
+            };
+        }
 
+        template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        shape()
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(0) && t_domain.hasDim(3))
         {
-            return lolita::matrix::Shape{2, 1};
-        }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-        }
-
-        static
-        void
-        non_linear(
-                auto & gradient
-        )
-        {}
-
-    };
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(1) && t_domain.hasDim(3) && t_mapping.isIdentity())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {3, 1};
-
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
                 MappingValues{0, 2, 2, 1},
-        };
+            };
+        }
 
+        template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        shape()
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
-            return lolita::matrix::Shape{3, 1};
-        }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-        }
-
-        static
-        void
-        non_linear(
-                auto & gradient
-        )
-        {}
-
-    };
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(1) && t_domain.hasDim(2) && t_mapping.isGradient())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {2, 2};
-
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
                 MappingValues{1, 0, 2, 1},
                 MappingValues{1, 1, 3, 1},
-        };
+            };
+        }
 
+        template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        shape()
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
-            return lolita::matrix::Shape{2, 2};
-        }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-        }
-
-        static
-        void
-        non_linear(
-                auto & gradient
-        )
-        {}
-
-    };
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(1) && t_domain.hasDim(3) && t_mapping.isGradient())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {3, 3};
-
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{0, 1, 1, 1},
                 MappingValues{0, 2, 2, 1},
@@ -442,188 +298,151 @@ namespace lolita2::geometry
                 MappingValues{2, 0, 6, 1},
                 MappingValues{2, 1, 7, 1},
                 MappingValues{2, 2, 8, 1},
-        };
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return lolita::matrix::Shape{3, 3};
+            };
         }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-        }
-
+        
         static
         void
         non_linear(
                 auto & gradient
         )
         {}
-
+        
     };
 
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(1) && t_domain.hasDim(2) && t_mapping.isSmallStrain())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
+    template<Mapping t_mapping>
+    requires(t_mapping.isSmallStrain())
+    struct MappingTraits<t_mapping>
     {
 
-        lolita::matrix::Shape static constexpr shape_ = {1, 4};
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::matrix::Shape
+        shape()
+        requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        {
+            return {1, 4};
+        }
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::matrix::Shape
+        shape()
+        requires(t_field.isTensor(1) && t_domain.hasDim(3))
+        {
+            return {1, 6};
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::integer
+        size()
+        {
+            return shape<t_domain, t_field>().size_;
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
-                MappingValues{0, 0, 2, 0},
+                MappingValues{2, 2, 2, 1},
                 MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
-        };
+            };
+        }
 
+        template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        shape()
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
-            return lolita::matrix::Shape{1, 4};
-        }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-        }
-
-        static
-        void
-        non_linear(
-                auto & gradient
-        )
-        {}
-
-    };
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(1) && t_domain.hasDim(3) && t_mapping.isSmallStrain())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {1, 6};
-
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
-                MappingValues{2, 2, 2, 0},
+                MappingValues{2, 2, 2, 1},
                 MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
                 MappingValues{0, 2, 4, lolita::numerics::sqrt_2},
                 MappingValues{1, 2, 5, lolita::numerics::sqrt_2},
-        };
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return lolita::matrix::Shape{1, 6};
+            };
         }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            return lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-        }
-
+        
         static
         void
         non_linear(
                 auto & gradient
         )
         {}
-
+        
     };
 
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(1) && t_domain.hasDim(2) && t_mapping.isLargeStrain())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
+    template<Mapping t_mapping>
+    requires(t_mapping.isLargeStrain())
+    struct MappingTraits<t_mapping>
     {
 
-        lolita::matrix::Shape static constexpr shape_ = {1, 5};
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::matrix::Shape
+        shape()
+        requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        {
+            return {1, 5};
+        }
 
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::matrix::Shape
+        shape()
+        requires(t_field.isTensor(1) && t_domain.hasDim(3))
+        {
+            return {1, 9};
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        lolita::integer
+        size()
+        {
+            return shape<t_domain, t_field>().size_;
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
-                MappingValues{0, 0, 2, 0},
+                MappingValues{2, 2, 2, 1},
                 MappingValues{0, 1, 3, 1},
                 MappingValues{1, 0, 4, 1},
-        };
+            };
+        }
 
+        template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        shape()
+        std::array<MappingValues, size<t_domain, t_field>()>
+        getValues()
+        requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
-            return lolita::matrix::Shape{1, 5};
-        }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            auto res = lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-            res(0) += 1.0;
-            res(1) += 1.0;
-            res(2) += 1.0;
-            return res;
-        }
-
-        static
-        void
-        non_linear(
-                auto & gradient
-        )
-        {
-            gradient(0) += 1.0;
-            gradient(1) += 1.0;
-            gradient(2) += 1.0;
-        }
-
-    };
-
-    template<Field t_field, Domain t_domain, Mapping t_mapping>
-    requires(t_field.isTensor(1) && t_domain.hasDim(3) && t_mapping.isLargeStrain())
-    struct MappingPolicy<t_field, t_domain, t_mapping>
-    {
-
-        lolita::matrix::Shape static constexpr shape_ = {1, 9};
-
-        std::array<MappingValues, shape_.size_> static constexpr values_ = {
+            return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
-                MappingValues{2, 2, 2, 0},
+                MappingValues{2, 2, 2, 1},
                 MappingValues{0, 1, 3, 1},
-                MappingValues{0, 2, 4, 1},
-                MappingValues{1, 2, 5, 1},
-                MappingValues{1, 0, 6, 1},
-                MappingValues{2, 0, 7, 1},
+                MappingValues{1, 0, 4, 1},
+                MappingValues{0, 2, 5, 1},
+                MappingValues{2, 0, 6, 1},
+                MappingValues{1, 2, 7, 1},
                 MappingValues{2, 1, 8, 1},
-        };
-
-        static constexpr
-        lolita::matrix::Shape
-        shape()
-        {
-            return lolita::matrix::Shape{1, 9};
-        }
-
-        static
-        lolita::matrix::Vector<lolita::real, shape_.size_>
-        non_linear()
-        {
-            auto res = lolita::matrix::Zero<lolita::matrix::Vector<lolita::real, shape_.size_>>();
-            res(0) += 1.0;
-            res(1) += 1.0;
-            res(2) += 1.0;
-            return res;
+            };
         }
 
         static
@@ -635,6 +454,39 @@ namespace lolita2::geometry
             gradient(0) += 1.0;
             gradient(1) += 1.0;
             gradient(2) += 1.0;
+        }
+        
+    };
+
+    template<BehaviorConcept auto t_behavior>
+    struct BehaviorTraits
+    {
+
+        template<Domain t_domain>
+        static constexpr
+        lolita::integer
+        strainSize()
+        {
+            auto p = lolita::integer(0);
+            auto cnt = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                auto constexpr t_field = t_behavior.template getUnknown<t_i>().getField();
+                auto constexpr t_mapping = t_behavior.template getUnknown<t_i>().template getMapping<t_j>();
+                p += MappingTraits<t_mapping>::template size<t_domain, t_field>();
+                if constexpr (t_j < t_behavior.template getUnknown<t_i>().getNumMappings() - 1)
+                {
+                    self.template operator ()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < t_behavior.getNumUnknowns() - 1)
+                {
+                    self.template operator ()<t_i + 1, 0>(self);
+                }
+            };
+            cnt(cnt);
+            return p;
         }
 
     };

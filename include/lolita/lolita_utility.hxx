@@ -18,197 +18,203 @@
 namespace lolita::utility
 {
 
-
     namespace detail
     {
 
-        struct _Void {};
+        template<lolita::integer t_i, typename t_T>
+        struct AggregateTail
+        {
+
+            constexpr
+            lolita::boolean
+            operator==(
+                AggregateTail const &
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                AggregateTail const &
+            )
+            const = default;
+
+            t_T value_;
+
+        };
+
+        template<lolita::integer t_i, typename... t_T>
+        struct AggregateHead;
+
+        template<lolita::integer t_i>
+        struct AggregateHead<t_i>
+        {
+
+            constexpr
+            lolita::boolean
+            operator==(
+                AggregateHead const &
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                AggregateHead const &
+            )
+            const = default;
+
+        };
+
+        template<lolita::integer t_i, typename t_T, typename... t_U>
+        struct AggregateHead<t_i, t_T, t_U...> : AggregateTail<t_i, t_T>, AggregateHead<t_i + 1, t_U...>
+        {
+
+            constexpr
+            lolita::boolean
+            operator==(
+                AggregateHead const &
+            )
+            const = default;
+
+            constexpr
+            lolita::boolean
+            operator!=(
+                AggregateHead const &
+            )
+            const = default;
+
+        };
+
+        template<lolita::integer t_i, typename t_T, typename... t_U>
+        static constexpr
+        t_T &
+        get(
+            AggregateHead<t_i, t_T, t_U...> & aggregate
+        )
+        {
+            return aggregate.AggregateTail<t_i, t_T>::value_;
+        }
+
+        template<lolita::integer t_i, typename t_T, typename... t_U>
+        static constexpr
+        t_T const &
+        get(
+            AggregateHead<t_i, t_T, t_U...> const & aggregate
+        )
+        {
+            return aggregate.AggregateTail<t_i, t_T>::value_;
+        }
 
     }
 
-    enum struct Output
+    template<typename... T>
+    struct Aggregate : detail::AggregateHead<0, T...>
     {
-
-        Success,
-        Failure
-
-    };
-
-    template<typename _T>
-    struct OutputA
-    {
-
-        using ReturnType = _T;
-
-        lolita::utility::Output result_;
-
-        _T value_;
-
-    };
-
-    struct EnumA
-    {
-
-    private:
-
-        using Label = std::array<lolita::character, 50>;
-
-        template<typename... _U>
-        static constexpr
-        Label
-        makeLabel(
-                std::basic_string_view<_U> const &... str
-        )
-        requires(std::same_as<lolita::character, _U> && ...)
-        {
-            auto label = Label();
-            auto count = lolita::index(0);
-            auto make = [&] (auto const & s) constexpr mutable {
-                for (auto i = 0; i < s.size(); ++i) {
-                    label[i + count] = s[i];
-                }
-                count += s.size();
-            };
-            (make(str), ...);
-            return label;
-        }
-
-        template<typename... _U>
-        static constexpr
-        Label
-        makeLabel(
-                std::basic_string_view<_U> &&... str
-        )
-        requires(std::same_as<lolita::character, _U> && ...)
-        {
-            auto label = Label();
-            auto count = lolita::index(0);
-            auto make = [&] (auto && s) constexpr mutable {
-                for (auto i = 0; i < s.size(); ++i) {
-                    label[i + count] = s[i];
-                }
-                count += s.size();
-            };
-            (make(std::forward<std::basic_string_view<_U>>(str)), ...);
-            return label;
-        }
-
-    public:
 
         constexpr
-        EnumA(
-                std::basic_string_view<lolita::character> const & str
-        )
+        Aggregate()
         :
-        tag_(makeLabel(str))
+        detail::AggregateHead<0, T...>()
         {}
 
         constexpr
-        EnumA(
-                std::basic_string_view<lolita::character> && str
+        Aggregate(
+            T &&... args
         )
         :
-        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)))
+        detail::AggregateHead<0, T...>{std::forward<T>(args)...}
         {}
 
-//        template<typename... _U>
-//        constexpr
-//        EnumA(
-//                std::basic_string_view<_U> const &... str
-//        )
-//        :
-//        tag_(makeLabel(str...))
-//        {}
-//
-//
-//        template<typename... _U>
-//        constexpr
-//        EnumA(
-//                std::basic_string_view<_U> &&... str
-//        )
-//        :
-//        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)...))
-//        {}
+        constexpr
+        Aggregate(
+            T const &... args
+        )
+        :
+        detail::AggregateHead<0, T...>{args...}
+        {}
 
         constexpr
         lolita::boolean
         operator==(
-                EnumA const & other
+            Aggregate const &
         )
         const = default;
 
         constexpr
         lolita::boolean
         operator!=(
-                EnumA const & other
+            Aggregate const &
         )
         const = default;
 
+        template<lolita::integer t_i>
         constexpr
-        lolita::boolean
-        operator==(
-                std::basic_string_view<lolita::character> const & other
-        )
+        std::tuple_element_t<t_i, std::tuple<T...>> &
+        get()
+        {
+            return detail::get<t_i>(* this);
+        }
+
+        template<lolita::integer t_i>
+        constexpr
+        std::tuple_element_t<t_i, std::tuple<T...>> const &
+        get()
         const
         {
-            auto view = std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
-            return other == view;
+            return detail::get<t_i>(* this);
         }
 
         constexpr
-        lolita::boolean
-        operator!=(
-                std::basic_string_view<lolita::character> const & other
-        )
+        std::tuple<T...>
+        asTuple()
         const
         {
-            return !(* this == other);
+            auto tuple = std::tuple<T...>();
+            auto fill = [&] <lolita::integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                std::get<t_i>(tuple) = detail::get<t_i>(* this);
+                if constexpr (t_i < sizeof...(T) - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            fill(fill);
+            return tuple;
         }
-
-        friend
-        std::ostream &
-        operator<<(
-                std::ostream & os,
-                EnumA const & enuma
-        )
-        {
-            auto const & tag = enuma.tag_;
-            os << std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), lolita::character())));
-            return os;
-        }
-
-        Label tag_;
 
     };
 
-    using Tag = std::array<lolita::character, 50>;
-
-    struct Labell
+    struct Label
     {
+
+        using Tag = std::array<lolita::character, 50>;
 
     private:
 
         static constexpr
-        Tag
+        Label::Tag
         setTag(
-                std::basic_string_view<lolita::character> str
+            std::basic_string_view<lolita::character> str
         )
         {
-            auto tag = Tag();
-            std::copy_n(std::make_move_iterator(str.begin()), str.size(), tag.begin());
-//            auto count = lolita::index(0);
-//            for (auto c : std::forward<std::basic_string_view<lolita::character>>(str)) {
-//                tag[count] = c;
-//                count ++;
-//            }
+            auto tag = Label::Tag();
+            auto count = lolita::integer(0);
+            for (auto c : str) {
+                tag[count] = c;
+                count ++;
+            }
             return tag;
         }
 
     public:
 
         constexpr
-        Labell(
-                std::basic_string_view<lolita::character> str
+        Label(
+            std::basic_string_view<lolita::character> str
         )
         :
         tag_(setTag(str))
@@ -217,35 +223,35 @@ namespace lolita::utility
         constexpr
         lolita::boolean
         operator==(
-                Labell const & other
+            Label const & other
         )
         const = default;
 
         constexpr
         lolita::boolean
         operator!=(
-                Labell const & other
+            Label const & other
         )
         const = default;
 
         constexpr
         lolita::boolean
         operator==(
-                std::basic_string_view<lolita::character> const & tag
+            std::basic_string_view<lolita::character> str
         )
         const
         {
-            return tag == this->view();
+            return str == this->view();
         }
 
         constexpr
         lolita::boolean
         operator!=(
-                std::basic_string_view<lolita::character> const & other
+            std::basic_string_view<lolita::character> str
         )
         const
         {
-            return !(* this == other);
+            return !(* this == str);
         }
 
         constexpr
@@ -259,265 +265,517 @@ namespace lolita::utility
         friend
         std::ostream &
         operator<<(
-                std::ostream & os,
-                Labell const & label
+            std::ostream & os,
+            Label const & label
         )
         {
             os << label.view();
             return os;
         }
 
-        Tag tag_;
+        Label::Tag tag_;
 
     };
 
-    template<typename t_Base>
-    struct Enumeration
-    {
+//     namespace detail
+//     {
 
-    private:
+//         struct _Void {};
 
-        template<typename... _U>
-        static constexpr
-        Tag
-        setTag(
-                std::basic_string_view<_U> const &... str
-        )
-        requires(std::same_as<lolita::character, _U> && ...)
-        {
-            auto label = Tag();
-            auto count = lolita::index(0);
-            auto make = [&] (auto const & s) constexpr mutable {
-                for (auto i = 0; i < s.size(); ++i) {
-                    label[i + count] = s[i];
-                }
-                count += s.size();
-            };
-            (make(str), ...);
-            return label;
-        }
+//     }
 
-        template<typename... _U>
-        static constexpr
-        Tag
-        setTag(
-                std::basic_string_view<_U> &&... str
-        )
-        requires(std::same_as<lolita::character, _U> && ...)
-        {
-            auto label = Tag();
-            auto count = lolita::index(0);
-            auto make = [&] (auto && s) constexpr mutable {
-                for (auto i = 0; i < s.size(); ++i) {
-                    label[i + count] = s[i];
-                }
-                count += s.size();
-            };
-            (make(std::forward<std::basic_string_view<_U>>(str)), ...);
-            return label;
-        }
+//     enum struct Output
+//     {
 
-    public:
+//         Success,
+//         Failure
 
-        constexpr
-        Enumeration(
-                std::basic_string_view<lolita::character> const & str
-        )
-        :
-        tag_(setTag(str))
-        {}
+//     };
 
-        constexpr
-        Enumeration(
-                std::basic_string_view<lolita::character> && str
-        )
-        :
-        tag_(setTag(std::forward<std::basic_string_view<lolita::character>>(str)))
-        {}
+//     template<typename _T>
+//     struct OutputA
+//     {
 
-        constexpr
-        std::basic_string_view<lolita::character>
-        view()
-        const
-        {
-            return std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
-        }
+//         using ReturnType = _T;
 
-//        template<typename... _U>
-//        constexpr
-//        EnumA(
-//                std::basic_string_view<_U> const &... str
-//        )
-//        :
-//        tag_(makeLabel(str...))
-//        {}
-//
-//
-//        template<typename... _U>
-//        constexpr
-//        EnumA(
-//                std::basic_string_view<_U> &&... str
-//        )
-//        :
-//        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)...))
-//        {}
+//         lolita::utility::Output result_;
 
-        constexpr
-        lolita::boolean
-        operator==(
-                Enumeration const & other
-        )
-        const = default;
+//         _T value_;
 
-        constexpr
-        lolita::boolean
-        operator!=(
-                Enumeration const & other
-        )
-        const = default;
+//     };
 
-        constexpr
-        lolita::boolean
-        operator==(
-                std::basic_string_view<lolita::character> const & other
-        )
-        const
-        {
-            return other == this->view();
-        }
+//     struct EnumA
+//     {
 
-        constexpr
-        lolita::boolean
-        operator!=(
-                std::basic_string_view<lolita::character> const & other
-        )
-        const
-        {
-            return !(* this == other);
-        }
+//     private:
 
-        constexpr
-        lolita::boolean
-        operator==(
-                lolita::utility::Tag const & tag
-        )
-        const
-        {
-            auto constexpr t_null = lolita::character();
-            auto view = std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), t_null)));
-            auto view1 = std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), t_null)));
-            return view1 == view;
-        }
+//         using Label = std::array<lolita::character, 50>;
 
-        constexpr
-        lolita::boolean
-        operator!=(
-                lolita::utility::Tag const & tag
-        )
-        const
-        {
-            return !(* this == tag);
-        }
+//         template<typename... _U>
+//         static constexpr
+//         Label
+//         makeLabel(
+//                 std::basic_string_view<_U> const &... str
+//         )
+//         requires(std::same_as<lolita::character, _U> && ...)
+//         {
+//             auto label = Label();
+//             auto count = lolita::index(0);
+//             auto make = [&] (auto const & s) constexpr mutable {
+//                 for (auto i = 0; i < s.size(); ++i) {
+//                     label[i + count] = s[i];
+//                 }
+//                 count += s.size();
+//             };
+//             (make(str), ...);
+//             return label;
+//         }
 
-        friend
-        std::ostream &
-        operator<<(
-                std::ostream & os,
-                Enumeration const & enuma
-        )
-        {
-            auto constexpr t_null = lolita::character();
-            auto const & tag = enuma.tag_;
-            os << std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), t_null)));
-            return os;
-        }
+//         template<typename... _U>
+//         static constexpr
+//         Label
+//         makeLabel(
+//                 std::basic_string_view<_U> &&... str
+//         )
+//         requires(std::same_as<lolita::character, _U> && ...)
+//         {
+//             auto label = Label();
+//             auto count = lolita::index(0);
+//             auto make = [&] (auto && s) constexpr mutable {
+//                 for (auto i = 0; i < s.size(); ++i) {
+//                     label[i + count] = s[i];
+//                 }
+//                 count += s.size();
+//             };
+//             (make(std::forward<std::basic_string_view<_U>>(str)), ...);
+//             return label;
+//         }
 
-        Tag tag_;
+//     public:
 
-    };
+//         constexpr
+//         EnumA(
+//                 std::basic_string_view<lolita::character> const & str
+//         )
+//         :
+//         tag_(makeLabel(str))
+//         {}
 
-    struct TupleSlice
-    {
+//         constexpr
+//         EnumA(
+//                 std::basic_string_view<lolita::character> && str
+//         )
+//         :
+//         tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)))
+//         {}
 
-        struct detail
-        {
+// //        template<typename... _U>
+// //        constexpr
+// //        EnumA(
+// //                std::basic_string_view<_U> const &... str
+// //        )
+// //        :
+// //        tag_(makeLabel(str...))
+// //        {}
+// //
+// //
+// //        template<typename... _U>
+// //        constexpr
+// //        EnumA(
+// //                std::basic_string_view<_U> &&... str
+// //        )
+// //        :
+// //        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)...))
+// //        {}
 
-            template<lolita::index _offset, typename... _T, lolita::index... _i>
-            static constexpr
-            auto
-            tupleSlice(
-                    std::tuple<_T...> const & tuple,
-                    std::integer_sequence<lolita::index, _i...>
-            )
-            {
-                return std::make_tuple(std::get<_i + _offset>(tuple)...);
-            }
+//         constexpr
+//         lolita::boolean
+//         operator==(
+//                 EnumA const & other
+//         )
+//         const = default;
 
-        };
+//         constexpr
+//         lolita::boolean
+//         operator!=(
+//                 EnumA const & other
+//         )
+//         const = default;
 
-        template<lolita::index _begin, lolita::index _end, typename... _T>
-        static constexpr
-        auto
-        tupleSlice(
-                std::tuple<_T...> const & tuple
-        )
-        requires(_end >= _begin && sizeof...(_T) >= _end)
-        {
-            return detail::template tupleSlice<_begin, _T...>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
-        }
+//         constexpr
+//         lolita::boolean
+//         operator==(
+//                 std::basic_string_view<lolita::character> const & other
+//         )
+//         const
+//         {
+//             auto view = std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
+//             return other == view;
+//         }
 
-    };
+//         constexpr
+//         lolita::boolean
+//         operator!=(
+//                 std::basic_string_view<lolita::character> const & other
+//         )
+//         const
+//         {
+//             return !(* this == other);
+//         }
 
-    using Label = std::array<lolita::character, 20>;
+//         friend
+//         std::ostream &
+//         operator<<(
+//                 std::ostream & os,
+//                 EnumA const & enuma
+//         )
+//         {
+//             auto const & tag = enuma.tag_;
+//             os << std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), lolita::character())));
+//             return os;
+//         }
 
-    template<typename... _U>
-    static constexpr
-    lolita::utility::Label
-    makeLabel(
-            std::basic_string_view<_U> const &... str
-    )
-    requires(std::same_as<lolita::character, _U> && ...)
-    {
-        auto label = lolita::utility::Label();
-        auto count = lolita::index(0);
-        auto make = [&] (auto const & s) constexpr mutable {
-            for (auto i = 0; i < s.size(); ++i) {
-                label[i + count] = s[i];
-            }
-            count += s.size();
-        };
-        (make(str), ...);
-        return label;
-    }
+//         Label tag_;
 
-    template<typename... _U>
-    static constexpr
-    lolita::utility::Label
-    makeLabel(
-            std::basic_string_view<_U> &&... str
-    )
-    requires(std::same_as<lolita::character, _U> && ...)
-    {
-        auto label = lolita::utility::Label();
-        auto count = lolita::index(0);
-        auto make = [&] (auto && s) constexpr mutable {
-            for (auto i = 0; i < s.size(); ++i) {
-                label[i + count] = s[i];
-            }
-            count += s.size();
-        };
-        (make(std::forward<std::basic_string_view<_U>>(str)), ...);
-        return label;
-    }
+//     };
 
-    static constexpr
-    std::basic_string_view<lolita::character>
-    readLabel(
-            lolita::utility::Label const & label
-    )
-    {
-        return std::basic_string_view<lolita::character>(label.data(), std::distance(label.begin(), std::find(label.begin(), label.end(), lolita::character())));
-    }
+//     using Tag = std::array<lolita::character, 50>;
+
+//     struct Labell
+//     {
+
+//     private:
+
+//         static constexpr
+//         Tag
+//         setTag(
+//                 std::basic_string_view<lolita::character> str
+//         )
+//         {
+//             auto tag = Tag();
+//             std::copy_n(std::make_move_iterator(str.begin()), str.size(), tag.begin());
+// //            auto count = lolita::index(0);
+// //            for (auto c : std::forward<std::basic_string_view<lolita::character>>(str)) {
+// //                tag[count] = c;
+// //                count ++;
+// //            }
+//             return tag;
+//         }
+
+//     public:
+
+//         constexpr
+//         Labell(
+//                 std::basic_string_view<lolita::character> str
+//         )
+//         :
+//         tag_(setTag(str))
+//         {}
+
+//         constexpr
+//         lolita::boolean
+//         operator==(
+//                 Labell const & other
+//         )
+//         const = default;
+
+//         constexpr
+//         lolita::boolean
+//         operator!=(
+//                 Labell const & other
+//         )
+//         const = default;
+
+//         constexpr
+//         lolita::boolean
+//         operator==(
+//                 std::basic_string_view<lolita::character> const & tag
+//         )
+//         const
+//         {
+//             return tag == this->view();
+//         }
+
+//         constexpr
+//         lolita::boolean
+//         operator!=(
+//                 std::basic_string_view<lolita::character> const & other
+//         )
+//         const
+//         {
+//             return !(* this == other);
+//         }
+
+//         constexpr
+//         std::basic_string_view<lolita::character>
+//         view()
+//         const
+//         {
+//             return std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
+//         }
+
+//         friend
+//         std::ostream &
+//         operator<<(
+//                 std::ostream & os,
+//                 Labell const & label
+//         )
+//         {
+//             os << label.view();
+//             return os;
+//         }
+
+//         Tag tag_;
+
+//     };
+
+//     template<typename t_Base>
+//     struct Enumeration
+//     {
+
+//     private:
+
+//         template<typename... _U>
+//         static constexpr
+//         Tag
+//         setTag(
+//                 std::basic_string_view<_U> const &... str
+//         )
+//         requires(std::same_as<lolita::character, _U> && ...)
+//         {
+//             auto label = Tag();
+//             auto count = lolita::index(0);
+//             auto make = [&] (auto const & s) constexpr mutable {
+//                 for (auto i = 0; i < s.size(); ++i) {
+//                     label[i + count] = s[i];
+//                 }
+//                 count += s.size();
+//             };
+//             (make(str), ...);
+//             return label;
+//         }
+
+//         template<typename... _U>
+//         static constexpr
+//         Tag
+//         setTag(
+//                 std::basic_string_view<_U> &&... str
+//         )
+//         requires(std::same_as<lolita::character, _U> && ...)
+//         {
+//             auto label = Tag();
+//             auto count = lolita::index(0);
+//             auto make = [&] (auto && s) constexpr mutable {
+//                 for (auto i = 0; i < s.size(); ++i) {
+//                     label[i + count] = s[i];
+//                 }
+//                 count += s.size();
+//             };
+//             (make(std::forward<std::basic_string_view<_U>>(str)), ...);
+//             return label;
+//         }
+
+//     public:
+
+//         constexpr
+//         Enumeration(
+//                 std::basic_string_view<lolita::character> const & str
+//         )
+//         :
+//         tag_(setTag(str))
+//         {}
+
+//         constexpr
+//         Enumeration(
+//                 std::basic_string_view<lolita::character> && str
+//         )
+//         :
+//         tag_(setTag(std::forward<std::basic_string_view<lolita::character>>(str)))
+//         {}
+
+//         constexpr
+//         std::basic_string_view<lolita::character>
+//         view()
+//         const
+//         {
+//             return std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
+//         }
+
+// //        template<typename... _U>
+// //        constexpr
+// //        EnumA(
+// //                std::basic_string_view<_U> const &... str
+// //        )
+// //        :
+// //        tag_(makeLabel(str...))
+// //        {}
+// //
+// //
+// //        template<typename... _U>
+// //        constexpr
+// //        EnumA(
+// //                std::basic_string_view<_U> &&... str
+// //        )
+// //        :
+// //        tag_(makeLabel(std::forward<std::basic_string_view<lolita::character>>(str)...))
+// //        {}
+
+//         constexpr
+//         lolita::boolean
+//         operator==(
+//                 Enumeration const & other
+//         )
+//         const = default;
+
+//         constexpr
+//         lolita::boolean
+//         operator!=(
+//                 Enumeration const & other
+//         )
+//         const = default;
+
+//         constexpr
+//         lolita::boolean
+//         operator==(
+//                 std::basic_string_view<lolita::character> const & other
+//         )
+//         const
+//         {
+//             return other == this->view();
+//         }
+
+//         constexpr
+//         lolita::boolean
+//         operator!=(
+//                 std::basic_string_view<lolita::character> const & other
+//         )
+//         const
+//         {
+//             return !(* this == other);
+//         }
+
+//         constexpr
+//         lolita::boolean
+//         operator==(
+//                 lolita::utility::Tag const & tag
+//         )
+//         const
+//         {
+//             auto constexpr t_null = lolita::character();
+//             auto view = std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), t_null)));
+//             auto view1 = std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), t_null)));
+//             return view1 == view;
+//         }
+
+//         constexpr
+//         lolita::boolean
+//         operator!=(
+//                 lolita::utility::Tag const & tag
+//         )
+//         const
+//         {
+//             return !(* this == tag);
+//         }
+
+//         friend
+//         std::ostream &
+//         operator<<(
+//                 std::ostream & os,
+//                 Enumeration const & enuma
+//         )
+//         {
+//             auto constexpr t_null = lolita::character();
+//             auto const & tag = enuma.tag_;
+//             os << std::basic_string_view<lolita::character>(tag.data(), std::distance(tag.begin(), std::find(tag.begin(), tag.end(), t_null)));
+//             return os;
+//         }
+
+//         Tag tag_;
+
+//     };
+
+//     struct TupleSlice
+//     {
+
+//         struct detail
+//         {
+
+//             template<lolita::index _offset, typename... _T, lolita::index... _i>
+//             static constexpr
+//             auto
+//             tupleSlice(
+//                     std::tuple<_T...> const & tuple,
+//                     std::integer_sequence<lolita::index, _i...>
+//             )
+//             {
+//                 return std::make_tuple(std::get<_i + _offset>(tuple)...);
+//             }
+
+//         };
+
+//         template<lolita::index _begin, lolita::index _end, typename... _T>
+//         static constexpr
+//         auto
+//         tupleSlice(
+//                 std::tuple<_T...> const & tuple
+//         )
+//         requires(_end >= _begin && sizeof...(_T) >= _end)
+//         {
+//             return detail::template tupleSlice<_begin, _T...>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
+//         }
+
+//     };
+
+//     using Label = std::array<lolita::character, 20>;
+
+//     template<typename... _U>
+//     static constexpr
+//     lolita::utility::Label
+//     makeLabel(
+//             std::basic_string_view<_U> const &... str
+//     )
+//     requires(std::same_as<lolita::character, _U> && ...)
+//     {
+//         auto label = lolita::utility::Label();
+//         auto count = lolita::index(0);
+//         auto make = [&] (auto const & s) constexpr mutable {
+//             for (auto i = 0; i < s.size(); ++i) {
+//                 label[i + count] = s[i];
+//             }
+//             count += s.size();
+//         };
+//         (make(str), ...);
+//         return label;
+//     }
+
+//     template<typename... _U>
+//     static constexpr
+//     lolita::utility::Label
+//     makeLabel(
+//             std::basic_string_view<_U> &&... str
+//     )
+//     requires(std::same_as<lolita::character, _U> && ...)
+//     {
+//         auto label = lolita::utility::Label();
+//         auto count = lolita::index(0);
+//         auto make = [&] (auto && s) constexpr mutable {
+//             for (auto i = 0; i < s.size(); ++i) {
+//                 label[i + count] = s[i];
+//             }
+//             count += s.size();
+//         };
+//         (make(std::forward<std::basic_string_view<_U>>(str)), ...);
+//         return label;
+//     }
+
+//     static constexpr
+//     std::basic_string_view<lolita::character>
+//     readLabel(
+//             lolita::utility::Label const & label
+//     )
+//     {
+//         return std::basic_string_view<lolita::character>(label.data(), std::distance(label.begin(), std::find(label.begin(), label.end(), lolita::character())));
+//     }
 
 //    namespace detail
 //    {
@@ -671,212 +929,120 @@ namespace lolita::utility
      *
      */
 
-    namespace detail
-    {
+    
 
-        template<lolita::index I, typename T>
-        struct AggregateTail
-        {
+    // template<typename... T>
+    // using Aggregate = detail::AggregateHead<0u, T...>;
 
-            constexpr
-            lolita::boolean
-            operator==(
-                    AggregateTail const &
-            )
-            const = default;
+    // namespace detail
+    // {
 
-            constexpr
-            lolita::boolean
-            operator!=(
-                    AggregateTail const &
-            )
-            const = default;
+    //     template<typename T>
+    //     struct AggregateSizeTraits;
 
-            T value_;
+    //     template<typename... T>
+    //     struct AggregateSizeTraits<Aggregate<T...>>
+    //     {
 
-        };
+    //         lolita::index value = sizeof...(T);
 
-        template<lolita::index I, typename... T>
-        struct AggregateHead;
+    //     };
 
-        template<lolita::index I>
-        struct AggregateHead<I>
-        {
+    //     template<lolita::index I, typename T>
+    //     struct AggregateElementTraits;
 
+    //     template<lolita::index I, typename... T>
+    //     struct AggregateElementTraits<I, Aggregate<T...>>
+    //     {
 
-            constexpr
-            lolita::boolean
-            operator==(
-                    AggregateHead const &
-            )
-            const = default;
+    //         using type = std::tuple_element_t<I, std::tuple<T...>>;
 
-            constexpr
-            lolita::boolean
-            operator!=(
-                    AggregateHead const &
-            )
-            const = default;
+    //     };
 
-        };
+    // }
 
-        template<lolita::index I, typename T, typename... U>
-        struct AggregateHead<I, T, U...> : public AggregateTail<I, T>, public AggregateHead<I + 1, U...>
-        {
+    // template<typename T>
+    // static constexpr
+    // lolita::index aggregate_size_v = detail::AggregateSizeTraits<T>::value;
 
+    // template<lolita::index I, typename... T>
+    // using aggregate_element_t = typename detail::AggregateElementTraits<I, T...>::type;
 
-            constexpr
-            lolita::boolean
-            operator==(
-                    AggregateHead const &
-            )
-            const = default;
+    // template<typename... T>
+    // static constexpr
+    // lolita::index
+    // size(
+    //         Aggregate<T...> const &
+    //         aggregate
+    // )
+    // {
+    //     return sizeof...(T);
+    // }
 
-            constexpr
-            lolita::boolean
-            operator!=(
-                    AggregateHead const &
-            )
-            const = default;
+    // template<lolita::index I, typename... T>
+    // static constexpr
+    // std::tuple_element_t<I, std::tuple<T...>> const &
+    // get(
+    //         Aggregate<T...> const &
+    //         aggregate
+    // )
+    // {
+    //     return detail::get<I>(aggregate);
+    // }
 
-        };
+    // template<lolita::index I, typename... T>
+    // static constexpr
+    // std::tuple_element_t<I, std::tuple<T...>> &
+    // get(
+    //         Aggregate<T...> &
+    //         aggregate
+    // )
+    // {
+    //     return detail::get<I>(aggregate);
+    // }
 
-        template<lolita::index I, typename T, typename... U>
-        static constexpr
-        T &
-        get(
-                AggregateHead<I, T, U...> &
-                aggregate_arg
-        )
-        {
-            return aggregate_arg.AggregateTail<I, T>::value_;
-        }
-
-        template<lolita::index I, typename T, typename... U>
-        static constexpr
-        T const &
-        get(
-                AggregateHead<I, T, U...> const &
-                aggregate_arg
-        )
-        {
-            return aggregate_arg.AggregateTail<I, T>::value_;
-        }
-
-    }
-
-    template<typename... T>
-    using Aggregate = detail::AggregateHead<0u, T...>;
-
-    namespace detail
-    {
-
-        template<typename T>
-        struct AggregateSizeTraits;
-
-        template<typename... T>
-        struct AggregateSizeTraits<Aggregate<T...>>
-        {
-
-            lolita::index value = sizeof...(T);
-
-        };
-
-        template<lolita::index I, typename T>
-        struct AggregateElementTraits;
-
-        template<lolita::index I, typename... T>
-        struct AggregateElementTraits<I, Aggregate<T...>>
-        {
-
-            using type = std::tuple_element_t<I, std::tuple<T...>>;
-
-        };
-
-    }
-
-    template<typename T>
-    static constexpr
-    lolita::index aggregate_size_v = detail::AggregateSizeTraits<T>::value;
-
-    template<lolita::index I, typename... T>
-    using aggregate_element_t = typename detail::AggregateElementTraits<I, T...>::type;
-
-    template<typename... T>
-    static constexpr
-    lolita::index
-    size(
-            Aggregate<T...> const &
-            aggregate
-    )
-    {
-        return sizeof...(T);
-    }
-
-    template<lolita::index I, typename... T>
-    static constexpr
-    std::tuple_element_t<I, std::tuple<T...>> const &
-    get(
-            Aggregate<T...> const &
-            aggregate
-    )
-    {
-        return detail::get<I>(aggregate);
-    }
-
-    template<lolita::index I, typename... T>
-    static constexpr
-    std::tuple_element_t<I, std::tuple<T...>> &
-    get(
-            Aggregate<T...> &
-            aggregate
-    )
-    {
-        return detail::get<I>(aggregate);
-    }
-
-    template<auto A>
-    struct S{};
+    // template<auto A>
+    // struct S{};
 
 
 
-    template<typename T, lolita::index... I>
-    using TupleParts = std::tuple<std::tuple_element_t<I, T>...>;
+    // template<typename T, lolita::index... I>
+    // using TupleParts = std::tuple<std::tuple_element_t<I, T>...>;
 
-    template<auto... A>
-    struct Expand
-    {
+    // template<auto... A>
+    // struct Expand
+    // {
 
-        using E = std::tuple<S<A>...>;
+    //     using E = std::tuple<S<A>...>;
 
-    };
+    // };
 
 
 
-    template<lolita::index... s>
-    struct seq
-    {
+    // template<lolita::index... s>
+    // struct seq
+    // {
 
-        using type = seq<s...>;
+    //     using type = seq<s...>;
 
-    };
+    // };
 
-    template<lolita::index max, lolita::index... s>
-    struct make_seq : make_seq<max - 1, max - 1, s...> {};
+    // template<lolita::index max, lolita::index... s>
+    // struct make_seq : make_seq<max - 1, max - 1, s...> {};
 
-    template<lolita::index...s>
-    struct make_seq<0, s...> : seq<s...> {};
+    // template<lolita::index...s>
+    // struct make_seq<0, s...> : seq<s...> {};
 
-    template<lolita::index... s, typename Tuple>
-    auto
-    extract_tuple(
-            seq<s...>,
-            Tuple &
-            tup
-    )
-    {
-        return std::make_tuple(std::get<s>(tup)...);
-    }
+    // template<lolita::index... s, typename Tuple>
+    // auto
+    // extract_tuple(
+    //         seq<s...>,
+    //         Tuple &
+    //         tup
+    // )
+    // {
+    //     return std::make_tuple(std::get<s>(tup)...);
+    // }
 
 //        template<typename... T>
 //        struct TupleExpansion

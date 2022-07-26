@@ -103,95 +103,6 @@ namespace lolita2
 
     };
 
-    struct Label
-    {
-
-        using Tag = std::array<lolita::character, 50>;
-
-    private:
-
-        static constexpr
-        Label::Tag
-        setTag(
-            std::basic_string_view<lolita::character> str
-        )
-        {
-            auto tag = Label::Tag();
-            auto count = lolita::integer(0);
-            for (auto c : str) {
-                tag[count] = c;
-                count ++;
-            }
-            return tag;
-        }
-
-    public:
-
-        constexpr
-        Label(
-            std::basic_string_view<lolita::character> str
-        )
-        :
-        tag_(setTag(str))
-        {}
-
-        constexpr
-        lolita::boolean
-        operator==(
-            Label const & other
-        )
-        const = default;
-
-        constexpr
-        lolita::boolean
-        operator!=(
-            Label const & other
-        )
-        const = default;
-
-        constexpr
-        lolita::boolean
-        operator==(
-            std::basic_string_view<lolita::character> str
-        )
-        const
-        {
-            return str == this->view();
-        }
-
-        constexpr
-        lolita::boolean
-        operator!=(
-            std::basic_string_view<lolita::character> str
-        )
-        const
-        {
-            return !(* this == str);
-        }
-
-        constexpr
-        std::basic_string_view<lolita::character>
-        view()
-        const
-        {
-            return std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
-        }
-
-        friend
-        std::ostream &
-        operator<<(
-            std::ostream & os,
-            Label const & label
-        )
-        {
-            os << label.view();
-            return os;
-        }
-
-        Label::Tag tag_;
-
-    };
-
     struct Domain
     {
 
@@ -244,6 +155,15 @@ namespace lolita2
         {
             return dim_ == dim;
         }
+
+        static constexpr
+        Domain
+        axiSymmetric(
+            lolita::integer dim
+        )
+        {
+            return Domain(dim, Frame::AxiSymmetric);
+        }
         
         constexpr
         lolita::boolean
@@ -251,6 +171,15 @@ namespace lolita2
         const
         {
             return frame_ == Frame::AxiSymmetric;
+        }
+
+        static constexpr
+        Domain
+        cartesian(
+            lolita::integer dim
+        )
+        {
+            return Domain(dim, Frame::Cartesian);
         }
         
         constexpr
@@ -418,12 +347,26 @@ namespace lolita2
         )
         const = default;
 
+        static constexpr
+        Mapping
+        gradient()
+        {
+            return Mapping(Type::Gradient);
+        }
+
         constexpr
         lolita::boolean
         isGradient()
         const
         {
             return type_ == Type::Gradient;
+        }
+
+        static constexpr
+        Mapping
+        identity()
+        {
+            return Mapping(Type::Identity);
         }
 
         constexpr
@@ -434,6 +377,13 @@ namespace lolita2
             return type_ == Type::Identity;
         }
 
+        static constexpr
+        Mapping
+        divergence()
+        {
+            return Mapping(Type::Divergence);
+        }
+
         constexpr
         lolita::boolean
         isDivergence()
@@ -442,12 +392,26 @@ namespace lolita2
             return type_ == Type::Divergence;
         }
 
+        static constexpr
+        Mapping
+        smallStrain()
+        {
+            return Mapping(Type::SmallStrain);
+        }
+
         constexpr
         lolita::boolean
         isSmallStrain()
         const
         {
             return type_ == Type::SmallStrain;
+        }
+
+        static constexpr
+        Mapping
+        largeStrain()
+        {
+            return Mapping(Type::LargeStrain);
         }
 
         constexpr
@@ -464,6 +428,20 @@ namespace lolita2
 
     struct Field
     {
+
+        static constexpr
+        Field
+        scalar()
+        {
+            return Field(0);
+        }
+
+        static constexpr
+        Field
+        vector()
+        {
+            return Field(1);
+        }
         
         constexpr
         Field(
@@ -500,103 +478,6 @@ namespace lolita2
         lolita::integer dim_;
 
     };
-
-    template<typename... t_Mappings>
-    struct Unknown
-    {
-
-        constexpr
-        Unknown(
-            Field field,
-            t_Mappings... mappings
-        )
-        :
-        field_(field),
-        mappings_({mappings...})
-        {}
-
-        constexpr
-        lolita::boolean
-        operator==(
-            Unknown const & other
-        )
-        const = default;
-
-        constexpr
-        lolita::boolean
-        operator!=(
-            Unknown const & other
-        )
-        const = default;
-
-        Field field_;
-
-        std::array<Mapping, sizeof...(t_Mappings)> mappings_;
-
-    };
-
-    // namespace discretization
-    // {
-
-    //     namespace hybrid_discontinuous_galerkin
-    //     {
-
-    //         struct Stabilization
-    //         {
-
-    //             enum Type
-    //             {
-
-    //                 Hdg,
-    //                 Hho,
-
-    //             };
-
-    //             constexpr
-    //             Stabilization(
-    //                 Type type
-    //             )
-    //             :
-    //             type_(type)
-    //             {}
-
-    //             constexpr
-    //             lolita::boolean
-    //             operator==(
-    //                 Stabilization const & other
-    //             )
-    //             const = default;
-
-    //             constexpr
-    //             lolita::boolean
-    //             operator!=(
-    //                 Stabilization const & other
-    //             )
-    //             const = default;
-
-    //             constexpr
-    //             lolita::boolean
-    //             isHdg()
-    //             const
-    //             {
-    //                 return type_ == Type::Hdg;
-    //             }
-
-    //             constexpr
-    //             lolita::boolean
-    //             isHho()
-    //             const
-    //             {
-    //                 return type_ == Type::Hho;
-    //             }
-
-    //             Type type_;
-
-    //         };
-
-    //     }
-
-    // }
 
     struct HybridDiscontinuousGalerkin
     {
@@ -676,18 +557,156 @@ namespace lolita2
     template<typename t_T>
     concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
 
-    template<typename t_Unknown, typename t_Discretization>
+    template<typename... t_Mappings>
+    struct Unknown
+    {
+
+        using Mappings = lolita::utility::Aggregate<t_Mappings...>;
+        
+        static constexpr
+        lolita::integer
+        getNumMappings()
+        {
+            return sizeof...(t_Mappings);
+        }
+
+        constexpr
+        Unknown(
+            Field field,
+            t_Mappings... mappings
+        )
+        :
+        field_(field),
+        mappings_(mappings...)
+        {}
+
+        constexpr
+        lolita::boolean
+        operator==(
+            Unknown const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+            Unknown const & other
+        )
+        const = default;
+
+        constexpr
+        Field
+        getField()
+        const
+        {
+            return field_;
+        }
+
+        template<lolita::integer t_i>
+        constexpr
+        Mapping
+        getMapping()
+        const
+        {
+            return mappings_.template get<t_i>();
+        }
+
+        Field field_;
+
+        Mappings mappings_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsUnknown : std::false_type {};
+        
+        template<typename... t_T>
+        struct IsUnknown<Unknown<t_T...>> : std::true_type {};
+
+    }
+
+    template<typename t_T>
+    concept UnknownConcept = detail::IsUnknown<t_T>::value;
+
+    template<UnknownConcept... t_Unknowns>
+    struct Behavior
+    {
+
+        using Unknowns = lolita::utility::Aggregate<t_Unknowns...>;
+
+        static constexpr
+        lolita::integer
+        getNumUnknowns()
+        {
+            return sizeof...(t_Unknowns);
+        }
+
+        constexpr
+        Behavior(
+            t_Unknowns... unknowns
+        )
+        :
+        unknowns_(unknowns...)
+        {}
+
+        constexpr
+        lolita::boolean
+        operator==(
+            Behavior const & other
+        )
+        const = default;
+
+        constexpr
+        lolita::boolean
+        operator!=(
+            Behavior const & other
+        )
+        const = default;
+
+        template<lolita::integer t_i>
+        constexpr
+        std::tuple_element_t<t_i, std::tuple<t_Unknowns...>> const &
+        getUnknown()
+        const
+        {
+            return unknowns_.template get<t_i>();
+        }
+
+        Unknowns unknowns_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsBehavior : std::false_type {};
+        
+        template<typename... t_T>
+        struct IsBehavior<Behavior<t_T...>> : std::true_type {};
+
+    }
+
+    template<typename t_T>
+    concept BehaviorConcept = detail::IsBehavior<t_T>::value;
+
+    template<UnknownConcept t_Unknown, BehaviorConcept t_Behavior, typename t_Discretization>
     struct FiniteElementMethod
     {
 
         constexpr
         FiniteElementMethod(
             t_Unknown unknown,
+            t_Behavior behavior,
             t_Discretization discretization,
             Quadrature quadrature
         )
         :
         unknown_(unknown),
+        behavior_(behavior),
         discretization_(discretization),
         quadrature_(quadrature)
         {}
@@ -716,99 +735,27 @@ namespace lolita2
 
         t_Unknown unknown_;
 
+        t_Behavior behavior_;
+
         t_Discretization discretization_;
 
         Quadrature quadrature_;
 
     };
 
-    // template<typename t_Unknown>
-    // struct HybridDiscontinuousGalerkin
-    // {
+    namespace detail
+    {
 
-    //     enum Stabilization
-    //     {
-
-    //         Hdg,
-    //         Hho,
-
-    //     };
-
-    //     constexpr
-    //     HybridDiscontinuousGalerkin(
-    //         t_Unknown unknown,
-    //         Quadrature quadrature,
-    //         Basis cell_basis,
-    //         Basis face_basis
-    //         // Stabilization stabilization
-    //     )
-    //     :
-    //     unknown_(unknown),
-    //     quadrature_(quadrature),
-    //     cell_basis_(cell_basis),
-    //     face_basis_(face_basis)
-    //     // stabilization_(stabilization)
-    //     {}
-
-    //     t_Unknown unknown_;
-
-    //     Quadrature quadrature_;
-
-    //     Basis cell_basis_;
-
-    //     Basis face_basis_;
-
-    //     // Stabilization stabilization_;
-
-    // };
-
-    // namespace detail
-    // {
-
-    //     template<typename t_T>
-    //     struct IsHybridDiscontinuousGalerkin : std::true_type {};
-
-    //     template<typename t_T>
-    //     struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin<t_T>> : std::false_type {};
-
-    // }
-
-    // template<typename t_T>
-    // concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
-    
-    // template<auto... t_finite_elements>
-    // struct ElementGroup
-    // {
-
-    // private:
-    
-    //     using t_FiniteElements = std::tuple<std::remove_cvref_t<decltype(t_finite_elements)>...>;
-
-    // public:
-    
-    //     template<template<auto, auto, auto> typename t_T, auto t_element, auto t_domain>
-    //     using ElementPointers = std::tuple<std::shared_ptr<t_T<t_element, t_domain, t_finite_elements>>...>;
+        template<typename t_T>
+        struct IsFiniteElementMethod : std::false_type {};
         
-    //     template<template<auto, auto, auto> typename t_T, auto t_element, auto t_domain>
-    //     using Elements = std::tuple<t_T<t_element, t_domain, t_finite_elements>...>;
-    
-    // };
+        template<typename... t_T>
+        struct IsFiniteElementMethod<FiniteElementMethod<t_T...>> : std::true_type {};
 
-    // namespace detail
-    // {
+    }
 
-    //     template<typename t_T>
-    //     struct IsElementGroup : std::true_type {};
-
-    //     template<auto... t_args>
-    //     struct IsElementGroup<ElementGroup<t_args...>> : std::false_type {};
-
-    // }
-
-    // template<typename t_T>
-    // concept ElementGroupConcept = detail::IsElementGroup<t_T>::value;
-
-
+    template<typename t_T>
+    concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<t_T>::value;
 
 }
 

@@ -437,14 +437,38 @@ namespace lolita::matrix
             lolita::index cols
         )
         :
-        num_rows_(rows),
-        num_cols_(cols),
+        rows_(rows),
+        cols_(cols),
         size_(rows * cols)
         {}
 
-        lolita::index num_rows_;
+        constexpr
+        lolita::integer
+        rows()
+        const
+        {
+            return rows_;
+        }
 
-        lolita::index num_cols_;
+        constexpr
+        lolita::integer
+        cols()
+        const
+        {
+            return cols_;
+        }
+
+        constexpr
+        lolita::integer
+        size()
+        const
+        {
+            return size_;
+        }
+
+        lolita::index rows_;
+
+        lolita::index cols_;
 
         lolita::index size_;
 

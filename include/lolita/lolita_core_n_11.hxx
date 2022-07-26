@@ -192,6 +192,53 @@ namespace lolita2::geometry
 
     };
 
+    template<lolita::integer t_num_unknowns>
+    struct ElementUnknowns
+    {
+
+        void
+        setUnknown(
+            std::shared_ptr<lolita::matrix::Vector<lolita::real>> & unknown
+        )
+        {
+            unknown_ = unknown;
+            index_ = unknown->size();
+            unknown->resize(unknown->size() + t_num_unknowns);
+        }
+
+        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_num_unknowns> const>
+        getCoefficients()
+        const
+        {
+            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_num_unknowns> const>(unknown_->data() + index_);
+        }
+
+        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_num_unknowns>>
+        getCoefficients()
+        {
+            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_num_unknowns>>(unknown_->data() + index_);
+        }
+
+        std::shared_ptr<lolita::matrix::Vector<lolita::real>> unknown_;
+
+        lolita::integer index_;
+
+    };
+    
+    template<lolita::integer t_strain_size>
+    struct IntegrationPoint
+    {
+        
+        Point coordinates_;
+        
+        lolita::real weight_;
+        
+        std::unique_ptr<mgis::behaviour::BehaviourData> material_point_;
+        
+        lolita::matrix::Matrix<lolita::real, 2, t_strain_size> generalized_strain_mapping_;
+
+    };
+    
     template<auto t_arg>
     struct Traits;
 
@@ -205,7 +252,7 @@ namespace lolita2::geometry
         lolita::integer
         getNumCellUnknowns()
         {
-            auto constexpr field_size = FieldTraits2<t_arg.unknown_.field_>::template size<t_domain>();
+            auto constexpr field_size = FieldTraits<t_arg.unknown_.field_>::template size<t_domain>();
             auto constexpr basis_size = FiniteElementBasisTraits<t_arg.discretization_.cell_basis_>::template size<t_element>();
             return field_size * basis_size;
         }
@@ -215,7 +262,7 @@ namespace lolita2::geometry
         lolita::integer
         getNumFaceUnknowns()
         {
-            auto constexpr field_size = FieldTraits2<t_arg.unknown_.field_>::template size<t_domain>();
+            auto constexpr field_size = FieldTraits<t_arg.unknown_.field_>::template size<t_domain>();
             auto constexpr basis_size = FiniteElementBasisTraits<t_arg.discretization_.face_basis_>::template size<t_element>();
             return field_size * basis_size;
         }
