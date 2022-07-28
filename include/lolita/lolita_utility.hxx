@@ -165,26 +165,26 @@ namespace lolita::utility
             return detail::get<t_i>(* this);
         }
 
-        constexpr
-        std::tuple<T...>
-        asTuple()
-        const
-        {
-            auto tuple = std::tuple<T...>();
-            auto fill = [&] <lolita::integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                std::get<t_i>(tuple) = detail::get<t_i>(* this);
-                if constexpr (t_i < sizeof...(T) - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            fill(fill);
-            return tuple;
-        }
+        // constexpr
+        // std::tuple<T...>
+        // asTuple()
+        // const
+        // {
+        //     auto tuple = std::tuple<T...>();
+        //     auto fill = [&] <lolita::integer t_i = 0> (
+        //         auto & self
+        //     )
+        //     constexpr mutable
+        //     {
+        //         std::get<t_i>(tuple) = detail::get<t_i>(* this);
+        //         if constexpr (t_i < sizeof...(T) - 1)
+        //         {
+        //             self.template operator ()<t_i + 1>(self);
+        //         }
+        //     };
+        //     fill(fill);
+        //     return tuple;
+        // }
 
     };
 
@@ -234,7 +234,7 @@ namespace lolita::utility
         )
         const = default;
 
-        constexpr
+        constexpr inline
         lolita::boolean
         operator==(
             std::basic_string_view<lolita::character> str
@@ -244,7 +244,7 @@ namespace lolita::utility
             return str == this->view();
         }
 
-        constexpr
+        constexpr inline
         lolita::boolean
         operator!=(
             std::basic_string_view<lolita::character> str
@@ -254,7 +254,7 @@ namespace lolita::utility
             return !(* this == str);
         }
 
-        constexpr
+        constexpr inline
         std::basic_string_view<lolita::character>
         view()
         const
@@ -262,7 +262,7 @@ namespace lolita::utility
             return std::basic_string_view<lolita::character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), lolita::character())));
         }
 
-        friend
+        friend inline
         std::ostream &
         operator<<(
             std::ostream & os,

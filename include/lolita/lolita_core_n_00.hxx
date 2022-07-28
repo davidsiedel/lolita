@@ -221,7 +221,7 @@ namespace lolita2::geometry
         lolita::matrix::Shape
         shape()
         {
-            return FieldTraits<Field(t_field.dim_ + 1)>::template shape<t_domain>();
+            return FieldTraits<Field(t_field.label_, t_field.dim_ + 1)>::template shape<t_domain>();
         }
 
         template<Domain t_domain, Field t_field>
@@ -458,6 +458,35 @@ namespace lolita2::geometry
         
     };
 
+    template<GeneralizedStrainConcept auto t_generalized_strain>
+    struct GeneralizedStrainTraits
+    {
+
+        template<Domain t_domain>
+        static constexpr
+        lolita::integer
+        size()
+        {
+            auto constexpr t_field = t_generalized_strain.getField();
+            auto size = lolita::integer(0);
+            auto set_size = [&] <lolita::integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                auto constexpr t_mapping = t_generalized_strain.template getMapping<t_i>();
+                size += MappingTraits<t_mapping>::template size<t_domain, t_field>();
+                if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_size(set_size);
+            return size;
+        }
+
+    };
+
     template<BehaviorConcept auto t_behavior>
     struct BehaviorTraits
     {
@@ -465,28 +494,70 @@ namespace lolita2::geometry
         template<Domain t_domain>
         static constexpr
         lolita::integer
-        strainSize()
+        getGeneralizedStrainSize()
         {
             auto p = lolita::integer(0);
-            auto cnt = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+            auto cnt = [&] <lolita::integer t_i = 0> (
                 auto & self
             )
             constexpr mutable
             {
-                auto constexpr t_field = t_behavior.template getUnknown<t_i>().getField();
-                auto constexpr t_mapping = t_behavior.template getUnknown<t_i>().template getMapping<t_j>();
-                p += MappingTraits<t_mapping>::template size<t_domain, t_field>();
-                if constexpr (t_j < t_behavior.template getUnknown<t_i>().getNumMappings() - 1)
+                p += GeneralizedStrainTraits<t_behavior.template getGeneralizedStrain<t_i>()>::template size<t_domain>();
+                if constexpr (t_i < t_behavior.getNumGeneralizedStrains() - 1)
                 {
-                    self.template operator ()<t_i, t_j + 1>(self);
-                }
-                else if constexpr (t_i < t_behavior.getNumUnknowns() - 1)
-                {
-                    self.template operator ()<t_i + 1, 0>(self);
+                    self.template operator ()<t_i + 1>(self);
                 }
             };
             cnt(cnt);
             return p;
+        }
+
+    };
+
+    template<FiniteElementMethodConcept auto t_finite_element_method>
+    struct FiniteElementMethodTraits
+    {
+
+        template<Domain t_domain>
+        static constexpr
+        lolita::integer
+        getGeneralizedStrainSize()
+        {
+            return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template size<t_domain>();
+        }
+
+        template<Domain t_domain>
+        static constexpr
+        lolita::integer
+        getGeneralizedStrainOffset()
+        {
+            auto constexpr t_finite_element_generalized_strain = t_finite_element_method.getGeneralizedStrain();
+            auto offset = lolita::integer(0);
+            auto is_set = false;
+            auto set_offset = [&] <lolita::integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                auto constexpr t_generalized_strain = t_finite_element_method.getBehavior().template getGeneralizedStrain<t_i>();
+                if constexpr (std::is_same_v<std::decay_t<decltype(t_generalized_strain)>, std::decay_t<decltype(t_finite_element_generalized_strain)>>)
+                {
+                    if constexpr (t_generalized_strain == t_finite_element_generalized_strain)
+                    {
+                        is_set = true;
+                    }
+                }
+                if (!is_set)
+                {
+                    offset += GeneralizedStrainTraits<t_generalized_strain>::template size<t_domain>();
+                }
+                if constexpr (t_i < t_finite_element_method.getBehavior().getNumGeneralizedStrains() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
         }
 
     };

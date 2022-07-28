@@ -8,6 +8,7 @@
 #include "lolita/lolita_core_n_00.hxx"
 #include "lolita/lolita_core_n_0.hxx"
 #include "lolita/lolita_core_n_11.hxx"
+#include "lolita/lolita_core_n_112.hxx"
 
 namespace lolita2::geometry
 {
@@ -23,6 +24,34 @@ namespace lolita2::geometry
         )
         {
 
+        }
+
+        template<lolita::integer... t_i>
+        void
+        activate(
+            std::basic_string_view<lolita::character> domain
+        )
+        {
+            auto activate_elements = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    element.second->activate();
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+                {
+                    self.template operator()<t_i + 1, 0>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
         }
         
         friend
@@ -103,7 +132,7 @@ namespace lolita2::geometry
                     os << std::endl;
                     print_element_inner_neighbors.template operator()<t_element>(element.second, print_element_inner_neighbors);
                     print_element_outer_neighbors.template operator()<t_element>(element.second, print_element_outer_neighbors);
-                }                
+                }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
                 {
                     self.template operator()<t_i, t_j + 1>(self);

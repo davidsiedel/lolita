@@ -431,23 +431,39 @@ namespace lolita2
 
         static constexpr
         Field
-        scalar()
+        scalar(
+            std::basic_string_view<lolita::character> label
+        )
         {
-            return Field(0);
+            return Field(label, 0);
         }
 
         static constexpr
         Field
-        vector()
+        vector(
+            std::basic_string_view<lolita::character> label
+        )
         {
-            return Field(1);
+            return Field(label, 1);
         }
         
         constexpr
         Field(
+            lolita::utility::Label const & label,
             lolita::integer dim
         )
         :
+        label_(label),
+        dim_(dim)
+        {}
+        
+        constexpr
+        Field(
+            std::basic_string_view<lolita::character> label,
+            lolita::integer dim
+        )
+        :
+        label_(label),
         dim_(dim)
         {}
 
@@ -475,7 +491,41 @@ namespace lolita2
             return dim_ == dim;
         }
 
+        lolita::utility::Label label_;
+
         lolita::integer dim_;
+
+    };
+
+    struct Unknown
+    {
+
+        enum Type
+        {
+
+            Cell,
+            Face,
+            Edge,
+            Node,
+
+        };
+        
+        constexpr
+        Unknown(
+            Field field,
+            Basis basis
+        )
+        :
+        is_active_(true),
+        field_(field),
+        basis_(basis)
+        {}
+
+        lolita::boolean is_active_;
+
+        Field field_;
+
+        Basis basis_;
 
     };
 
@@ -558,7 +608,7 @@ namespace lolita2
     concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
 
     template<typename... t_Mappings>
-    struct Unknown
+    struct GeneralizedStrain
     {
 
         using Mappings = lolita::utility::Aggregate<t_Mappings...>;
@@ -571,7 +621,7 @@ namespace lolita2
         }
 
         constexpr
-        Unknown(
+        GeneralizedStrain(
             Field field,
             t_Mappings... mappings
         )
@@ -583,14 +633,14 @@ namespace lolita2
         constexpr
         lolita::boolean
         operator==(
-            Unknown const & other
+            GeneralizedStrain const & other
         )
         const = default;
 
         constexpr
         lolita::boolean
         operator!=(
-            Unknown const & other
+            GeneralizedStrain const & other
         )
         const = default;
 
@@ -621,35 +671,35 @@ namespace lolita2
     {
 
         template<typename t_T>
-        struct IsUnknown : std::false_type {};
+        struct IsGeneralizedStrain : std::false_type {};
         
         template<typename... t_T>
-        struct IsUnknown<Unknown<t_T...>> : std::true_type {};
+        struct IsGeneralizedStrain<GeneralizedStrain<t_T...>> : std::true_type {};
 
     }
 
     template<typename t_T>
-    concept UnknownConcept = detail::IsUnknown<t_T>::value;
+    concept GeneralizedStrainConcept = detail::IsGeneralizedStrain<t_T>::value;
 
-    template<UnknownConcept... t_Unknowns>
+    template<GeneralizedStrainConcept... t_GeneralizedStrains>
     struct Behavior
     {
 
-        using Unknowns = lolita::utility::Aggregate<t_Unknowns...>;
+        using GeneralizedStrains = lolita::utility::Aggregate<t_GeneralizedStrains...>;
 
         static constexpr
         lolita::integer
-        getNumUnknowns()
+        getNumGeneralizedStrains()
         {
-            return sizeof...(t_Unknowns);
+            return sizeof...(t_GeneralizedStrains);
         }
 
         constexpr
         Behavior(
-            t_Unknowns... unknowns
+            t_GeneralizedStrains... generalized_strains
         )
         :
-        unknowns_(unknowns...)
+        generalized_strains_(generalized_strains...)
         {}
 
         constexpr
@@ -668,14 +718,14 @@ namespace lolita2
 
         template<lolita::integer t_i>
         constexpr
-        std::tuple_element_t<t_i, std::tuple<t_Unknowns...>> const &
-        getUnknown()
+        std::tuple_element_t<t_i, std::tuple<t_GeneralizedStrains...>> const &
+        getGeneralizedStrain()
         const
         {
-            return unknowns_.template get<t_i>();
+            return generalized_strains_.template get<t_i>();
         }
 
-        Unknowns unknowns_;
+        GeneralizedStrains generalized_strains_;
 
     };
 
@@ -693,19 +743,19 @@ namespace lolita2
     template<typename t_T>
     concept BehaviorConcept = detail::IsBehavior<t_T>::value;
 
-    template<UnknownConcept t_Unknown, BehaviorConcept t_Behavior, typename t_Discretization>
+    template<GeneralizedStrainConcept t_GeneralizedStrain, BehaviorConcept t_Behavior, typename t_Discretization>
     struct FiniteElementMethod
     {
 
         constexpr
         FiniteElementMethod(
-            t_Unknown unknown,
+            t_GeneralizedStrain generalized_strain,
             t_Behavior behavior,
             t_Discretization discretization,
             Quadrature quadrature
         )
         :
-        unknown_(unknown),
+        generalized_strain_(generalized_strain),
         behavior_(behavior),
         discretization_(discretization),
         quadrature_(quadrature)
@@ -733,7 +783,64 @@ namespace lolita2
             return HybridDiscontinuousGalerkinConcept<t_Discretization>;
         }
 
-        t_Unknown unknown_;
+        constexpr
+        Field
+        getField()
+        const
+        {
+            return generalized_strain_.field_;
+        }
+
+        template<lolita::integer t_i>
+        constexpr
+        Mapping
+        getMapping()
+        const
+        {
+            return generalized_strain_.mappings_.template get<t_i>();
+        }
+
+        constexpr
+        t_GeneralizedStrain const &
+        getGeneralizedStrain()
+        const
+        {
+            return generalized_strain_;
+        }
+
+        constexpr
+        t_Behavior const &
+        getBehavior()
+        const
+        {
+            return behavior_;
+        }
+
+        constexpr
+        t_Discretization const &
+        getDiscretization()
+        const
+        {
+            return discretization_;
+        }
+
+        constexpr
+        Quadrature const &
+        getQuadrature()
+        const
+        {
+            return quadrature_;
+        }
+
+        // Unknown cell_unknown_;
+
+        // Unknown face_unknown_;
+
+        // Unknown edge_unknown_;
+
+        // Unknown node_unknown_;
+
+        t_GeneralizedStrain generalized_strain_;
 
         t_Behavior behavior_;
 
