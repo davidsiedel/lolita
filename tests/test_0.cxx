@@ -32,17 +32,26 @@ TEST(t0, t0)
     
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
     auto elements = lolita2::geometry::MeshFileParser(file_path).template makeFiniteElementSet<domain, fe1, fe2>();
+    auto degree_of_freedom = std::make_shared<lolita2::geometry::DegreeOfFreedom>("FaceDisplacement");
+    elements->activate<2, 0, 1>("SQUARE");
+    elements->activate<1, 0, 1>("SQUARE");
+    elements->setDegreeOfFreedom<displacement_field, basis, 1, 0>("SQUARE", degree_of_freedom);
+    // elements->setDegreeOfFreedom<displacement_field, basis, 0, 0>("SQUARE", degree_of_freedom);
     // std::cout << elements << std::endl;
     
-    for (auto const & elem : elements->getElements<1, 0>())
-    {
-        std::cout << elem.second->getHash() << std::endl;
-        // std::cout << elem.second->template getElement<0>()->template getOuterNeighbors<0, 0>().size() << std::endl;
-        for (auto const & domain : elem.second->template getFiniteElement<0>()->domains_)
-        {
-            std::cout << domain->tag_ << std::endl;
-        }
-    }
+    // for (auto const & elem : elements->getElements<1, 0>())
+    // {
+    //     std::cout << elem.second->getHash() << std::endl;
+    //     // std::cout << elem.second->template getElement<0>()->template getOuterNeighbors<0, 0>().size() << std::endl;
+    //     for (auto const & domain : elem.second->template getFiniteElement<0>()->domains_)
+    //     {
+    //         std::cout << domain->tag_ << std::endl;
+    //     }
+    // }
+
+    // auto degree_of_freedom = std::make_shared<lolita2::geometry::DegreeOfFreedom>(lolita2::geometry::DegreeOfFreedom("FaceDisplacement"));
+
+    std::cout << degree_of_freedom->coefficients_.size() << std::endl;
 
     auto constexpr t_element = lolita2::geometry::Element::triangle(1);
 

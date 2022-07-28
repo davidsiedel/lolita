@@ -304,6 +304,14 @@ namespace lolita2
         {
             return polynomial_ == Polynomial::Monomial;
         }
+
+        constexpr
+        lolita::integer
+        getOrder()
+        const
+        {
+            return ord_;
+        }
         
         Polynomial polynomial_;
         
@@ -569,6 +577,14 @@ namespace lolita2
 
         constexpr
         lolita::boolean
+        isHybridDiscontinuousGalerkin()
+        const
+        {
+            return true;
+        }
+
+        constexpr
+        lolita::boolean
         isHdg()
         const
         {
@@ -605,7 +621,7 @@ namespace lolita2
     }
 
     template<typename t_T>
-    concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<t_T>::value;
+    concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<std::decay_t<t_T>>::value;
 
     template<typename... t_Mappings>
     struct GeneralizedStrain

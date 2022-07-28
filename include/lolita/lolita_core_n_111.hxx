@@ -26,13 +26,14 @@ namespace lolita2::geometry
 
         }
 
-        template<lolita::integer... t_i>
+        template<lolita::integer t_i, lolita::integer... t_k>
         void
         activate(
             std::basic_string_view<lolita::character> domain
         )
+        requires(sizeof...(t_k) > 0)
         {
-            auto activate_elements = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+            auto activate_elements = [&] <lolita::integer t_j = 0> (
                 auto & self
             )
             mutable
@@ -40,15 +41,51 @@ namespace lolita2::geometry
                 auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    element.second->activate();
+                    auto const & element_domains = element.second->domains_;
+                    auto has_domain = [&] (std::shared_ptr<MeshDomain> const & mesh_domain) {
+                        return mesh_domain->tag_ == domain;
+                    };
+                    if (std::find_if(element_domains.begin(), element_domains.end(), has_domain) != element_domains.end())
+                    {
+                        (element.second->template getFiniteElement<t_k>()->activate(), ...);
+                    }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
                 {
-                    self.template operator()<t_i, t_j + 1>(self);
+                    self.template operator()<t_j + 1>(self);
                 }
-                else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<Field t_field, Basis t_basis, lolita::integer t_i, lolita::integer... t_k>
+        void
+        setDegreeOfFreedom(
+            std::basic_string_view<lolita::character> domain,
+            std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
+        )
+        requires(sizeof...(t_k) > 0)
+        {
+            auto activate_elements = [&] <lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    self.template operator()<t_i + 1, 0>(self);
+                    auto const & element_domains = element.second->domains_;
+                    auto has_domain = [&] (std::shared_ptr<MeshDomain> const & mesh_domain) {
+                        return mesh_domain->tag_ == domain;
+                    };
+                    if (std::find_if(element_domains.begin(), element_domains.end(), has_domain) != element_domains.end())
+                    {
+                        (element.second->template getFiniteElement<t_k>()->template setDegreeOfFreedom<t_field, t_basis>(degree_of_freedom), ...);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
                 }
             }; 
             activate_elements(activate_elements);
