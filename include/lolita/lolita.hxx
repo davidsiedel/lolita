@@ -43,20 +43,7 @@ namespace lolita
 
     }
 
-//    namespace lolita = configuration;
-
     using namespace config;
-
-//    namespace detail
-//    {
-//
-//        template<typename T, typename... U>
-//        concept IsAnyOf =   (std::same_as<T, U> || ...);
-//
-//        template<typename T, typename... U>
-//        concept IsSameAs =  (std::same_as<T, U> && ...);
-//
-//    }
 
 }
 

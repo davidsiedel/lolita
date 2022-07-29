@@ -1,13 +1,13 @@
-#include "lolita/lolita_core_n_3.hxx"
+// #include "lolita/lolita_core_n_3.hxx"
 
 int main(int argc, char** argv)
 {
 
-    // Domain
-    auto constexpr domain = lolita2::Domain(2, lolita2::Domain::Cartesian);
+    // // Domain
+    // auto constexpr domain = lolita2::Domain(2, lolita2::Domain::Cartesian);
 
-    // Mesh
-    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
+    // // Mesh
+    // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
     // auto msh = lolita2::geometry::MeshParser<lolita2::MeshFileFormat::Gmsh, domain>::makeMesh(file_path);
 
     // // for (auto const & element : msh.sets_[* msh.domains_[5]].getElements<domain.dim_, 0>())

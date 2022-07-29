@@ -65,44 +65,6 @@ namespace lolita2
 
     using Loading = std::function<lolita::real(lolita2::Point const &, lolita::real const &)>;
 
-    struct Load
-    {
-
-        auto static constexpr zero = [] (auto const &, auto const &) constexpr { return lolita::real(0); };
-
-        Load()
-        :
-        loading_(std::make_shared<Loading>(zero))
-        {}
-
-        Load(
-            Loading const & loading
-        )
-        :
-        loading_(std::make_shared<Loading>(loading))
-        {}
-
-        Load(
-            Loading && loading
-        )
-        :
-        loading_(std::make_shared<Loading>(std::forward<Loading>(loading)))
-        {}
-        
-        lolita::real
-        getImposedValue(
-            lolita2::Point const & point,
-            lolita::real const & time
-        )
-        const
-        {
-            return loading_->operator ()(point, time);
-        }
-
-        std::shared_ptr<Loading> loading_;
-
-    };
-
     struct Domain
     {
 

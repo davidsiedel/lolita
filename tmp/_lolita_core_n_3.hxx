@@ -5,7 +5,7 @@
 #include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_algebra.hxx"
 #include "lolita/lolita_defs.hxx"
-#include "lolita/lolita_core_n_00.hxx"
+#include "lolita/lolita_core_n_000.hxx"
 #include "lolita/lolita_core_n_0.hxx"
 #include "lolita/lolita_core_n_1.hxx"
 

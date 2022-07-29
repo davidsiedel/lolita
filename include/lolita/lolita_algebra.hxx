@@ -5,11 +5,13 @@
 #ifndef LOLITA_LOLITA_ALGEBRA_HXX
 #define LOLITA_LOLITA_ALGEBRA_HXX
 
-//#define EIGEN_USE_MKL_ALL
+#define EIGEN_USE_MKL_ALL
+
 //#define EIGEN_USE_LAPACKE
 //#define EIGEN_USE_MKL_VML
-#define EIGEN_USE_BLAS
-#define EIGEN_USE_MKL
+
+// #define EIGEN_USE_BLAS
+// #define EIGEN_USE_MKL
 
 #include <Eigen/Dense>
 #include <Eigen/Core>

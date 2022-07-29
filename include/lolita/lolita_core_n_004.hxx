@@ -5,13 +5,73 @@
 #include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_algebra.hxx"
 #include "lolita/lolita_defs.hxx"
-#include "lolita/lolita_core_n_00.hxx"
-#include "lolita/lolita_core_n_0.hxx"
+#include "lolita/lolita_core_n_000.hxx"
 #include "lolita/lolita_core_n_001.hxx"
-#include "lolita/lolita_core_n_11.hxx"
+#include "lolita/lolita_core_n_002.hxx"
+#include "lolita/lolita_core_n_003.hxx"
 
 namespace lolita2::geometry
 {
+
+    struct Load
+    {
+
+        auto static constexpr zero = [] (auto const &, auto const &) constexpr { return lolita::real(0); };
+
+        Load()
+        :
+        loading_(std::make_shared<Loading>(zero))
+        {}
+
+        Load(
+            Loading const & loading
+        )
+        :
+        loading_(std::make_shared<Loading>(loading))
+        {}
+
+        Load(
+            Loading && loading
+        )
+        :
+        loading_(std::make_shared<Loading>(std::forward<Loading>(loading)))
+        {}
+        
+        lolita::real
+        getImposedValue(
+            lolita2::Point const & point,
+            lolita::real const & time
+        )
+        const
+        {
+            return loading_->operator ()(point, time);
+        }
+
+        std::shared_ptr<Loading> loading_;
+
+    };
+
+    template<Field t_field, Domain t_domain>
+    struct FieldLoad
+    {
+
+        static constexpr
+        lolita::integer
+        getRows()
+        {
+            return FieldTraits<t_field>::template shape<t_domain>().rows();
+        }
+
+        static constexpr
+        lolita::integer
+        getCols()
+        {
+            return FieldTraits<t_field>::template shape<t_domain>().cols();
+        }
+
+        std::array<std::array<Load, getRows()>, getCols()> loads_;
+
+    };
 
     template<Element t_element, Domain t_domain, auto t_arg>
     struct FiniteElement;
