@@ -18,37 +18,24 @@ namespace lolita2::geometry
     struct FiniteElementSet : ElementSet<FiniteElementHolder, t_domain, t_args...>
     {
 
-        // template<lolita::integer... t_i>
-        // void
-        // getEl(
-        //     std::basic_string_view<lolita::character> domain
-        // )
-        // {
-
-        // }
-
-        template<lolita::integer t_i, lolita::integer... t_k>
+        template<FiniteElementMethodConcept auto t_arg, ElementType t_ii>
         void
         activate(
             std::basic_string_view<lolita::character> domain
         )
-        requires(sizeof...(t_k) > 0)
         {
             auto activate_elements = [&] <lolita::integer t_j = 0> (
                 auto & self
             )
             mutable
             {
+                auto constexpr t_i = t_ii.getDim();
                 auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    auto const & element_domains = element.second->domains_;
-                    auto has_domain = [&] (std::shared_ptr<MeshDomain> const & mesh_domain) {
-                        return mesh_domain->tag_ == domain;
-                    };
-                    if (std::find_if(element_domains.begin(), element_domains.end(), has_domain) != element_domains.end())
+                    if (element.second->isIn(domain))
                     {
-                        (element.second->template getFiniteElement<t_k>()->activate(), ...);
+                        element.second->template getFiniteElement<t_arg>()->activate();
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -59,29 +46,57 @@ namespace lolita2::geometry
             activate_elements(activate_elements);
         }
 
-        template<Field t_field, Basis t_basis, lolita::integer t_i, lolita::integer... t_k>
+        template<FiniteElementMethodConcept auto t_arg, ElementType t_ii, Field t_field, Basis t_basis>
         void
         setDegreeOfFreedom(
             std::basic_string_view<lolita::character> domain,
             std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
         )
-        requires(sizeof...(t_k) > 0)
         {
             auto activate_elements = [&] <lolita::integer t_j = 0> (
                 auto & self
             )
             mutable
             {
+                auto constexpr t_i = t_ii.getDim();
                 auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    auto const & element_domains = element.second->domains_;
-                    auto has_domain = [&] (std::shared_ptr<MeshDomain> const & mesh_domain) {
-                        return mesh_domain->tag_ == domain;
-                    };
-                    if (std::find_if(element_domains.begin(), element_domains.end(), has_domain) != element_domains.end())
+                    if (element.second->isIn(domain))
                     {
-                        (element.second->template getFiniteElement<t_k>()->template setDegreeOfFreedom<t_field, t_basis>(degree_of_freedom), ...);
+                        element.second->template getFiniteElement<t_arg>()->template setDegreeOfFreedom<t_field, t_basis>(degree_of_freedom);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<FiniteElementMethodConcept auto t_arg, ElementType t_ii>
+        void
+        setLoad(
+            std::basic_string_view<lolita::character> domain,
+            lolita::integer row,
+            lolita::integer col,
+            Loading && load
+        )
+        {
+            auto activate_elements = [&] <lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                auto ptr_load = std::make_shared<Loading>(std::forward<Loading>(load));
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->template getFiniteElement<t_arg>()->template setLoad(row, col, ptr_load);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)

@@ -16,50 +16,6 @@
 
 namespace lolita2
 {
-
-    // struct MeshFileFormat
-    // {
-
-    //     enum Format
-    //     {
-
-    //         Gmsh,
-
-    //     };
-
-    //     constexpr
-    //     MeshFileFormat(
-    //         Format format
-    //     )
-    //     :
-    //     format_(format)
-    //     {}
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator==(
-    //         MeshFileFormat const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator!=(
-    //         MeshFileFormat const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     lolita::boolean
-    //     isGmsh()
-    //     const
-    //     {
-    //         return format_ == Format::Gmsh;
-    //     }
-
-    //     Format format_;
-
-    // };
     
     using Point = lolita::matrix::Vector<lolita::real, 3>;
 
@@ -150,6 +106,22 @@ namespace lolita2
         const
         {
             return frame_ == Frame::Cartesian;
+        }
+
+        constexpr
+        lolita::integer
+        getDim()
+        const
+        {
+            return dim_;
+        }
+
+        constexpr
+        Frame
+        getFrame()
+        const
+        {
+            return frame_;
         }
 
         lolita::integer dim_;
@@ -840,7 +812,7 @@ namespace lolita2
     }
 
     template<typename t_T>
-    concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<t_T>::value;
+    concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
 
 }
 

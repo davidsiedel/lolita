@@ -9,6 +9,84 @@
 
 namespace lolita2::geometry
 {
+
+    // enum struct HJK
+    // {
+    //     Points,
+    //     Curves,
+    //     Facets,
+    //     Solids,
+    //     // Cells,
+    //     // Faces,
+    //     // Edges,
+    //     // Nodes,
+    // };
+
+    struct ElementType
+    {
+
+        enum Type
+        {
+
+            // Points,
+            // Curves,
+            // Facets,
+            // Solids,
+            Cells,
+            Faces,
+            Edges,
+            Nodes,
+
+        };
+
+        static constexpr
+        ElementType
+        cells(
+            Domain domain
+        )
+        {
+            return ElementType(domain, Type::Cells);
+        }
+
+        static constexpr
+        ElementType
+        faces(
+            Domain domain
+        )
+        {
+            return ElementType(domain, Type::Faces);
+        }
+
+        constexpr
+        ElementType(
+            Domain domain,
+            Type type
+        )
+        :
+        domain_(domain),
+        type_(type)
+        {}
+        
+        constexpr
+        lolita::integer
+        getDim()
+        const
+        {
+            switch (type_)
+            {
+                case Type::Cells: return domain_.getDim() - 0;
+                case Type::Faces: return domain_.getDim() - 1;
+                case Type::Edges: return 1;
+                case Type::Nodes: return 0;
+                default : return -1;
+            }
+        }
+
+        Domain domain_;
+
+        Type type_;
+
+    };
     
     struct ElementCoordinates
     {
@@ -62,7 +140,7 @@ namespace lolita2::geometry
         lolita::integer tag_;
 
     };
-
+    
     struct Element
     {
 
@@ -385,7 +463,7 @@ namespace lolita2::geometry
             Element static constexpr element_ = t_element;
             
             static constexpr
-            Element
+            Element const &
             getElement()
             {
                 return t_element;
@@ -1118,6 +1196,20 @@ namespace lolita2::geometry
 
     struct MeshDomain
     {
+
+        enum Elements
+        {
+
+            Points,
+            Curves,
+            Facets,
+            Solids,
+            // Cells,
+            // Faces,
+            // Edges,
+            // Nodes,
+
+        };
 
         MeshDomain(
             lolita::integer dim,

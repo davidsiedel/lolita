@@ -560,6 +560,14 @@ namespace lolita2::geometry
             return offset;
         }
 
+        template<Domain t_domain, Mapping t_mapping>
+        static constexpr
+        lolita::integer
+        getMappingSize()
+        {
+            return MappingTraits<t_mapping>::template size<t_domain, t_finite_element_method.getField()>();
+        }
+
     };
 
 }

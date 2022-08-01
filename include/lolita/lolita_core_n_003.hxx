@@ -69,6 +69,21 @@ namespace lolita2::geometry
             FiniteElementGeometry const & other
         )
         const = default;
+
+        lolita::boolean
+        isIn(
+            std::basic_string_view<lolita::character> domain
+        )
+        const
+        {
+            auto has_domain = [&] (
+                std::shared_ptr<MeshDomain> const & mesh_domain
+            )
+            {
+                return mesh_domain->tag_ == domain;
+            };
+            return std::find_if(domains_.begin(), domains_.end(), has_domain) != domains_.end();
+        }
         
         std::basic_string<lolita::character>
         getHash()

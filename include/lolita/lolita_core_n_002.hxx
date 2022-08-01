@@ -20,6 +20,39 @@ namespace lolita2::geometry
         :
         label_(label)
         {}
+        
+        std::basic_string_view<lolita::character>
+        getLabel()
+        const
+        {
+            return label_;
+        }
+        
+        lolita::matrix::Vector<lolita::real> const &
+        getCoefficients()
+        const
+        {
+            return coefficients_;
+        }
+        
+        lolita::matrix::Vector<lolita::real> &
+        getCoefficients()
+        {
+            return coefficients_;
+        }
+        
+        lolita::matrix::Vector<lolita::real> const &
+        getVariations()
+        const
+        {
+            return variations_;
+        }
+        
+        lolita::matrix::Vector<lolita::real> &
+        getVariations()
+        {
+            return variations_;
+        }
 
         std::basic_string_view<lolita::character> label_;
 

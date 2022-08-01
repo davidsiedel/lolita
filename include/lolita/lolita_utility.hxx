@@ -18,6 +18,78 @@
 namespace lolita::utility
 {
 
+    template<typename t_K, typename t_T>
+    struct Container
+    {
+
+        lolita::boolean
+        has(
+            t_K const & key
+        )
+        const
+        {
+            auto has_item = [&] (std::pair<t_K, t_T> const & item) {
+                return item.first == key;
+            };
+            auto iter = std::find_if(data_.begin(), data_.end(), has_item);
+            return iter != data_.end();
+        }
+
+        t_T const &
+        get(
+            t_K const & key
+        )
+        const
+        {
+            auto has_item = [&] (std::pair<t_K, t_T> const & item) {
+                return item.first == key;
+            };
+            auto iter = std::find_if(data_.begin(), data_.end(), has_item);
+            if (iter != data_.end())
+            {
+                return * iter;
+            }
+            else
+            {
+                throw std::runtime_error();
+            }
+        }
+
+        t_T &
+        get(
+            t_K const & key
+        )
+        {
+            auto has_item = [&] (std::pair<t_K, t_T> const & item) {
+                return item.first == key;
+            };
+            auto iter = std::find_if(data_.begin(), data_.end(), has_item);
+            if (iter != data_.end())
+            {
+                return * iter;
+            }
+            else
+            {
+                throw std::runtime_error();
+            }
+        }
+
+        void
+        add(
+            t_K const & key,
+            t_T const & val
+        )
+        {
+            if (!has(key))
+            {
+                data_.push_back(std::make_pair(key, val));
+            }
+        }
+
+        std::vector<std::pair<t_K, t_T>> data_;
+
+    };
+
     namespace detail
     {
 
