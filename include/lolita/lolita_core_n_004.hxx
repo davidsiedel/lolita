@@ -13,6 +13,15 @@
 namespace lolita2::geometry
 {
 
+    template<auto... t_args>
+    using RealMatrix = lolita::matrix::Matrix<lolita::real, t_args...>;
+
+    template<auto... t_args>
+    using RealVector = lolita::matrix::Vector<lolita::real, t_args...>;
+
+    template<Element t_element, Domain t_domain, auto t_finite_element_method>
+    struct FiniteElementTraits;
+
     struct Load
     {
 
@@ -119,7 +128,7 @@ namespace lolita2::geometry
 
     };
 
-    template<Element t_element, Domain t_domain, auto t_arg>
+    template<Element t_element, Domain t_domain, auto t_finite_element_method>
     struct FiniteElement;
         
     template<Basis t_basis>
@@ -146,6 +155,14 @@ namespace lolita2::geometry
             return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
         }
 
+        template<lolita::integer t_dim>
+        static constexpr
+        lolita::integer
+        getSize()
+        {
+            return lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
+        }
+
         template<Element t_element>
         static constexpr
         lolita::integer
@@ -154,17 +171,24 @@ namespace lolita2::geometry
             return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
         }
         
-        template<Element t_element, Domain t_domain, auto t_arg>
-        struct Implementation : FiniteElement<t_element, t_domain, t_arg>
+        template<Element t_element, Domain t_domain, auto t_finite_element_method>
+        struct Implementation : FiniteElement<t_element, t_domain, t_finite_element_method>
         {
+
+            static constexpr
+            lolita::integer
+            getSize()
+            {
+                return FiniteElementBasisTraits::template getSize<t_element>();
+            }
 
         private:
         
             static constexpr
-            std::array<std::array<lolita::integer, 3>, getSize<t_element>()>
+            std::array<std::array<lolita::integer, 3>, getSize()>
             getExponents()
             {
-                auto exponents = std::array<std::array<lolita::integer, 3>, getSize<t_element>()>();
+                auto exponents = std::array<std::array<lolita::integer, 3>, getSize()>();
                 auto row = lolita::integer(0);
                 if constexpr (t_element.dim_ == 0)
                 {
@@ -217,20 +241,20 @@ namespace lolita2::geometry
                 return exponents;
             }
             
-            std::array<std::array<lolita::integer, 3>, getSize<t_element>()> static constexpr exponents_ = getExponents();
+            std::array<std::array<lolita::integer, 3>, getSize()> static constexpr exponents_ = getExponents();
 
         public:
         
-            lolita::matrix::Vector<lolita::real, getSize<t_element>()>
+            lolita::matrix::Vector<lolita::real, getSize()>
             getBasisEvaluation(
                 Point const & point
             )
             const
             {
-                auto basis_vector_values = lolita::matrix::Vector<lolita::real, getSize<t_element>()>();
+                auto basis_vector_values = lolita::matrix::Vector<lolita::real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 auto const diameters = this->getCurrentDiameters();
-                for (lolita::integer i = 0; i < getSize<t_element>(); ++i)
+                for (lolita::integer i = 0; i < getSize(); ++i)
                 {
                     auto value = lolita::real(1);
                     for (lolita::integer j = 0; j < t_element.dim_; ++j)
@@ -243,17 +267,17 @@ namespace lolita2::geometry
                 return basis_vector_values;
             }
             
-            lolita::matrix::Vector<lolita::real, getSize<t_element>()>
+            lolita::matrix::Vector<lolita::real, getSize()>
             getBasisDerivative(
                 Point const & point,
                 lolita::integer derivative_direction
             )
             const
             {
-                auto basis_vector_values = lolita::matrix::Vector<lolita::real, getSize<t_element>()>();
+                auto basis_vector_values = lolita::matrix::Vector<lolita::real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 auto const diameters = this->getCurrentDiameters();
-                for (lolita::integer i = 0; i < getSize<t_element>(); ++i)
+                for (lolita::integer i = 0; i < getSize(); ++i)
                 {
                     auto value = lolita::real(1);
                     for (lolita::integer j = 0; j < t_element.dim_; ++j)
@@ -286,40 +310,81 @@ namespace lolita2::geometry
 
     };
 
-    template<auto t_finite_element_method>
-    struct DiscretizationTraits;
-
-    template<auto t_finite_element_method>
-    requires(t_finite_element_method.getDiscretization().isHybridDiscontinuousGalerkin())
-    struct DiscretizationTraits<t_finite_element_method>
+    template<auto t_discretization>
+    struct HybridDiscontinuousGalerkinTraits
     {
 
-        template<Element t_element, Domain t_domain>
+        static constexpr
+        Basis
+        getCellBasis()
+        {
+            return t_discretization.cell_basis_;
+        }
+
+        static constexpr
+        Basis
+        getFaceBasis()
+        {
+            return t_discretization.face_basis_;
+        }
+
+        static constexpr
+        Basis
+        getGradBasis()
+        {
+            return t_discretization.grad_basis_;
+        }
+
+        template<Element t_element>
+        static constexpr
+        lolita::integer
+        getCellBasisSize()
+        {
+            return FiniteElementBasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
+        }
+
+        template<Element t_element>
+        static constexpr
+        lolita::integer
+        getFaceBasisSize()
+        {
+            return FiniteElementBasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
+        }
+
+        template<Element t_element>
+        static constexpr
+        lolita::integer
+        getGradBasisSize()
+        {
+            return FiniteElementBasisTraits<t_discretization.grad_basis_>::template getSize<t_element>();
+        }
+
+        template<Element t_element, Domain t_domain, Field t_field>
         static constexpr
         lolita::integer
         getNumCellUnknowns()
         {
-            auto constexpr field_size = FieldTraits<t_finite_element_method.getGeneralizedStrain().getField()>::template size<t_domain>();
-            auto constexpr basis_size = FiniteElementBasisTraits<t_finite_element_method.discretization_.cell_basis_>::template size<t_element>();
+            auto constexpr field_size = FieldTraits<t_field>::template size<t_domain>();
+            auto constexpr basis_size = FiniteElementBasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
             return field_size * basis_size;
         }
 
-        template<Element t_element, Domain t_domain>
+        template<Element t_element, Domain t_domain, Field t_field>
         static constexpr
         lolita::integer
         getNumFaceUnknowns()
         {
-            auto constexpr field_size = FieldTraits<t_finite_element_method.getGeneralizedStrain().getField()>::template size<t_domain>();
-            auto constexpr basis_size = FiniteElementBasisTraits<t_finite_element_method.discretization_.face_basis_>::template size<t_element>();
+            auto constexpr field_size = FieldTraits<t_field>::template size<t_domain>();
+            auto constexpr basis_size = FiniteElementBasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
             return field_size * basis_size;
         }
 
-        template<Element t_element, Domain t_domain>
+        template<Element t_element, Domain t_domain, Field t_field>
         static constexpr
         lolita::integer
-        getNumCols()
+        getNumElementUnknowns()
         {
-            auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain>();
+            auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain, t_field>();
             auto set_num_faces_unknowns = [&] <lolita::integer t_i = 0> (
                 auto & self
             )
@@ -327,7 +392,7 @@ namespace lolita2::geometry
             {
                 auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_i>();
                 auto constexpr t_num_inner_neighbors = ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0, t_i>();
-                num_element_unknowns += getNumFaceUnknowns<t_inner_neighbor, t_domain>() * t_num_inner_neighbors;
+                num_element_unknowns += getNumFaceUnknowns<t_inner_neighbor, t_domain, t_field>() * t_num_inner_neighbors;
                 if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
                 {
                     self.template operator ()<t_i + 1>(self);
@@ -337,79 +402,131 @@ namespace lolita2::geometry
             return num_element_unknowns;
         }
 
-        template<Element t_element, Domain t_domain>
+        template<Element t_element, Domain t_domain, auto t_finite_element_method>
         struct Implementation : FiniteElement<t_element, t_domain, t_finite_element_method>
         {
 
         private:
 
-            Field static constexpr t_field = t_finite_element_method.getField();
+            using t_FiniteElementTraits = FiniteElementTraits<t_element, t_domain, t_finite_element_method>;
 
-            template<Basis t_basis>
+            template<Mapping t_mapping>
             static constexpr
             lolita::integer
-            getBasisSize()
+            getMappingSize()
             {
-                return FiniteElementBasisTraits<t_basis>::template size<t_element>();
+                return MappingTraits<t_mapping>::template size<t_domain, t_finite_element_method.getField()>();
             }
 
         public:
 
-            template<Basis t_gradient_basis>
-            lolita::matrix::Matrix<lolita::real, getBasisSize<t_gradient_basis>(), getBasisSize<t_gradient_basis>()>
-            getLhs()
-            const
+            static constexpr
+            lolita::integer
+            getNumElementUnknowns()
             {
-                auto constexpr t_quadrature = Quadrature::gauss(2 * t_gradient_basis.getOrder());
-                auto lhs = lolita::matrix::Matrix<lolita::real, getBasisSize<t_gradient_basis>(), getBasisSize<t_gradient_basis>()>();
-                lhs.setZero();
-                for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
-                {
-                    auto weight = this->template getReferenceQuadratureWeight<t_quadrature>(i);
-                    auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
-                    auto vec = this->template getBasisEvaluation<t_gradient_basis>(point);
-                    lhs += weight * vec * vec.transpose();
-                }
-                // std::cout << "coucou !" << std::endl;
-                return lhs;
+                return HybridDiscontinuousGalerkinTraits::template getNumElementUnknowns<t_element, t_domain, t_finite_element_method.getField()>();
             }
-
-            template<Basis t_gradient_basis>
-            lolita::matrix::Matrix<lolita::real, getBasisSize<t_gradient_basis>(), getBasisSize<t_gradient_basis>()>
+            
+            RealMatrix<getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
             getGradientLhs()
             const
             {
-                auto constexpr t_quadrature = Quadrature::gauss(2 * t_gradient_basis.getOrder());
-                auto lhs = lolita::matrix::Matrix<lolita::real, getBasisSize<t_gradient_basis>(), getBasisSize<t_gradient_basis>()>();
+                auto constexpr t_quadrature = Quadrature::gauss(2 * getGradBasis().getOrder());
+                auto lhs = RealMatrix<getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
                 lhs.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
                 {
                     auto weight = this->template getReferenceQuadratureWeight<t_quadrature>(i);
                     auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
-                    auto vec = this->template getBasisEvaluation<t_gradient_basis>(point);
-                    lhs += weight * vec * vec.transpose();
+                    auto test_vector = this->template getBasisEvaluation<getGradBasis()>(point);
+                    lhs += weight * test_vector * test_vector.transpose();
                 }
-                // std::cout << "coucou !" << std::endl;
-                return lhs;
+                return lhs.llt().solve(decltype(lhs)::Identity());
             }
 
-            template<Basis t_gradient_basis>
-            lolita::matrix::Matrix<lolita::real, getBasisSize<t_gradient_basis>(), getNumCols<t_element, t_domain>()>
-            getGradientRhs()
+            RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns()>
+            getGradientRhs(
+                lolita::integer row,
+                lolita::integer col
+            )
             const
             {
-                auto constexpr t_quadrature = Quadrature::gauss(2 * t_gradient_basis.getOrder());
-                auto rhs = lolita::matrix::Matrix<lolita::real, getBasisSize<t_gradient_basis>(), getNumCols<t_element, t_domain>()>();
+                auto constexpr t_quadrature = Quadrature::gauss(2 * getGradBasis().getOrder());
+                auto constexpr t_field_size = FieldTraits<t_finite_element_method.getField()>::template size<t_domain>();
+                auto face_offset = t_field_size * getCellBasisSize<t_element>();
+                auto rhs = RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns()>();
                 rhs.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
                 {
                     auto weight = this->template getReferenceQuadratureWeight<t_quadrature>(i);
                     auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
-                    auto vec = this->template getBasisEvaluation<t_gradient_basis>(point);
-                    // rhs += weight * vec * vec.transpose();
+                    auto test_vector = this->template getBasisEvaluation<getGradBasis()>(point);
+                    auto left_vector = this->template getBasisDerivative<getCellBasis()>(point, col);
+                    auto col_offset = row * getCellBasisSize<t_element>();
+                    auto block = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, col_offset);
+                    block += weight * test_vector * left_vector.transpose();
                 }
-                // std::cout << "coucou !" << std::endl;
+                auto set_faces_blocks = [&] <lolita::integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_i>();
+                    auto constexpr t_num_inner_neighbors = ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0, t_i>();
+                    auto face_index = lolita::integer(0);
+                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::size(); i++)
+                        {
+                            auto weight = face->template getReferenceQuadratureWeight<t_quadrature>(i);
+                            auto point = face->template getReferenceQuadraturePoint<t_quadrature>(i);
+                            auto test_vector = this->template getBasisEvaluation<getGradBasis()>(point);
+                            auto left_face_vector = face->template getBasisEvaluation<getFaceBasis()>(point);
+                            auto left_cell_vector = this->template getBasisEvaluation<getCellBasis()>(point);
+                            auto normal_vector = face->getNormalVector(point)(col) * this->template getInnerNeighborOrientation<0, t_i>(face);
+                            auto face_col_offset = face_offset + (t_field_size * face_index + row) * getFaceBasisSize<t_inner_neighbor>();
+                            auto face_block = rhs.template block<getGradBasisSize<t_element>(), getFaceBasisSize<t_inner_neighbor>()>(0, face_col_offset);
+                            face_block += weight * test_vector * left_face_vector.transpose();
+                            auto cell_col_offset = row * getCellBasisSize<t_element>();
+                            auto cell_block = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, cell_col_offset);
+                            cell_block -= weight * test_vector * left_cell_vector.transpose();
+                            face_index ++;
+                        }
+                    }
+                    face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>() * t_num_inner_neighbors;
+                    if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator()<t_i + 1>(self);
+                    }
+                };
+                set_faces_blocks(set_faces_blocks);
                 return rhs;
+            }
+
+            template<Mapping t_mapping>
+            RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns()>
+            getMapping(
+                Point const & point
+            )
+            const
+            {
+                auto grd = RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns()>();
+                grd.setZero();
+                // getGradientRhs(0, 0);
+                auto lhs = getGradientLhs();
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain, t_finite_element_method.getField()>())
+                {
+                    auto rhs = getGradientRhs(mapping_value.row(), mapping_value.col());
+                    auto line = grd.template block<1, getNumElementUnknowns()>(mapping_value.rank(), 0);
+                    // auto res = lhs * rhs;
+                    // auto res2 = this->template getBasisEvaluation<getGradBasis()>(point);
+                    // std::cout << "ici rhs : " << rhs.rows() << ", " << rhs.cols() << std::endl;
+                    // std::cout << "ici lhs : " << lhs.rows() << ", " << lhs.cols() << std::endl;
+                    // std::cout << "ici res2 : " << res2.rows() << ", " << res2.cols() << std::endl;
+                    // // auto left_cell_vector = this->template getBasisEvaluation<getCellBasis()>(point);
+                    line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
+                }
+                return grd;
             }
 
             // template<Mapping t_mapping, Basis t_gradient_basis>
@@ -426,6 +543,78 @@ namespace lolita2::geometry
             // }
 
         };
+
+    };
+    
+    template<auto t_finite_element_method>
+    struct DiscretizationTraits;
+
+    template<Element t_element, Domain t_domain, auto t_finite_element_method>
+    struct FiniteElementTraits
+    {
+        
+        static constexpr
+        Field const &
+        getField()
+        {
+            return t_finite_element_method.getField();
+        }
+
+        template<Basis t_basis>
+        static constexpr
+        lolita::integer
+        getBasisSize()
+        {
+            return FiniteElementBasisTraits<t_basis>::template size<t_element>();
+        }
+        
+        static constexpr
+        lolita::integer
+        getGeneralizedStrainSize()
+        {
+            return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template size<t_domain>();
+        }
+        
+        static constexpr
+        lolita::integer
+        getGeneralizedStrainOffset()
+        {
+            auto constexpr t_finite_element_generalized_strain = t_finite_element_method.getGeneralizedStrain();
+            auto offset = lolita::integer(0);
+            auto is_set = false;
+            auto set_offset = [&] <lolita::integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                auto constexpr t_generalized_strain = t_finite_element_method.getBehavior().template getGeneralizedStrain<t_i>();
+                if constexpr (std::is_same_v<std::decay_t<decltype(t_generalized_strain)>, std::decay_t<decltype(t_finite_element_generalized_strain)>>)
+                {
+                    if constexpr (t_generalized_strain == t_finite_element_generalized_strain)
+                    {
+                        is_set = true;
+                    }
+                }
+                if (!is_set)
+                {
+                    offset += GeneralizedStrainTraits<t_generalized_strain>::template size<t_domain>();
+                }
+                if constexpr (t_i < t_finite_element_method.getBehavior().getNumGeneralizedStrains() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
+        }
+
+        template<Mapping t_mapping>
+        static constexpr
+        lolita::integer
+        getMappingSize()
+        {
+            return MappingTraits<t_mapping>::template size<t_domain, t_finite_element_method.getField()>();
+        }
 
     };
     
@@ -553,22 +742,22 @@ namespace lolita2::geometry
     struct QuadraturePoint
     {
 
-        using t_FiniteElementMethodTraits = FiniteElementMethodTraits<t_finite_element_method>;
+        using t_FiniteElementTraits = FiniteElementTraits<t_element, t_domain, t_finite_element_method>;
         
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_FiniteElementMethodTraits::template getGeneralizedStrainSize<t_domain>()> const>
+        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_FiniteElementTraits::getGeneralizedStrainSize()> const>
         getGeneralizedStrain()
         const
         {
-            auto constexpr size = t_FiniteElementMethodTraits::template getGeneralizedStrainSize<t_domain>();
-            auto constexpr offset = t_FiniteElementMethodTraits::template getGeneralizedStrainOffset<t_domain>();
+            auto constexpr size = t_FiniteElementTraits::getGeneralizedStrainSize();
+            auto constexpr offset = t_FiniteElementTraits::getGeneralizedStrainOffset();
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(integration_point_->material_point_->s1.gradients.data() + offset);
         }
         
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_FiniteElementMethodTraits::template getGeneralizedStrainSize<t_domain>()>>
+        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_FiniteElementTraits::getGeneralizedStrainSize()>>
         getGeneralizedStrain()
         {
-            auto constexpr size = t_FiniteElementMethodTraits::template getGeneralizedStrainSize<t_domain>();
-            auto constexpr offset = t_FiniteElementMethodTraits::template getGeneralizedStrainOffset<t_domain>();
+            auto constexpr size = t_FiniteElementTraits::getGeneralizedStrainSize();
+            auto constexpr offset = t_FiniteElementTraits::getGeneralizedStrainOffset();
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size>>(integration_point_->material_point_->s1.gradients.data() + offset);
         }
         
@@ -578,9 +767,17 @@ namespace lolita2::geometry
 
     };
 
-    template<Element t_element, Domain t_domain, auto t_arg>
-    struct FiniteElement : FiniteElementGeometry<FiniteElement, t_element, t_domain, t_arg>
+    template<Element t_element, Domain t_domain, auto t_finite_element_method>
+    struct FiniteElement : FiniteElementGeometry<FiniteElement, t_element, t_domain, t_finite_element_method>
     {
+
+        using t_FiniteElementTraits = FiniteElementTraits<t_element, t_domain, t_finite_element_method>;
+
+        template<Basis t_basis>
+        using t_Basis = typename FiniteElementBasisTraits<t_basis>::template Implementation<t_element, t_domain, t_finite_element_method>;
+
+        template<auto t_discretization>
+        using t_Disc = typename HybridDiscontinuousGalerkinTraits<t_discretization>::template Implementation<t_element, t_domain, t_finite_element_method>;
 
         struct Data
         {
@@ -589,9 +786,9 @@ namespace lolita2::geometry
 
             std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> element_degrees_of_freedom_;
 
-            std::vector<std::unique_ptr<QuadraturePoint<t_element, t_domain, t_arg>>> quadrature_points_;
+            std::vector<std::unique_ptr<QuadraturePoint<t_element, t_domain, t_finite_element_method>>> quadrature_points_;
 
-            std::unique_ptr<FieldLoad<t_domain, t_arg.getField()>> loads_;
+            std::unique_ptr<FieldLoad<t_domain, t_finite_element_method.getField()>> loads_;
 
         };
 
@@ -604,7 +801,7 @@ namespace lolita2::geometry
         {
             if (data_->loads_ == nullptr)
             {
-                data_->loads_ = std::make_unique<FieldLoad<t_domain, t_arg.getField()>>(FieldLoad<t_domain, t_arg.getField()>());
+                data_->loads_ = std::make_unique<FieldLoad<t_domain, t_finite_element_method.getField()>>(FieldLoad<t_domain, t_finite_element_method.getField()>());
             }
             data_->loads_->setLoad(row, col, load);
         }
@@ -695,69 +892,55 @@ namespace lolita2::geometry
         }
         
         template<Basis t_basis>
-        lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis>::template size<t_element>()>
+        RealVector<t_Basis<t_basis>::getSize()>
         getBasisEvaluation(
             Point const & point
         )
         const
         {
-            using t_FiniteElementBasisTraits = FiniteElementBasisTraits<t_basis>;
-            using t_Implementation = typename t_FiniteElementBasisTraits::template Implementation<t_element, t_domain, t_arg>;
-            return static_cast<t_Implementation const *>(this)->getBasisEvaluation(point);
+            return static_cast<t_Basis<t_basis> const *>(this)->getBasisEvaluation(point);
         }
         
         template<Basis t_basis>
-        lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis>::template size<t_element>()>
+        RealVector<t_Basis<t_basis>::getSize()>
         getBasisDerivative(
             Point const & point,
             lolita::integer derivative_direction
         )
         const
         {
-            using t_FiniteElementBasisTraits = FiniteElementBasisTraits<t_basis>;
-            using t_Implementation = typename t_FiniteElementBasisTraits::template Implementation<t_element, t_domain, t_arg>;
-            return static_cast<t_Implementation const *>(this)->getBasisDerivative(point, derivative_direction);
+            return static_cast<t_Basis<t_basis> const *>(this)->getBasisDerivative(point, derivative_direction);
         }
 
-        template<Basis t_gradient_basis>
-        auto
-        getLhs()
+        template<Mapping t_mapping, auto t_discretization>
+        RealMatrix<t_FiniteElementTraits::template getMappingSize<t_mapping>(), t_Disc<t_discretization>::getNumElementUnknowns()>
+        getMapping(
+            Point const & point
+        )
         const
         {
-            using t_DiscretizationTraits = DiscretizationTraits<t_arg>;
-            using t_Implementation = typename t_DiscretizationTraits::template Implementation<t_element, t_domain>;
-            return static_cast<t_Implementation const *>(this)->template getLhs<t_gradient_basis>();
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping>(point);
         }
-
-        template<Basis t_gradient_basis>
-        auto
-        getGradientRhs()
-        const
-        {
-            using t_DiscretizationTraits = DiscretizationTraits<t_arg>;
-            using t_Implementation = typename t_DiscretizationTraits::template Implementation<t_element, t_domain>;
-            return static_cast<t_Implementation const *>(this)->template getGradientRhs<t_gradient_basis>();
-        }
-
-        // template<Mapping t_mapping, Basis t_gradient_basis>
-        // lolita::matrix::Matrix<lolita::real, DiscretizationTraits<t_finite_element_method>::template getMappingSize<t_mapping>(), getNumCols<t_element, t_domain>()>
-        // getGradient(
-        //     lolita::integer i
-        // )
-        // const
-        // {
-        //     using t_DiscretizationTraits = DiscretizationTraits<t_arg>;
-        //     using t_Implementation = typename t_DiscretizationTraits::template Implementation<t_element, t_domain>;
-        //     return static_cast<t_Implementation const *>(this)->template getGradientRhs<t_mapping, t_gradient_basis>();
-        // }
 
         void
         activate()
         {
             data_ = std::make_unique<Data>(Data());
-            auto constexpr bas = Basis::monomial(1);
-            this->template getLhs<bas>();
-            this->template getGradientRhs<bas>();
+            auto constexpr cell_basis = lolita2::Basis::monomial(1);
+            auto constexpr face_basis = lolita2::Basis::monomial(1);
+            auto point = Point();
+            point.setZero();
+            auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
+            // auto constexpr bas = Basis::monomial(1);
+            this->template getBasisEvaluation<cell_basis>(point);
+            if constexpr (t_element.isSub(t_domain, 0))
+            {
+                auto mapp = this->template getMapping<Mapping::gradient(), hdg>(point);
+                mapp.setZero();
+                std::cout << "mapp : " << std::endl;
+                std::cout << mapp << std::endl;
+            }
+            // this->template getGradientRhs<bas>();
         }
 
         lolita::boolean
@@ -771,16 +954,16 @@ namespace lolita2::geometry
 
     };
 
-    template<Element t_element, Domain t_domain, auto... t_args>
-    struct FiniteElementHolder : FiniteElementGeometry<FiniteElementHolder, t_element, t_domain, t_args...>
+    template<Element t_element, Domain t_domain, auto... t_finite_element_methods>
+    struct FiniteElementHolder : FiniteElementGeometry<FiniteElementHolder, t_element, t_domain, t_finite_element_methods...>
     {
 
-        using t_FiniteElements = std::tuple<std::shared_ptr<FiniteElement<t_element, t_domain, t_args>>...>;
+        using t_FiniteElements = std::tuple<std::shared_ptr<FiniteElement<t_element, t_domain, t_finite_element_methods>>...>;
 
         template<lolita::integer t_i>
         using t_FiniteElement = typename std::tuple_element_t<t_i, t_FiniteElements>::element_type;
 
-        template<FiniteElementMethodConcept auto t_arg>
+        template<FiniteElementMethodConcept auto t_finite_element_method>
         static constexpr
         lolita::integer
         getArgIndex()
@@ -792,9 +975,9 @@ namespace lolita2::geometry
             )
             constexpr
             {
-                if constexpr (std::is_same_v<std::decay_t<decltype(t_arg)>, std::decay_t<decltype(arg)>>)
+                if constexpr (std::is_same_v<std::decay_t<decltype(t_finite_element_method)>, std::decay_t<decltype(arg)>>)
                 {
-                    if (t_arg == arg)
+                    if (t_finite_element_method == arg)
                     {
                         found = true;
                     }
@@ -804,7 +987,7 @@ namespace lolita2::geometry
                     index += 1;
                 }
             };
-            (set_index(t_args), ...);
+            (set_index(t_finite_element_methods), ...);
             return index;
         }
           
@@ -823,19 +1006,19 @@ namespace lolita2::geometry
             return std::get<t_i>(finite_elements_);
         }
         
-        template<FiniteElementMethodConcept auto t_arg>
-        std::tuple_element_t<getArgIndex<t_arg>(), t_FiniteElements> const &
+        template<FiniteElementMethodConcept auto t_finite_element_method>
+        std::tuple_element_t<getArgIndex<t_finite_element_method>(), t_FiniteElements> const &
         getFiniteElement()
         const
         {
-            return std::get<getArgIndex<t_arg>()>(finite_elements_);
+            return std::get<getArgIndex<t_finite_element_method>()>(finite_elements_);
         }
         
-        template<FiniteElementMethodConcept auto t_arg>
-        std::tuple_element_t<getArgIndex<t_arg>(), t_FiniteElements> &
+        template<FiniteElementMethodConcept auto t_finite_element_method>
+        std::tuple_element_t<getArgIndex<t_finite_element_method>(), t_FiniteElements> &
         getFiniteElement()
         {
-            return std::get<getArgIndex<t_arg>()>(finite_elements_);
+            return std::get<getArgIndex<t_finite_element_method>()>(finite_elements_);
         }
 
         t_FiniteElements finite_elements_;

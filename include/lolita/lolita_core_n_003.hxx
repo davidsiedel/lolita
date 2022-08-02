@@ -158,15 +158,32 @@ namespace lolita2::geometry
         const
         requires(!t_element.isNode())
         {
-            auto constexpr t_component = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
-            using t_NeighbourTraits = ElementTraits<t_component, t_domain>;
-            auto constexpr t_coordinates = t_NeighbourTraits::template getOuterNeighborCoordinates<t_element>();
+            auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
+            auto constexpr t_coordinates = ElementTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
             auto const & items = getInnerNeighbors<t_i, t_j>()[i]->template getOuterNeighbors<t_coordinates.dim_, t_coordinates.tag_>();
             auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
             {
                 return * ptr_element == * this;
             };
             return std::distance(items.begin(), std::find_if(items.begin(), items.end(), is_equal));
+        }
+        
+        template<lolita::integer t_i, lolita::integer t_j>
+        lolita::integer
+        getInnerNeighborIndex(
+            std::shared_ptr<t_T<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain, t_args...>> const & ptr_neighbor
+        )
+        const
+        requires(!t_element.isNode())
+        {
+            auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
+            auto const & inner_neighbors = getInnerNeighbors<t_i, t_j>();
+            auto is_equal = [&] (std::shared_ptr<t_T<t_inner_neighbor, t_domain, t_args...>> const & neighbor)
+            {
+                return * neighbor == * ptr_neighbor;
+            };
+            auto neighbor_index = std::distance(inner_neighbors.begin(), std::find_if(inner_neighbors.begin(), inner_neighbors.end(), is_equal));
+            return getInnerNeighborIndex<t_i, t_j>(neighbor_index);
         }
         
         template<lolita::integer t_i, lolita::integer t_j>
@@ -178,6 +195,17 @@ namespace lolita2::geometry
         requires(!t_element.isNode())
         {
             return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
+        }
+        
+        template<lolita::integer t_i, lolita::integer t_j>
+        lolita::integer
+        getInnerNeighborOrientation(
+            std::shared_ptr<t_T<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain, t_args...>> const & ptr_neighbor
+        )
+        const
+        requires(!t_element.isNode())
+        {
+            return getInnerNeighborIndex<t_i, t_j>(ptr_neighbor) == 0 ? 1 : -1;
         }
     
         Point &
@@ -433,7 +461,7 @@ namespace lolita2::geometry
             Point const & point
         )
         const
-        requires(t_ElementTraits::isFace())
+        requires(t_element.isSub(t_domain, 1))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
             auto ru = lolita::matrix::Matrix<lolita::real, 3, t_element.dim_>();
