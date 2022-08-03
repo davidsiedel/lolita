@@ -512,19 +512,20 @@ namespace lolita2::geometry
             {
                 auto grd = RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns()>();
                 grd.setZero();
-                // getGradientRhs(0, 0);
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain, t_finite_element_method.getField()>())
                 {
-                    auto rhs = getGradientRhs(mapping_value.row(), mapping_value.col());
-                    auto line = grd.template block<1, getNumElementUnknowns()>(mapping_value.rank(), 0);
-                    // auto res = lhs * rhs;
-                    // auto res2 = this->template getBasisEvaluation<getGradBasis()>(point);
-                    // std::cout << "ici rhs : " << rhs.rows() << ", " << rhs.cols() << std::endl;
-                    // std::cout << "ici lhs : " << lhs.rows() << ", " << lhs.cols() << std::endl;
-                    // std::cout << "ici res2 : " << res2.rows() << ", " << res2.cols() << std::endl;
-                    // // auto left_cell_vector = this->template getBasisEvaluation<getCellBasis()>(point);
-                    line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
+                    if (mapping_value.value() > 1.e-12)
+                    {
+                        auto rhs = getGradientRhs(mapping_value.row(), mapping_value.col());
+                        auto line = grd.template block<1, getNumElementUnknowns()>(mapping_value.rank(), 0);
+                        line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
+                    }
+                    else
+                    {
+                        auto line = grd.template block<1, getNumElementUnknowns()>(mapping_value.rank(), 0);
+                        line = RealMatrix<1, getNumElementUnknowns()>::Zero();
+                    }
                 }
                 return grd;
             }
@@ -943,6 +944,46 @@ namespace lolita2::geometry
             // this->template getGradientRhs<bas>();
         }
 
+        template<auto t_discretization, Quadrature t_quadrature>
+        void
+        make()
+        {
+            using MappingOperator = RealMatrix<t_FiniteElementTraits::getGeneralizedStrainSize(), t_Disc<t_discretization>::getNumElementUnknowns()>;
+            data_ = std::make_unique<Data>();
+            for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
+            {
+                auto reference_weight = this->template getReferenceQuadratureWeight<t_quadrature>(i);
+                auto reference_point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
+                auto current_weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
+                auto current_point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
+                auto qp = std::make_unique<QuadraturePoint<t_element, t_domain, t_finite_element_method>>();
+                qp->generalized_strain_mapping_ = MappingOperator::Zero();
+                auto set_quadrature_mapping = [&] <lolita::integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr t_mapping = t_finite_element_method.template getMapping<t_i>();
+                    auto constexpr t_block_cols = t_Disc<t_discretization>::getNumElementUnknowns();
+                    auto constexpr t_block_rows = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, t_mapping>();
+                    auto constexpr t_block_offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, t_mapping>();
+                    std::cout << "*** t_i : " << t_i << std::endl;
+                    std::cout << "mapping offset : " << t_block_offset << std::endl;
+                    std::cout << "t_block_rows : " << t_block_rows << std::endl;
+                    std::cout << "t_block_cols : " << t_block_cols << std::endl;
+                    auto mapping_block = qp->generalized_strain_mapping_.template block<t_block_rows, t_block_cols>(t_block_offset, 0);
+                    mapping_block = getMapping<t_mapping, t_discretization>(reference_point);
+                    if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_quadrature_mapping(set_quadrature_mapping);
+                data_->quadrature_points_.push_back(std::move(qp));
+            }
+            
+        }
+
         lolita::boolean
         isActivated()
         const
@@ -954,14 +995,94 @@ namespace lolita2::geometry
 
     };
 
+    
+    // template<Domain t_domain, BehaviorConcept auto t_behavior>
+    // struct IntegrationPoints
+    // {
+
+    //     template<Quadrature t_quadrature>
+    //     void
+    //     makeBehavior()
+    //     {
+    //         for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
+    //         {
+    //             auto ip = std::make_shared<t_IntegrationPoint<getArgIndex<t_behavior>()>>;
+    //             getIntegrationPoints<t_behavior>().push_back(ip);
+    //         }
+            
+    //     }
+
+    //     std::vector<std::shared_ptr<IntegrationPoint<t_domain, t_behavior>>>;
+
+    // };
+
     template<Element t_element, Domain t_domain, auto... t_finite_element_methods>
     struct FiniteElementHolder : FiniteElementGeometry<FiniteElementHolder, t_element, t_domain, t_finite_element_methods...>
     {
 
+        // template<typename T, typename... U>
+        // static constexpr
+        // auto
+        // data(
+        //     T const & arg
+        //     std::tuple<U...> const & tpl
+        // )
+        // {
+        //     if constexpr ((std::is_same_v<T, U> || ...))
+        //     {
+        //         return tpl;
+        //     }
+        //     else
+        //     {
+        //         return std::make_tuple(std::get<U>(tpl)..., arg);
+        //     }
+        // }
+
+        // data()
+
         using t_FiniteElements = std::tuple<std::shared_ptr<FiniteElement<t_element, t_domain, t_finite_element_methods>>...>;
 
+        using t_IntegrationPoints = std::tuple<std::vector<std::shared_ptr<IntegrationPoint<t_domain, t_finite_element_methods.getBehavior()>>>...>;
+
         template<lolita::integer t_i>
-        using t_FiniteElement = typename std::tuple_element_t<t_i, t_FiniteElements>::element_type;
+        using t_FiniteElement = typename std::tuple_element_t<t_i, std::tuple<FiniteElement<t_element, t_domain, t_finite_element_methods>...>>;
+
+        template<lolita::integer t_i>
+        using t_IntegrationPoint = typename std::tuple_element_t<t_i, std::tuple<IntegrationPoint<t_domain, t_finite_element_methods.getBehavior()>...>>;
+
+        // template<lolita::integer t_i>
+        // using t_FiniteElement = typename std::tuple_element_t<t_i, std::tuple<FiniteElement<t_element, t_domain, t_finite_element_methods>...>>;
+
+        // template<BehaviorConcept auto t_finite_element_method>
+        // using t_IntegrationPoint = typename std::tuple_element_t<t_i, std::tuple<IntegrationPoint<t_domain, t_finite_element_methods.getBehavior()>...>>;
+
+        template<BehaviorConcept auto t_finite_element_method>
+        static constexpr
+        lolita::integer
+        getArgIndex()
+        {
+            auto index = lolita::integer(0);
+            auto found = lolita::boolean(false);
+            auto set_index = [&] (
+                BehaviorConcept auto const & arg
+            )
+            constexpr
+            {
+                if constexpr (std::is_same_v<std::decay_t<decltype(t_finite_element_method)>, std::decay_t<decltype(arg)>>)
+                {
+                    if (t_finite_element_method == arg)
+                    {
+                        found = true;
+                    }
+                }
+                if (!found)
+                {
+                    index += 1;
+                }
+            };
+            (set_index(t_finite_element_methods.getBehavior()), ...);
+            return index;
+        }
 
         template<FiniteElementMethodConcept auto t_finite_element_method>
         static constexpr
@@ -1020,8 +1141,50 @@ namespace lolita2::geometry
         {
             return std::get<getArgIndex<t_finite_element_method>()>(finite_elements_);
         }
+        
+        template<lolita::integer t_i>
+        std::tuple_element_t<t_i, t_IntegrationPoints> const &
+        getIntegrationPoints()
+        const
+        {
+            return std::get<t_i>(integrations_points_);
+        }
+        
+        template<lolita::integer t_i>
+        std::tuple_element_t<t_i, t_IntegrationPoints> &
+        getIntegrationPoints()
+        {
+            return std::get<t_i>(integrations_points_);
+        }
+        
+        template<BehaviorConcept auto t_finite_element_method>
+        std::tuple_element_t<getArgIndex<t_finite_element_method>(), t_IntegrationPoints> const &
+        getIntegrationPoints()
+        const
+        {
+            return std::get<getArgIndex<t_finite_element_method>()>(integrations_points_);
+        }
+        
+        template<BehaviorConcept auto t_finite_element_method>
+        std::tuple_element_t<getArgIndex<t_finite_element_method>(), t_IntegrationPoints> &
+        getIntegrationPoints()
+        {
+            return std::get<getArgIndex<t_finite_element_method>()>(integrations_points_);
+        }
+
+        template<BehaviorConcept auto t_behavior, Quadrature t_quadrature>
+        void
+        makeBehavior()
+        {
+            for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
+            {
+                getIntegrationPoints<t_behavior>().push_back(std::make_shared<t_IntegrationPoint<getArgIndex<t_behavior>()>>());
+            }
+        }
 
         t_FiniteElements finite_elements_;
+
+        t_IntegrationPoints integrations_points_;
 
     };
     

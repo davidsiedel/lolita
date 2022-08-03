@@ -17,6 +17,8 @@ TEST(t0, t0)
     // behaviors
     auto constexpr displacement_behavior = lolita2::Behavior(displacement_generalized_strain);
     auto constexpr damage_behavior = lolita2::Behavior(damage_generalized_strain);
+    // static_assert(displacement_behavior == lolita2::Behavior(lolita2::GeneralizedStrain(lolita2::Field::vector("Displacement"), lolita2::Mapping::smallStrain())));
+    // static_assert(displacement_behavior != lolita2::Behavior(lolita2::GeneralizedStrain(lolita2::Field::vector("Displacement"), lolita2::Mapping::gradient())));
     // discretization
     auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
     // finite elements
@@ -30,7 +32,7 @@ TEST(t0, t0)
     // mesh build
     auto elements = lolita2::geometry::MeshFileParser(file_path).template makeFiniteElementSet<domain, displacement_element, damage_element>();
     // problem build
-    elements->activate<displacement_element, lolita2::geometry::ElementType::cells(domain)>("SQUARE");
+    elements->make<displacement_element, lolita2::geometry::ElementType::cells(domain), hdg, quadrature>("SQUARE");
     elements->activate<displacement_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
     elements->activate<damage_element, lolita2::geometry::ElementType::cells(domain)>("SQUARE");
     elements->activate<damage_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
@@ -42,7 +44,7 @@ TEST(t0, t0)
         0, 0, [](lolita2::Point const &p, lolita::real const &t) { return 1.0; }
     );
     // show mesh
-    std::cout << * elements << std::endl;
+    // std::cout << * elements << std::endl;
     std::cout << degree_of_freedom->coefficients_.size() << std::endl;
     degree_of_freedom->coefficients_.setZero();
     //

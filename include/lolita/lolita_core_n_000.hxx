@@ -350,7 +350,7 @@ namespace lolita2::geometry
             return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
-                MappingValues{2, 2, 2, 1},
+                MappingValues{2, 2, 2, 0},
                 MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
             };
         }
@@ -420,7 +420,7 @@ namespace lolita2::geometry
             return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
-                MappingValues{2, 2, 2, 1},
+                MappingValues{2, 2, 2, 0},
                 MappingValues{0, 1, 3, 1},
                 MappingValues{1, 0, 4, 1},
             };
@@ -566,6 +566,46 @@ namespace lolita2::geometry
         getMappingSize()
         {
             return MappingTraits<t_mapping>::template size<t_domain, t_finite_element_method.getField()>();
+        }
+
+        template<Domain t_domain, Mapping t_mapping>
+        static constexpr
+        lolita::integer
+        getMappingOffset()
+        {
+            // return MappingTraits<t_mapping>::template size<t_domain, t_finite_element_method.getField()>();
+            auto offset = lolita::integer(0);
+            auto is_set = false;
+            auto set_offset = [&] <lolita::integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                // auto constexpr t_mapping2 = t_finite_element_method.getGeneralizedStrain().template getMapping<t_i>();
+                auto constexpr t_current_mapping = t_finite_element_method.getGeneralizedStrain().template getMapping<t_i>();
+                if constexpr (t_current_mapping == t_mapping)
+                {
+                    is_set = true;
+                }
+                
+                // if constexpr (std::is_same_v<std::decay_t<decltype(t_mapping2)>, std::decay_t<decltype(t_mapping)>>)
+                // {
+                //     if constexpr (t_mapping2 == t_mapping)
+                //     {
+                //         is_set = true;
+                //     }
+                // }
+                if (!is_set)
+                {
+                    offset += getMappingSize<t_domain, t_current_mapping>();
+                }
+                if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
         }
 
     };

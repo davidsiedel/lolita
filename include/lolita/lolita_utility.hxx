@@ -936,6 +936,32 @@ namespace lolita::utility
     template<typename _T, typename _U>
     using tuple_merge_t = decltype(lolita::utility::tupleMerge(std::declval<_T>(), std::declval<_U>()));
 
+
+
+    // // end of recursive call: tuple is forwared using `type`
+    // template<typename T, typename... Ts>
+    // struct unique_impl {using type = T;};
+
+    // // recursive call: 1. Consumes the first type of the variadic arguments, 
+    // //                    if not repeated add it to the tuple.  
+    // //                 2. Call this again with the rest of arguments
+    // template<template<class...> class Tuple, typename... Ts, typename U, typename... Us>
+    // struct unique_impl<Tuple<Ts...>, U, Us...> : std::conditional_t<(std::is_same_v<U, Ts> || ...), unique_impl<Tuple<Ts...>, Us...>, unique_impl<Tuple<Ts..., U>, Us...>> {};
+
+    // // forward definition
+    // template <class Tuple>
+    // struct unique_tuple;
+
+    // // class specialization so that tuple arguments can be extracted from type
+    // template<template<class...>class Tuple, typename... Ts>
+    // struct unique_tuple<Tuple<Ts...>> : public unique_impl<Tuple<>, Ts...> {};
+
+    // // template <typename T, typename Tuple>
+    // // struct has_type;
+
+    // // template <typename T, typename... Us>
+    // // struct has_type<T, std::tuple<Us...>> : std::disjunction<std::is_same<T, Us>...> {};
+
     static void inline
     removeCharacter(
             std::basic_string<lolita::character> & line,
