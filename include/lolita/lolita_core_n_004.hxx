@@ -738,26 +738,28 @@ namespace lolita2::geometry
 
     };
     
-    template<Element t_element, Domain t_domain, auto t_finite_element_method>
+    template<Element t_element, Domain t_domain>
     struct QuadraturePoint
     {
-
-        using t_FiniteElementTraits = FiniteElementTraits<t_element, t_domain, t_finite_element_method>;
         
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_FiniteElementTraits::getGeneralizedStrainSize()> const>
-        getGeneralizedStrain()
+        template<auto t_generalized_strain>
+        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, GeneralizedStrainTraits<t_generalized_strain>::template getSize<t_domain>()> const>
+        getGeneralizedStrain(
+            lolita::integer offset
+        )
         const
         {
-            auto constexpr size = t_FiniteElementTraits::getGeneralizedStrainSize();
-            auto constexpr offset = t_FiniteElementTraits::getGeneralizedStrainOffset();
+            auto constexpr size = GeneralizedStrainTraits<t_generalized_strain>::template getSize<t_domain>();
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(integration_point_->material_point_->s1.gradients.data() + offset);
         }
         
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_FiniteElementTraits::getGeneralizedStrainSize()>>
-        getGeneralizedStrain()
+        template<auto t_generalized_strain>
+        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, GeneralizedStrainTraits<t_generalized_strain>::template getSize<t_domain>()> const>
+        getGeneralizedStrain(
+            lolita::integer offset
+        )
         {
-            auto constexpr size = t_FiniteElementTraits::getGeneralizedStrainSize();
-            auto constexpr offset = t_FiniteElementTraits::getGeneralizedStrainOffset();
+            auto constexpr size = GeneralizedStrainTraits<t_generalized_strain>::template getSize<t_domain>();
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size>>(integration_point_->material_point_->s1.gradients.data() + offset);
         }
         
