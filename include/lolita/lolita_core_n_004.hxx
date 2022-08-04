@@ -764,6 +764,8 @@ namespace lolita2::geometry
         
         std::shared_ptr<IntegrationPoint<t_domain, t_finite_element_method.getBehavior()>> integration_point_;
         
+        std::vector<lolita::matrix::Matrix<lolita::real>> quadrature_operators_;
+        
         lolita::matrix::Matrix<lolita::real> generalized_strain_mapping_;
 
     };
@@ -1020,6 +1022,8 @@ namespace lolita2::geometry
     struct FiniteElementHolder : FiniteElementGeometry<FiniteElementHolder, t_element, t_domain, t_finite_element_methods...>
     {
 
+        using t_IntegrationPoints = lolita::utility::unique_tuple_t<std::tuple<std::vector<std::shared_ptr<IntegrationPoint<t_domain, t_finite_element_methods.getBehavior()>>>...>>;
+
         // template<typename T, typename... U>
         // static constexpr
         // auto
@@ -1042,13 +1046,13 @@ namespace lolita2::geometry
 
         using t_FiniteElements = std::tuple<std::shared_ptr<FiniteElement<t_element, t_domain, t_finite_element_methods>>...>;
 
-        using t_IntegrationPoints = std::tuple<std::vector<std::shared_ptr<IntegrationPoint<t_domain, t_finite_element_methods.getBehavior()>>>...>;
+        // using t_IntegrationPoints = std::tuple<std::vector<std::shared_ptr<IntegrationPoint<t_domain, t_finite_element_methods.getBehavior()>>>...>;
 
         template<lolita::integer t_i>
         using t_FiniteElement = typename std::tuple_element_t<t_i, std::tuple<FiniteElement<t_element, t_domain, t_finite_element_methods>...>>;
 
         template<lolita::integer t_i>
-        using t_IntegrationPoint = typename std::tuple_element_t<t_i, std::tuple<IntegrationPoint<t_domain, t_finite_element_methods.getBehavior()>...>>;
+        using t_IntegrationPoint = typename std::tuple_element_t<t_i, lolita::utility::unique_tuple_t<std::tuple<IntegrationPoint<t_domain, t_finite_element_methods.getBehavior()>...>>>;
 
         // template<lolita::integer t_i>
         // using t_FiniteElement = typename std::tuple_element_t<t_i, std::tuple<FiniteElement<t_element, t_domain, t_finite_element_methods>...>>;
@@ -1172,15 +1176,36 @@ namespace lolita2::geometry
             return std::get<getArgIndex<t_finite_element_method>()>(integrations_points_);
         }
 
-        template<BehaviorConcept auto t_behavior, Quadrature t_quadrature>
-        void
-        makeBehavior()
-        {
-            for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
-            {
-                getIntegrationPoints<t_behavior>().push_back(std::make_shared<t_IntegrationPoint<getArgIndex<t_behavior>()>>());
-            }
-        }
+        // template<BehaviorConcept auto t_behavior, Quadrature t_quadrature>
+        // void
+        // makeBehavior()
+        // {
+        //     for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
+        //     {
+        //         getIntegrationPoints<t_behavior>().push_back(std::make_shared<t_IntegrationPoint<getArgIndex<t_behavior>()>>());
+        //     }
+        //     auto jklm = [&] <lolita::integer t_i = 0> (
+        //         auto & self
+        //     )
+        //     constexpr mutable
+        //     {
+        //         auto constexpr t_finite_element_method = std::get<t_i>(std::make_tuple(t_finite_element_methods...));
+        //         // using t_Behavior = std::decay_t<decltype(t_behavior)>;
+        //         // using t_FiniteElementBehavior = std::tuple_element_t<t_i, std::tuple<std::decay_t<decltype(t_finite_element_method)>...>>;
+        //         if constexpr (std::is_same_v<std::decay_t<decltype(t_behavior)>, std::decay_t<decltype(t_finite_element_method.getBehavior())>>)
+        //         {
+        //             getElement<t_i>()->data_->quadrature_points_ = std::vector<std::unique_ptr<QuadraturePoint<t_element, t_domain, t_finite_element_method>>>();
+        //             for (size_t i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
+        //             {
+        //                 getElement<t_i>()->data_->quadrature_points_[i] = std::make_unique<QuadraturePoint<t_element, t_domain, t_finite_element_method>>();
+        //                 getElement<t_i>()->data_->quadrature_points_[i] = std::make_unique<QuadraturePoint<t_element, t_domain, t_finite_element_method>>();
+        //             }
+                    
+        //             getElement<t_i>()->data_->quadrature_points_ = std::make_shared<QuadraturePoint<t_element, t_domain, ttt>>();
+        //             getElement<t_i>()->data_->quadrature_points_ = getIntegrationPoints<t_behavior>();
+        //         }
+        //     };
+        // }
 
         t_FiniteElements finite_elements_;
 

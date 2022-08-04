@@ -766,7 +766,7 @@ namespace lolita::utility
 
 //     };
 
-//     struct TupleSlice
+//     struct getSlicedTuple
 //     {
 
 //         struct detail
@@ -775,7 +775,7 @@ namespace lolita::utility
 //             template<lolita::index _offset, typename... _T, lolita::index... _i>
 //             static constexpr
 //             auto
-//             tupleSlice(
+//             getSlicedTuple(
 //                     std::tuple<_T...> const & tuple,
 //                     std::integer_sequence<lolita::index, _i...>
 //             )
@@ -788,12 +788,12 @@ namespace lolita::utility
 //         template<lolita::index _begin, lolita::index _end, typename... _T>
 //         static constexpr
 //         auto
-//         tupleSlice(
+//         getSlicedTuple(
 //                 std::tuple<_T...> const & tuple
 //         )
 //         requires(_end >= _begin && sizeof...(_T) >= _end)
 //         {
-//             return detail::template tupleSlice<_begin, _T...>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
+//             return detail::template getSlicedTuple<_begin, _T...>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
 //         }
 
 //     };
@@ -855,7 +855,7 @@ namespace lolita::utility
 //        template<lolita::index _offset, typename... _T, lolita::index... _i>
 //        constexpr
 //        auto
-//        tupleSlice(
+//        getSlicedTuple(
 //                std::tuple<_T...> const & tuple,
 //                std::integer_sequence<lolita::index, _i...>
 //        )
@@ -868,12 +868,12 @@ namespace lolita::utility
 //    template<lolita::index _begin, lolita::index _end, typename... _T>
 //    constexpr
 //    auto
-//    tupleSlice(
+//    getSlicedTuple(
 //            std::tuple<_T...> const & tuple
 //    )
 //    requires(_end >= _begin && sizeof...(_T) >= _end)
 //    {
-//        return detail::tupleSlice<_begin>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
+//        return detail::getSlicedTuple<_begin>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
 //    }
 
     namespace detail
@@ -882,7 +882,7 @@ namespace lolita::utility
         template<typename... t_T, typename... t_U, lolita::index... t_i, lolita::index... t_j>
         static constexpr
         std::tuple<t_T..., t_U...>
-        tupleMerge(
+        getMergedTuple(
                 std::tuple<t_T...> const & first_tuple,
                 std::tuple<t_U...> const & second_tuple,
                 std::integer_sequence<lolita::index, t_i...>,
@@ -895,7 +895,7 @@ namespace lolita::utility
         template<lolita::index t_offset, typename... t_T, lolita::index... t_i>
         constexpr
         auto
-        tupleSlice(
+        getSlicedTuple(
                 std::tuple<t_T...> const & tuple,
                 std::integer_sequence<lolita::index, t_i...>
         )
@@ -905,36 +905,85 @@ namespace lolita::utility
 
     }
 
-    template<typename... _T, typename... _U>
+    template<typename... t_T, typename... t_U>
     static constexpr
-    std::tuple<_T..., _U...>
-    tupleMerge(
-            std::tuple<_T...> const & first_tuple,
-            std::tuple<_U...> const & second_tuple
+    std::tuple<t_T..., t_U...>
+    getMergedTuple(
+            std::tuple<t_T...> const & first_tuple,
+            std::tuple<t_U...> const & second_tuple
     )
     {
-        auto const constexpr fi = std::make_integer_sequence<lolita::index, std::tuple_size_v<std::tuple<_T...>>>{};
-        auto const constexpr si = std::make_integer_sequence<lolita::index, std::tuple_size_v<std::tuple<_U...>>>{};
-        return lolita::utility::detail::tupleMerge(first_tuple, second_tuple, fi, si);
+        auto const constexpr fi = std::make_integer_sequence<lolita::index, std::tuple_size_v<std::tuple<t_T...>>>{};
+        auto const constexpr si = std::make_integer_sequence<lolita::index, std::tuple_size_v<std::tuple<t_U...>>>{};
+        return lolita::utility::detail::getMergedTuple(first_tuple, second_tuple, fi, si);
     }
 
-    template<lolita::index _begin, lolita::index _end, typename... _T>
+    template<lolita::index _begin, lolita::index _end, typename... t_T>
     constexpr
     auto
-    tupleSlice(
-            std::tuple<_T...> const & tuple
+    getSlicedTuple(
+            std::tuple<t_T...> const & tuple
     )
-    requires(_end >= _begin && sizeof...(_T) >= _end)
+    requires(_end >= _begin && sizeof...(t_T) >= _end)
     {
-        return detail::tupleSlice<_begin>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
+        return detail::getSlicedTuple<_begin>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
     }
 
-    template<typename _T, lolita::index _begin, lolita::index _end>
-            requires(_end >= _begin && std::tuple_size_v<_T> >= _end)
-    using tuple_slice_t = decltype(lolita::utility::tupleSlice<_begin, _end>(std::declval<_T>()));
+    template<typename t_T, typename... t_U>
+    constexpr
+    auto
+    getUniqueTuple(
+        std::tuple<t_T, t_U...>
+    )
+    {
+        if constexpr ((std::is_same_v<t_T, t_U> || ...))
+        {
+            return getUniqueTuple(std::tuple<t_U...>());
+        }
+        else
+        {
+            if constexpr (sizeof...(t_U) > 0)
+            {
+                return std::tuple_cat(std::tuple<t_T>(), decltype(getUniqueTuple(std::tuple<t_U...>()))());
+            }
+            else
+            {
+                return std::tuple<t_T>();
+            }
+        }
+    }
 
-    template<typename _T, typename _U>
-    using tuple_merge_t = decltype(lolita::utility::tupleMerge(std::declval<_T>(), std::declval<_U>()));
+    template<typename>
+    void
+    TD()
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+
+    // template<typename... Ts>
+    // using unique_tuple_t = decltype(lolita::utility::getUniqueTuple(std::declval<std::tuple<Ts...>>()));
+
+    template<typename t_T>
+    using unique_tuple_t = decltype(lolita::utility::getUniqueTuple(std::declval<t_T>()));
+
+    template<typename t_T, lolita::index _begin, lolita::index _end>
+    requires(_end >= _begin && std::tuple_size_v<t_T> >= _end)
+    using tuple_slice_t = decltype(lolita::utility::getSlicedTuple<_begin, _end>(std::declval<t_T>()));
+
+    template<typename t_T, typename t_U>
+    using tuple_merge_t = decltype(lolita::utility::getMergedTuple(std::declval<t_T>(), std::declval<t_U>()));
+
+    // template <typename T, typename... Ts>
+    // struct unique : std::type_identity<T> {};
+
+    // template <typename... Ts, typename U, typename... Us>
+    // struct unique<std::tuple<Ts...>, U, Us...> : std::conditional_t<(std::is_same_v<U, Ts> || ...), unique<std::tuple<Ts...>, Us...> , unique<std::tuple<Ts..., U>, Us...>> {};
+
+    // template <typename... Ts>
+    // using unique_tuple_t = typename unique<std::tuple<>, Ts...>::type;
+
+
+
 
 
 

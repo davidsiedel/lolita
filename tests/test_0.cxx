@@ -17,8 +17,6 @@ TEST(t0, t0)
     // behaviors
     auto constexpr displacement_behavior = lolita2::Behavior(displacement_generalized_strain);
     auto constexpr damage_behavior = lolita2::Behavior(damage_generalized_strain);
-    // static_assert(displacement_behavior == lolita2::Behavior(lolita2::GeneralizedStrain(lolita2::Field::vector("Displacement"), lolita2::Mapping::smallStrain())));
-    // static_assert(displacement_behavior != lolita2::Behavior(lolita2::GeneralizedStrain(lolita2::Field::vector("Displacement"), lolita2::Mapping::gradient())));
     // discretization
     auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
     // finite elements
