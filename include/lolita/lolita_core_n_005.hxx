@@ -59,18 +59,14 @@ namespace lolita2::geometry
             {
                 auto constexpr t_i = t_ii.getDim();
                 auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                auto constexpr jkll = FiniteElementHolder<t_element, t_domain, t_args...>::template getArgIndex<t_arg>();
+                auto constexpr jkll = FiniteElementHolder<t_element, t_domain, t_args...>::template getBehaviorIndex<t_arg>();
                 using t_FiniteElementHolder = FiniteElementHolder<t_element, t_domain, t_args...>;
                 using t_IntegrationPoint = typename t_FiniteElementHolder::template t_IntegrationPoint<jkll>;
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
                     if (element.second->isIn(domain))
                     {
-                        auto & ips = element.second->template getIntegrationPoints<t_arg>();
-                        for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
-                        {
-                            element.second->template getIntegrationPoints<t_arg>().push_back(std::make_shared<t_IntegrationPoint>());
-                        }
+                        element.second->template makeBehavior<t_arg, t_quadrature>();
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)

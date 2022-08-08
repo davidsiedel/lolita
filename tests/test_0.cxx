@@ -10,6 +10,8 @@ TEST(t0, t0)
     auto constexpr cell_basis = lolita2::Basis::monomial(1);
     auto constexpr face_basis = lolita2::Basis::monomial(1);
     auto constexpr quadrature = lolita2::Quadrature::gauss(2);
+    auto constexpr cells = lolita2::geometry::ElementType::cells(domain);
+    auto constexpr faces = lolita2::geometry::ElementType::faces(domain);
     // fields
     auto constexpr displacement_field = lolita2::Field::vector("Displacement");
     auto constexpr damage_field = lolita2::Field::scalar("Damage");
@@ -32,17 +34,13 @@ TEST(t0, t0)
     // mesh build
     auto elements = lolita2::geometry::MeshFileParser(file_path).template makeFiniteElementSet<domain, displacement_element, damage_element>();
     // problem build
-    elements->make<displacement_element, lolita2::geometry::ElementType::cells(domain), hdg, quadrature>("SQUARE");
-    elements->activate<displacement_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
-    elements->activate<damage_element, lolita2::geometry::ElementType::cells(domain)>("SQUARE");
-    elements->activate<damage_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
-    elements->setDegreeOfFreedom<displacement_element, lolita2::geometry::ElementType::faces(domain), displacement_field, face_basis>(
-        "SQUARE", degree_of_freedom
-    );
-    elements->setLoad<displacement_element, lolita2::geometry::ElementType::cells(domain)>(
-        "SQUARE",
-        0, 0, [](lolita2::Point const &p, lolita::real const &t) { return 1.0; }
-    );
+    elements->make<displacement_element, cells, hdg, quadrature>("SQUARE");
+    elements->activate<displacement_element, faces>("SQUARE");
+    elements->activate<damage_element, cells>("SQUARE");
+    elements->activate<damage_element, faces>("SQUARE");
+    elements->setDegreeOfFreedom<displacement_element, faces, displacement_field, face_basis>("SQUARE", degree_of_freedom);
+    elements->setLoad<displacement_element, cells>("SQUARE", 0, 0, [](lolita2::Point const &p, lolita::real const &t) { return 1.0; });
+    elements->setBehavior<displacement_behavior, cells, quadrature>("SQUARE");
     // show mesh
     // std::cout << * elements << std::endl;
     std::cout << degree_of_freedom->coefficients_.size() << std::endl;
@@ -53,7 +51,7 @@ TEST(t0, t0)
         element.second->getFiniteElement<0>()->isActivated();
         std::cout
         <<
-        element.second->getFiniteElement<0>()->getDegreeOfFreedom("FaceDisplacement")->getCoefficients<displacement_field, face_basis>() << std::endl;
+        element.second->getFiniteElement<0>()->getDegreeOfFreedom("FaceDisplacement").getCoefficients<displacement_field, face_basis>() << std::endl;
     }
     
     
