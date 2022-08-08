@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "lolita/lolita_core_n_005.hxx"
+// #include "lolita/lolita_utility2.hxx"
 
 TEST(tm, tm)
 {
@@ -25,17 +26,21 @@ TEST(tm, tm)
 
     auto constexpr t_element = lolita2::geometry::Element::triangle(1);
 
-    // std::cout << "ici : " << lolita2::geometry::FiniteElementMethodTraits<damage_element>::template getNumElementUnknowns<t_element, domain>() << std::endl;
-    // std::cout << "ici : " << lolita2::geometry::FiniteElementMethodTraits<damage_element>::template getNumCellUnknowns<t_element, domain>() << std::endl;
-    std::cout << "ici fld size : " << lolita2::geometry::FieldTraits<displacement_field>::template size<domain>() << std::endl;
-    std::cout << "ici basis size : " << lolita2::geometry::FiniteElementBasisTraits<cell_basis>::template size<t_element>() << std::endl;
-    // std::cout << "ici displacement_behavior size : " << lolita2::geometry::BehaviorTraits<displacement_behavior>::template strainSize<domain>() << std::endl;
+    auto constexpr bhv0 = lolita2::Behavior(lolita2::GeneralizedStrain(lolita2::Field::scalar("Damage"), lolita2::Mapping::gradient(), lolita2::Mapping::identity()));
+    auto constexpr bhv1 = lolita2::Behavior(lolita2::GeneralizedStrain(lolita2::Field::scalar("Damage2"), lolita2::Mapping::gradient(), lolita2::Mapping::identity()));
+    static_assert(std::is_same_v<decltype(bhv0), decltype(bhv1)>);
 
-    std::cout << "yo : " << std::endl;
-    std::cout << lolita2::geometry::FiniteElementHolder<t_element, domain, displacement_element, damage_element>::template getArgIndex<displacement_element>();
-    std::cout << " , ";
-    std::cout << lolita2::geometry::FiniteElementHolder<t_element, domain, displacement_element, damage_element>::template getArgIndex<damage_element>();
-    std::cout << std::endl;
+    // // std::cout << "ici : " << lolita2::geometry::FiniteElementMethodTraits<damage_element>::template getNumElementUnknowns<t_element, domain>() << std::endl;
+    // // std::cout << "ici : " << lolita2::geometry::FiniteElementMethodTraits<damage_element>::template getNumCellUnknowns<t_element, domain>() << std::endl;
+    // std::cout << "ici fld size : " << lolita2::geometry::FieldTraits<displacement_field>::template size<domain>() << std::endl;
+    // std::cout << "ici basis size : " << lolita2::geometry::FiniteElementBasisTraits<cell_basis>::template size<t_element>() << std::endl;
+    // // std::cout << "ici displacement_behavior size : " << lolita2::geometry::BehaviorTraits<displacement_behavior>::template strainSize<domain>() << std::endl;
+
+    // std::cout << "yo : " << std::endl;
+    // std::cout << lolita2::geometry::FiniteElementHolder<t_element, domain, displacement_element, damage_element>::template getArgIndex<displacement_element>();
+    // std::cout << " , ";
+    // std::cout << lolita2::geometry::FiniteElementHolder<t_element, domain, displacement_element, damage_element>::template getArgIndex<damage_element>();
+    // std::cout << std::endl;
     
 
     // std::cout << elements.getElements<2, 0>().at("304")->getElement<0>()->getOuterNeighbors<0, 0>().size() << std::endl;
@@ -96,6 +101,43 @@ TEST(tm, tm)
     auto tockm = std::chrono::high_resolution_clock::now();
     auto timem = std::chrono::duration<double>(tockm - tickm);
     std::cout << "time map : " << timem.count() << std::endl;
+
+    // auto constexpr restpl = lolita::utility::hello(std::make_tuple(1, true, 'A', 1, 2.0));
+    // // auto constexpr restpl = lolita::utility::getSlicedTuple<1, 5>(std::make_tuple(1, 2.0, 'A', 1, 2.0));
+
+    // std::apply([&](auto &&... args) {((std::cout << args << " "), ...);}, restpl);
+    // std::cout << std::endl;
+
     // std::cout << * stdvec.end() << std::endl;
+
+    // lolita2::geometry::TEST<displacement_element, damage_element, displacement_element>();
+    // lolita2::geometry::TEST<1, 2, 1>();
+
+    // lolita::utility::TD<decltype(lolita::utility::hello<domain, cell_basis, domain, lolita2::Basis::monomial(2)>())>();
+    // std::apply([&](auto &&... args) {((std::cout << args << " "), ...);}, lolita::utility::hello<4, 1, 3, 1, 2, 5, 3, 2, 3, 4>());
+    // std::cout << std::endl;
+    // using JJJK = lolita::utility::HH<lolita::utility::Holder, domain, cell_basis, domain, lolita2::Basis::monomial(2)>;
+
+
+    // lolita::utility::TD<decltype(lolita::utility::hello2<domain, cell_basis, domain, lolita2::Basis::monomial(2)>())>();
+
+    // auto constexpr inpt = lolita::utility::hello2<domain, cell_basis, domain, lolita2::Basis::monomial(2)>();
+
+    // // using MYT = lolita::utility::MYTYPE<lolita::utility::Holder, inpt>;
+
+    // // auto constexpr myt = MYT();
+
+    // static_assert(std::is_same_v<std::tuple<int, float, char>, lolita::utility2::HJK<std::tuple<int, float>, std::tuple<char>>::type>);
+
+    // // using TESTT = lolita::utility2::tuple_slice_t<2, std::tuple<int, float, char, double, bool>>;
+
+    // // lolita::utility::TD<TESTT>();
+    // // lolita::utility::TD<lolita::utility2::tuple_sort_t<int, float, double, int, char, double>>();
+    // // lolita::utility::TD<lolita::utility2::tuple_sort_t2<std::tuple<int, float, double, int, char, double>>>();
+    // // lolita::utility::TD<lolita::utility2::tuple_slice_t2<2, 4, std::tuple<int, float, double, int, char, double>>>();
+
+
+
+    // static_assert(std::is_same_v<lolita::utility2::tuple_slice_t<2, std::tuple<int, float, char>>, std::tuple<char>>);
     
 }

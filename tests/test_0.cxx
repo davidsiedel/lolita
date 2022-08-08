@@ -3,6 +3,8 @@
 
 TEST(t0, t0)
 {
+
+    auto constexpr jjj = std::tuple<char>{'A'};
     // constants
     auto constexpr domain = lolita2::Domain::cartesian(2);
     auto constexpr cell_basis = lolita2::Basis::monomial(1);
