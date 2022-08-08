@@ -405,21 +405,22 @@ namespace lolita2::geometry
 
         private:
 
-            template<Mapping t_mapping>
+            template<Mapping t_mapping, Field t_field>
             static constexpr
             lolita::integer
             getMappingSize()
             {
-                return MappingTraits<t_mapping>::template size<t_domain, t_finite_element_method.getField()>();
+                return MappingTraits<t_mapping>::template size<t_domain, t_field>();
             }
 
         public:
 
+            template<Field t_field>
             static constexpr
             lolita::integer
             getNumElementUnknowns()
             {
-                return HybridDiscontinuousGalerkinTraits::template getNumElementUnknowns<t_element, t_domain, t_finite_element_method.getField()>();
+                return HybridDiscontinuousGalerkinTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
             }
             
             RealMatrix<getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
@@ -439,7 +440,8 @@ namespace lolita2::geometry
                 return lhs.llt().solve(decltype(lhs)::Identity());
             }
 
-            RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns()>
+            template<Field t_field>
+            RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
             getGradientRhs(
                 lolita::integer row,
                 lolita::integer col
@@ -447,9 +449,9 @@ namespace lolita2::geometry
             const
             {
                 auto constexpr t_quadrature = Quadrature::gauss(2 * getGradBasis().getOrder());
-                auto constexpr t_field_size = FieldTraits<t_finite_element_method.getField()>::template size<t_domain>();
+                auto constexpr t_field_size = FieldTraits<t_field>::template size<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns()>();
+                auto rhs = RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
                 {
@@ -498,21 +500,21 @@ namespace lolita2::geometry
                 return rhs;
             }
 
-            template<Mapping t_mapping>
-            RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns()>
+            template<Mapping t_mapping, Field t_field>
+            RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns<t_field>()>
             getMapping(
                 Point const & point
             )
             const
             {
-                auto grd = RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns()>();
+                auto grd = RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns<t_field>()>();
                 grd.setZero();
                 // getGradientRhs(0, 0);
                 auto lhs = getGradientLhs();
-                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain, t_finite_element_method.getField()>())
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain, t_field>())
                 {
                     auto rhs = getGradientRhs(mapping_value.row(), mapping_value.col());
-                    auto line = grd.template block<1, getNumElementUnknowns()>(mapping_value.rank(), 0);
+                    auto line = grd.template block<1, getNumElementUnknowns<t_field>()>(mapping_value.rank(), 0);
                     // auto res = lhs * rhs;
                     // auto res2 = this->template getBasisEvaluation<getGradBasis()>(point);
                     // std::cout << "ici rhs : " << rhs.rows() << ", " << rhs.cols() << std::endl;
@@ -688,8 +690,6 @@ namespace lolita2::geometry
     struct IntegrationPoint
     {
 
-        using t_BehaviorTraits = BehaviorTraits<t_behavior>;
-
         void
         setBehavior(
             std::shared_ptr<mgis::behaviour::Behaviour> behaviour
@@ -711,7 +711,7 @@ namespace lolita2::geometry
         getGeneralizedStrain()
         const
         {
-            auto constexpr size = t_BehaviorTraits::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(material_point_->s1.gradients.data());
         }
         
@@ -911,26 +911,27 @@ namespace lolita2::geometry
         //     return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping>(point);
         // }
 
-        // void
-        // activate()
-        // {
-        //     data_ = std::make_unique<Data>(Data());
-        //     auto constexpr cell_basis = lolita2::Basis::monomial(1);
-        //     auto constexpr face_basis = lolita2::Basis::monomial(1);
-        //     auto point = Point();
-        //     point.setZero();
-        //     auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
-        //     // auto constexpr bas = Basis::monomial(1);
-        //     this->template getBasisEvaluation<cell_basis>(point);
-        //     if constexpr (t_element.isSub(t_domain, 0))
-        //     {
-        //         auto mapp = this->template getMapping<Mapping::gradient(), hdg>(point);
-        //         mapp.setZero();
-        //         std::cout << "mapp : " << std::endl;
-        //         std::cout << mapp << std::endl;
-        //     }
-        //     // this->template getGradientRhs<bas>();
-        // }
+        void
+        activate()
+        {
+            std::cout << "activating " << label_ << " for " << t_element << std::endl; 
+            data_ = std::make_unique<Data>(Data());
+            // auto constexpr cell_basis = lolita2::Basis::monomial(1);
+            // auto constexpr face_basis = lolita2::Basis::monomial(1);
+            // auto point = Point();
+            // point.setZero();
+            // auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
+            // // auto constexpr bas = Basis::monomial(1);
+            // this->template getBasisEvaluation<cell_basis>(point);
+            // if constexpr (t_element.isSub(t_domain, 0))
+            // {
+            //     auto mapp = this->template getMapping<Mapping::gradient(), hdg>(point);
+            //     mapp.setZero();
+            //     std::cout << "mapp : " << std::endl;
+            //     std::cout << mapp << std::endl;
+            // }
+            // this->template getGradientRhs<bas>();
+        }
 
         // lolita::boolean
         // isActivated()
@@ -941,44 +942,28 @@ namespace lolita2::geometry
 
         std::unique_ptr<Data> data_;
 
+        std::basic_string_view<lolita::character> label_;
+
     };
 
     template<Element t_element, Domain t_domain>
     struct FiniteElementHolder : FiniteElementGeometry<FiniteElementHolder, t_element, t_domain>
     {
 
-        using t_FiniteElements = std::vector<std::shared_ptr<FiniteElement<t_element, t_domain>>>;
-
-        // template<lolita::integer t_i>
-        // using t_FiniteElement = typename std::tuple_element_t<t_i, t_FiniteElements>::element_type;
-
-        // template<FiniteElementMethodConcept auto t_finite_element_method>
-        // static constexpr
-        // lolita::integer
-        // getArgIndex()
-        // {
-        //     auto index = lolita::integer(0);
-        //     auto found = lolita::boolean(false);
-        //     auto set_index = [&] (
-        //         FiniteElementMethodConcept auto const & arg
-        //     )
-        //     constexpr
-        //     {
-        //         if constexpr (std::is_same_v<std::decay_t<decltype(t_finite_element_method)>, std::decay_t<decltype(arg)>>)
-        //         {
-        //             if (t_finite_element_method == arg)
-        //             {
-        //                 found = true;
-        //             }
-        //         }
-        //         if (!found)
-        //         {
-        //             index += 1;
-        //         }
-        //     };
-        //     (set_index(t_finite_element_methods), ...);
-        //     return index;
-        // }
+        lolita::boolean
+        getFiniteElementIndex(
+            std::basic_string_view<lolita::character> label
+        )
+        const
+        {
+            auto has_label = [&] (
+                std::shared_ptr<FiniteElement<t_element, t_domain>> const & finite_element
+            )
+            {
+                return finite_element->label_ == label;
+            };
+            return std::find_if(finite_elements_.begin(), finite_elements_.end(), has_label) != finite_elements_.end();
+        }
         
         std::shared_ptr<FiniteElement<t_element, t_domain>> const &
         getFiniteElement(
@@ -997,22 +982,24 @@ namespace lolita2::geometry
             return finite_elements_[i];
         }
         
-        // template<FiniteElementMethodConcept auto t_finite_element_method>
-        // std::tuple_element_t<getArgIndex<t_finite_element_method>(), t_FiniteElements> const &
-        // getFiniteElement()
-        // const
-        // {
-        //     return std::get<getArgIndex<t_finite_element_method>()>(finite_elements_);
-        // }
+        std::shared_ptr<FiniteElement<t_element, t_domain>> const &
+        getFiniteElement(
+            std::basic_string_view<lolita::character> label
+        )
+        const
+        {
+            return finite_elements_[getFiniteElementIndex(label)];
+        }
         
-        // template<FiniteElementMethodConcept auto t_finite_element_method>
-        // std::tuple_element_t<getArgIndex<t_finite_element_method>(), t_FiniteElements> &
-        // getFiniteElement()
-        // {
-        //     return std::get<getArgIndex<t_finite_element_method>()>(finite_elements_);
-        // }
+        std::shared_ptr<FiniteElement<t_element, t_domain>> &
+        getFiniteElement(
+            std::basic_string_view<lolita::character> label
+        )
+        {
+            return finite_elements_[getFiniteElementIndex(label)];
+        }
 
-        t_FiniteElements finite_elements_;
+        std::vector<std::shared_ptr<FiniteElement<t_element, t_domain>>> finite_elements_;
 
     };
     
