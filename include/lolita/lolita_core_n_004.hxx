@@ -715,6 +715,25 @@ namespace lolita2::geometry
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(material_point_->s1.gradients.data());
         }
         
+        template<auto t_finite_element_method>
+        lolita::matrix::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
+        getGeneralizedStrain()
+        const
+        {
+            auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
+            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(material_point_->s1.gradients.data() + offset);
+        }
+        
+        template<auto t_finite_element_method>
+        lolita::matrix::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
+        getGeneralizedStrain()
+        {
+            auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
+            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size>>(material_point_->s1.gradients.data() + offset);
+        }
+        
         Point coordinates_;
         
         lolita::real weight_;
@@ -722,6 +741,8 @@ namespace lolita2::geometry
         std::shared_ptr<mgis::behaviour::Behaviour> behaviour_;
         
         std::unique_ptr<mgis::behaviour::BehaviourData> material_point_;
+
+        std::vector<std::vector<lolita::matrix::Matrix<lolita::real>>> quadrature_operators_;
 
     };
     
