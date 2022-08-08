@@ -666,6 +666,35 @@ namespace lolita2
         )
         const = default;
 
+        template<GeneralizedStrainConcept auto t_generalized_strain>
+        constexpr
+        lolita::integer
+        getGeneralizedStrainIndex()
+        {
+            auto index = lolita::integer(0);
+            auto found = lolita::boolean(false);
+            auto set_index = [&] <lolita::integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                if (lolita::utility::areEqual(t_generalized_strain, lolita::utility::get<t_i>(generalized_strains_)))
+                {
+                    found = true;
+                }
+                if (!found)
+                {
+                    index += 1;
+                }
+                if constexpr (t_i < getNumGeneralizedStrains() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_index(set_index);
+            return index;
+        }
+
         template<lolita::integer t_i>
         constexpr
         std::tuple_element_t<t_i, std::tuple<t_GeneralizedStrains...>> const &
@@ -673,6 +702,15 @@ namespace lolita2
         const
         {
             return generalized_strains_.template get<t_i>();
+        }
+
+        template<GeneralizedStrainConcept auto t_generalized_strain>
+        constexpr
+        std::tuple_element_t<getGeneralizedStrainIndex<t_generalized_strain>(), std::tuple<t_GeneralizedStrains...>> const &
+        getGeneralizedStrain()
+        const
+        {
+            return generalized_strains_.template get<getGeneralizedStrainIndex<t_generalized_strain>()>();
         }
 
         GeneralizedStrains generalized_strains_;

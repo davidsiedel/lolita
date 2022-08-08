@@ -653,6 +653,40 @@ namespace lolita2::geometry
             auto constexpr size = t_BehaviorTraits::template getGeneralizedStrainSize<t_domain>();
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(material_point_->s1.gradients.data());
         }
+
+        template<auto t_finite_element_method>
+        std::vector<lolita::matrix::Matrix<lolita::real>> const &
+        getQuadratureOperators()
+        const
+        {
+            return quadrature_operators_[t_behavior.template getGeneralizedStrainIndex<t_finite_element_method.getGeneralizedStrain()>()];
+        }
+
+        template<auto t_finite_element_method>
+        std::vector<lolita::matrix::Matrix<lolita::real>> &
+        getQuadratureOperators()
+        {
+            return quadrature_operators_[t_behavior.template getGeneralizedStrainIndex<t_finite_element_method.getGeneralizedStrain()>()];
+        }
+        
+        template<auto t_finite_element_method>
+        lolita::matrix::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
+        getGeneralizedStrain()
+        const
+        {
+            auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
+            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(material_point_->s1.gradients.data() + offset);
+        }
+        
+        template<auto t_finite_element_method>
+        lolita::matrix::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
+        getGeneralizedStrain()
+        {
+            auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
+            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size>>(material_point_->s1.gradients.data() + offset);
+        }
         
         Point coordinates_;
         
@@ -662,38 +696,40 @@ namespace lolita2::geometry
         
         std::unique_ptr<mgis::behaviour::BehaviourData> material_point_;
 
+        std::array<std::vector<lolita::matrix::Matrix<lolita::real>>, t_behavior.getNumGeneralizedStrains()> quadrature_operators_;
+
     };
     
-    template<Element t_element, Domain t_domain, auto t_finite_element_method>
-    struct QuadraturePoint
-    {
+    // template<Element t_element, Domain t_domain, auto t_finite_element_method>
+    // struct QuadraturePoint
+    // {
 
-        using t_F = FiniteElementMethodTraits<t_finite_element_method>;
+    //     using t_F = FiniteElementMethodTraits<t_finite_element_method>;
         
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_F::template getGeneralizedStrainSize<t_domain>()> const>
-        getGeneralizedStrain()
-        const
-        {
-            auto constexpr size = t_F::template getGeneralizedStrainSize<t_domain>();
-            auto constexpr offset = t_F::template getGeneralizedStrainOffset<t_domain>();
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(integration_point_->material_point_->s1.gradients.data() + offset);
-        }
+    //     lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_F::template getGeneralizedStrainSize<t_domain>()> const>
+    //     getGeneralizedStrain()
+    //     const
+    //     {
+    //         auto constexpr size = t_F::template getGeneralizedStrainSize<t_domain>();
+    //         auto constexpr offset = t_F::template getGeneralizedStrainOffset<t_domain>();
+    //         return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(integration_point_->material_point_->s1.gradients.data() + offset);
+    //     }
         
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_F::template getGeneralizedStrainSize<t_domain>()>>
-        getGeneralizedStrain()
-        {
-            auto constexpr size = t_F::template getGeneralizedStrainSize<t_domain>();
-            auto constexpr offset = t_F::template getGeneralizedStrainOffset<t_domain>();
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size>>(integration_point_->material_point_->s1.gradients.data() + offset);
-        }
+    //     lolita::matrix::Span<lolita::matrix::Vector<lolita::real, t_F::template getGeneralizedStrainSize<t_domain>()>>
+    //     getGeneralizedStrain()
+    //     {
+    //         auto constexpr size = t_F::template getGeneralizedStrainSize<t_domain>();
+    //         auto constexpr offset = t_F::template getGeneralizedStrainOffset<t_domain>();
+    //         return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size>>(integration_point_->material_point_->s1.gradients.data() + offset);
+    //     }
         
-        std::shared_ptr<IntegrationPoint<t_domain, t_finite_element_method.getBehavior()>> integration_point_;
+    //     std::shared_ptr<IntegrationPoint<t_domain, t_finite_element_method.getBehavior()>> integration_point_;
         
-        std::vector<lolita::matrix::Matrix<lolita::real>> quadrature_operators_;
+    //     std::vector<lolita::matrix::Matrix<lolita::real>> quadrature_operators_;
         
-        lolita::matrix::Matrix<lolita::real> generalized_strain_mapping_;
+    //     lolita::matrix::Matrix<lolita::real> generalized_strain_mapping_;
 
-    };
+    // };
 
     template<Element t_element, Domain t_domain, auto t_finite_element_method>
     struct FiniteElement : FiniteElementGeometry<FiniteElement, t_element, t_domain, t_finite_element_method>
@@ -714,7 +750,7 @@ namespace lolita2::geometry
 
             std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> element_degrees_of_freedom_;
 
-            std::vector<std::unique_ptr<QuadraturePoint<t_element, t_domain, t_finite_element_method>>> quadrature_points_;
+            std::vector<std::shared_ptr<IntegrationPoint<t_domain, t_finite_element_method.getBehavior()>>> quadrature_points_;
 
             std::unique_ptr<FieldLoad<t_domain, t_finite_element_method.getField()>> loads_;
 
@@ -854,20 +890,20 @@ namespace lolita2::geometry
         activate()
         {
             data_ = std::make_unique<Data>(Data());
-            auto constexpr cell_basis = lolita2::Basis::monomial(1);
-            auto constexpr face_basis = lolita2::Basis::monomial(1);
-            auto point = Point();
-            point.setZero();
-            auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
-            // auto constexpr bas = Basis::monomial(1);
-            this->template getBasisEvaluation<cell_basis>(point);
-            if constexpr (t_element.isSub(t_domain, 0))
-            {
-                auto mapp = this->template getMapping<Mapping::gradient(), hdg>(point);
-                mapp.setZero();
-                std::cout << "mapp : " << std::endl;
-                std::cout << mapp << std::endl;
-            }
+            // auto constexpr cell_basis = lolita2::Basis::monomial(1);
+            // auto constexpr face_basis = lolita2::Basis::monomial(1);
+            // auto point = Point();
+            // point.setZero();
+            // auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
+            // // auto constexpr bas = Basis::monomial(1);
+            // this->template getBasisEvaluation<cell_basis>(point);
+            // if constexpr (t_element.isSub(t_domain, 0))
+            // {
+            //     auto mapp = this->template getMapping<Mapping::gradient(), hdg>(point);
+            //     mapp.setZero();
+            //     std::cout << "mapp : " << std::endl;
+            //     std::cout << mapp << std::endl;
+            // }
             // this->template getGradientRhs<bas>();
         }
 
@@ -877,37 +913,37 @@ namespace lolita2::geometry
         {
             using MappingOperator = RealMatrix<t_F::template getGeneralizedStrainSize<t_domain>(), t_Disc<t_discretization>::getNumElementUnknowns()>;
             data_ = std::make_unique<Data>();
-            for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
-            {
-                auto reference_weight = this->template getReferenceQuadratureWeight<t_quadrature>(i);
-                auto reference_point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
-                auto current_weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                auto current_point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
-                auto qp = std::make_unique<QuadraturePoint<t_element, t_domain, t_finite_element_method>>();
-                qp->generalized_strain_mapping_ = MappingOperator::Zero();
-                auto set_quadrature_mapping = [&] <lolita::integer t_i = 0> (
-                    auto & self
-                )
-                constexpr mutable
-                {
-                    auto constexpr t_mapping = t_finite_element_method.template getMapping<t_i>();
-                    auto constexpr t_block_cols = t_Disc<t_discretization>::getNumElementUnknowns();
-                    auto constexpr t_block_rows = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, t_mapping>();
-                    auto constexpr t_block_offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, t_mapping>();
-                    std::cout << "*** t_i : " << t_i << std::endl;
-                    std::cout << "mapping offset : " << t_block_offset << std::endl;
-                    std::cout << "t_block_rows : " << t_block_rows << std::endl;
-                    std::cout << "t_block_cols : " << t_block_cols << std::endl;
-                    auto mapping_block = qp->generalized_strain_mapping_.template block<t_block_rows, t_block_cols>(t_block_offset, 0);
-                    mapping_block = getMapping<t_mapping, t_discretization>(reference_point);
-                    if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
-                    {
-                        self.template operator ()<t_i + 1>(self);
-                    }
-                };
-                set_quadrature_mapping(set_quadrature_mapping);
-                data_->quadrature_points_.push_back(std::move(qp));
-            }
+            // for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
+            // {
+            //     auto reference_weight = this->template getReferenceQuadratureWeight<t_quadrature>(i);
+            //     auto reference_point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
+            //     auto current_weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
+            //     auto current_point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
+            //     auto qp = std::make_unique<QuadraturePoint<t_element, t_domain, t_finite_element_method>>();
+            //     qp->generalized_strain_mapping_ = MappingOperator::Zero();
+            //     auto set_quadrature_mapping = [&] <lolita::integer t_i = 0> (
+            //         auto & self
+            //     )
+            //     constexpr mutable
+            //     {
+            //         auto constexpr t_mapping = t_finite_element_method.template getMapping<t_i>();
+            //         auto constexpr t_block_cols = t_Disc<t_discretization>::getNumElementUnknowns();
+            //         auto constexpr t_block_rows = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, t_mapping>();
+            //         auto constexpr t_block_offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, t_mapping>();
+            //         std::cout << "*** t_i : " << t_i << std::endl;
+            //         std::cout << "mapping offset : " << t_block_offset << std::endl;
+            //         std::cout << "t_block_rows : " << t_block_rows << std::endl;
+            //         std::cout << "t_block_cols : " << t_block_cols << std::endl;
+            //         auto mapping_block = qp->generalized_strain_mapping_.template block<t_block_rows, t_block_cols>(t_block_offset, 0);
+            //         mapping_block = getMapping<t_mapping, t_discretization>(reference_point);
+            //         if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+            //         {
+            //             self.template operator ()<t_i + 1>(self);
+            //         }
+            //     };
+            //     set_quadrature_mapping(set_quadrature_mapping);
+            //     data_->quadrature_points_.push_back(std::move(qp));
+            // }
             
         }
 
@@ -1005,7 +1041,6 @@ namespace lolita2::geometry
         getBehaviorIndex()
         {
             using t_Behaviors = lolita::utility::tuple_sort_t2<std::tuple<lolita::utility::Holder<t_finite_element_methods.getBehavior()>...>>;
-            auto constexpr hhh = t_Behaviors();
             auto index = lolita::integer(0);
             auto found = lolita::boolean(false);
             auto set_index = [&] <lolita::integer t_i = 0> (
@@ -1013,7 +1048,7 @@ namespace lolita2::geometry
             )
             constexpr mutable
             {
-                if (lolita::utility::areEqual(t_behavior, std::get<t_i>(hhh).value_))
+                if (lolita::utility::areEqual(t_behavior, std::get<t_i>(t_Behaviors()).value_))
                 {
                     found = true;
                 }
@@ -1036,7 +1071,6 @@ namespace lolita2::geometry
         getArgIndex()
         {
             using t_FiniteElementMethods = lolita::utility::tuple_sort_t2<std::tuple<lolita::utility::Holder<t_finite_element_methods>...>>;
-            auto constexpr hhh = t_FiniteElementMethods();
             auto index = lolita::integer(0);
             auto found = lolita::boolean(false);
             auto set_index = [&] <lolita::integer t_i = 0> (
@@ -1044,7 +1078,7 @@ namespace lolita2::geometry
             )
             constexpr mutable
             {
-                if (lolita::utility::areEqual(t_finite_element_method, std::get<t_i>(hhh).value_))
+                if (lolita::utility::areEqual(t_finite_element_method, std::get<t_i>(t_FiniteElementMethods()).value_))
                 {
                     found = true;
                 }
