@@ -758,8 +758,6 @@ namespace lolita2::geometry
     struct FiniteElement : FiniteElementGeometry<FiniteElement, t_element, t_domain>
     {
 
-        // using t_FiniteElementTraits = FiniteElementTraits<t_element, t_domain, t_finite_element_method>;
-
         template<Basis t_basis>
         using t_Basis = typename FiniteElementBasisTraits<t_basis>::template Implementation<t_element, t_domain>;
 

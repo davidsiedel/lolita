@@ -525,42 +525,6 @@ namespace lolita2::geometry
                 };
                 initialize_outer_neighbors(initialize_outer_neighbors);
             }
-            // auto initialize_element = [&] <lolita::integer t_k = 0u> (
-            //         auto & t_initialize_element
-            // )
-            // constexpr mutable
-            // {
-            //     ptr_element->template getFiniteElement<t_k>()->inner_neighbors_ = ptr_element->inner_neighbors_;
-            //     ptr_element->template getFiniteElement<t_k>()->coordinates_ = ptr_element->coordinates_;
-            //     ptr_element->template getFiniteElement<t_k>()->tag_ = ptr_element->tag_;
-            //     ptr_element->template getFiniteElement<t_k>()->domains_ = ptr_element->domains_;
-            //     auto initialize_outer_neighbors = [&] <lolita::integer t_i = 0u, lolita::integer t_j = 0u> (
-            //             auto & t_initialize_outer_neighbors
-            //     )
-            //     mutable
-            //     {
-            //         for (lolita::integer i = 0; i < ptr_element->template getOuterNeighbors<t_i, t_j>().size(); ++i)
-            //         {
-            //             auto & rhs = ptr_element->template getOuterNeighbors<t_i, t_j>()[i]->template getFiniteElement<t_k>();
-            //             auto & lhs = ptr_element->template getFiniteElement<t_k>()->template getOuterNeighbors<t_i, t_j>();
-            //             lhs.push_back(rhs);
-            //         }
-            //         if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumOuterNeighbors<t_i>() - 1)
-            //         {
-            //             t_initialize_outer_neighbors.template operator()<t_i, t_j + 1>(t_initialize_outer_neighbors);
-            //         }
-            //         else if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumOuterNeighbors<>() - 1)
-            //         {
-            //             t_initialize_outer_neighbors.template operator()<t_i + 1, 0>(t_initialize_outer_neighbors);
-            //         }
-            //     };
-            //     initialize_outer_neighbors(initialize_outer_neighbors);
-            //     if constexpr (t_k < std::tuple_size_v<typename FiniteElementHolder<t_element, t_domain, t_args...>::t_FiniteElements> - 1)
-            //     {
-            //         t_initialize_element.template operator()<t_k + 1>(t_initialize_element);
-            //     }
-            // };
-            // initialize_element(initialize_element);
         }
         
         lolita::natural tag_;
