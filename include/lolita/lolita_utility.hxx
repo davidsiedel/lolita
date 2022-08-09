@@ -14,6 +14,157 @@
 namespace lolita::utility
 {
 
+    template<auto t_value>
+    struct Holder
+    {
+
+        auto static constexpr value_ = t_value;
+
+    };
+
+    template<typename t_T, typename t_U>
+    static constexpr
+    lolita::boolean
+    areEqual(
+        t_T const & x,
+        t_U const & y
+    )
+    {
+        if constexpr (std::is_same_v<t_T, t_U>)
+        {
+            if (x == y)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------
+
+    template<typename t_T, typename t_U>
+    struct tuple_concatenation_traits;
+
+    template<typename... t_T, typename... t_U>
+    struct tuple_concatenation_traits<std::tuple<t_T...>, std::tuple<t_U...>>
+    {
+
+        using type = std::tuple<t_T..., t_U...>;
+
+    };
+
+    template<typename t_T, typename t_U>
+    using tuple_cat_t = tuple_concatenation_traits<t_T, t_U>::type;
+
+    // ------------------------------------------------------------------------------------------------------
+
+    template<typename t_T, lolita::integer t_a, lolita::integer t_b>
+    struct TupleSliceTraits;
+
+    template<typename... t_T, lolita::integer t_a, lolita::integer t_b>
+    struct TupleSliceTraits<std::tuple<t_T...>, t_a, t_b>
+    {
+
+        using type = tuple_cat_t<std::tuple<std::tuple_element_t<t_a, std::tuple<t_T...>>>, typename TupleSliceTraits<std::tuple<t_T...>, t_a + 1, t_b>::type>;
+
+    };
+
+    template<typename... t_T, lolita::integer t_b>
+    struct TupleSliceTraits<std::tuple<t_T...>, t_b - 1, t_b>
+    {
+
+        using type = std::tuple<std::tuple_element_t<t_b - 1, std::tuple<t_T...>>>;
+
+    };
+
+    template<typename... t_T, lolita::integer t_b>
+    struct TupleSliceTraits<std::tuple<t_T...>, t_b, t_b>
+    {
+
+        using type = std::tuple<>;
+
+    };
+
+    template<typename t_T, lolita::integer t_a, lolita::integer t_b>
+    using tuple_slice_t = TupleSliceTraits<t_T, t_a, t_b>::type;
+
+    // ------------------------------------------------------------------------------------------------------
+
+    template<typename t_T, typename t_U>
+    struct TupleHasTraits;
+
+    template<typename... t_T, typename t_U>
+    struct TupleHasTraits<std::tuple<t_T...>, t_U>
+    {
+
+        lolita::boolean static constexpr value = (std::is_same_v<t_U, t_T> || ...);
+
+    };
+
+    template<typename t_T, typename t_U>
+    static constexpr
+    lolita::boolean tuple_has_v = TupleHasTraits<t_T, t_U>::value;
+
+    // ------------------------------------------------------------------------------------------------------
+
+    template<typename t_T, lolita::integer t_a>
+    struct TupleUniqueTraits;
+
+    template<typename... t_T, lolita::integer t_a>
+    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
+    {
+
+        using type = tuple_cat_t<std::tuple<std::tuple_element_t<t_a, std::tuple<t_T...>>>, typename TupleUniqueTraits<std::tuple<t_T...>, t_a + 1>::type>;
+
+    };
+
+    template<typename... t_T, lolita::integer t_a>
+    requires(tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>> >)
+    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
+    {
+
+        using type = tuple_cat_t<std::tuple<>, typename TupleUniqueTraits<std::tuple<t_T...>, t_a + 1>::type>;
+
+    };
+
+    template<typename... t_T>
+    struct TupleUniqueTraits<std::tuple<t_T...>, sizeof...(t_T) - 1>
+    {
+
+        using type = std::tuple<std::tuple_element_t<sizeof...(t_T) - 1, std::tuple<t_T...>>>;
+
+    };
+
+    template<typename... t_T>
+    requires(tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, sizeof...(t_T) - 1>, std::tuple_element_t<sizeof...(t_T) - 1, std::tuple<t_T...>>>)
+    struct TupleUniqueTraits<std::tuple<t_T...>, sizeof...(t_T) - 1>
+    {
+
+        using type = std::tuple<>;
+
+    };
+
+    template<typename t_T>
+    using tuple_unique_t = TupleUniqueTraits<t_T, 0>::type;
+
+    // ------------------------------------------------------------------------------------------------------
+
+    template<typename>
+    void
+    TD()
+    {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+
+    // ------------------------------------------------------------------------------------------------------
+
     namespace detail
     {
 
@@ -172,33 +323,6 @@ namespace lolita::utility
 
     };
 
-    namespace detail
-    {
-
-        template<typename T>
-        struct AggregateSizeTraits;
-
-        template<typename... T>
-        struct AggregateSizeTraits<Aggregate<T...>>
-        {
-
-            lolita::index value = sizeof...(T);
-
-        };
-
-        template<lolita::index I, typename T>
-        struct AggregateElementTraits;
-
-        template<lolita::index I, typename... T>
-        struct AggregateElementTraits<I, Aggregate<T...>>
-        {
-
-            using type = std::tuple_element_t<I, std::tuple<T...>>;
-
-        };
-
-    }
-
     template<lolita::integer t_i, typename... t_U>
     static constexpr
     std::tuple_element_t<t_i, std::tuple<t_U...>> &
@@ -220,11 +344,64 @@ namespace lolita::utility
     }
 
     template<typename T>
+    struct AggregateSizeTraits;
+
+    template<typename... T>
+    struct AggregateSizeTraits<Aggregate<T...>>
+    {
+
+        lolita::integer static constexpr value = sizeof...(T);
+
+    };
+
+    template<typename T>
     static constexpr
-    lolita::index aggregate_size_v = detail::AggregateSizeTraits<T>::value;
+    lolita::index aggregate_size_v = AggregateSizeTraits<T>::value;
+
+    template<lolita::index I, typename T>
+    struct AggregateElementTraits;
 
     template<lolita::index I, typename... T>
-    using aggregate_element_t = typename detail::AggregateElementTraits<I, T...>::type;
+    struct AggregateElementTraits<I, Aggregate<T...>>
+    {
+
+        using type = std::tuple_element_t<I, std::tuple<T...>>;
+
+    };
+
+    template<lolita::index I, typename... T>
+    using aggregate_element_t = typename AggregateElementTraits<I, T...>::type;
+
+    template<template<auto> typename t_T, auto t_aggregate, lolita::integer t_i>
+    struct Exp
+    {
+        
+    private:
+
+        auto static constexpr t_arg = lolita::utility::get<t_i>(t_aggregate);
+        
+    public:
+
+        using type = lolita::utility::tuple_cat_t<std::tuple<t_T<t_arg>>, typename Exp<t_T, t_aggregate, t_i + 1>::type>;
+
+    };
+    
+    template<template<auto> typename t_T, auto t_aggregate>
+    struct Exp<t_T, t_aggregate, aggregate_size_v<std::decay_t<decltype(t_aggregate)>> - 1>
+    {
+        
+    private:
+
+        auto static constexpr t_arg = lolita::utility::get<aggregate_size_v<std::decay_t<decltype(t_aggregate)>> - 1>(t_aggregate);
+        
+    public:
+
+        using type = std::tuple<t_T<t_arg>>;
+
+    };
+
+    template<template<auto> typename t_T, auto t_aggregate>
+    using aggregate_template_t = Exp<t_T, t_aggregate, 0>::type;
 
     // ------------------------------------------------------------------------------------------------------
 
@@ -315,211 +492,6 @@ namespace lolita::utility
 
         Label::Tag tag_;
 
-    };
-
-    // ------------------------------------------------------------------------------------------------------
-
-    namespace detail
-    {
-
-        template<typename... t_T, typename... t_U, lolita::index... t_i, lolita::index... t_j>
-        static constexpr
-        std::tuple<t_T..., t_U...>
-        getMergedTuple(
-                std::tuple<t_T...> const & first_tuple,
-                std::tuple<t_U...> const & second_tuple,
-                std::integer_sequence<lolita::index, t_i...>,
-                std::integer_sequence<lolita::index, t_j...>
-        )
-        {
-            return std::make_tuple(std::get<t_i>(first_tuple)..., std::get<t_j>(second_tuple)...);
-        }
-
-        template<lolita::index t_offset, typename... t_T, lolita::index... t_i>
-        constexpr
-        auto
-        getSlicedTuple(
-                std::tuple<t_T...> const & tuple,
-                std::integer_sequence<lolita::index, t_i...>
-        )
-        {
-            return std::make_tuple(std::get<t_i + t_offset>(tuple)...);
-        }
-
-    }
-
-    template<typename... t_T, typename... t_U>
-    static constexpr
-    std::tuple<t_T..., t_U...>
-    getMergedTuple(
-            std::tuple<t_T...> const & first_tuple,
-            std::tuple<t_U...> const & second_tuple
-    )
-    {
-        auto const constexpr fi = std::make_integer_sequence<lolita::index, std::tuple_size_v<std::tuple<t_T...>>>{};
-        auto const constexpr si = std::make_integer_sequence<lolita::index, std::tuple_size_v<std::tuple<t_U...>>>{};
-        return lolita::utility::detail::getMergedTuple(first_tuple, second_tuple, fi, si);
-    }
-
-    template<lolita::index _begin, lolita::index _end, typename... t_T>
-    constexpr
-    auto
-    getSlicedTuple(
-            std::tuple<t_T...> const & tuple
-    )
-    requires(_end >= _begin && sizeof...(t_T) >= _end)
-    {
-        return detail::getSlicedTuple<_begin>(tuple, std::make_integer_sequence<lolita::index, _end - _begin>{});
-    }
-
-    // template<lolita::index _begin, lolita::index _end>
-    // constexpr
-    // auto
-    // getSlicedTuple(
-    //         std::tuple<> const & tuple
-    // )
-    // {
-    //     return tuple;
-    // }
-
-    template<typename t_T, lolita::index _begin, lolita::index _end>
-    requires(_end >= _begin && std::tuple_size_v<t_T> >= _end)
-    using tuple_slice_t = decltype(lolita::utility::getSlicedTuple<_begin, _end>(std::declval<t_T>()));
-
-    template<typename t_T, typename t_U>
-    using tuple_merge_t = decltype(lolita::utility::getMergedTuple(std::declval<t_T>(), std::declval<t_U>()));
-
-    template<auto t_value>
-    struct Holder
-    {
-
-        auto static constexpr value_ = t_value;
-
-    };
-
-    template<typename t_T, typename t_U>
-    static constexpr
-    lolita::boolean
-    areEqual(
-        t_T const & x,
-        t_U const & y
-    )
-    {
-        if constexpr (std::is_same_v<t_T, t_U>)
-        {
-            if (x == y)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    // ------------------------------------------------------------------------------------------------------
-
-    template<typename t_T, typename t_U>
-    struct tuple_concatenation_traits;
-
-    template<typename... t_T, typename... t_U>
-    struct tuple_concatenation_traits<std::tuple<t_T...>, std::tuple<t_U...>>
-    {
-        using type = std::tuple<t_T..., t_U...>;
-    };
-
-    template<typename t_T, typename t_U>
-    using tuple_cat_t = tuple_concatenation_traits<t_T, t_U>::type;
-
-    // ------------------------------------------------------------------------------------------------------
-
-    template<typename t_T>
-    struct tuple_singleton_traits;
-
-    template<typename t_T, typename... t_U>
-    struct tuple_singleton_traits<std::tuple<t_T, t_U...>>
-    {
-
-        using type = tuple_cat_t<std::tuple<t_T>, typename tuple_singleton_traits<std::tuple<t_U...>>::type>;
-
-    };
-
-    template<typename t_T, typename... t_U>
-    requires((std::is_same_v<t_T, t_U> || ...))
-    struct tuple_singleton_traits<std::tuple<t_T, t_U...>>
-    {
-
-        using type = typename tuple_singleton_traits<std::tuple<t_U...>>::type;
-
-    };
-
-    template<typename t_T>
-    struct tuple_singleton_traits<std::tuple<t_T>>
-    {
-
-        using type = std::tuple<t_T>;
-
-    };
-    
-    template<typename t_T>
-    using tuple_sort_t2 = tuple_singleton_traits<t_T>::type;
-
-    // ------------------------------------------------------------------------------------------------------
-
-    // ------------------------------------------------------------------------------------------------------
-
-    // template<lolita::integer t_i, lolita::integer t_a, lolita::integer t_b, typename t_T>
-    // struct Filt3;
-
-    // template<lolita::integer t_i, lolita::integer t_a, lolita::integer t_b, typename t_T, typename... t_U>
-    // struct Filt3<t_i, t_a, t_b, std::tuple<t_T, t_U...>>
-    // {
-
-    //     using type = typename Filt3<t_i - 1, t_a, t_b, std::tuple<t_U...>>::type;
-
-    // };
-
-    // template<lolita::integer t_i, lolita::integer t_a, lolita::integer t_b, typename t_T, typename... t_U>
-    // requires(t_a <= t_i <= t_b)
-    // struct Filt3<t_i, t_a, t_b, std::tuple<t_T, t_U...>>
-    // {
-
-    //     using type = tuple_cat_t<std::tuple<t_T>, typename Filt3<t_i - 1, t_a, t_b, std::tuple<t_U...>>::type>;
-
-    // };
-
-    // template<lolita::integer t_i, lolita::integer t_a, lolita::integer t_b, typename t_T>
-    // struct Filt3<t_i, t_a, t_b, std::tuple<t_T>>
-    // {
-
-    //     using type = std::tuple<t_T>;
-
-    // };
-    
-    // template<lolita::integer t_a, lolita::integer t_b, typename t_T>
-    // using tuple_slice_t2 = Filt3<std::tuple_size_v<t_T>, t_a, t_b, t_T>::type;
-
-    // ------------------------------------------------------------------------------------------------------
-
-    template<lolita::integer N, typename Tuple_Type>
-    struct tuple_trunc_head;
-    // {};
-
-    template<lolita::integer N, typename Head, typename... Tail>
-    struct tuple_trunc_head<N, std::tuple<Head, Tail...>>
-    {
-        using type = typename tuple_trunc_head<N - 1, std::tuple<Tail...>>::type;
-    };
-
-    template<typename Head, typename... Tail>
-    struct tuple_trunc_head<0, std::tuple<Head, Tail...>>
-    {
-        using type = std::tuple<Head, Tail...>;
     };
 
     // ------------------------------------------------------------------------------------------------------

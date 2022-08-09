@@ -53,6 +53,17 @@ TEST(t0, t0)
         <<
         element.second->getFiniteElement<0>()->getDegreeOfFreedom("FaceDisplacement").getCoefficients<displacement_field, face_basis>() << std::endl;
     }
+
+    // auto constexpr hhjk = lolita2::expand<lolita::utility::Holder, displacement_behavior>();
+    auto constexpr kkkm = lolita::utility::Aggregate<int, char, double>(1, 'A', 2.0);
+    auto constexpr kkkm2 = lolita::utility::aggregate_template_t<lolita::utility::Holder, kkkm>();
+    // using RESS = std::tuple<lolita::utility::Holder<1>, lolita::utility::Holder<'A'>, lolita::utility::Holder<1>>;
+    lolita::utility::TD<decltype(kkkm2)>();
+    using SLICE = lolita::utility::tuple_slice_t<std::tuple<int, char, double, float, bool, long>, 2, 4>;
+    lolita::utility::TD<SLICE>();
+    using UNIQUE = lolita::utility::tuple_unique_t<std::tuple<int, char, int, float, bool, float>>;
+    using CAT = lolita::utility::tuple_cat_t<std::tuple<>, std::tuple<int, float>>;
+    lolita::utility::TD<UNIQUE>();
     
     
 }

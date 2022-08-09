@@ -947,45 +947,54 @@ namespace lolita2::geometry
     struct FiniteElementHolder : FiniteElementGeometry<FiniteElementHolder, t_element, t_domain, t_finite_element_methods...>
     {
 
+    private:
+
+        template<auto t_finite_element_method>
+        using t_FiniteElementPointer = std::shared_ptr<FiniteElement<t_element, t_domain, t_finite_element_method>>;
+
+        template<auto t_behavior>
+        using t_IntegrationPointsPointer = std::shared_ptr<std::vector<IntegrationPoint<t_domain, t_behavior>>>;
+
+        // template<auto t_finite_element_method>
+        // using t_FE = std::shared_ptr<FiniteElement<t_element, t_domain, t_finite_element_method>>;
+
+        // template<auto t_behavior>
+        // using t_IP = std::shared_ptr<std::vector<IntegrationPoint<t_domain, t_behavior>>>;
+
+        // template<auto t_behavior>
+        // using t_IP = std::shared_ptr<std::vector<IntegrationPoint<t_domain, t_behavior>>>;
+
+        // template<auto t_finite_element_method>
+        // using t_FE_TT = FiniteElement<t_element, t_domain, t_finite_element_method>;
+
+        // template<auto t_behavior>
+        // using t_IP_TT = IntegrationPoint<t_domain, t_behavior>;
+
+    public:
+
+        using t_FiniteElements = lolita::utility::tuple_unique_t<std::tuple<t_FiniteElementPointer<t_finite_element_methods>...>>;
+
+        using t_IntegrationPoints = lolita::utility::tuple_unique_t<std::tuple<t_IntegrationPointsPointer<t_finite_element_methods.getBehavior()>...>>;
+
+        template<lolita::integer t_i>
+        using t_FiniteElement = typename std::tuple_element_t<t_i, t_FiniteElements>::element_type;
+
+        template<lolita::integer t_i>
+        using t_IntegrationPoint = typename std::tuple_element_t<t_i, t_IntegrationPoints>::element_type::value_type;
+
         static constexpr
         lolita::integer
         getNumFiniteElements()
         {
-            return sizeof...(t_finite_element_methods);
+            return std::tuple_size_v<t_FiniteElements>;
         }
-
-    private:
-
-        template<auto t_finite_element_method>
-        using t_FE = std::shared_ptr<FiniteElement<t_element, t_domain, t_finite_element_method>>;
-
-        template<auto t_behavior>
-        using t_IP = std::shared_ptr<std::vector<IntegrationPoint<t_domain, t_behavior>>>;
-
-        template<auto t_finite_element_method>
-        using t_FE_TT = FiniteElement<t_element, t_domain, t_finite_element_method>;
-
-        template<auto t_behavior>
-        using t_IP_TT = IntegrationPoint<t_domain, t_behavior>;
-
-    public:
-
-        using t_FiniteElements = lolita::utility::tuple_sort_t2<std::tuple<t_FE<t_finite_element_methods>...>>;
-
-        using t_IntegrationPoints = lolita::utility::tuple_sort_t2<std::tuple<t_IP<t_finite_element_methods.getBehavior()>...>>;
-
-        template<lolita::integer t_i>
-        using t_FiniteElement = std::tuple_element_t<t_i, lolita::utility::tuple_sort_t2<std::tuple<t_FE_TT<t_finite_element_methods>...>>>;
-
-        template<lolita::integer t_i>
-        using t_IntegrationPoint = std::tuple_element_t<t_i, lolita::utility::tuple_sort_t2<std::tuple<t_IP_TT<t_finite_element_methods.getBehavior()>...>>>;
 
         template<BehaviorConcept auto t_behavior>
         static constexpr
         lolita::integer
         getBehaviorIndex()
         {
-            using t_Behaviors = lolita::utility::tuple_sort_t2<std::tuple<lolita::utility::Holder<t_finite_element_methods.getBehavior()>...>>;
+            using t_Behaviors = lolita::utility::tuple_unique_t<std::tuple<lolita::utility::Holder<t_finite_element_methods.getBehavior()>...>>;
             auto index = lolita::integer(0);
             auto found = lolita::boolean(false);
             auto set_index = [&] <lolita::integer t_i = 0> (
@@ -1013,9 +1022,9 @@ namespace lolita2::geometry
         template<FiniteElementMethodConcept auto t_finite_element_method>
         static constexpr
         lolita::integer
-        getArgIndex()
+        getFiniteElementIndex()
         {
-            using t_FiniteElementMethods = lolita::utility::tuple_sort_t2<std::tuple<lolita::utility::Holder<t_finite_element_methods>...>>;
+            using t_FiniteElementMethods = lolita::utility::tuple_unique_t<std::tuple<lolita::utility::Holder<t_finite_element_methods>...>>;
             auto index = lolita::integer(0);
             auto found = lolita::boolean(false);
             auto set_index = [&] <lolita::integer t_i = 0> (
@@ -1056,18 +1065,18 @@ namespace lolita2::geometry
         }
         
         template<FiniteElementMethodConcept auto t_finite_element_method>
-        std::tuple_element_t<getArgIndex<t_finite_element_method>(), t_FiniteElements> const &
+        std::tuple_element_t<getFiniteElementIndex<t_finite_element_method>(), t_FiniteElements> const &
         getFiniteElement()
         const
         {
-            return std::get<getArgIndex<t_finite_element_method>()>(finite_elements_);
+            return std::get<getFiniteElementIndex<t_finite_element_method>()>(finite_elements_);
         }
         
         template<FiniteElementMethodConcept auto t_finite_element_method>
-        std::tuple_element_t<getArgIndex<t_finite_element_method>(), t_FiniteElements> &
+        std::tuple_element_t<getFiniteElementIndex<t_finite_element_method>(), t_FiniteElements> &
         getFiniteElement()
         {
-            return std::get<getArgIndex<t_finite_element_method>()>(finite_elements_);
+            return std::get<getFiniteElementIndex<t_finite_element_method>()>(finite_elements_);
         }
         
         template<lolita::integer t_i>
@@ -1104,10 +1113,10 @@ namespace lolita2::geometry
         void
         makeBehavior()
         {
-            getIntegrationPoints<t_behavior>() = std::make_shared<std::vector<t_IntegrationPoint<getBehaviorIndex<t_behavior>()>>>();
+            getIntegrationPoints<t_behavior>() = std::make_shared<std::vector<IntegrationPoint<t_domain, t_behavior>>>();
             for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::size(); i++)
             {
-                getIntegrationPoints<t_behavior>()->push_back(t_IntegrationPoint<getBehaviorIndex<t_behavior>()>());
+                getIntegrationPoints<t_behavior>()->push_back(IntegrationPoint<t_domain, t_behavior>());
             }
             auto set_element_behaviour = [&] <auto t_finite_element_method> ()
             {
