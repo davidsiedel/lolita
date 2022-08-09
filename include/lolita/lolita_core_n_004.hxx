@@ -308,7 +308,7 @@ namespace lolita2::geometry
     };
 
     template<auto t_discretization>
-    struct HybridDiscontinuousGalerkinTraits
+    struct Discretization
     {
 
         static constexpr
@@ -421,7 +421,7 @@ namespace lolita2::geometry
             lolita::integer
             getNumElementUnknowns()
             {
-                return HybridDiscontinuousGalerkinTraits::template getNumElementUnknowns<t_element, t_domain, t_finite_element_method.getField()>();
+                return Discretization::template getNumElementUnknowns<t_element, t_domain, t_finite_element_method.getField()>();
             }
             
             RealMatrix<getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
@@ -628,6 +628,13 @@ namespace lolita2::geometry
     struct IntegrationPoint
     {
 
+        template<GeneralizedStrainConcept auto t_generalized_strain>
+        using HHH = Eigen::Matrix<lolita::real, GeneralizedStrainTraits<t_generalized_strain>::template getSize<t_domain>(), Eigen::Dynamic>;
+
+        using QPops = BehaviorTraits<t_behavior>::template GeneralizedStrainsExpansion<HHH>;
+
+        QPops qpops_;
+
         using t_BehaviorTraits = BehaviorTraits<t_behavior>;
 
         void
@@ -710,7 +717,7 @@ namespace lolita2::geometry
         using t_Basis = typename FiniteElementBasisTraits<t_basis>::template Implementation<t_element, t_domain, t_finite_element_method>;
 
         template<auto t_discretization>
-        using t_Disc = typename HybridDiscontinuousGalerkinTraits<t_discretization>::template Implementation<t_element, t_domain, t_finite_element_method>;
+        using t_Disc = typename Discretization<t_discretization>::template Implementation<t_element, t_domain, t_finite_element_method>;
 
         struct Data
         {
@@ -954,21 +961,6 @@ namespace lolita2::geometry
 
         template<auto t_behavior>
         using t_IntegrationPointsPointer = std::shared_ptr<std::vector<IntegrationPoint<t_domain, t_behavior>>>;
-
-        // template<auto t_finite_element_method>
-        // using t_FE = std::shared_ptr<FiniteElement<t_element, t_domain, t_finite_element_method>>;
-
-        // template<auto t_behavior>
-        // using t_IP = std::shared_ptr<std::vector<IntegrationPoint<t_domain, t_behavior>>>;
-
-        // template<auto t_behavior>
-        // using t_IP = std::shared_ptr<std::vector<IntegrationPoint<t_domain, t_behavior>>>;
-
-        // template<auto t_finite_element_method>
-        // using t_FE_TT = FiniteElement<t_element, t_domain, t_finite_element_method>;
-
-        // template<auto t_behavior>
-        // using t_IP_TT = IntegrationPoint<t_domain, t_behavior>;
 
     public:
 

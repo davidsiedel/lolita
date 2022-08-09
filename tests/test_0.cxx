@@ -56,7 +56,7 @@ TEST(t0, t0)
 
     // auto constexpr hhjk = lolita2::expand<lolita::utility::Holder, displacement_behavior>();
     auto constexpr kkkm = lolita::utility::Aggregate<int, char, double>(1, 'A', 2.0);
-    auto constexpr kkkm2 = lolita::utility::aggregate_template_t<lolita::utility::Holder, kkkm>();
+    auto constexpr kkkm2 = lolita::utility::aggregate_expansion_t<lolita::utility::Holder, kkkm>();
     // using RESS = std::tuple<lolita::utility::Holder<1>, lolita::utility::Holder<'A'>, lolita::utility::Holder<1>>;
     lolita::utility::TD<decltype(kkkm2)>();
     using SLICE = lolita::utility::tuple_slice_t<std::tuple<int, char, double, float, bool, long>, 2, 4>;

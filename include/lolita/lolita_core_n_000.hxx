@@ -485,6 +485,29 @@ namespace lolita2::geometry
             return size;
         }
 
+        template<Domain t_domain>
+        static constexpr
+        lolita::integer
+        getSize()
+        {
+            auto constexpr t_field = t_generalized_strain.getField();
+            auto size = lolita::integer(0);
+            auto set_size = [&] <lolita::integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                auto constexpr t_mapping = t_generalized_strain.template getMapping<t_i>();
+                size += MappingTraits<t_mapping>::template size<t_domain, t_field>();
+                if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_size(set_size);
+            return size;
+        }
+
     };
 
     template<BehaviorConcept auto t_behavior>
@@ -511,6 +534,9 @@ namespace lolita2::geometry
             cnt(cnt);
             return p;
         }
+
+        template<template<GeneralizedStrainConcept auto> typename t_T>
+        using GeneralizedStrainsExpansion = lolita::utility::aggregate_expansion_t<t_T, t_behavior.getGeneralizedStrains()>;
 
     };
 
