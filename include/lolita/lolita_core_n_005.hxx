@@ -50,9 +50,9 @@ namespace lolita2::geometry
         template<ElementType t_ii, Field t_field, Basis t_basis>
         void
         setDegreeOfFreedom(
-            std::basic_string_view<lolita::character> label,
             std::basic_string_view<lolita::character> domain,
-            std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
+            std::shared_ptr<DegreeOfFreedom> & degree_of_freedom,
+            std::basic_string_view<lolita::character> label
         )
         {
             auto activate_elements = [&] <lolita::integer t_j = 0> (
@@ -67,6 +67,65 @@ namespace lolita2::geometry
                     if (element.second->isIn(domain))
                     {
                         element.second->getFiniteElement(label)->template setDegreeOfFreedom<t_field, t_basis>(degree_of_freedom);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<ElementType t_ii, Quadrature t_quadrature, typename... t_Labels>
+        void
+        setBehavior(
+            std::basic_string_view<lolita::character> domain,
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior,
+            t_Labels... labels
+        )
+        {
+            auto activate_elements = [&] <lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->template setBehavior<t_quadrature>(behavior, labels...);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<ElementType t_ii, Field t_field, Quadrature t_quadrature, auto t_discretization>
+        void
+        makeQuadrature(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> label
+        )
+        {
+            auto activate_elements = [&] <lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->getFiniteElement(label)->template makeQuadrature<t_field, t_quadrature, t_discretization>();
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -309,12 +368,12 @@ namespace lolita2::geometry
                 }
                 ptr_element->tag_ = element_set.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>().size();
                 ptr_element->domains_.assign(domains.begin(), domains.end());
-                auto labelss = std::array<std::basic_string_view<lolita::character>, sizeof...(t_Labels)>{labels...};
+                auto labelss = std::array<std::shared_ptr<std::basic_string<Character>>, sizeof...(t_Labels)>{std::make_shared<std::basic_string<Character>>(labels)...};
                 for (auto i = 0; i < sizeof...(t_Labels); i++)
                 {
-                    auto fem = std::make_shared<FiniteElement<t_element, t_domain>>();
-                    fem->label_ = labelss[i];
-                    ptr_element->finite_elements_.push_back(fem);
+                    // auto fem = std::make_shared<FiniteElement<t_element, t_domain>>(labelss[i]);
+                    // fem->label_ = labelss[i];
+                    ptr_element->finite_elements_.push_back(std::make_shared<FiniteElement<t_element, t_domain>>(labelss[i]));
                 }
                 element_set.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>()[getHash(node_tags_)] = ptr_element;
             }
@@ -467,12 +526,12 @@ namespace lolita2::geometry
             ptr_element->tag_ = tag_;
             ptr_element->domains_ = domains_;
             ptr_element->coordinates_ = coordinates_;
-            auto labelss = std::array<std::basic_string_view<lolita::character>, sizeof...(t_Labels)>{labels...};
+            auto labelss = std::array<std::shared_ptr<std::basic_string<Character>>, sizeof...(t_Labels)>{std::make_shared<std::basic_string<Character>>(labels)...};
             for (auto i = 0; i < sizeof...(t_Labels); i++)
             {
-                auto fem = std::make_shared<FiniteElement<t_element, t_domain>>();
-                fem->label_ = labelss[i];
-                ptr_element->finite_elements_.push_back(fem);
+                // auto fem = std::make_shared<FiniteElement<t_element, t_domain>>(labelss[i]);
+                // fem->label_ = labelss[i];
+                ptr_element->finite_elements_.push_back(std::make_shared<FiniteElement<t_element, t_domain>>(labelss[i]));
             }
             element_set.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>()[getHash(tag_)] = ptr_element;
         }

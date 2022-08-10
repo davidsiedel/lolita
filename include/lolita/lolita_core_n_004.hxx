@@ -501,19 +501,19 @@ namespace lolita2::geometry
             }
 
             template<Mapping t_mapping, Field t_field>
-            RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns<t_field>()>
+            RealMatrix<getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>
             getMapping(
                 Point const & point
             )
             const
             {
-                auto grd = RealMatrix<getMappingSize<t_mapping>(), getNumElementUnknowns<t_field>()>();
+                auto grd = RealMatrix<getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>();
                 grd.setZero();
                 // getGradientRhs(0, 0);
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain, t_field>())
                 {
-                    auto rhs = getGradientRhs(mapping_value.row(), mapping_value.col());
+                    auto rhs = getGradientRhs<t_field>(mapping_value.row(), mapping_value.col());
                     auto line = grd.template block<1, getNumElementUnknowns<t_field>()>(mapping_value.rank(), 0);
                     // auto res = lhs * rhs;
                     // auto res2 = this->template getBasisEvaluation<getGradBasis()>(point);
@@ -542,75 +542,6 @@ namespace lolita2::geometry
         };
 
     };
-
-    // template<Element t_element, Domain t_domain, auto t_finite_element_method>
-    // struct FiniteElementTraits
-    // {
-        
-    //     static constexpr
-    //     Field const &
-    //     getField()
-    //     {
-    //         return t_finite_element_method.getField();
-    //     }
-
-    //     template<Basis t_basis>
-    //     static constexpr
-    //     lolita::integer
-    //     getBasisSize()
-    //     {
-    //         return FiniteElementBasisTraits<t_basis>::template size<t_element>();
-    //     }
-        
-    //     static constexpr
-    //     lolita::integer
-    //     getGeneralizedStrainSize()
-    //     {
-    //         return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template size<t_domain>();
-    //     }
-        
-    //     static constexpr
-    //     lolita::integer
-    //     getGeneralizedStrainOffset()
-    //     {
-    //         auto constexpr t_finite_element_generalized_strain = t_finite_element_method.getGeneralizedStrain();
-    //         auto offset = lolita::integer(0);
-    //         auto is_set = false;
-    //         auto set_offset = [&] <lolita::integer t_i = 0> (
-    //             auto & self
-    //         )
-    //         constexpr mutable
-    //         {
-    //             auto constexpr t_generalized_strain = t_finite_element_method.getBehavior().template getGeneralizedStrain<t_i>();
-    //             if constexpr (std::is_same_v<std::decay_t<decltype(t_generalized_strain)>, std::decay_t<decltype(t_finite_element_generalized_strain)>>)
-    //             {
-    //                 if constexpr (t_generalized_strain == t_finite_element_generalized_strain)
-    //                 {
-    //                     is_set = true;
-    //                 }
-    //             }
-    //             if (!is_set)
-    //             {
-    //                 offset += GeneralizedStrainTraits<t_generalized_strain>::template size<t_domain>();
-    //             }
-    //             if constexpr (t_i < t_finite_element_method.getBehavior().getNumGeneralizedStrains() - 1)
-    //             {
-    //                 self.template operator ()<t_i + 1>(self);
-    //             }
-    //         };
-    //         set_offset(set_offset);
-    //         return offset;
-    //     }
-
-    //     template<Mapping t_mapping>
-    //     static constexpr
-    //     lolita::integer
-    //     getMappingSize()
-    //     {
-    //         return MappingTraits<t_mapping>::template size<t_domain, t_finite_element_method.getField()>();
-    //     }
-
-    // };
     
     template<Element t_element, Domain t_domain>
     struct FiniteElementDegreeOfFreedom
@@ -686,6 +617,7 @@ namespace lolita2::geometry
     struct QuadratureOperator
     {
 
+        inline
         std::basic_string_view<Character>
         getLabel()
         const
@@ -693,6 +625,7 @@ namespace lolita2::geometry
             return label_;
         }
 
+        inline
         lolita::matrix::Matrix<Real>
         getOperator(
             Integer i
@@ -712,20 +645,28 @@ namespace lolita2::geometry
     struct IntegrationPoint
     {
 
-        void
-        setBehavior(
-            std::shared_ptr<mgis::behaviour::Behaviour> behaviour
+        IntegrationPoint(
+            Point const & coordinates,
+            Real const & weight,
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behaviour
         )
+        :
+        coordinates_(coordinates),
+        weight_(weight),
+        material_point_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behaviour)))
+        {}
+
+        std::unique_ptr<mgis::behaviour::BehaviourData> const &
+        getMaterialPoint()
+        const
         {
-            behaviour_ = behaviour;
-            material_point_ = std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behaviour_));
+            return material_point_;
         }
 
-        void
-        integrate()
+        std::unique_ptr<mgis::behaviour::BehaviourData> &
+        getMaterialPoint()
         {
-            auto behaviour_view = mgis::behaviour::make_view(* material_point_);
-            auto result = mgis::behaviour::integrate(behaviour_view, * behaviour_);
+            return material_point_;
         }
         
         template<BehaviorConcept auto t_behavior>
@@ -756,15 +697,54 @@ namespace lolita2::geometry
             return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size>>(material_point_->s1.gradients.data() + offset);
         }
         
-        std::shared_ptr<mgis::behaviour::Behaviour> behaviour_;
-        
-        std::unique_ptr<mgis::behaviour::BehaviourData> material_point_;
-        
         Point coordinates_;
         
         Real weight_;
 
         std::vector<QuadratureOperator> quadrature_operators_;
+        
+        std::unique_ptr<mgis::behaviour::BehaviourData> material_point_;
+
+    };
+
+    template<Domain t_domain>
+    struct ElementIntegrationPoints
+    {
+
+        ElementIntegrationPoints(
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behaviour
+        )
+        :
+        behaviour_(behaviour)
+        {}
+
+        Integer
+        getSize()
+        const
+        {
+            return integration_points_.size();
+        }
+
+        std::basic_string_view<Character>
+        getLabel()
+        const
+        {
+            return behaviour_->behaviour;
+        }
+
+        void
+        integrate()
+        {
+            for (auto const & integration_point : integration_points_)
+            {
+                auto behaviour_view = mgis::behaviour::make_view(integration_point->material_point_);
+                auto result = mgis::behaviour::integrate(behaviour_view, * behaviour_);
+            }
+        }
+        
+        std::shared_ptr<mgis::behaviour::Behaviour> behaviour_;
+
+        std::vector<IntegrationPoint<t_domain>> integration_points_;
 
     };
 
@@ -772,23 +752,37 @@ namespace lolita2::geometry
     struct FiniteElement : FiniteElementGeometry<FiniteElement, t_element, t_domain>
     {
 
-        std::vector<std::shared_ptr<IntegrationPoint<t_domain>>> integrations_points_;
-
-        std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
-
-        std::vector<lolita::matrix::Matrix<lolita::real>> element_operators_;
-
-        std::basic_string_view<lolita::character> label_;
-
         template<Basis t_basis>
         using t_Basis = typename FiniteElementBasisTraits<t_basis>::template Implementation<t_element, t_domain>;
 
         template<auto t_discretization>
         using t_Disc = typename HybridDiscontinuousGalerkinTraits<t_discretization>::template Implementation<t_element, t_domain>;
 
+        std::shared_ptr<ElementIntegrationPoints<t_domain>> element_integration_points_;
+
+        std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
+
+        std::vector<lolita::matrix::Matrix<lolita::real>> element_operators_;
+
+        std::shared_ptr<std::basic_string<Character>> label_;
+
+        FiniteElement(
+            std::shared_ptr<std::basic_string<Character>> const & label
+        )
+        :
+        label_(label)
+        {}
+
+        std::basic_string_view<Character>
+        getLabel()
+        const
+        {
+            return std::basic_string_view<Character>(* label_);
+        }
+
         lolita::boolean
         hasDegreeOfFreedom(
-            std::basic_string_view<lolita::character> label
+            std::basic_string_view<Character> label
         )
         const
         {
@@ -828,7 +822,7 @@ namespace lolita2::geometry
 
         std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const &
         getDegreeOfFreedom(
-            std::basic_string_view<lolita::character> label
+            std::basic_string_view<Character> label
         )
         const
         {
@@ -851,7 +845,7 @@ namespace lolita2::geometry
 
         std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> &
         getDegreeOfFreedom(
-            std::basic_string_view<lolita::character> label
+            std::basic_string_view<Character> label
         )
         {
             auto has_dof = [&] (
@@ -892,15 +886,33 @@ namespace lolita2::geometry
             return static_cast<t_Basis<t_basis> const *>(this)->getBasisDerivative(point, derivative_direction);
         }
 
-        // template<Mapping t_mapping, auto t_discretization>
-        // RealMatrix<t_FiniteElementTraits::template getMappingSize<t_mapping>(), t_Disc<t_discretization>::getNumElementUnknowns()>
-        // getMapping(
-        //     Point const & point
-        // )
-        // const
-        // {
-        //     return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping>(point);
-        // }
+        template<Field t_field, Mapping t_mapping, auto t_discretization>
+        RealMatrix<MappingTraits<t_mapping>::template size<t_domain, t_field>(), t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
+        getMapping(
+            Point const & point
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping, t_field>(point);
+        }
+
+        template<Field t_field, Quadrature t_quadrature, auto t_discretization>
+        void
+        makeQuadrature()
+        {
+            for (auto i = 0; i < element_integration_points_->getSize(); i++)
+            {
+                auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
+                auto mapp = this->template getMapping<t_field, Mapping::gradient(), t_discretization>(point);
+                // element_integration_points_->integration_points_[i].quadrature_operators_[0] = mapp;
+            }
+            // for (auto const & integration_point : element_integration_points_->integration_points_)
+            // {
+            //     integration_point.quadrature_operators_[0] = 
+            // }
+            // std::cout << "mapp : " << std::endl;
+            // std::cout << mapp << std::endl;
+        }
 
         void
         activate()
@@ -930,6 +942,36 @@ namespace lolita2::geometry
     struct FiniteElementHolder : FiniteElementGeometry<FiniteElementHolder, t_element, t_domain>
     {
 
+        Boolean
+        hasFiniteElement(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto has_label = [&] (
+                std::shared_ptr<FiniteElement<t_element, t_domain>> const & finite_element
+            )
+            {
+                return finite_element->getLabel() == label;
+            };
+            return std::find_if(finite_elements_.begin(), finite_elements_.end(), has_label) != finite_elements_.end();
+        }
+
+        Boolean
+        hasBehavior(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto has_label = [&] (
+                std::shared_ptr<ElementIntegrationPoints<t_domain>> const & element_integration_points
+            )
+            {
+                return element_integration_points->getLabel() == label;
+            };
+            return std::find_if(integration_points_.begin(), integration_points_.end(), has_label) != integration_points_.end();
+        }
+
         Integer
         getFiniteElementIndex(
             std::basic_string_view<Character> label
@@ -940,11 +982,33 @@ namespace lolita2::geometry
                 std::shared_ptr<FiniteElement<t_element, t_domain>> const & finite_element
             )
             {
-                return finite_element->label_ == label;
+                return finite_element->getLabel() == label;
             };
             if (std::find_if(finite_elements_.begin(), finite_elements_.end(), has_label) != finite_elements_.end())
             {
                 return std::distance(finite_elements_.begin(), std::find_if(finite_elements_.begin(), finite_elements_.end(), has_label));
+            }
+            else
+            {
+                throw std::runtime_error("NO");
+            }
+        }
+
+        Integer
+        getBehaviorIndex(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto has_label = [&] (
+                std::shared_ptr<ElementIntegrationPoints<t_domain>> const & element_integration_points
+            )
+            {
+                return element_integration_points->getLabel() == label;
+            };
+            if (std::find_if(integration_points_.begin(), integration_points_.end(), has_label) != integration_points_.end())
+            {
+                return std::distance(integration_points_.begin(), std::find_if(integration_points_.begin(), integration_points_.end(), has_label));
             }
             else
             {
@@ -971,7 +1035,7 @@ namespace lolita2::geometry
         
         std::shared_ptr<FiniteElement<t_element, t_domain>> const &
         getFiniteElement(
-            std::basic_string_view<lolita::character> label
+            std::basic_string_view<Character> label
         )
         const
         {
@@ -980,15 +1044,41 @@ namespace lolita2::geometry
         
         std::shared_ptr<FiniteElement<t_element, t_domain>> &
         getFiniteElement(
-            std::basic_string_view<lolita::character> label
+            std::basic_string_view<Character> label
         )
         {
             return finite_elements_[getFiniteElementIndex(label)];
         }
 
+        template<Quadrature t_quadrature, typename... t_Labels>
+        void
+        setBehavior(
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior,
+            t_Labels... labels
+        )
+        {
+            if (!hasBehavior(behavior->behaviour))
+            {
+                auto element_integration_points = std::make_shared<ElementIntegrationPoints<t_domain>>(behavior);
+                for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
+                {
+                    auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
+                    auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
+                    auto integration_point = IntegrationPoint<t_domain>(point, weight, behavior);
+                    element_integration_points->integration_points_.push_back(std::move(integration_point));
+                }
+                std::cout << "dt : " << element_integration_points->integration_points_[0].material_point_->dt << std::endl;
+                integration_points_.push_back(element_integration_points);
+                for (auto label : std::array<std::basic_string_view<Character>, sizeof...(labels)>{labels...})
+                {
+                    getFiniteElement(label)->element_integration_points_ = element_integration_points;
+                }
+            }
+        }
+
         std::vector<std::shared_ptr<FiniteElement<t_element, t_domain>>> finite_elements_;
 
-        std::vector<std::shared_ptr<IntegrationPoint<t_domain>>> integration_points_;
+        std::vector<std::shared_ptr<ElementIntegrationPoints<t_domain>>> integration_points_;
 
     };
     

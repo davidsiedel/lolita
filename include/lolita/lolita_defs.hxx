@@ -386,7 +386,7 @@ namespace lolita2
         static constexpr
         Field
         scalar(
-            std::basic_string_view<lolita::character> label
+            std::basic_string_view<Character> label
         )
         {
             return Field(label, 0);
@@ -395,7 +395,7 @@ namespace lolita2
         static constexpr
         Field
         vector(
-            std::basic_string_view<lolita::character> label
+            std::basic_string_view<Character> label
         )
         {
             return Field(label, 1);
@@ -413,7 +413,7 @@ namespace lolita2
         
         constexpr
         Field(
-            std::basic_string_view<lolita::character> label,
+            std::basic_string_view<Character> label,
             lolita::integer dim
         )
         :
@@ -825,6 +825,101 @@ namespace lolita2
 
     template<typename t_T>
     concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
+
+    // using ParameterFunction = std::function<lolita::real(Point const &, lolita::real const &)>;
+
+    // struct MgisParameter
+    // {
+
+    //     MgisParameter(
+    //         std::basic_string_view<Character> label,
+    //         ParameterFunction && function
+    //     )
+    //     :
+    //     label_(label),
+    //     function_(std::forward<ParameterFunction>(function))
+    //     {}
+
+    //     constexpr
+    //     lolita::boolean
+    //     operator==(
+    //         MgisParameter const & other
+    //     )
+    //     const
+    //     {
+    //         return other.label_ == this->label_;
+    //     }
+
+    //     constexpr
+    //     lolita::boolean
+    //     operator!=(
+    //         MgisParameter const & other
+    //     )
+    //     const
+    //     {
+    //         return !(* this == other);
+    //     }
+
+    //     std::basic_string_view<Character> label_;
+
+    //     ParameterFunction function_;
+
+    // };
+
+    // struct MgisBehaviour
+    // {
+
+    //     MgisBehaviour(
+    //         std::basic_string<Character> const & path,
+    //         std::basic_string<Character> const & name,
+    //         mgis::behaviour::Hypothesis hypothesis,
+    //         std::vector<MgisParameter> && parameters
+    //     )
+    //     :
+    //     behaviour_(mgis::behaviour::load(path, name, hypothesis)),
+    //     parameters_(std::forward<std::vector<MgisParameter>>(parameters))
+    //     {}
+
+    //     MgisBehaviour(
+    //         std::basic_string<Character> const & path,
+    //         std::basic_string<Character> const & name,
+    //         mgis::behaviour::Hypothesis hypothesis,
+    //         std::vector<MgisParameter> const & parameters
+    //     )
+    //     :
+    //     behaviour_(mgis::behaviour::load(path, name, hypothesis)),
+    //     parameters_(parameters)
+    //     {}
+
+    //     MgisBehaviour(
+    //             std::basic_string<Character> const & path,
+    //             std::basic_string<Character> const & name,
+    //             mgis::behaviour::Hypothesis hypothesis,
+    //             mgis::behaviour::FiniteStrainBehaviourOptions finite_strain_options,
+    //             std::vector<MgisParameter> && parameters
+    //     )
+    //     :
+    //     behaviour_(mgis::behaviour::load(finite_strain_options, path, name, hypothesis)),
+    //     parameters_(std::forward<std::vector<MgisParameter>>(parameters))
+    //     {}
+
+    //     MgisBehaviour(
+    //             std::basic_string<Character> const & path,
+    //             std::basic_string<Character> const & name,
+    //             mgis::behaviour::Hypothesis hypothesis,
+    //             mgis::behaviour::FiniteStrainBehaviourOptions finite_strain_options,
+    //             std::vector<MgisParameter> const & parameters
+    //     )
+    //     :
+    //     behaviour_(mgis::behaviour::load(finite_strain_options, path, name, hypothesis)),
+    //     parameters_(parameters)
+    //     {}
+
+    //     mgis::behaviour::Behaviour behaviour_;
+
+    //     std::vector<MgisParameter> parameters_;
+
+    // };
 
 }
 

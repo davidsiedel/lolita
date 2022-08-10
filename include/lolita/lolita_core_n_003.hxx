@@ -31,6 +31,13 @@ namespace lolita2::geometry
             return 1;
         }
 
+        static constexpr
+        lolita::integer
+        getSize()
+        {
+            return 1;
+        }
+
         std::array<std::array<lolita::real, 3>, dim_> static constexpr reference_points_ = {
                 +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
         };
