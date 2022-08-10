@@ -21,6 +21,18 @@ namespace lolita2
 
     using Loading = std::function<lolita::real(lolita2::Point const &, lolita::real const &)>;
 
+    using Integer = int;
+
+    using Real = double;
+
+    using Character = char;
+
+    using Boolean = bool;
+
+    using Index = unsigned short;
+
+    using Long = unsigned long long;
+
     struct Domain
     {
 
