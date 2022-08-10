@@ -16,6 +16,12 @@
 
 namespace lolita2
 {
+
+    using Integer = lolita::integer;
+
+    using Real = lolita::real;
+
+    using Boolean = lolita::boolean;
     
     using Point = lolita::matrix::Vector<lolita::real, 3>;
 
