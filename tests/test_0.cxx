@@ -8,6 +8,8 @@ TEST(t0, t0)
     auto constexpr cell_basis = lolita2::Basis::monomial(1);
     auto constexpr face_basis = lolita2::Basis::monomial(1);
     auto constexpr quadrature = lolita2::Quadrature::gauss(2);
+    auto constexpr cells = lolita2::geometry::ElementType::cells(domain);
+    auto constexpr faces = lolita2::geometry::ElementType::faces(domain);
     // fields
     auto constexpr displacement_field = lolita2::Field::vector("Displacement");
     auto constexpr damage_field = lolita2::Field::scalar("Damage");
@@ -30,14 +32,14 @@ TEST(t0, t0)
     // mesh build
     auto elements = lolita2::geometry::MeshFileParser(file_path).template makeFiniteElementSet<domain>("Displacement", "Damage");
     // problem build
-    elements->activate<lolita2::geometry::ElementType::cells(domain)>("Displacement", "SQUARE");
-    elements->activate<lolita2::geometry::ElementType::faces(domain)>("Displacement", "SQUARE");
-    elements->activate<lolita2::geometry::ElementType::cells(domain)>("Damage", "SQUARE");
-    elements->activate<lolita2::geometry::ElementType::faces(domain)>("Damage", "SQUARE");
+    elements->activate<cells>("Displacement", "SQUARE");
+    elements->activate<faces>("Displacement", "SQUARE");
+    elements->activate<cells>("Damage", "SQUARE");
+    elements->activate<faces>("Damage", "SQUARE");
     // elements->activate<displacement_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
     // elements->activate<damage_element, lolita2::geometry::ElementType::cells(domain)>("SQUARE");
     // elements->activate<damage_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
-    elements->setDegreeOfFreedom<lolita2::geometry::ElementType::faces(domain), displacement_field, face_basis>("Displacement", "SQUARE", degree_of_freedom);
+    elements->setDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE", degree_of_freedom);
     // elements->setLoad<displacement_element, lolita2::geometry::ElementType::cells(domain)>(
     //     "SQUARE",
     //     0, 0, [](lolita2::Point const &p, lolita::real const &t) { return 1.0; }

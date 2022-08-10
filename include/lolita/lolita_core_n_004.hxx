@@ -682,6 +682,31 @@ namespace lolita2::geometry
         std::shared_ptr<DegreeOfFreedom> degree_of_freedom_;
 
     };
+
+    struct QuadratureOperator
+    {
+
+        std::basic_string_view<Character>
+        getLabel()
+        const
+        {
+            return label_;
+        }
+
+        lolita::matrix::Matrix<Real>
+        getOperator(
+            Integer i
+        )
+        const
+        {
+            return operators_[i];
+        }
+
+        std::basic_string_view<Character> label_;
+
+        std::vector<lolita::matrix::Matrix<Real>> operators_;
+
+    };
     
     template<Domain t_domain>
     struct IntegrationPoint
@@ -739,7 +764,7 @@ namespace lolita2::geometry
         
         Real weight_;
 
-        std::vector<std::vector<lolita::matrix::Matrix<Real>>> quadrature_operators_;
+        std::vector<QuadratureOperator> quadrature_operators_;
 
     };
 
@@ -747,49 +772,19 @@ namespace lolita2::geometry
     struct FiniteElement : FiniteElementGeometry<FiniteElement, t_element, t_domain>
     {
 
-        // std::shared_ptr<std::vector<IntegrationPoint<t_domain>>> integrations_points_;
         std::vector<std::shared_ptr<IntegrationPoint<t_domain>>> integrations_points_;
 
-        // std::unique_ptr<std::vector<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
         std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
 
-        // std::unique_ptr<std::vector<lolita::matrix::Matrix<lolita::real>>> element_operators_;
         std::vector<lolita::matrix::Matrix<lolita::real>> element_operators_;
+
+        std::basic_string_view<lolita::character> label_;
 
         template<Basis t_basis>
         using t_Basis = typename FiniteElementBasisTraits<t_basis>::template Implementation<t_element, t_domain>;
 
         template<auto t_discretization>
         using t_Disc = typename HybridDiscontinuousGalerkinTraits<t_discretization>::template Implementation<t_element, t_domain>;
-
-        // struct Data
-        // {
-
-        //     std::vector<lolita::matrix::Matrix<lolita::real>> element_operators_;
-
-        //     std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> element_degrees_of_freedom_;
-
-        //     // std::vector<IntegrationPoint<t_domain>> quadrature_points_;
-
-        //     // std::unique_ptr<FieldLoad<t_domain>> loads_;
-
-        // };
-
-        // void
-        // setLoad(
-        //     lolita::integer row,
-        //     lolita::integer col,
-        //     std::shared_ptr<Loading> const & load
-        // )
-        // {
-        //     if (data_->loads_ == nullptr)
-        //     {
-        //         data_->loads_ = std::make_unique<FieldLoad<t_domain, t_finite_element_method.getField()>>(
-        //             FieldLoad<t_domain, t_finite_element_method.getField()>()
-        //         );
-        //     }
-        //     data_->loads_->setLoad(row, col, load);
-        // }
 
         lolita::boolean
         hasDegreeOfFreedom(
@@ -928,17 +923,6 @@ namespace lolita2::geometry
             // }
             // this->template getGradientRhs<bas>();
         }
-
-        // lolita::boolean
-        // isActivated()
-        // const
-        // {
-        //     return data_ == nullptr;
-        // }
-
-        // std::unique_ptr<Data> data_;
-
-        std::basic_string_view<lolita::character> label_;
 
     };
 
