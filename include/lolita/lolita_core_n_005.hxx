@@ -137,15 +137,6 @@ namespace lolita2::geometry
             activate_elements(activate_elements);
         }
 
-        // void
-        // setBehavior(
-        //     std::basic_string_view<Character> finite_element_label,
-        //     std::basic_string_view<Character> behavior_label
-        // )
-        // {
-        //     getFiniteElement(finite_element_label)->element_integration_points_ = getIntegrationPoints(behavior_label);
-        // }
-
         template<ElementType t_ii, Field t_field, Quadrature t_quadrature, auto t_discretization>
         void
         makeQuadrature(

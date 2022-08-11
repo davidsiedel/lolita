@@ -866,6 +866,12 @@ namespace lolita2::geometry
         using t_InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer>;
         
         using t_OuterNeighbors = typename t_ElementTraits::template OuterConnectivity<t_ElementPointer>;
+
+        template<Basis t_basis>
+        using t_Basis = typename FiniteElementBasisTraits<t_basis>::template Implementation<t_element, t_domain>;
+
+        template<auto t_discretization>
+        using t_Disc = typename HybridDiscontinuousGalerkinTraits<t_discretization>::template Implementation<t_element, t_domain>;
         
         lolita::boolean
         operator==(
@@ -1430,26 +1436,10 @@ namespace lolita2::geometry
             }
             return p;
         }
-        
-        t_OuterNeighbors outer_neighbors_;
-        
-        t_InnerNeighbors inner_neighbors_;
-        
-        lolita::natural tag_;
-
-        std::vector<std::shared_ptr<MeshDomain>> domains_;
-        
-        std::shared_ptr<Point> coordinates_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // NEW
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
-
-        template<Basis t_basis>
-        using t_Basis = typename FiniteElementBasisTraits<t_basis>::template Implementation<t_element, t_domain>;
-
-        template<auto t_discretization>
-        using t_Disc = typename HybridDiscontinuousGalerkinTraits<t_discretization>::template Implementation<t_element, t_domain>;
 
         Boolean
         hasFiniteElement(
@@ -1650,6 +1640,16 @@ namespace lolita2::geometry
             // std::cout << "mapp : " << std::endl;
             // std::cout << mapp << std::endl;
         }
+        
+        t_OuterNeighbors outer_neighbors_;
+        
+        t_InnerNeighbors inner_neighbors_;
+        
+        lolita::natural tag_;
+
+        std::vector<std::shared_ptr<MeshDomain>> domains_;
+        
+        std::shared_ptr<Point> coordinates_;
 
         std::vector<std::shared_ptr<FiniteElement<t_element, t_domain>>> finite_elements_;
 
