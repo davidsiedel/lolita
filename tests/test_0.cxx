@@ -37,6 +37,8 @@ TEST(t0, t0)
     elements->addElement<faces>("Damage", "SQUARE");
     // dofs
     elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE", degree_of_freedom);
+    // load
+    elements->addLoad<faces>("Displacement", "SQUARE", load_f);
     // bhv
     auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/behaviour/src/libBehaviour.so";
     auto lib_name = "Voce";

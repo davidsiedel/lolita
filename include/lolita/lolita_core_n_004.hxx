@@ -14,119 +14,10 @@ namespace lolita2::geometry
 {
 
     template<auto... t_args>
-    using RealMatrix = lolita::matrix::Matrix<lolita::real, t_args...>;
+    using RealMatrix = lolita::matrix::Matrix<Real, t_args...>;
 
     template<auto... t_args>
-    using RealVector = lolita::matrix::Vector<lolita::real, t_args...>;
-
-    struct Load
-    {
-
-        Load(
-            Loading const & loading,
-            lolita::integer row,
-            lolita::integer col
-        )
-        :
-        row_(row),
-        col_(col),
-        loading_(loading)
-        {}
-
-        Load(
-            Loading && loading,
-            lolita::integer row,
-            lolita::integer col
-        )
-        :
-        row_(row),
-        col_(col),
-        loading_(std::forward<Loading>(loading))
-        {}
-        
-        lolita::real
-        getImposedValue(
-            Point const & point,
-            lolita::real const & time
-        )
-        const
-        {
-            return loading_(point, time);
-        }
-
-        Loading loading_;
-
-        lolita::integer row_;
-
-        lolita::integer col_;
-
-    };
-
-    // template<Domain t_domain, Field t_field>
-    // struct FieldLoad
-    // {
-
-    //     static constexpr
-    //     lolita::integer
-    //     getRows()
-    //     {
-    //         return FieldTraits<t_field>::template shape<t_domain>().rows();
-    //     }
-
-    //     static constexpr
-    //     lolita::integer
-    //     getCols()
-    //     {
-    //         return FieldTraits<t_field>::template shape<t_domain>().cols();
-    //     }
-
-    //     void
-    //     setLoad(
-    //         lolita::integer row,
-    //         lolita::integer col,
-    //         std::shared_ptr<Loading> const & loading
-    //     )
-    //     {
-    //         loads_[col][row] = loading;
-    //     }
-
-    //     void
-    //     setLoad(
-    //         lolita::integer row,
-    //         lolita::integer col,
-    //         std::shared_ptr<Loading> && loading
-    //     )
-    //     {
-    //         loads_[col][row] = std::forward<std::shared_ptr<Loading>>(loading);
-    //     }
-        
-    //     lolita::real
-    //     getImposedValue(
-    //         lolita::integer row,
-    //         lolita::integer col,
-    //         Point const & point,
-    //         lolita::real const & time
-    //     )
-    //     const
-    //     {
-    //         if (loads_[col][row] == nullptr)
-    //         {
-    //             return 0.0;
-    //         }
-    //         else
-    //         {
-    //             return loads_[col][row]->operator ()(point, time);
-    //         }
-    //     }
-
-    // private:
-
-    //     std::array<std::array<std::shared_ptr<Loading>, getRows()>, getCols()> loads_;
-
-    // };
-
-    // template<Element t_element, Domain t_domain>
-    // struct FiniteElement;
+    using RealVector = lolita::matrix::Vector<Real, t_args...>;
 
     template<Element t_element, Domain t_domain>
     struct FiniteElementHolder;
@@ -139,25 +30,9 @@ namespace lolita2::geometry
     struct FiniteElementBasisTraits<t_basis>
     {
 
-        // template<lolita::integer t_dim>
-        // static constexpr
-        // lolita::integer
-        // size()
-        // {
-        //     return lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
-        // }
-
-        // template<Element t_element>
-        // static constexpr
-        // lolita::integer
-        // size()
-        // {
-        //     return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
-        // }
-
         template<Integer t_dim>
         static constexpr
-        lolita::integer
+        Integer
         getSize()
         {
             return lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
@@ -165,7 +40,7 @@ namespace lolita2::geometry
 
         template<Element t_element>
         static constexpr
-        lolita::integer
+        Integer
         getSize()
         {
             return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
@@ -188,8 +63,8 @@ namespace lolita2::geometry
             std::array<std::array<Integer, 3>, getSize()>
             getExponents()
             {
-                auto exponents = std::array<std::array<lolita::integer, 3>, getSize()>();
-                auto row = lolita::integer(0);
+                auto exponents = std::array<std::array<Integer, 3>, getSize()>();
+                auto row = Integer(0);
                 if constexpr (t_element.dim_ == 0)
                 {
                     exponents[row][0] = 0;
@@ -198,7 +73,7 @@ namespace lolita2::geometry
                 }
                 else if constexpr (t_element.dim_ == 1)
                 {
-                    for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
+                    for (auto i = 0; i < t_basis.ord_ + 1; ++i)
                     {
                         exponents[row][0] = i;
                         exponents[row][1] = 0;
@@ -208,9 +83,9 @@ namespace lolita2::geometry
                 }
                 else if constexpr (t_element.dim_ == 2)
                 {
-                    for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
+                    for (auto i = 0; i < t_basis.ord_ + 1; ++i)
                     {
-                        for (lolita::integer j = 0; j < i + 1; ++j)
+                        for (auto j = 0; j < i + 1; ++j)
                         {
                             exponents[row][0] = i - j;
                             exponents[row][1] = j;
@@ -221,11 +96,11 @@ namespace lolita2::geometry
                 }
                 else if constexpr (t_element.dim_ == 3)
                 {
-                    for (lolita::integer i = 0; i < t_basis.ord_ + 1; ++i)
+                    for (auto i = 0; i < t_basis.ord_ + 1; ++i)
                     {
-                        for (lolita::integer j = 0; j < i + 1; ++j)
+                        for (auto j = 0; j < i + 1; ++j)
                         {
-                            for (lolita::integer k = 0; k < i + 1; ++k)
+                            for (auto k = 0; k < i + 1; ++k)
                             {
                                 if (j + k < i + 1)
                                 {
@@ -241,23 +116,23 @@ namespace lolita2::geometry
                 return exponents;
             }
             
-            std::array<std::array<lolita::integer, 3>, getSize()> static constexpr exponents_ = getExponents();
+            std::array<std::array<Integer, 3>, getSize()> static constexpr exponents_ = getExponents();
 
         public:
         
-            lolita::matrix::Vector<lolita::real, getSize()>
+            lolita::matrix::Vector<Real, getSize()>
             getBasisEvaluation(
                 Point const & point
             )
             const
             {
-                auto basis_vector_values = lolita::matrix::Vector<lolita::real, getSize()>();
+                auto basis_vector_values = lolita::matrix::Vector<Real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 auto const diameters = this->getCurrentDiameters();
-                for (lolita::integer i = 0; i < getSize(); ++i)
+                for (auto i = 0; i < getSize(); ++i)
                 {
-                    auto value = lolita::real(1);
-                    for (lolita::integer j = 0; j < t_element.dim_; ++j)
+                    auto value = Real(1);
+                    for (auto j = 0; j < t_element.dim_; ++j)
                     {
                         auto dist = this->getRiemannianDistance(centroid, point, j);
                         value *= std::pow(2.0 * dist / diameters(j), exponents_[i][j]);
@@ -267,20 +142,20 @@ namespace lolita2::geometry
                 return basis_vector_values;
             }
             
-            lolita::matrix::Vector<lolita::real, getSize()>
+            lolita::matrix::Vector<Real, getSize()>
             getBasisDerivative(
                 Point const & point,
-                lolita::integer derivative_direction
+                Integer derivative_direction
             )
             const
             {
-                auto basis_vector_values = lolita::matrix::Vector<lolita::real, getSize()>();
+                auto basis_vector_values = lolita::matrix::Vector<Real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 auto const diameters = this->getCurrentDiameters();
-                for (lolita::integer i = 0; i < getSize(); ++i)
+                for (auto i = 0; i < getSize(); ++i)
                 {
-                    auto value = lolita::real(1);
-                    for (lolita::integer j = 0; j < t_element.dim_; ++j)
+                    auto value = Real(1);
+                    for (auto j = 0; j < t_element.dim_; ++j)
                     {
                         if (j != derivative_direction)
                         {
@@ -337,7 +212,7 @@ namespace lolita2::geometry
 
         template<Element t_element>
         static constexpr
-        lolita::integer
+        Integer
         getCellBasisSize()
         {
             return FiniteElementBasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
@@ -345,7 +220,7 @@ namespace lolita2::geometry
 
         template<Element t_element>
         static constexpr
-        lolita::integer
+        Integer
         getFaceBasisSize()
         {
             return FiniteElementBasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
@@ -353,7 +228,7 @@ namespace lolita2::geometry
 
         template<Element t_element>
         static constexpr
-        lolita::integer
+        Integer
         getGradBasisSize()
         {
             return FiniteElementBasisTraits<t_discretization.grad_basis_>::template getSize<t_element>();
@@ -361,7 +236,7 @@ namespace lolita2::geometry
 
         template<Element t_element, Domain t_domain, Field t_field>
         static constexpr
-        lolita::integer
+        Integer
         getNumCellUnknowns()
         {
             auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
@@ -371,7 +246,7 @@ namespace lolita2::geometry
 
         template<Element t_element, Domain t_domain, Field t_field>
         static constexpr
-        lolita::integer
+        Integer
         getNumFaceUnknowns()
         {
             auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
@@ -381,11 +256,11 @@ namespace lolita2::geometry
 
         template<Element t_element, Domain t_domain, Field t_field>
         static constexpr
-        lolita::integer
+        Integer
         getNumElementUnknowns()
         {
             auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain, t_field>();
-            auto set_num_faces_unknowns = [&] <lolita::integer t_i = 0> (
+            auto set_num_faces_unknowns = [&] <Integer t_i = 0> (
                 auto & self
             )
             constexpr mutable
@@ -410,7 +285,7 @@ namespace lolita2::geometry
 
             template<Mapping t_mapping, Field t_field>
             static constexpr
-            lolita::integer
+            Integer
             getMappingSize()
             {
                 return MappingTraits<t_mapping>::template getSize<t_domain, t_field>();
@@ -420,7 +295,7 @@ namespace lolita2::geometry
 
             template<Field t_field>
             static constexpr
-            lolita::integer
+            Integer
             getNumElementUnknowns()
             {
                 return HybridDiscontinuousGalerkinTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
@@ -446,8 +321,8 @@ namespace lolita2::geometry
             template<Field t_field>
             RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
             getGradientRhs(
-                lolita::integer row,
-                lolita::integer col
+                Integer row,
+                Integer col
             )
             const
             {
@@ -466,14 +341,14 @@ namespace lolita2::geometry
                     auto block = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, col_offset);
                     block += weight * test_vector * left_vector.transpose();
                 }
-                auto set_faces_blocks = [&] <lolita::integer t_i = 0> (
+                auto set_faces_blocks = [&] <Integer t_i = 0> (
                     auto & self
                 )
                 constexpr mutable
                 {
                     auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_i>();
                     auto constexpr t_num_inner_neighbors = ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0, t_i>();
-                    auto face_index = lolita::integer(0);
+                    auto face_index = Integer(0);
                     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                     {
                         for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::size(); i++)
@@ -530,14 +405,14 @@ namespace lolita2::geometry
             }
 
             // template<Mapping t_mapping, Basis t_gradient_basis>
-            // lolita::matrix::Matrix<lolita::real, getMappingSize<t_mapping>(), getNumCols<t_element, t_domain>()>
+            // lolita::matrix::Matrix<Real, getMappingSize<t_mapping>(), getNumCols<t_element, t_domain>()>
             // getGradient(
-            //     lolita::integer i
+            //     Integer i
             // )
             // const
             // requires(t_mapping.isGradient())
             // {
-            //     auto rhs = lolita::matrix::Matrix<lolita::real, getMappingSize<t_mapping>(), getNumCols<t_element, t_domain>()>();
+            //     auto rhs = lolita::matrix::Matrix<Real, getMappingSize<t_mapping>(), getNumCols<t_element, t_domain>()>();
             //     rhs.setZero();
             //     return rhs;
             // }
@@ -552,7 +427,7 @@ namespace lolita2::geometry
 
         template<Field t_field, Basis t_basis>
         static constexpr
-        lolita::integer
+        Integer
         getSize()
         {
             auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
@@ -561,47 +436,47 @@ namespace lolita2::geometry
         }
 
         template<Field t_field, Basis t_basis>
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, getSize<t_field, t_basis>()> const>
+        lolita::matrix::Span<lolita::matrix::Vector<Real, getSize<t_field, t_basis>()> const>
         getCoefficients()
         const
         {
             auto const & data = degree_of_freedom_->coefficients_.data() + index_;
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, getSize<t_field, t_basis>()> const>(data);
+            return lolita::matrix::Span<lolita::matrix::Vector<Real, getSize<t_field, t_basis>()> const>(data);
         }
 
         template<Field t_field, Basis t_basis>
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, getSize<t_field, t_basis>()>>
+        lolita::matrix::Span<lolita::matrix::Vector<Real, getSize<t_field, t_basis>()>>
         getCoefficients()
         {
             auto const & data = degree_of_freedom_->coefficients_.data() + index_;
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, getSize<t_field, t_basis>()>>(data);
+            return lolita::matrix::Span<lolita::matrix::Vector<Real, getSize<t_field, t_basis>()>>(data);
         }
 
         template<Field t_field, Basis t_basis>
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
+        lolita::matrix::Span<lolita::matrix::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
         getCoefficients(
-            lolita::integer row,
-            lolita::integer col
+            Integer row,
+            Integer col
         )
         {
             auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
             auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
             auto const & data = degree_of_freedom_->coefficients_.data() + index_ + (t_field_shape.cols() * row  + col) * t_basis_size;
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+            return lolita::matrix::Span<lolita::matrix::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
         }
 
         template<Field t_field, Basis t_basis>
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
+        lolita::matrix::Span<lolita::matrix::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
         getCoefficients(
-            lolita::integer row,
-            lolita::integer col
+            Integer row,
+            Integer col
         )
         const
         {
             auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
             auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
             auto const & data = degree_of_freedom_->coefficients_.data() + index_ + (t_field_shape.cols() * row  + col) * t_basis_size;
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+            return lolita::matrix::Span<lolita::matrix::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
         }
         
         std::shared_ptr<DegreeOfFreedom> const &
@@ -611,9 +486,66 @@ namespace lolita2::geometry
             return degree_of_freedom_;
         }
 
-        lolita::integer index_;
+        Integer index_;
 
         std::shared_ptr<DegreeOfFreedom> degree_of_freedom_;
+
+    };
+
+    struct Load
+    {
+
+        Load(
+            Loading const & loading,
+            Integer row,
+            Integer col
+        )
+        :
+        row_(row),
+        col_(col),
+        loading_(loading)
+        {}
+
+        Load(
+            Loading && loading,
+            Integer row,
+            Integer col
+        )
+        :
+        row_(row),
+        col_(col),
+        loading_(std::forward<Loading>(loading))
+        {}
+        
+        Real
+        getImposedValue(
+            Point const & point,
+            Real const & time
+        )
+        const
+        {
+            return loading_(point, time);
+        }
+
+        Integer
+        getRow()
+        const
+        {
+            return row_;
+        }
+
+        Integer
+        getCol()
+        const
+        {
+            return col_;
+        }
+
+        Loading loading_;
+
+        Integer row_;
+
+        Integer col_;
 
     };
 
@@ -673,12 +605,12 @@ namespace lolita2::geometry
         }
         
         template<BehaviorConcept auto t_behavior>
-        lolita::matrix::Span<lolita::matrix::Vector<lolita::real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
+        lolita::matrix::Span<lolita::matrix::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
         getGeneralizedStrain()
         const
         {
             auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(behavior_data_->s1.gradients.data());
+            return lolita::matrix::Span<lolita::matrix::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
         }
         
         template<auto t_finite_element_method>
@@ -688,7 +620,7 @@ namespace lolita2::geometry
         {
             auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size> const>(behavior_data_->s1.gradients.data() + offset);
+            return lolita::matrix::Span<lolita::matrix::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
         }
         
         template<auto t_finite_element_method>
@@ -697,7 +629,7 @@ namespace lolita2::geometry
         {
             auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-            return lolita::matrix::Span<lolita::matrix::Vector<lolita::real, size>>(behavior_data_->s1.gradients.data() + offset);
+            return lolita::matrix::Span<lolita::matrix::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
         }
         
         Point coordinates_;
@@ -759,7 +691,9 @@ namespace lolita2::geometry
 
         std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
 
-        std::vector<lolita::matrix::Matrix<lolita::real>> element_operators_;
+        std::vector<lolita::matrix::Matrix<Real>> element_operators_;
+
+        std::vector<std::shared_ptr<Load>> loads_;
 
         std::shared_ptr<std::basic_string<Character>> label_;
 
@@ -775,6 +709,60 @@ namespace lolita2::geometry
         const
         {
             return std::basic_string_view<Character>(* label_);
+        }
+
+        Boolean
+        hasLoad(
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto has_load = [&] (
+                std::shared_ptr<Load> const & load
+            )
+            {
+                return load->getRow() == row && load->getCol() == col;
+            };
+            return std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end();
+        }
+
+        Integer
+        getLoadIndex(
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto has_load = [&] (
+                std::shared_ptr<Load> const & load
+            )
+            {
+                return load->getRow() == row && load->getCol() == col;
+            };
+            if (std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end())
+            {
+                return std::distance(loads_.begin(), std::find_if(loads_.begin(), loads_.end(), has_load));
+            }
+            else
+            {
+                throw std::runtime_error("NO");
+            }
+        }
+        
+        void
+        addLoad(
+            std::shared_ptr<Load> const & load
+        )
+        {
+            if (!hasLoad(load->getRow(), load->getCol()))
+            {
+                loads_.push_back(load);
+            }
+            else
+            {
+                getLoad(load->getRow(), load->getCol()) = load;
+            }
         }
 
         Boolean
@@ -846,6 +834,25 @@ namespace lolita2::geometry
         )
         {
             return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
+        }
+
+        std::shared_ptr<Load> const &
+        getLoad(
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return loads_[getLoadIndex(row, col)];
+        }
+
+        std::shared_ptr<Load> &
+        getLoad(
+            Integer row,
+            Integer col
+        )
+        {
+            return loads_[getLoadIndex(row, col)];
         }
 
     };
@@ -921,26 +928,26 @@ namespace lolita2::geometry
             return hash.str();
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         static constexpr
-        lolita::integer
+        Integer
         getInnerNeighborNodeConnection(
-            lolita::integer i,
-            lolita::integer j
+            Integer i,
+            Integer j
         )
         requires(!t_element.isNode())
         {
             return std::get<t_j>(std::get<t_i>(ElementTraits<t_element, t_domain>::node_connectivity_))[i][j];
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_OuterNeighbors>> &
         getOuterNeighbors()
         {
             return std::get<t_j>(std::get<t_i>(outer_neighbors_));
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_OuterNeighbors>> const &
         getOuterNeighbors()
         const
@@ -948,7 +955,7 @@ namespace lolita2::geometry
             return std::get<t_j>(std::get<t_i>(outer_neighbors_));
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_InnerNeighbors>> &
         getInnerNeighbors()
         requires(!t_element.isNode())
@@ -956,7 +963,7 @@ namespace lolita2::geometry
             return std::get<t_j>(std::get<t_i>(inner_neighbors_));
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_InnerNeighbors>> const &
         getInnerNeighbors()
         const
@@ -965,10 +972,10 @@ namespace lolita2::geometry
             return std::get<t_j>(std::get<t_i>(inner_neighbors_));
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
-        lolita::integer
+        template<Integer t_i, Integer t_j>
+        Integer
         getInnerNeighborIndex(
-            lolita::integer i
+            Integer i
         )
         const
         requires(!t_element.isNode())
@@ -983,8 +990,8 @@ namespace lolita2::geometry
             return std::distance(items.begin(), std::find_if(items.begin(), items.end(), is_equal));
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
-        lolita::integer
+        template<Integer t_i, Integer t_j>
+        Integer
         getInnerNeighborIndex(
             std::shared_ptr<FiniteElementHolder<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
         )
@@ -1001,10 +1008,10 @@ namespace lolita2::geometry
             return getInnerNeighborIndex<t_i, t_j>(neighbor_index);
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
-        lolita::integer
+        template<Integer t_i, Integer t_j>
+        Integer
         getInnerNeighborOrientation(
-            lolita::integer i
+            Integer i
         )
         const
         requires(!t_element.isNode())
@@ -1012,8 +1019,8 @@ namespace lolita2::geometry
             return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
-        lolita::integer
+        template<Integer t_i, Integer t_j>
+        Integer
         getInnerNeighborOrientation(
             std::shared_ptr<FiniteElementHolder<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
         )
@@ -1038,13 +1045,13 @@ namespace lolita2::geometry
             return * this->coordinates_;
         }
         
-        lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_>
+        lolita::matrix::Matrix<Real, 3, t_element.num_nodes_>
         getCurrentCoordinates()
         const
         requires(!t_element.isNode())
         {
-            auto current_nodes_coordinates = lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_>();
-            auto count = lolita::integer(0);
+            auto current_nodes_coordinates = lolita::matrix::Matrix<Real, 3, t_element.num_nodes_>();
+            auto count = Integer(0);
             for (auto const & node : this->template getInnerNeighbors<t_element.dim_ - 1, 0>())
             {
                 current_nodes_coordinates.col(count) = node->getCurrentCoordinates();
@@ -1054,17 +1061,17 @@ namespace lolita2::geometry
         }
         
         static
-        lolita::matrix::Span<lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_, lolita::matrix::col_major> const>
+        lolita::matrix::Span<lolita::matrix::Matrix<Real, 3, t_element.num_nodes_, lolita::matrix::col_major> const>
         getReferenceCoordinates()
         {
-            using t_ReferenceCoordinates = lolita::matrix::Span<lolita::matrix::Matrix<lolita::real, 3, t_element.num_nodes_, lolita::matrix::col_major> const>;
+            using t_ReferenceCoordinates = lolita::matrix::Span<lolita::matrix::Matrix<Real, 3, t_element.num_nodes_, lolita::matrix::col_major> const>;
             return t_ReferenceCoordinates(ElementTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
         }
         
         static
-        lolita::real
+        Real
         getShapeMappingEvaluation(
-            lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const & nodal_field_values,
+            lolita::matrix::Vector<Real, t_element.num_nodes_> const & nodal_field_values,
             Point const & reference_point
         )
         {
@@ -1072,29 +1079,29 @@ namespace lolita2::geometry
         }
         
         static
-        lolita::real
+        Real
         getShapeMappingDerivative(
-            lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const & nodal_field_values,
+            lolita::matrix::Vector<Real, t_element.num_nodes_> const & nodal_field_values,
             Point const & reference_point,
-            lolita::integer derivative_direction
+            Integer derivative_direction
         )
         {
             return t_ElementTraits::getShapeMappingDerivative(nodal_field_values, reference_point, derivative_direction);
         }
         
-        lolita::real
+        Real
         getShapeMappingDifferential(
             Point const & point
         )
         const
         {
             auto const current_coordinates = this->getCurrentCoordinates();
-            auto ru = lolita::matrix::Matrix<lolita::real, 3, 3>();
-            auto du = lolita::real(0);
+            auto ru = lolita::matrix::Matrix<Real, 3, 3>();
+            auto du = Real(0);
             ru.setZero();
-            for (lolita::integer i = 0; i < t_domain.dim_; ++i)
+            for (auto i = 0; i < t_domain.dim_; ++i)
             {
-                for (lolita::integer j = 0; j < t_element.dim_; ++j)
+                for (auto j = 0; j < t_element.dim_; ++j)
                 {
                     ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
                 }
@@ -1113,7 +1120,7 @@ namespace lolita2::geometry
             }
             if constexpr (t_domain.frame_ == Domain::Frame::AxiSymmetric)
             {
-                lolita::real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+                Real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
                 if (r0 < 1.e-10)
                 {
                     r0 = 1.e-10;
@@ -1123,21 +1130,21 @@ namespace lolita2::geometry
             return du;
         }
         
-        lolita::real
+        Real
         getRiemannianDistance(
             Point const & first_point,
             Point const & second_point,
-            lolita::integer direction = -1
+            Integer direction = -1
         )
         const
         {
             if constexpr (t_ElementTraits::hasDim(0))
             {
                 auto const & current_coordinates = this->getCurrentCoordinates();
-                auto distance = lolita::real();
+                auto distance = Real();
                 auto mp0 = Point();
                 auto mp1 = Point();
-                for (lolita::integer i = 0; i < t_element.dim_; ++i)
+                for (auto i = 0; i < t_element.dim_; ++i)
                 {
                     mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
                     mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
@@ -1148,21 +1155,21 @@ namespace lolita2::geometry
             else
             {
                 using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
-                auto distance = lolita::real(0);
-                auto dt = lolita::real();
+                auto distance = Real(0);
+                auto dt = Real();
                 auto const current_nodes_coordinates = this->getCurrentCoordinates();
-                for (lolita::integer q = 0; q < SegmentQuadrature::dim_; ++q)
+                for (auto q = 0; q < SegmentQuadrature::dim_; ++q)
                 {
                     auto pq = SegmentQuadrature::reference_points_[q][0];
                     auto wq = SegmentQuadrature::reference_weights_[q];
-                    auto ru = lolita::matrix::Matrix<lolita::real, 3, 3>().setZero();
+                    auto ru = lolita::matrix::Matrix<Real, 3, 3>().setZero();
                     auto difference = second_point - first_point;
                     auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
-                    for (lolita::integer i = 0; i < t_domain.dim_; ++i)
+                    for (auto i = 0; i < t_domain.dim_; ++i)
                     {
-                        for (lolita::integer j = 0; j < t_element.dim_; ++j)
+                        for (auto j = 0; j < t_element.dim_; ++j)
                         {
-                            if (direction == -1 || i == static_cast<lolita::integer>(direction))
+                            if (direction == -1 || i == static_cast<Integer>(direction))
                             {
                                 auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
                                 auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
@@ -1198,13 +1205,13 @@ namespace lolita2::geometry
         {
             auto reference_coordinates = FiniteElementHolder::getReferenceCoordinates();
             auto current_diameters = Point().setZero();
-            for (lolita::integer i = 0; i < t_element.num_nodes_; ++i)
+            for (auto i = 0; i < t_element.num_nodes_; ++i)
             {
-                for (lolita::integer j = i + 1; j < t_element.num_nodes_; ++j)
+                for (auto j = i + 1; j < t_element.num_nodes_; ++j)
                 {
                     auto const & pt0 = reference_coordinates.col(i);
                     auto const & pt1 = reference_coordinates.col(j);
-                    for (lolita::integer k = 0; k < 3; ++k)
+                    for (auto k = 0; k < 3; ++k)
                     {
                         auto new_value = lolita::numerics::abs(getRiemannianDistance(pt0, pt1, k));
                         auto & current_value = current_diameters(k);
@@ -1228,7 +1235,7 @@ namespace lolita2::geometry
             for (auto i = 0; i < t_element.num_nodes_; ++i) {
                 barycenter += current_nodes_coordinates.col(i);
             }
-            barycenter /= lolita::real(t_element.num_nodes_);
+            barycenter /= Real(t_element.num_nodes_);
             return barycenter;
         }
         
@@ -1242,7 +1249,7 @@ namespace lolita2::geometry
             for (auto i = 0; i < t_element.num_nodes_; ++i) {
                 barycenter += reference_nodes_coordinates.col(i);
             }
-            barycenter /= lolita::real(t_element.num_nodes_);
+            barycenter /= Real(t_element.num_nodes_);
             return barycenter;
         }
         
@@ -1253,11 +1260,11 @@ namespace lolita2::geometry
             auto dts = Point();
             auto nds = FiniteElementHolder::getReferenceCoordinates();
             dts.setZero();
-            for (lolita::integer i = 0; i < t_element.num_nodes_; ++i)
+            for (auto i = 0; i < t_element.num_nodes_; ++i)
             {
-                for (lolita::integer j = i + 1; j < t_element.num_nodes_; ++j)
+                for (auto j = i + 1; j < t_element.num_nodes_; ++j)
                 {
-                    for (lolita::integer k = 0; k < 3; ++k)
+                    for (auto k = 0; k < 3; ++k)
                     {
                         auto new_value = lolita::numerics::abs(nds(k, i) - nds(k, j));
                         auto & current_value = dts(k);
@@ -1279,11 +1286,11 @@ namespace lolita2::geometry
         requires(t_element.isSub(t_domain, 1))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto ru = lolita::matrix::Matrix<lolita::real, 3, t_element.dim_>();
+            auto ru = lolita::matrix::Matrix<Real, 3, t_element.dim_>();
             ru.setZero();
-            for (lolita::integer i = 0; i < 3; ++i)
+            for (auto i = 0; i < 3; ++i)
             {
-                for (lolita::integer j = 0; j < t_element.dim_; ++j)
+                for (auto j = 0; j < t_element.dim_; ++j)
                 {
                     ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
                 }
@@ -1304,14 +1311,14 @@ namespace lolita2::geometry
         Point
         getTangentVector(
             Point const & point,
-            lolita::integer direction
+            Integer direction
         )
         const
         requires(t_element.isCurve())
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
             auto tangent_vector = Point();
-            for (lolita::integer i = 0; i < 3; ++i)
+            for (auto i = 0; i < 3; ++i)
             {
                 tangent_vector(i) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, direction);
             }
@@ -1320,9 +1327,9 @@ namespace lolita2::geometry
         
         template<Quadrature t_quadrature>
         static
-        lolita::real
+        Real
         getReferenceQuadratureWeight(
-            lolita::integer index
+            Integer index
         )
         {
             return ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_weights_[index];
@@ -1332,16 +1339,16 @@ namespace lolita2::geometry
         static
         lolita::matrix::Span<Point const>
         getReferenceQuadraturePoint(
-            lolita::integer index
+            Integer index
         )
         {
             return lolita::matrix::Span<Point const>(ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_points_[index].begin());
         }
         
         template<Quadrature t_quadrature>
-        lolita::real
+        Real
         getCurrentQuadratureWeight(
-            lolita::integer index
+            Integer index
         )
         const
         {
@@ -1352,24 +1359,24 @@ namespace lolita2::geometry
         template<Quadrature t_quadrature>
         Point
         getCurrentQuadraturePoint(
-            lolita::integer index
+            Integer index
         )
         const
         {
             auto p = Point();
             auto const nds = this->getCurrentCoordinates();
-            for (lolita::integer j = 0; j < 3; ++j)
+            for (auto j = 0; j < 3; ++j)
             {
                 p(j) = FiniteElementHolder::getShapeMappingEvaluation(nds.row(j), getReferenceQuadraturePoint<t_quadrature>(index));
             }
             return p;
         }
         
-        template<Quadrature t_quadrature, lolita::integer _i, lolita::integer _j>
+        template<Quadrature t_quadrature, Integer _i, Integer _j>
         static
-        lolita::real
+        Real
         getInnerNeighborReferenceQuadratureWeight(
-            lolita::integer index
+            Integer index
         )
         requires(!t_element.isNode())
         {
@@ -1378,12 +1385,12 @@ namespace lolita2::geometry
             return ComponentGeometry::template getReferenceQuadratureWeight<t_quadrature>(index);
         }
         
-        template<Quadrature t_quadrature, lolita::integer _i, lolita::integer _j>
+        template<Quadrature t_quadrature, Integer _i, Integer _j>
         static
         Point
         getInnerNeighborReferenceQuadraturePoint(
-            lolita::integer component_index,
-            lolita::integer index
+            Integer component_index,
+            Integer index
         )
         requires(!t_element.isNode())
         {
@@ -1391,10 +1398,10 @@ namespace lolita2::geometry
             auto p = Point();
             using ComponentGeometry = FiniteElementHolder<_component, t_domain>;
             auto const & elt_reference_nodes = ElementTraits<t_element, t_domain>::reference_nodes_;
-            for (lolita::integer i = 0; i < 3; ++i)
+            for (auto i = 0; i < 3; ++i)
             {
-                auto cpt_coordinates = lolita::matrix::Vector<lolita::real, _component.num_nodes_>();
-                for (lolita::integer j = 0; j < _component.num_nodes_; ++j)
+                auto cpt_coordinates = lolita::matrix::Vector<Real, _component.num_nodes_>();
+                for (auto j = 0; j < _component.num_nodes_; ++j)
                 {
                     auto const node_tag = getInnerNeighborNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);
                     cpt_coordinates(j) = elt_reference_nodes[node_tag][i];
@@ -1405,11 +1412,11 @@ namespace lolita2::geometry
             return p;
         }
         
-        template<Quadrature t_quadrature, lolita::integer t_i, lolita::integer t_j>
-        lolita::real
+        template<Quadrature t_quadrature, Integer t_i, Integer t_j>
+        Real
         getInnerNeighborCurrentQuadratureWeight(
-            lolita::integer component_index,
-            lolita::integer index
+            Integer component_index,
+            Integer index
         )
         const
         requires(!t_element.isNode())
@@ -1418,11 +1425,11 @@ namespace lolita2::geometry
             return cmp->template getCurrentQuadratureWeight<t_quadrature>(index);
         }
         
-        template<Quadrature t_quadrature, lolita::integer t_i, lolita::integer t_j>
+        template<Quadrature t_quadrature, Integer t_i, Integer t_j>
         Point
         getInnerNeighborCurrentQuadraturePoint(
-            lolita::integer component_index,
-            lolita::integer index
+            Integer component_index,
+            Integer index
         )
         const
         requires(!t_element.isNode())
@@ -1430,7 +1437,7 @@ namespace lolita2::geometry
             auto p = Point();
             auto const cpt_ref_pnt = getInnerNeighborReferenceQuadraturePoint<t_quadrature, t_i, t_j>(component_index, index);
             auto const nds = this->getCurrentCoordinates();
-            for (lolita::integer j = 0; j < 3; ++j)
+            for (auto j = 0; j < 3; ++j)
             {
                 p(j) = FiniteElementHolder::getShapeMappingEvaluation(nds.row(j), cpt_ref_pnt);
             }
@@ -1604,7 +1611,7 @@ namespace lolita2::geometry
         RealVector<t_Basis<t_basis>::getSize()>
         getBasisDerivative(
             Point const & point,
-            lolita::integer derivative_direction
+            Integer derivative_direction
         )
         const
         {

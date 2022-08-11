@@ -78,6 +78,36 @@ namespace lolita2::geometry
             activate_elements(activate_elements);
         }
 
+        template<ElementType t_ii>
+        void
+        addLoad(
+            std::basic_string_view<lolita::character> finite_element_label,
+            std::basic_string_view<lolita::character> domain,
+            std::shared_ptr<Load> & load
+        )
+        {
+            auto activate_elements = [&] <lolita::integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->getFiniteElement(finite_element_label)->addLoad(load);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
         template<ElementType t_ii, Quadrature t_quadrature>
         void
         addBehavior(
