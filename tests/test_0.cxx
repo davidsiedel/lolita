@@ -11,19 +11,19 @@ TEST(t0, t0)
     auto constexpr cells = lolita2::geometry::ElementType::cells(domain);
     auto constexpr faces = lolita2::geometry::ElementType::faces(domain);
     // fields
-    auto constexpr displacement_field = lolita2::Field::vector("Displacement");
-    auto constexpr damage_field = lolita2::Field::scalar("Damage");
+    auto constexpr displacement_field = lolita2::Field::vector();
+    auto constexpr damage_field = lolita2::Field::scalar();
     // generalized strains
-    // auto constexpr displacement_generalized_strain = lolita2::GeneralizedStrain(displacement_field, lolita2::Mapping::smallStrain());
-    // auto constexpr damage_generalized_strain = lolita2::GeneralizedStrain(damage_field, lolita2::Mapping::gradient(), lolita2::Mapping::identity());
+    auto constexpr displacement_generalized_strain = lolita2::GeneralizedStrain(displacement_field, lolita2::Mapping::smallStrain());
+    auto constexpr damage_generalized_strain = lolita2::GeneralizedStrain(damage_field, lolita2::Mapping::gradient(), lolita2::Mapping::identity());
     // behaviors
-    // auto constexpr displacement_behavior = lolita2::Behavior(displacement_generalized_strain);
-    // auto constexpr damage_behavior = lolita2::Behavior(damage_generalized_strain);
+    auto constexpr displacement_behavior = lolita2::Behavior(displacement_generalized_strain);
+    auto constexpr damage_behavior = lolita2::Behavior(damage_generalized_strain);
     // discretization
     auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
     // finite elements
-    // auto constexpr displacement_element =  lolita2::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
-    // auto constexpr damage_element =  lolita2::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
+    auto constexpr displacement_element =  lolita2::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
+    auto constexpr damage_element =  lolita2::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
     // mesh    
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
     // dofs

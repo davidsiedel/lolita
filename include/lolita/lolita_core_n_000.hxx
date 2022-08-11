@@ -221,7 +221,7 @@ namespace lolita2::geometry
         lolita::matrix::Shape
         shape()
         {
-            return FieldTraits<Field(t_field.label_, t_field.dim_ + 1)>::template shape<t_domain>();
+            return FieldTraits<Field(t_field.dim_ + 1)>::template shape<t_domain>();
         }
 
         template<Domain t_domain, Field t_field>

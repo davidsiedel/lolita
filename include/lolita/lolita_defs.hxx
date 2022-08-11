@@ -385,39 +385,23 @@ namespace lolita2
 
         static constexpr
         Field
-        scalar(
-            std::basic_string_view<Character> label
-        )
+        scalar()
         {
-            return Field(label, 0);
+            return Field(0);
         }
 
         static constexpr
         Field
-        vector(
-            std::basic_string_view<Character> label
-        )
+        vector()
         {
-            return Field(label, 1);
+            return Field(1);
         }
         
         constexpr
         Field(
-            lolita::utility::Label const & label,
             lolita::integer dim
         )
         :
-        label_(label),
-        dim_(dim)
-        {}
-        
-        constexpr
-        Field(
-            std::basic_string_view<Character> label,
-            lolita::integer dim
-        )
-        :
-        label_(label),
         dim_(dim)
         {}
 
@@ -445,43 +429,41 @@ namespace lolita2
             return dim_ == dim;
         }
 
-        lolita::utility::Label label_;
-
         lolita::integer dim_;
 
     };
 
-    struct Unknown
-    {
+    // struct Unknown
+    // {
 
-        enum Type
-        {
+    //     enum Type
+    //     {
 
-            Cell,
-            Face,
-            Edge,
-            Node,
+    //         Cell,
+    //         Face,
+    //         Edge,
+    //         Node,
 
-        };
+    //     };
         
-        constexpr
-        Unknown(
-            Field field,
-            Basis basis
-        )
-        :
-        is_active_(true),
-        field_(field),
-        basis_(basis)
-        {}
+    //     constexpr
+    //     Unknown(
+    //         Field field,
+    //         Basis basis
+    //     )
+    //     :
+    //     is_active_(true),
+    //     field_(field),
+    //     basis_(basis)
+    //     {}
 
-        lolita::boolean is_active_;
+    //     lolita::boolean is_active_;
 
-        Field field_;
+    //     Field field_;
 
-        Basis basis_;
+    //     Basis basis_;
 
-    };
+    // };
 
     struct HybridDiscontinuousGalerkin
     {
@@ -794,14 +776,6 @@ namespace lolita2
             return quadrature_;
         }
 
-        // Unknown cell_unknown_;
-
-        // Unknown face_unknown_;
-
-        // Unknown edge_unknown_;
-
-        // Unknown node_unknown_;
-
         t_GeneralizedStrain generalized_strain_;
 
         t_Behavior behavior_;
@@ -825,101 +799,6 @@ namespace lolita2
 
     template<typename t_T>
     concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
-
-    // using ParameterFunction = std::function<lolita::real(Point const &, lolita::real const &)>;
-
-    // struct MgisParameter
-    // {
-
-    //     MgisParameter(
-    //         std::basic_string_view<Character> label,
-    //         ParameterFunction && function
-    //     )
-    //     :
-    //     label_(label),
-    //     function_(std::forward<ParameterFunction>(function))
-    //     {}
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator==(
-    //         MgisParameter const & other
-    //     )
-    //     const
-    //     {
-    //         return other.label_ == this->label_;
-    //     }
-
-    //     constexpr
-    //     lolita::boolean
-    //     operator!=(
-    //         MgisParameter const & other
-    //     )
-    //     const
-    //     {
-    //         return !(* this == other);
-    //     }
-
-    //     std::basic_string_view<Character> label_;
-
-    //     ParameterFunction function_;
-
-    // };
-
-    // struct MgisBehaviour
-    // {
-
-    //     MgisBehaviour(
-    //         std::basic_string<Character> const & path,
-    //         std::basic_string<Character> const & name,
-    //         mgis::behaviour::Hypothesis hypothesis,
-    //         std::vector<MgisParameter> && parameters
-    //     )
-    //     :
-    //     behaviour_(mgis::behaviour::load(path, name, hypothesis)),
-    //     parameters_(std::forward<std::vector<MgisParameter>>(parameters))
-    //     {}
-
-    //     MgisBehaviour(
-    //         std::basic_string<Character> const & path,
-    //         std::basic_string<Character> const & name,
-    //         mgis::behaviour::Hypothesis hypothesis,
-    //         std::vector<MgisParameter> const & parameters
-    //     )
-    //     :
-    //     behaviour_(mgis::behaviour::load(path, name, hypothesis)),
-    //     parameters_(parameters)
-    //     {}
-
-    //     MgisBehaviour(
-    //             std::basic_string<Character> const & path,
-    //             std::basic_string<Character> const & name,
-    //             mgis::behaviour::Hypothesis hypothesis,
-    //             mgis::behaviour::FiniteStrainBehaviourOptions finite_strain_options,
-    //             std::vector<MgisParameter> && parameters
-    //     )
-    //     :
-    //     behaviour_(mgis::behaviour::load(finite_strain_options, path, name, hypothesis)),
-    //     parameters_(std::forward<std::vector<MgisParameter>>(parameters))
-    //     {}
-
-    //     MgisBehaviour(
-    //             std::basic_string<Character> const & path,
-    //             std::basic_string<Character> const & name,
-    //             mgis::behaviour::Hypothesis hypothesis,
-    //             mgis::behaviour::FiniteStrainBehaviourOptions finite_strain_options,
-    //             std::vector<MgisParameter> const & parameters
-    //     )
-    //     :
-    //     behaviour_(mgis::behaviour::load(finite_strain_options, path, name, hypothesis)),
-    //     parameters_(parameters)
-    //     {}
-
-    //     mgis::behaviour::Behaviour behaviour_;
-
-    //     std::vector<MgisParameter> parameters_;
-
-    // };
 
 }
 

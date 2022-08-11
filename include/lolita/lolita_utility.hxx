@@ -936,14 +936,14 @@ namespace lolita::utility
     template<typename _T, typename _U>
     using tuple_merge_t = decltype(lolita::utility::tupleMerge(std::declval<_T>(), std::declval<_U>()));
 
-    static void inline
-    removeCharacter(
-            std::basic_string<lolita::character> & line,
-            lolita::character character
-    )
-    {
-        line.erase(std::remove(line.begin(), line.end(), character), line.end());
-    }
+    // static void inline
+    // removeCharacter(
+    //     std::basic_string<lolita::character> & line,
+    //     lolita::character character
+    // )
+    // {
+    //     line.erase(std::remove(line.begin(), line.end(), character), line.end());
+    // }
 
     struct File
     {
@@ -952,7 +952,7 @@ namespace lolita::utility
 
         explicit
         File(
-                std::basic_string_view<lolita::character> file_path
+            std::basic_string_view<lolita::character> file_path
         )
         :
         file_path_(file_path)
@@ -962,15 +962,13 @@ namespace lolita::utility
 
         lolita::boolean
         operator==(
-                File const &
-                other
+            File const & other
         )
         const = default;
 
         lolita::boolean
         operator!=(
-                File const &
-                other
+            File const & other
         )
         const = default;
 
@@ -981,10 +979,12 @@ namespace lolita::utility
         readLines()
         {
             std::basic_ifstream<lolita::character> file(file_path_);
-            if (!file) {
+            if (!file)
+            {
                 throw std::runtime_error("Could not open file");
             }
-            for (std::basic_string<lolita::character> line; std::getline(file, line); ) {
+            for (std::basic_string<lolita::character> line; std::getline(file, line); )
+            {
                 lines_.push_back(line);
             }
         }

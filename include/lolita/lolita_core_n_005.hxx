@@ -155,7 +155,6 @@ namespace lolita2::geometry
                 {
                     if (element.second->isIn(domain))
                     {
-                        // element.second->getFiniteElement(label)->template makeQuadrature<t_field, t_quadrature, t_discretization>();
                         element.second->template makeQuadrature<t_field, t_quadrature, t_discretization>(finite_element_label);
                     }
                 }
@@ -360,8 +359,7 @@ namespace lolita2::geometry
                     component_hash = MeshElement<t_component, t_domain>::getHash(cpt.node_tags_);
                     if (!components.contains(component_hash))
                     {
-                        using t_Component = FiniteElementHolder<t_component, t_domain>;
-                        auto ptr_component = std::make_shared<t_Component>(t_Component());
+                        auto ptr_component = std::make_shared<FiniteElementHolder<t_component, t_domain>>();
                         cpt.template setElement<0, 0>(element_set, ptr_component);
                     }
                 }
@@ -398,22 +396,13 @@ namespace lolita2::geometry
                 }
                 ptr_element->tag_ = element_set.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>().size();
                 ptr_element->domains_.assign(domains.begin(), domains.end());
-                // auto labelss = std::array<std::shared_ptr<std::basic_string<Character>>, sizeof...(t_Labels)>{std::make_shared<std::basic_string<Character>>(labels)...};
-                // for (auto i = 0; i < sizeof...(t_Labels); i++)
-                // {
-                //     // auto fem = std::make_shared<FiniteElement<t_element, t_domain>>(labelss[i]);
-                //     // fem->label_ = labelss[i];
-                //     ptr_element->finite_elements_.push_back(std::make_shared<FiniteElement<t_element, t_domain>>(labelss[i]));
-                // }
                 element_set.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>()[getHash(node_tags_)] = ptr_element;
             }
         }
-
-        // template<typename... t_Labels>
+        
         void
         makeElement(
             FiniteElementSet<t_domain> & element_set
-            // t_Labels... labels
         )
         const
         {
@@ -495,13 +484,11 @@ namespace lolita2::geometry
         coordinates_(std::make_shared<Point>(Point::Zero())),
         domains_()
         {}
-
-        // template<typename... t_Labels>
+        
         void
         setElement(
             FiniteElementSet<t_domain> & element_set,
             std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & ptr_element
-            // t_Labels... labels
         )
         const
         {
@@ -509,21 +496,12 @@ namespace lolita2::geometry
             ptr_element->tag_ = tag_;
             ptr_element->domains_ = domains_;
             ptr_element->coordinates_ = coordinates_;
-            // auto labelss = std::array<std::shared_ptr<std::basic_string<Character>>, sizeof...(t_Labels)>{std::make_shared<std::basic_string<Character>>(labels)...};
-            // for (auto i = 0; i < sizeof...(t_Labels); i++)
-            // {
-            //     // auto fem = std::make_shared<FiniteElement<t_element, t_domain>>(labelss[i]);
-            //     // fem->label_ = labelss[i];
-            //     ptr_element->finite_elements_.push_back(std::make_shared<FiniteElement<t_element, t_domain>>(labelss[i]));
-            // }
             element_set.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>()[getHash(tag_)] = ptr_element;
         }
-
-        // template<typename... t_Labels>
+        
         void
         makeElement(
             FiniteElementSet<t_domain> & element_set
-            // t_Labels... labels
         )
         const
         {
@@ -534,7 +512,7 @@ namespace lolita2::geometry
         static inline
         void
         initialize(
-                std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & ptr_element
+            std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & ptr_element
         )
         {}
         
@@ -553,7 +531,6 @@ namespace lolita2::geometry
         MeshElementSet()
         {}
         
-        // template<typename... t_Labels>
         std::unique_ptr<FiniteElementSet<t_domain>>
         makeFiniteElementSet()
         const
@@ -728,7 +705,7 @@ namespace lolita2::geometry
                 auto name = std::basic_string<lolita::character>();
                 auto physical_entity_tag = lolita::integer();
                 line_stream >> dim >> physical_entity_tag >> name;
-                lolita::utility::removeCharacter(name, '"');
+                name.erase(std::remove(name.begin(), name.end(), '"'), name.end());
                 auto hash = PhysicalEntity::getHash(physical_entity_tag);
                 physical_entities_[hash] = std::make_shared<PhysicalEntity>(PhysicalEntity(name, dim));
                 offset += 1;
