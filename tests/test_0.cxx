@@ -30,7 +30,27 @@ TEST(t0, t0)
     auto degree_of_freedom = std::make_shared<lolita2::geometry::DegreeOfFreedom>("FaceDisplacement");
     auto load_f = std::make_shared<lolita2::geometry::Load>([](lolita2::Point const &p, lolita::real const &t) { return 1.0; }, 0, 0);
     // mesh build
-    auto elements = lolita2::geometry::MeshFileParser(file_path).template makeFiniteElementSet<domain>("Displacement", "Damage");
+    auto elements = lolita2::geometry::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
+    elements->addElement<cells>("Displacement", "SQUARE");
+    elements->addElement<faces>("Displacement", "SQUARE");
+    elements->addElement<cells>("Damage", "SQUARE");
+    elements->addElement<faces>("Damage", "SQUARE");
+    // dofs
+    elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE", degree_of_freedom);
+    // bhv
+    auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/behaviour/src/libBehaviour.so";
+    auto lib_name = "Voce";
+    auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
+        mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
+        mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
+    };
+    auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
+
+    auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(opts, lib_path, lib_name, hyp));
+    elements->addBehavior<cells, quadrature>("SQUARE", bhvv);
+    elements->addBehavior<cells>("Displacement", "SQUARE", lib_name);
+    // elements->makeQuadrature<cells, displacement_field, quadrature, hdg>("SQUARE", "Displacement");
+    //
     // problem build
     // elements->activate<cells>("Displacement", "SQUARE");
     // elements->activate<faces>("Displacement", "SQUARE");
@@ -39,13 +59,11 @@ TEST(t0, t0)
     // elements->activate<displacement_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
     // elements->activate<damage_element, lolita2::geometry::ElementType::cells(domain)>("SQUARE");
     // elements->activate<damage_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
-    elements->setDegreeOfFreedom<faces, displacement_field, face_basis>("SQUARE", degree_of_freedom, "Displacement");
     // elements->setLoad<displacement_element, lolita2::geometry::ElementType::cells(domain)>(
     //     "SQUARE",
     //     0, 0, [](lolita2::Point const &p, lolita::real const &t) { return 1.0; }
     // );
     // // show mesh
-    std::cout << * elements << std::endl;
     // std::cout << degree_of_freedom->coefficients_.size() << std::endl;
     // degree_of_freedom->coefficients_.setZero();
     // //
@@ -56,18 +74,9 @@ TEST(t0, t0)
     //     <<
     //     element.second->getFiniteElement<0>()->getDegreeOfFreedom("FaceDisplacement")->getCoefficients<displacement_field, face_basis>() << std::endl;
     // }
+    //
+    std::cout << * elements << std::endl;
 
-    auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/behaviour/src/libBehaviour.so";
-    auto lib_name = "Voce";
-    auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
-        mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
-        mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
-    };
-    auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
-
-    auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(opts, lib_path, lib_name, hyp));
-    elements->setBehavior<cells, quadrature>("SQUARE", bhvv, "Displacement");
-    elements->makeQuadrature<cells, displacement_field, quadrature, hdg>("SQUARE", "Displacement");
     
     
 }
