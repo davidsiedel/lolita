@@ -139,23 +139,23 @@ namespace lolita2::geometry
     struct FiniteElementBasisTraits<t_basis>
     {
 
-        template<lolita::integer t_dim>
-        static constexpr
-        lolita::integer
-        size()
-        {
-            return lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
-        }
+        // template<lolita::integer t_dim>
+        // static constexpr
+        // lolita::integer
+        // size()
+        // {
+        //     return lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
+        // }
 
-        template<Element t_element>
-        static constexpr
-        lolita::integer
-        size()
-        {
-            return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
-        }
+        // template<Element t_element>
+        // static constexpr
+        // lolita::integer
+        // size()
+        // {
+        //     return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
+        // }
 
-        template<lolita::integer t_dim>
+        template<Integer t_dim>
         static constexpr
         lolita::integer
         getSize()
@@ -176,7 +176,7 @@ namespace lolita2::geometry
         {
 
             static constexpr
-            lolita::integer
+            Integer
             getSize()
             {
                 return FiniteElementBasisTraits::template getSize<t_element>();
@@ -185,7 +185,7 @@ namespace lolita2::geometry
         private:
         
             static constexpr
-            std::array<std::array<lolita::integer, 3>, getSize()>
+            std::array<std::array<Integer, 3>, getSize()>
             getExponents()
             {
                 auto exponents = std::array<std::array<lolita::integer, 3>, getSize()>();
@@ -364,7 +364,7 @@ namespace lolita2::geometry
         lolita::integer
         getNumCellUnknowns()
         {
-            auto constexpr field_size = FieldTraits<t_field>::template size<t_domain>();
+            auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
             auto constexpr basis_size = FiniteElementBasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
             return field_size * basis_size;
         }
@@ -374,7 +374,7 @@ namespace lolita2::geometry
         lolita::integer
         getNumFaceUnknowns()
         {
-            auto constexpr field_size = FieldTraits<t_field>::template size<t_domain>();
+            auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
             auto constexpr basis_size = FiniteElementBasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
             return field_size * basis_size;
         }
@@ -413,7 +413,7 @@ namespace lolita2::geometry
             lolita::integer
             getMappingSize()
             {
-                return MappingTraits<t_mapping>::template size<t_domain, t_field>();
+                return MappingTraits<t_mapping>::template getSize<t_domain, t_field>();
             }
 
         public:
@@ -452,7 +452,7 @@ namespace lolita2::geometry
             const
             {
                 auto constexpr t_quadrature = Quadrature::gauss(2 * getGradBasis().getOrder());
-                auto constexpr t_field_size = FieldTraits<t_field>::template size<t_domain>();
+                auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
                 auto rhs = RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
@@ -555,8 +555,8 @@ namespace lolita2::geometry
         lolita::integer
         getSize()
         {
-            auto constexpr t_field_size = FieldTraits<t_field>::template size<t_domain>();
-            auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template size<t_element>();
+            auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
+            auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
             return t_field_size * t_basis_size;
         }
 
@@ -1612,7 +1612,7 @@ namespace lolita2::geometry
         }
 
         template<Field t_field, Mapping t_mapping, auto t_discretization>
-        RealMatrix<MappingTraits<t_mapping>::template size<t_domain, t_field>(), t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
+        RealMatrix<MappingTraits<t_mapping>::template getSize<t_domain, t_field>(), t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
         getMapping(
             Point const & point
         )

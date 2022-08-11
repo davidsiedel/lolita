@@ -16,7 +16,7 @@ namespace lolita2::geometry
         template<Domain t_domain>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(0))
         {
             return {
@@ -28,7 +28,7 @@ namespace lolita2::geometry
         template<Domain t_domain>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(1))
         {
             return {
@@ -40,7 +40,7 @@ namespace lolita2::geometry
         template<Domain t_domain>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(2))
         {
             return {
@@ -52,7 +52,7 @@ namespace lolita2::geometry
         template<Domain t_domain>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(3))
         {
             return {
@@ -64,7 +64,7 @@ namespace lolita2::geometry
         template<Domain t_domain>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(4))
         {
             return {
@@ -76,9 +76,9 @@ namespace lolita2::geometry
         template<Domain t_domain>
         static constexpr
         lolita::integer
-        size()
+        getSize()
         {
-            return shape<t_domain>().size_;
+            return getShape<t_domain>().size_;
         }
 
     };
@@ -153,22 +153,22 @@ namespace lolita2::geometry
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         {
-            return FieldTraits<t_field>::template shape<t_domain>();
+            return FieldTraits<t_field>::template getShape<t_domain>();
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::integer
-        size()
+        getSize()
         {
-            return shape<t_domain, t_field>().size_;
+            return getShape<t_domain, t_field>().size_;
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(0))
         {
@@ -179,7 +179,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
@@ -191,7 +191,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
@@ -219,22 +219,22 @@ namespace lolita2::geometry
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         {
-            return FieldTraits<Field(t_field.dim_ + 1)>::template shape<t_domain>();
+            return FieldTraits<Field(t_field.dim_ + 1)>::template getShape<t_domain>();
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::integer
-        size()
+        getSize()
         {
-            return shape<t_domain, t_field>().size_;
+            return getShape<t_domain, t_field>().size_;
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(0) && t_domain.hasDim(1))
         {
@@ -245,7 +245,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(0) && t_domain.hasDim(2))
         {
@@ -257,7 +257,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(0) && t_domain.hasDim(3))
         {
@@ -270,7 +270,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
@@ -284,7 +284,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
@@ -318,7 +318,7 @@ namespace lolita2::geometry
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
             return {1, 4};
@@ -327,7 +327,7 @@ namespace lolita2::geometry
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
             return {1, 6};
@@ -336,14 +336,14 @@ namespace lolita2::geometry
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::integer
-        size()
+        getSize()
         {
-            return shape<t_domain, t_field>().size_;
+            return getShape<t_domain, t_field>().size_;
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
@@ -357,7 +357,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
@@ -388,7 +388,7 @@ namespace lolita2::geometry
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
             return {1, 5};
@@ -397,7 +397,7 @@ namespace lolita2::geometry
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::matrix::Shape
-        shape()
+        getShape()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
             return {1, 9};
@@ -406,14 +406,14 @@ namespace lolita2::geometry
         template<Domain t_domain, Field t_field>
         static constexpr
         lolita::integer
-        size()
+        getSize()
         {
-            return shape<t_domain, t_field>().size_;
+            return getShape<t_domain, t_field>().size_;
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
@@ -428,7 +428,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, size<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
@@ -465,7 +465,7 @@ namespace lolita2::geometry
         template<Domain t_domain>
         static constexpr
         lolita::integer
-        size()
+        getSize()
         {
             auto constexpr t_field = t_generalized_strain.getField();
             auto size = lolita::integer(0);
@@ -475,7 +475,7 @@ namespace lolita2::geometry
             constexpr mutable
             {
                 auto constexpr t_mapping = t_generalized_strain.template getMapping<t_i>();
-                size += MappingTraits<t_mapping>::template size<t_domain, t_field>();
+                size += MappingTraits<t_mapping>::template getSize<t_domain, t_field>();
                 if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
                 {
                     self.template operator ()<t_i + 1>(self);
@@ -502,7 +502,7 @@ namespace lolita2::geometry
             )
             constexpr mutable
             {
-                p += GeneralizedStrainTraits<t_behavior.template getGeneralizedStrain<t_i>()>::template size<t_domain>();
+                p += GeneralizedStrainTraits<t_behavior.template getGeneralizedStrain<t_i>()>::template getSize<t_domain>();
                 if constexpr (t_i < t_behavior.getNumGeneralizedStrains() - 1)
                 {
                     self.template operator ()<t_i + 1>(self);
@@ -523,7 +523,7 @@ namespace lolita2::geometry
         lolita::integer
         getGeneralizedStrainSize()
         {
-            return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template size<t_domain>();
+            return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template getSize<t_domain>();
         }
 
         template<Domain t_domain>
@@ -549,7 +549,7 @@ namespace lolita2::geometry
                 }
                 if (!is_set)
                 {
-                    offset += GeneralizedStrainTraits<t_generalized_strain>::template size<t_domain>();
+                    offset += GeneralizedStrainTraits<t_generalized_strain>::template getSize<t_domain>();
                 }
                 if constexpr (t_i < t_finite_element_method.getBehavior().getNumGeneralizedStrains() - 1)
                 {
@@ -565,7 +565,7 @@ namespace lolita2::geometry
         lolita::integer
         getMappingSize()
         {
-            return MappingTraits<t_mapping>::template size<t_domain, t_finite_element_method.getField()>();
+            return MappingTraits<t_mapping>::template getSize<t_domain, t_finite_element_method.getField()>();
         }
 
     };
