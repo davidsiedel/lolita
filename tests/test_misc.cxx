@@ -40,7 +40,6 @@ TEST(tm, tm)
     // std::cout << lolita2::geometry::FiniteElementHolder<t_element, domain, displacement_element, damage_element>::template getArgIndex<displacement_element>();
     // std::cout << " , ";
     // std::cout << lolita2::geometry::FiniteElementHolder<t_element, domain, displacement_element, damage_element>::template getArgIndex<damage_element>();
-=======
     // // std::cout << "ici : " << lolita::core::FiniteElementMethodTraits<damage_element>::template getNumElementUnknowns<t_element, domain>() << std::endl;
     // // std::cout << "ici : " << lolita::core::FiniteElementMethodTraits<damage_element>::template getNumCellUnknowns<t_element, domain>() << std::endl;
     // std::cout << "ici fld size : " << lolita::core::FieldTraits<displacement_field>::template size<domain>() << std::endl;

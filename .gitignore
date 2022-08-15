@@ -4,6 +4,11 @@
 # Compiled Object files
 *.slo
 *.lo
+// #include "lolita_core/lolita_core_n_0000.hxx"
+// #include "lolita_core/lolita_core_n_1000.hxx"
+// #include "lolita_core/lolita_core_n_2000.hxx"
+// #include "lolita_core/lolita_core_n_3000.hxx"
+// #include "lolita_core/lolita_core_n_4000.hxx"
 *.o
 *.obj
 
