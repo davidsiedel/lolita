@@ -6,7 +6,7 @@
 #include <ranges>
 #include "gtest/gtest.h"
 
-//#include "lolita/lolita.hxx"
+//#include "lolita/lolita_utility.hxx"
 //#include "lolita/lolita_utility.hxx"
 //#include "lolita/lolita_algebra.hxx"
 //#include "lolita/lolita_user.hxx"
@@ -28,19 +28,19 @@ struct Hello
 
 TEST(test_lolita_nnn, test_lolita_nnn) {
 
-    // auto constexpr d_domain = lolita2::Domain(2, lolita2::Domain::Frame::Cartesian);
-    // auto constexpr cells_unknowns = lolita2::Unknown("Cell Field");
-    // auto constexpr faces_unknowns = lolita2::Unknown("Face Field");
-    // auto constexpr cell_basis = lolita2::FieldG(1, 2, lolita2::FieldG::Basis::Monomial, lolita2::FieldG::Frame::Cell);
-    // auto constexpr face_basis = lolita2::FieldG(1, 1, lolita2::FieldG::Basis::Monomial, lolita2::FieldG::Frame::Face);
-    // auto constexpr grad_basis = lolita2::FieldG(2, 1, lolita2::FieldG::Basis::Monomial, lolita2::FieldG::Frame::Cell);
-    // auto constexpr ghost = lolita2::Field<>("Cell Field", cell_basis);
-    // auto constexpr cell_field = lolita2::Field<cells_unknowns>("Cell Field", cell_basis);
-    // auto constexpr face_field = lolita2::Field<faces_unknowns>("Face Field", face_basis);
-    // auto constexpr grad_field = lolita2::Field<cell_field, face_field>("Gradient", grad_basis);
-    // auto constexpr stab_field = lolita2::Field<grad_field>("Stabilization", face_basis);
+    // auto constexpr d_domain = lolita::Domain(2, lolita::Domain::Frame::Cartesian);
+    // auto constexpr cells_unknowns = lolita::Unknown("Cell Field");
+    // auto constexpr faces_unknowns = lolita::Unknown("Face Field");
+    // auto constexpr cell_basis = lolita::FieldG(1, 2, lolita::FieldG::Basis::Monomial, lolita::FieldG::Frame::Cell);
+    // auto constexpr face_basis = lolita::FieldG(1, 1, lolita::FieldG::Basis::Monomial, lolita::FieldG::Frame::Face);
+    // auto constexpr grad_basis = lolita::FieldG(2, 1, lolita::FieldG::Basis::Monomial, lolita::FieldG::Frame::Cell);
+    // auto constexpr ghost = lolita::Field<>("Cell Field", cell_basis);
+    // auto constexpr cell_field = lolita::Field<cells_unknowns>("Cell Field", cell_basis);
+    // auto constexpr face_field = lolita::Field<faces_unknowns>("Face Field", face_basis);
+    // auto constexpr grad_field = lolita::Field<cell_field, face_field>("Gradient", grad_basis);
+    // auto constexpr stab_field = lolita::Field<grad_field>("Stabilization", face_basis);
 
-    auto load_new = lolita2::Load([](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; });
+    auto load_new = lolita::Load([](lolita::domain::Point const &p, Real const &t) { return 1.0; });
 
     // std::cout << lolita::core::finite_element::basis::FiniteElementBasisTraits<lolita::core::geometry::Element::LinearTriangle(), lolita::core::finite_element::basis::Basis::Monomial(), 4>::dim_ << std::endl;
 
@@ -70,15 +70,15 @@ TEST(test_lolita_nnn, test_lolita_nnn) {
             mgis::behaviour::FiniteStrainBehaviourOptions::TangentOperator::DPK1_DF
     };
 
-    auto mgipara = lolita::behaviour::MgisParameter("Temperature", [](lolita::domain::Point const & p, lolita::real const & t) { return 1.0; });
+    auto mgipara = lolita::behaviour::MgisParameter("Temperature", [](lolita::domain::Point const & p, Real const & t) { return 1.0; });
     auto bhv_u = lolita::behaviour::MgisBehaviour("Displacement", "SQUARE", path, name, hyp, {mgipara});
     auto bhv_d = lolita::behaviour::MgisBehaviour("Damage", "SQUARE", path, name, hyp, {mgipara});
 
-    auto load = lolita::finite_element::LoadEntry("Displacement", "SQUARE", 2, 0, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
+    auto load = lolita::finite_element::LoadEntry("Displacement", "SQUARE", 2, 0, 0, [](lolita::domain::Point const &p, Real const &t) { return 1.0; },
                                                   lolita::finite_element::Load::Natural());
-    auto load_top_x = lolita::finite_element::LoadEntry("Displacement", "TOP", 1, 0, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
+    auto load_top_x = lolita::finite_element::LoadEntry("Displacement", "TOP", 1, 0, 0, [](lolita::domain::Point const &p, Real const &t) { return 1.0; },
                                                         lolita::finite_element::Load::Constraint());
-    auto load_top_y = lolita::finite_element::LoadEntry("Displacement", "TOP", 1, 1, 0, [](lolita::domain::Point const &p, lolita::real const &t) { return 1.0; },
+    auto load_top_y = lolita::finite_element::LoadEntry("Displacement", "TOP", 1, 1, 0, [](lolita::domain::Point const &p, Real const &t) { return 1.0; },
                                                         lolita::finite_element::Load::Constraint());
     auto file_path = "";
     file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";

@@ -1,5 +1,5 @@
-#ifndef AD31B868_1D56_48DB_A2CC_F898A668702D
-#define AD31B868_1D56_48DB_A2CC_F898A668702D
+#ifndef A4BCD9B5_985A_4D19_B3E9_7C559F45A353
+#define A4BCD9B5_985A_4D19_B3E9_7C559F45A353
 
 #include <MGIS/Behaviour/BehaviourData.hxx>
 #include <MGIS/Behaviour/BehaviourData.h>
@@ -10,20 +10,15 @@
 #include <MGIS/Behaviour/Integrate.hxx>
 #include <MGIS/Behaviour/Integrate.h>
 
-#include "lolita/lolita_utility.hxx"
-#include "lolita/lolita_utility.hxx"
-#include "lolita/lolita_algebra.hxx"
+#include "lolita_lolita/utility.hxx"
+#include "lolita_lolita/config.hxx"
+#include "lolita_lolita/numerics.hxx"
+#include "lolita_lolita/algebra.hxx"
 
 namespace lolita
 {
-
-    template<auto... t_args>
-    using RealMatrix = lolita::matrix::Matrix<Real, t_args...>;
-
-    template<auto... t_args>
-    using RealVector = lolita::matrix::Vector<Real, t_args...>;
     
-    using Point = lolita::matrix::Vector<Real, 3>;
+    using Point = RealVector<3>;
 
     using Loading = std::function<Real(Point const &, Real const &)>;
 
@@ -828,99 +823,6 @@ namespace lolita
     template<typename t_T>
     concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
 
-    using ParameterFunction = std::function<lolita::real(Point const &, lolita::real const &)>;
-
-    struct MgisParameter
-    {
-
-        MgisParameter(
-            std::basic_string_view<lolita::character> parameter_tag,
-            ParameterFunction && function
-        )
-        :
-        parameter_tag_(parameter_tag),
-        function_(std::forward<ParameterFunction>(function))
-        {}
-
-        constexpr
-        lolita::boolean
-        operator==(
-            MgisParameter const & other
-        )
-        const
-        {
-            return other.parameter_tag_ == this->parameter_tag_;
-        }
-
-        constexpr
-        lolita::boolean
-        operator!=(
-            MgisParameter const & other
-        )
-        const
-        {
-            return !(* this == other);
-        }
-
-        std::basic_string_view<lolita::character> parameter_tag_;
-
-        ParameterFunction function_;
-
-    };
-
-    struct MgisBehaviourData
-    {
-
-        mgis::behaviour::Behaviour behaviour_;
-
-        std::vector<MgisParameter> parameters_;
-
-    };
-
-    struct MgisBehaviour
-    {
-
-        MgisBehaviour(
-                std::basic_string_view<lolita::character> unknown_tag,
-                std::basic_string_view<lolita::character> domain_tag,
-                std::basic_string<lolita::character> const & path,
-                std::basic_string<lolita::character> const & name,
-                mgis::behaviour::Hypothesis hypothesis,
-                std::vector<MgisParameter> && parameters
-        )
-        :
-        unknown_tag_(unknown_tag),
-        domain_tag_(domain_tag),
-        behaviour_data_(std::make_shared<MgisBehaviourData>(MgisBehaviourData{mgis::behaviour::load(path, name, hypothesis), std::forward<std::vector<MgisParameter>>(parameters)}))
-        {}
-
-        // MgisBehaviour(
-        //         std::basic_string<lolita::character> && unknown_tag,
-        //         std::basic_string<lolita::character> && domain_tag,
-        //         std::string const & path,
-        //         std::string const & name,
-        //         mgis::behaviour::Hypothesis hypothesis,
-        //         mgis::behaviour::FiniteStrainBehaviourOptions finite_strain_behaviour_options,
-        //         std::vector<lolita::behaviour::MgisParameter> && parameters
-        // )
-        // :
-        // unknown_tag_(std::forward<std::basic_string<lolita::character>>(unknown_tag)),
-        // domain_tag_(std::forward<std::basic_string<lolita::character>>(domain_tag)),
-        // behaviour_data_(std::make_shared<lolita::behaviour::MgisBehaviourData>(lolita::behaviour::MgisBehaviourData{
-        //     mgis::behaviour::load(finite_strain_behaviour_options, path, name, hypothesis),
-        //     std::forward<std::vector<lolita::behaviour::MgisParameter>>(parameters)
-        // }))
-        // {}
-
-        std::basic_string<lolita::character> unknown_tag_;
-
-        std::basic_string<lolita::character> domain_tag_;
-
-        std::shared_ptr<MgisBehaviourData> behaviour_data_;
-
-    };
-
 }
 
-
-#endif /* AD31B868_1D56_48DB_A2CC_F898A668702D */
+#endif /* A4BCD9B5_985A_4D19_B3E9_7C559F45A353 */

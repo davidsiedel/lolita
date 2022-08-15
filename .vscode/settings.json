@@ -77,7 +77,8 @@
         "thread": "cpp",
         "typeinfo": "cpp",
         "*.ixx": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "core": "cpp"
     },
     "cSpell.words": [
         "discretization",

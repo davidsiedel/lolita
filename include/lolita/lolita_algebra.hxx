@@ -1,9 +1,5 @@
-//
-// Created by dsiedel on 06/05/22.
-//
-
-#ifndef LOLITA_LOLITA_ALGEBRA_HXX
-#define LOLITA_LOLITA_ALGEBRA_HXX
+#ifndef C0F85893_A5C0_442B_AA56_F552BEBAD263
+#define C0F85893_A5C0_442B_AA56_F552BEBAD263
 
 #define EIGEN_USE_MKL_ALL
 
@@ -13,6 +9,7 @@
 // #define EIGEN_USE_BLAS
 // #define EIGEN_USE_MKL
 
+#include <limits>
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <Eigen/Cholesky>
@@ -20,664 +17,341 @@
 #include <Eigen/LU>
 #include <Eigen/PardisoSupport>
 
-#include "lolita/lolita.hxx"
+#include "lolita/lolita_utility.hxx"
 
 namespace lolita::numerics
 {
 
-    lolita::real const static constexpr sqrt_2 = 1.41421356237;
-
-    namespace detail
+    struct Constants
     {
 
-        template<typename T>
-        struct IsNaturalConcept
+        static constexpr
+        Real
+        pi()
         {
+            return 3.14;
+        }
 
-            static constexpr
-            lolita::boolean
-            isUnsignedShortInt()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, unsigned short int>;
-            }
+    };
 
-            static constexpr
-            lolita::boolean
-            isUnsignedInt()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, unsigned int>;
-            }
-
-            static constexpr
-            lolita::boolean
-            isUnsignedLongInt()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, unsigned long int>;
-            }
-
-            static constexpr
-            lolita::boolean
-            isUnsignedLongLongInt()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, unsigned long long int>;
-            }
-
-            lolita::boolean static const constexpr value = isUnsignedShortInt() || isUnsignedInt() || isUnsignedLongInt() || isUnsignedLongLongInt();
-
-        };
-
-        template<typename T>
-        struct IsIntegerConcept
-        {
-
-            static constexpr
-            lolita::boolean
-            isShortInt()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, short int>;
-            }
-
-            static constexpr
-            lolita::boolean
-            isInt()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, int>;
-            }
-
-            static constexpr
-            lolita::boolean
-            isLongInt()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, long int>;
-            }
-
-            static constexpr
-            lolita::boolean
-            isLongLongInt()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, long long int>;
-            }
-
-            lolita::boolean static const constexpr value = IsNaturalConcept<T>::value || isShortInt() || isInt() || isLongInt() || isLongLongInt();
-
-        };
-
-        template<typename T>
-        struct IsRealConcept
-        {
-
-            static constexpr
-            lolita::boolean
-            isFloat()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, float>;
-            }
-
-            static constexpr
-            lolita::boolean
-            isDouble()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, double>;
-            }
-
-            static constexpr
-            lolita::boolean
-            isLongDouble()
-            {
-                return std::is_same_v<std::remove_cvref_t<T>, long double>;
-            }
-
-            lolita::boolean static const constexpr value = IsIntegerConcept<T>::value || isFloat() || isDouble() || isLongDouble();
-
-        };
-
-    }
-
-    template<typename T>
-    concept NaturalConcept = detail::IsNaturalConcept<T>::value;
-
-    template<typename T>
-    concept IntegerConcept = detail::IsIntegerConcept<T>::value;
-
-    template<typename T>
-    concept RealConcept = detail::IsRealConcept<T>::value;
-
-//        template<typename T>
-//        concept NaturalConcept =   std::same_as<std::remove_cvref_t<T>, unsigned short int>
-//                                || std::same_as<std::remove_cvref_t<T>, unsigned int>
-//                                || std::same_as<std::remove_cvref_t<T>, unsigned long int>
-//                                || std::same_as<std::remove_cvref_t<T>, unsigned long long int>;
-//
-//        template<typename T>
-//        concept IntegerConcept =   NaturalConcept<T>
-//                                || std::same_as<std::remove_cvref_t<T>, short int>
-//                                || std::same_as<std::remove_cvref_t<T>, int>
-//                                || std::same_as<std::remove_cvref_t<T>, long int>
-//                                || std::same_as<std::remove_cvref_t<T>, long long int>;
-//
-//        template<typename T>
-//        concept RealConcept =      IntegerConcept<T>
-//                                || std::same_as<std::remove_cvref_t<T>, float>
-//                                || std::same_as<std::remove_cvref_t<T>, double>
-//                                || std::same_as<std::remove_cvref_t<T>, long double>;
-
-    lolita::real const static constexpr pi = 3.14;
-
-    template<lolita::numerics::RealConcept T, lolita::numerics::IntegerConcept U>
+    template<typename t_T>
     static constexpr
-    T
+    t_T
     pow(
-        T x,
-        U n
+        t_T x,
+        Integer n
     )
     {
-        return n == 0 ? T(1) : x * pow(x, n - 1);
+        return n == 0 ? t_T(1) : x * pow(x, n - 1);
+    }
+
+    template<typename t_T>
+    static constexpr
+    t_T
+    abs(
+        t_T x
+    )
+    {
+        return x < t_T(0) ? -x : x;
+    }
+
+    template<typename t_T>
+    static constexpr
+    Boolean
+    equal(
+        t_T x,
+        t_T y
+    )
+    {
+        return abs(x - y) < 1.e-12;
     }
 
     namespace detail
     {
 
-        template<typename T>
-        static constexpr
-        T
+        static constexpr inline
+        Real
         sqrt(
-            T x,
-            T lo,
-            T hi
+            Real x,
+            Real curr,
+            Real prev
         )
         {
-            if (lo == hi)
-            {
-                return lo;
-            }
-            const auto mid = T((lo + hi + 1) / 2);
-            if (x / mid < mid)
-            {
-                return sqrt<T>(x, lo, mid - 1);
-            }
-            else
-            {
-                return sqrt(x, mid, hi);
-            }
+            return equal(curr, prev) ? curr : sqrt(x, 0.5 * (curr + x / curr), curr);
         }
 
     }
 
-    template<lolita::numerics::RealConcept T>
+    template<typename t_T>
     static constexpr
-    auto
+    Real
     sqrt(
-        T x
+        t_T x
     )
     {
-        return detail::sqrt<T>(x, T(0), x / T(2) + T(1));
+        return x >= 0 && x < std::numeric_limits<Real>::infinity() ? detail::sqrt(x, x, 0) : std::numeric_limits<Real>::quiet_NaN();
     }
 
-    template<lolita::numerics::RealConcept T>
+    template<typename t_T>
     static constexpr
-    T
-    abs(
-        T x
-    )
-    {
-        return x < T(0) ? -x : x;
-    }
-
-    template<lolita::numerics::RealConcept T>
-    static constexpr
-    T
+    t_T
     max(
-        T x
+        t_T x
     )
     {
         return x;
     }
 
-    template<lolita::numerics::RealConcept T>
+    template<typename t_T>
     static constexpr
-    T
+    t_T
     max(
-        T x,
-        T y
+        t_T x,
+        t_T y
     )
     {
         return x < y ? y : x;
     }
 
-    template <lolita::numerics::RealConcept T, lolita::numerics::RealConcept... U>
+    template<typename t_T, typename... t_U>
     static constexpr
-    T
+    t_T
     max(
-        T x,
-        U... y
+        t_T x,
+        t_U... y
     )
     {
-        return max(x, max(static_cast<T>(y)...));
+        return max(x, max(static_cast<t_T>(y)...));
     }
 
-    template<lolita::numerics::RealConcept T>
+    template<typename t_T>
     static constexpr
-    T
+    t_T
     prod(
-        T x
+        t_T x
     )
     {
         return x;
     }
 
-    template<lolita::numerics::RealConcept T>
+    template<typename t_T>
     static constexpr
-    T
+    t_T
     prod(
-        T x,
-        T y
+        t_T x,
+        t_T y
     )
     {
         return x * y;
     }
 
-    template<lolita::numerics::RealConcept T, lolita::numerics::RealConcept... U>
+    template<typename t_T, typename... t_U>
     static constexpr
-    T
+    t_T
     prod(
-        T x,
-        U... y
+        t_T x,
+        t_U... y
     )
     {
-        return prod(x, prod(static_cast<T>(y)...));
+        return prod(x, prod(static_cast<t_T>(y)...));
     }
 
-    template<lolita::numerics::RealConcept T>
+    template<typename t_T>
     static constexpr
-    T
+    t_T
     sum(
-        T x
+        t_T x
     )
     {
         return x;
     }
 
-    template<lolita::numerics::RealConcept T>
+    template<typename t_T>
     static constexpr
-    T
+    t_T
     sum(
-        T x,
-        T y
+        t_T x,
+        t_T y
     )
     {
         return x + y;
     }
 
-    template<lolita::numerics::RealConcept T, lolita::numerics::RealConcept... U>
+    template<typename t_T, typename... t_U>
     static constexpr
-    T
+    t_T
     sum(
-        T x,
-        U... y
+        t_T x,
+        t_U... y
     )
     {
-        return sum(x, sum(static_cast<T>(y)...));
+        return sum(x, sum(static_cast<t_T>(y)...));
     }
 
-    template<lolita::numerics::IntegerConcept T, lolita::numerics::IntegerConcept U>
+    template<typename t_T>
     static constexpr
-    T
+    t_T
     binomial(
-        T n,
-        U k
+        t_T n,
+        Integer k
     )
     {
-        //        return
-        //                (        k> n  )? 0 :                    // out of range
-        //                (k==0 || k==n  )? 1 :                    // edge
-        //                (k==1 || k==n-1)? n :                    // first
-        //                (     k+k < n  )?                        // recursive:
-        //                (binomial(n - 1, k - 1) * n) / k :       //  path to k=1   is faster
-        //                (binomial(n - 1, k) * n) / (n - k);      //  path to k=n-1 is faster
-        return (k > n) ? 0 : (k == 0 || k == n ) ? 1 : (k == 1 || k == n-1) ? n : (k + k < n) ? (binomial(n - 1, k - 1) * n) / k : (binomial(n - 1, k) * n) / (n - k);
+        return (k > n) ? 0 : (k == 0 || k == n) ? 1 : (k == 1 || k == n - 1) ? n : (k + k < n) ? (binomial(n - 1, k - 1) * n) / k : (binomial(n - 1, k) * n) / (n - k);
     }
 
 }
 
 namespace lolita::matrix
 {
-    
-    struct VectorBlock
-    {
-        
-        constexpr
-        VectorBlock()
-        :
-        i_(-1),
-        j_(-1)
-        {}
-        
-        constexpr
-        VectorBlock(
-            lolita::integer i,
-            lolita::integer j
-        )
-        :
-        i_(i),
-        j_(j)
-        {}
-        
-        lolita::integer i_;
-        
-        lolita::integer j_;
 
-    };
-    
-    struct MatrixBlock
-    {
-        
-        constexpr
-        MatrixBlock()
-        :
-        i_(-1),
-        j_(-1),
-        k_(-1),
-        l_(-1)
-        {}
-        
-        constexpr
-        MatrixBlock(
-            lolita::integer i,
-            lolita::integer j,
-            lolita::integer k,
-            lolita::integer l
-        )
-        :
-        i_(i),
-        j_(j),
-        k_(k),
-        l_(l)
-        {}
-        
-        lolita::integer i_;
-        
-        lolita::integer j_;
-        
-        lolita::integer k_;
-        
-        lolita::integer l_;
+    // struct Shape
+    // {
 
-    };
+    //     constexpr
+    //     Shape(
+    //         Integer rows,
+    //         Integer cols
+    //     )
+    //     :
+    //     rows_(rows),
+    //     cols_(cols)
+    //     {}
 
-    struct Coordinates
-    {
+    //     constexpr
+    //     Integer
+    //     getRows()
+    //     const
+    //     {
+    //         return rows_;
+    //     }
 
-        constexpr
-        Coordinates()
-        :
-        row_(-1),
-        col_(-1)
-        {}
+    //     constexpr
+    //     Integer
+    //     getCols()
+    //     const
+    //     {
+    //         return cols_;
+    //     }
 
-        constexpr
-        Coordinates(
-            lolita::integer row,
-            lolita::integer col
-        )
-        :
-        row_(row),
-        col_(col)
-        {}
+    //     constexpr
+    //     Integer
+    //     getSize()
+    //     const
+    //     {
+    //         return rows_ * cols_;
+    //     }
 
-        lolita::integer row_;
+    //     Integer rows_;
 
-        lolita::integer col_;
+    //     Integer cols_;
 
-    };
-
-    struct Shape
-    {
-
-        constexpr
-        Shape(
-            lolita::index rows,
-            lolita::index cols
-        )
-        :
-        rows_(rows),
-        cols_(cols),
-        size_(rows * cols)
-        {}
-
-        constexpr
-        lolita::integer
-        rows()
-        const
-        {
-            return rows_;
-        }
-
-        constexpr
-        lolita::integer
-        cols()
-        const
-        {
-            return cols_;
-        }
-
-        constexpr
-        lolita::integer
-        size()
-        const
-        {
-            return size_;
-        }
-
-        lolita::index rows_;
-
-        lolita::index cols_;
-
-        lolita::index size_;
-
-    };
-
-    template<typename _T, typename _U, lolita::integer _rows = -1, lolita::integer _cols = -1>
-    concept StaticMatrixObject = requires
-    {
-        requires _T::CompileTimeTraits::RowsAtCompileTime == _rows;
-        requires _T::CompileTimeTraits::ColsAtCompileTime == _cols;
-        requires std::same_as<_U, typename _T::Scalar>;
-        requires std::convertible_to<std::remove_reference_t<_T>, Eigen::Matrix<_U, _rows, _cols>>;
-    };
-
-    template<typename T>
-    concept MatrixConceptO = std::derived_from<std::remove_cvref_t<T>, Eigen::DenseBase<std::remove_cvref_t<T>>>;
-
-    template<typename _T, typename _U, lolita::integer _rows = -1, lolita::integer _cols = -1>
-    concept MatrixConceptE = requires
-    {
-        requires _T::CompileTimeTraits::RowsAtCompileTime == _rows;
-        requires _T::CompileTimeTraits::ColsAtCompileTime == _cols;
-        requires std::same_as<_U, typename _T::Scalar>;
-        requires std::convertible_to<std::remove_reference_t<_T>, Eigen::Matrix<_U, _rows, _cols>>;
-    };
-
-    template<typename T>
-    concept MatrixConcept = std::convertible_to<
-            std::remove_cvref_t<T>,
-            Eigen::Matrix<
-                    typename std::remove_cvref_t<T>::Scalar,
-                    std::remove_cvref_t<T>::CompileTimeTraits::RowsAtCompileTime,
-                    std::remove_cvref_t<T>::CompileTimeTraits::ColsAtCompileTime
-            >
-    >;
+    // };
 
     using StorageOption = Eigen::StorageOptions;
 
-    lolita::matrix::StorageOption const static constexpr row_major = StorageOption::RowMajor;
-
-    lolita::matrix::StorageOption const static constexpr col_major = StorageOption::ColMajor;
-
     static constexpr
     lolita::matrix::StorageOption
-    storageOption(
-        lolita::numerics::IntegerConcept auto num_rows,
-        lolita::numerics::IntegerConcept auto num_cols
-    )
+    rowMajor()
     {
-        return num_rows != 1 && num_cols == 1 ? col_major : row_major;
+        return StorageOption::RowMajor;
     }
 
     static constexpr
     lolita::matrix::StorageOption
-    storageOption(
-        lolita::matrix::StorageOption storage_option,
-        lolita::numerics::IntegerConcept auto num_rows,
-        lolita::numerics::IntegerConcept auto num_cols
-    )
+    colMajor()
     {
-        return num_rows != 1 && num_cols == 1 ? col_major : num_rows == 1 && num_cols != 1 ? row_major : storage_option;
+        return StorageOption::ColMajor;
     }
 
     namespace detail
     {
 
-        template<lolita::numerics::RealConcept T, auto... A>
+        static constexpr
+        lolita::matrix::StorageOption
+        getStorageOption(
+            Integer num_rows,
+            Integer num_cols
+        )
+        {
+            return num_rows != 1 && num_cols == 1 ? colMajor() : rowMajor();
+        }
+
+        static constexpr
+        lolita::matrix::StorageOption
+        getStorageOption(
+            lolita::matrix::StorageOption storage_option,
+            Integer num_rows,
+            Integer num_cols
+        )
+        {
+            return num_rows != 1 && num_cols == 1 ? colMajor() : num_rows == 1 && num_cols != 1 ? rowMajor() : storage_option;
+        }
+
+        template<typename t_T, auto... A>
         struct VectorPolicy;
 
-        template<lolita::numerics::RealConcept T, auto... A>
+        template<typename t_T, auto... A>
         struct MatrixPolicy;
 
-        template<lolita::numerics::RealConcept T>
-        struct VectorPolicy<T>
+        template<typename t_T>
+        struct VectorPolicy<t_T>
         {
 
-            using type = Eigen::Matrix<T, -1, 1, storageOption(-1, 1)>;
+            using type = Eigen::Matrix<t_T, -1, 1, getStorageOption(-1, 1)>;
 
         };
 
-        template<lolita::numerics::RealConcept T, auto R>
-        struct VectorPolicy<T, R>
+        template<typename t_T, auto t_rows>
+        struct VectorPolicy<t_T, t_rows>
         {
 
-            using type = Eigen::Matrix<T, R, 1, storageOption(R, 1)>;
+            using type = Eigen::Matrix<t_T, t_rows, 1, getStorageOption(t_rows, 1)>;
 
         };
 
-        template<lolita::numerics::RealConcept T>
-        struct MatrixPolicy<T>
+        template<typename t_T>
+        struct MatrixPolicy<t_T>
         {
 
-            using type = Eigen::Matrix<T, -1, -1, storageOption(-1, -1)>;
+            using type = Eigen::Matrix<t_T, -1, -1, getStorageOption(-1, -1)>;
 
         };
 
-        template<lolita::numerics::RealConcept T, StorageOption O>
-        struct MatrixPolicy<T, O>
+        template<typename t_T, StorageOption t_storage_option>
+        struct MatrixPolicy<t_T, t_storage_option>
         {
 
-            using type = Eigen::Matrix<T, -1, -1, storageOption(O, -1, -1)>;
+            using type = Eigen::Matrix<t_T, -1, -1, getStorageOption(t_storage_option, -1, -1)>;
 
         };
 
-        template<lolita::numerics::RealConcept T, auto R, auto C>
-        struct MatrixPolicy<T, R, C>
+        template<typename t_T, auto t_rows, auto t_cols>
+        struct MatrixPolicy<t_T, t_rows, t_cols>
         {
 
-            using type = Eigen::Matrix<T, R, C, storageOption(R, C)>;
+            using type = Eigen::Matrix<t_T, t_rows, t_cols, getStorageOption(t_rows, t_cols)>;
 
         };
 
-        template<lolita::numerics::RealConcept T, auto R, auto C, StorageOption O>
-        struct MatrixPolicy<T, R, C, O>
+        template<typename t_T, auto t_rows, auto t_cols, StorageOption t_storage_option>
+        struct MatrixPolicy<t_T, t_rows, t_cols, t_storage_option>
         {
 
-            using type = Eigen::Matrix<T, R, C, storageOption(O, R, C)>;
+            using type = Eigen::Matrix<t_T, t_rows, t_cols, getStorageOption(t_storage_option, t_rows, t_cols)>;
 
         };
 
     }
 
-    template<lolita::numerics::RealConcept T, auto... A>
-    using Vector = typename detail::VectorPolicy<T, A...>::type;
+    template<typename t_T, auto... A>
+    using Vector = typename detail::VectorPolicy<t_T, A...>::type;
 
-    template<lolita::numerics::RealConcept T, auto... A>
-    using Matrix = typename detail::MatrixPolicy<T, A...>::type;
+    template<typename t_T, auto... A>
+    using Matrix = typename detail::MatrixPolicy<t_T, A...>::type;
 
-    template<lolita::matrix::MatrixConcept T>
-    using Span = Eigen::Map<T>;
-
-    template<lolita::matrix::MatrixConcept T>
-    static constexpr
-    lolita::integer
-    rows()
-    {
-        return T::CompileTimeTraits::RowsAtCompileTime;
-    }
-
-    template<lolita::matrix::MatrixConcept T>
-    static constexpr
-    lolita::integer
-    cols()
-    {
-        return T::CompileTimeTraits::ColsAtCompileTime;
-    }
-
-    template<lolita::matrix::MatrixConcept T>
-    static constexpr
-    lolita::integer
-    size()
-    {
-        return T::CompileTimeTraits::SizeAtCompileTime;
-    }
-
-    template<lolita::matrix::MatrixConcept T>
-    static constexpr
-    lolita::integer
-    rows(
-            T const & matrix
-    )
-    {
-        return T::CompileTimeTraits::RowsAtCompileTime;
-    }
-
-    template<lolita::matrix::MatrixConcept T>
-    static constexpr
-    lolita::integer
-    cols(
-            T const & matrix
-    )
-    {
-        return T::CompileTimeTraits::ColsAtCompileTime;
-    }
-
-    template<lolita::matrix::MatrixConcept T>
-    static constexpr
-    lolita::integer
-    size(
-            T const & matrix
-    )
-    {
-        return T::CompileTimeTraits::SizeAtCompileTime;
-    }
-
-    template<lolita::numerics::RealConcept _T, auto... _args>
-    static inline
-    lolita::matrix::Matrix<_T, _args...>
-    Zero()
-    {
-        return lolita::matrix::Matrix<_T, _args...>::Zero();
-    }
-
-    template<typename _Matrix>
-    static inline
-    _Matrix
-    Zero()
-    {
-        return _Matrix::Zero();
-    }
-
-    template<typename T, lolita::index _rows, lolita::index _cols>
-    concept MatrixConcept2 = MatrixConcept<T> && rows<T>() == _rows && cols<T>() == _cols;
-
-    template<typename T, lolita::index _rows>
-    concept VectorConcept2 = MatrixConcept<T> && rows<T>() == _rows && cols<T>() == 1;
+    template<typename t_T>
+    using Span = Eigen::Map<t_T>;
 
 }
 
-#endif //LOLITA_LOLITA_ALGEBRA_HXX
+#endif /* C0F85893_A5C0_442B_AA56_F552BEBAD263 */
