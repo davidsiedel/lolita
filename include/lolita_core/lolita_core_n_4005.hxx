@@ -202,12 +202,12 @@ namespace lolita
             return * this->coordinates_;
         }
         
-        lolita::matrix::Matrix<Real, 3, t_element.getNumNodes()>
+        lolita::algebra::Matrix<Real, 3, t_element.getNumNodes()>
         getCurrentCoordinates()
         const
         requires(!t_element.isNode())
         {
-            auto current_nodes_coordinates = lolita::matrix::Matrix<Real, 3, t_element.getNumNodes()>();
+            auto current_nodes_coordinates = lolita::algebra::Matrix<Real, 3, t_element.getNumNodes()>();
             auto count = Integer(0);
             for (auto const & node : this->template getInnerNeighbors<t_element.dim_ - 1, 0>())
             {
@@ -218,17 +218,17 @@ namespace lolita
         }
         
         static
-        lolita::matrix::Span<lolita::matrix::Matrix<Real, 3, t_element.getNumNodes(), lolita::matrix::colMajor()> const>
+        lolita::algebra::Span<lolita::algebra::Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>
         getReferenceCoordinates()
         {
-            using t_ReferenceCoordinates = lolita::matrix::Span<lolita::matrix::Matrix<Real, 3, t_element.getNumNodes(), lolita::matrix::colMajor()> const>;
+            using t_ReferenceCoordinates = lolita::algebra::Span<lolita::algebra::Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>;
             return t_ReferenceCoordinates(ElementTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
         }
         
         static
         Real
         getShapeMappingEvaluation(
-            lolita::matrix::Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
+            lolita::algebra::Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
             Point const & reference_point
         )
         {
@@ -238,7 +238,7 @@ namespace lolita
         static
         Real
         getShapeMappingDerivative(
-            lolita::matrix::Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
+            lolita::algebra::Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
             Point const & reference_point,
             Integer derivative_direction
         )
@@ -253,7 +253,7 @@ namespace lolita
         const
         {
             auto const current_coordinates = this->getCurrentCoordinates();
-            auto ru = lolita::matrix::Matrix<Real, 3, 3>();
+            auto ru = lolita::algebra::Matrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
             for (auto i = 0; i < t_domain.dim_; ++i)
@@ -319,7 +319,7 @@ namespace lolita
                 {
                     auto pq = SegmentQuadrature::reference_points_[q][0];
                     auto wq = SegmentQuadrature::reference_weights_[q];
-                    auto ru = lolita::matrix::Matrix<Real, 3, 3>().setZero();
+                    auto ru = lolita::algebra::Matrix<Real, 3, 3>().setZero();
                     auto difference = second_point - first_point;
                     auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
                     for (auto i = 0; i < t_domain.dim_; ++i)
@@ -443,7 +443,7 @@ namespace lolita
         requires(t_element.isSub(t_domain, 1))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto ru = lolita::matrix::Matrix<Real, 3, t_element.dim_>();
+            auto ru = lolita::algebra::Matrix<Real, 3, t_element.dim_>();
             ru.setZero();
             for (auto i = 0; i < 3; ++i)
             {
@@ -494,12 +494,12 @@ namespace lolita
         
         template<Quadrature t_quadrature>
         static
-        lolita::matrix::Span<Point const>
+        lolita::algebra::Span<Point const>
         getReferenceQuadraturePoint(
             Integer index
         )
         {
-            return lolita::matrix::Span<Point const>(ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_points_[index].begin());
+            return lolita::algebra::Span<Point const>(ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_points_[index].begin());
         }
         
         template<Quadrature t_quadrature>
@@ -557,7 +557,7 @@ namespace lolita
             auto const & elt_reference_nodes = ElementTraits<t_element, t_domain>::reference_nodes_;
             for (auto i = 0; i < 3; ++i)
             {
-                auto cpt_coordinates = lolita::matrix::Vector<Real, _component.getNumNodes()>();
+                auto cpt_coordinates = lolita::algebra::Vector<Real, _component.getNumNodes()>();
                 for (auto j = 0; j < _component.getNumNodes(); ++j)
                 {
                     auto const node_tag = getInnerNeighborNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);

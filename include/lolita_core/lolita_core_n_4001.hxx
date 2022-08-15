@@ -111,13 +111,13 @@ namespace lolita
 
         public:
         
-            lolita::matrix::Vector<Real, getSize()>
+            lolita::algebra::Vector<Real, getSize()>
             getBasisEvaluation(
                 Point const & point
             )
             const
             {
-                auto basis_vector_values = lolita::matrix::Vector<Real, getSize()>();
+                auto basis_vector_values = lolita::algebra::Vector<Real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 auto const diameters = this->getCurrentDiameters();
                 for (auto i = 0; i < getSize(); ++i)
@@ -133,14 +133,14 @@ namespace lolita
                 return basis_vector_values;
             }
             
-            lolita::matrix::Vector<Real, getSize()>
+            lolita::algebra::Vector<Real, getSize()>
             getBasisDerivative(
                 Point const & point,
                 Integer derivative_direction
             )
             const
             {
-                auto basis_vector_values = lolita::matrix::Vector<Real, getSize()>();
+                auto basis_vector_values = lolita::algebra::Vector<Real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 auto const diameters = this->getCurrentDiameters();
                 for (auto i = 0; i < getSize(); ++i)

@@ -475,6 +475,14 @@ namespace lolita
         const = default;
 
         constexpr
+        Integer
+        getDim()
+        const
+        {
+            return dim_;
+        }
+
+        constexpr
         Boolean
         isTensor(
             Integer dim

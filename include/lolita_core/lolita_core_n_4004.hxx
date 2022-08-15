@@ -23,7 +23,7 @@ namespace lolita
 
         std::vector<std::shared_ptr<mgis::behaviour::BehaviourData>> behavior_data_;
 
-        std::vector<lolita::matrix::Matrix<Real>> element_operators_;
+        std::vector<lolita::algebra::Matrix<Real>> element_operators_;
 
         std::vector<std::shared_ptr<Load>> loads_;
         

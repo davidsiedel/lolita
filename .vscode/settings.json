@@ -78,7 +78,9 @@
         "typeinfo": "cpp",
         "*.ixx": "cpp",
         "execution": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "lu": "cpp",
+        "sparsecore": "cpp"
     },
     "cSpell.words": [
         "discretization",

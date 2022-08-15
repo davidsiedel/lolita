@@ -25,27 +25,27 @@ namespace lolita
             return label_;
         }
         
-        lolita::matrix::Vector<Real> const &
+        lolita::algebra::Vector<Real> const &
         getCoefficients()
         const
         {
             return coefficients_;
         }
         
-        lolita::matrix::Vector<Real> &
+        lolita::algebra::Vector<Real> &
         getCoefficients()
         {
             return coefficients_;
         }
         
-        lolita::matrix::Vector<Real> const &
+        lolita::algebra::Vector<Real> const &
         getVariations()
         const
         {
             return variations_;
         }
         
-        lolita::matrix::Vector<Real> &
+        lolita::algebra::Vector<Real> &
         getVariations()
         {
             return variations_;
@@ -53,9 +53,9 @@ namespace lolita
 
         std::basic_string_view<Character> label_;
 
-        lolita::matrix::Vector<Real> coefficients_;
+        lolita::algebra::Vector<Real> coefficients_;
 
-        lolita::matrix::Vector<Real> variations_;
+        lolita::algebra::Vector<Real> variations_;
 
     };
 

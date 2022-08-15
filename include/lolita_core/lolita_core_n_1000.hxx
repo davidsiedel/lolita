@@ -501,7 +501,7 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point
             )
             {
@@ -511,7 +511,7 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point,
                 Integer derivative_direction
             )
@@ -548,7 +548,7 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point
             )
             {
@@ -561,7 +561,7 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point,
                 Integer derivative_direction
             )
@@ -613,7 +613,7 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point
             )
             {
@@ -627,7 +627,7 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point,
                 Integer derivative_direction
             )
@@ -698,7 +698,7 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point
             )
             {
@@ -713,7 +713,7 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point,
                 Integer derivative_direction
             )
@@ -792,7 +792,7 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point
             )
             {
@@ -803,7 +803,7 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
                 Point const &reference_point,
                 Integer derivative_direction
             )

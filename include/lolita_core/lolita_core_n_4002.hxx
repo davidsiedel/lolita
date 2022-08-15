@@ -26,24 +26,24 @@ namespace lolita
         }
 
         template<Field t_field, Basis t_basis>
-        lolita::matrix::Span<lolita::matrix::Vector<Real, getSize<t_field, t_basis>()> const>
+        lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>
         getCoefficients()
         const
         {
             auto const & data = degree_of_freedom_->coefficients_.data() + index_;
-            return lolita::matrix::Span<lolita::matrix::Vector<Real, getSize<t_field, t_basis>()> const>(data);
+            return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>(data);
         }
 
         template<Field t_field, Basis t_basis>
-        lolita::matrix::Span<lolita::matrix::Vector<Real, getSize<t_field, t_basis>()>>
+        lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>
         getCoefficients()
         {
             auto const & data = degree_of_freedom_->coefficients_.data() + index_;
-            return lolita::matrix::Span<lolita::matrix::Vector<Real, getSize<t_field, t_basis>()>>(data);
+            return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>(data);
         }
 
         template<Field t_field, Basis t_basis>
-        lolita::matrix::Span<lolita::matrix::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
+        lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
         getCoefficients(
             Integer row,
             Integer col
@@ -52,11 +52,11 @@ namespace lolita
             auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
             auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
             auto const & data = degree_of_freedom_->coefficients_.data() + index_ + (t_field_shape.cols() * row  + col) * t_basis_size;
-            return lolita::matrix::Span<lolita::matrix::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+            return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
         }
 
         template<Field t_field, Basis t_basis>
-        lolita::matrix::Span<lolita::matrix::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
+        lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
         getCoefficients(
             Integer row,
             Integer col
@@ -66,7 +66,7 @@ namespace lolita
             auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
             auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
             auto const & data = degree_of_freedom_->coefficients_.data() + index_ + (t_field_shape.cols() * row  + col) * t_basis_size;
-            return lolita::matrix::Span<lolita::matrix::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+            return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
         }
         
         std::shared_ptr<DegreeOfFreedom> const &

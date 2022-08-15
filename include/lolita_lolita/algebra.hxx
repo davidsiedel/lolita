@@ -21,7 +21,7 @@
 namespace lolita
 {    
 
-    namespace matrix
+    namespace algebra
     {
 
         using StorageOption = Eigen::StorageOptions;
@@ -132,10 +132,10 @@ namespace lolita
     } // namespace matrix
 
     template<auto... t_args>
-    using RealVector = matrix::Vector<Real, t_args...>;
+    using RealVector = algebra::Vector<Real, t_args...>;
 
     template<auto... t_args>
-    using RealMatrix = matrix::Matrix<Real, t_args...>;
+    using RealMatrix = algebra::Matrix<Real, t_args...>;
 
 } // namespace lolita
 

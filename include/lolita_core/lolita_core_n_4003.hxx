@@ -24,7 +24,7 @@ namespace lolita
         }
 
         inline
-        lolita::matrix::Matrix<Real>
+        lolita::algebra::Matrix<Real>
         getOperator(
             Integer i
         )
@@ -35,7 +35,7 @@ namespace lolita
 
         std::basic_string_view<Character> label_;
 
-        std::vector<lolita::matrix::Matrix<Real>> operators_;
+        std::vector<lolita::algebra::Matrix<Real>> operators_;
 
     };
     
@@ -68,31 +68,31 @@ namespace lolita
         }
         
         template<BehaviorConcept auto t_behavior>
-        lolita::matrix::Span<lolita::matrix::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
+        lolita::algebra::Span<lolita::algebra::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
         getGeneralizedStrain()
         const
         {
             auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
-            return lolita::matrix::Span<lolita::matrix::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
+            return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
         }
         
         template<auto t_finite_element_method>
-        lolita::matrix::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
+        lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
         getGeneralizedStrain()
         const
         {
             auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-            return lolita::matrix::Span<lolita::matrix::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
+            return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
         }
         
         template<auto t_finite_element_method>
-        lolita::matrix::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
+        lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
         getGeneralizedStrain()
         {
             auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-            return lolita::matrix::Span<lolita::matrix::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
+            return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
         }
         
         Point coordinates_;
@@ -125,7 +125,7 @@ namespace lolita
     struct QuadraturePoint2 : QuadraturePoint
     {
 
-        std::vector<lolita::matrix::Matrix<Real>> element_operators_;
+        std::vector<lolita::algebra::Matrix<Real>> element_operators_;
 
     };
 

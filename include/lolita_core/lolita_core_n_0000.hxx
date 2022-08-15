@@ -5,7 +5,6 @@
 
 namespace lolita
 {
-
     template<Field t_field>
     struct FieldTraits
     {
@@ -181,14 +180,6 @@ namespace lolita
     struct MappingTraits<t_mapping>
     {
 
-        // template<Domain t_domain, Field t_field>
-        // static constexpr
-        // lolita::matrix::Shape
-        // getShape()
-        // {
-        //     return FieldTraits<t_field>::template getShape<t_domain>();
-        // }
-
         template<Domain t_domain, Field t_field>
         static constexpr
         Integer
@@ -263,20 +254,12 @@ namespace lolita
     struct MappingTraits<t_mapping>
     {
 
-        // template<Domain t_domain, Field t_field>
-        // static constexpr
-        // lolita::matrix::Shape
-        // getShape()
-        // {
-        //     return FieldTraits<Field(t_field.dim_ + 1)>::template getShape<t_domain>();
-        // }
-
         template<Domain t_domain, Field t_field>
         static constexpr
         Integer
         getRows()
         {
-            return FieldTraits<t_field>::template getRows<t_domain>();
+            return FieldTraits<Field(t_field.getDim() + 1)>::template getRows<t_domain>();
         }
 
         template<Domain t_domain, Field t_field>
@@ -284,7 +267,7 @@ namespace lolita
         Integer
         getCols()
         {
-            return FieldTraits<t_field>::template getCols<t_domain>();
+            return FieldTraits<Field(t_field.getDim() + 1)>::template getCols<t_domain>();
         }
 
         template<Domain t_domain, Field t_field>
@@ -378,36 +361,10 @@ namespace lolita
     struct MappingTraits<t_mapping>
     {
 
-        // template<Domain t_domain, Field t_field>
-        // static constexpr
-        // lolita::matrix::Shape
-        // getShape()
-        // requires(t_field.isTensor(1) && t_domain.hasDim(2))
-        // {
-        //     return {1, 4};
-        // }
-
-        // template<Domain t_domain, Field t_field>
-        // static constexpr
-        // lolita::matrix::Shape
-        // getShape()
-        // requires(t_field.isTensor(1) && t_domain.hasDim(3))
-        // {
-        //     return {1, 6};
-        // }
-
         template<Domain t_domain, Field t_field>
         static constexpr
         Integer
         getRows()
-        {
-            return 1;
-        }
-
-        template<Domain t_domain, Field t_field>
-        static constexpr
-        Integer
-        getCols()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
             return 4;
@@ -416,10 +373,18 @@ namespace lolita
         template<Domain t_domain, Field t_field>
         static constexpr
         Integer
-        getCols()
+        getRows()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
             return 6;
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        Integer
+        getCols()
+        {
+            return 1;
         }
 
         template<Domain t_domain, Field t_field>
@@ -474,36 +439,10 @@ namespace lolita
     struct MappingTraits<t_mapping>
     {
 
-        // template<Domain t_domain, Field t_field>
-        // static constexpr
-        // lolita::matrix::Shape
-        // getShape()
-        // requires(t_field.isTensor(1) && t_domain.hasDim(2))
-        // {
-        //     return {1, 5};
-        // }
-
-        // template<Domain t_domain, Field t_field>
-        // static constexpr
-        // lolita::matrix::Shape
-        // getShape()
-        // requires(t_field.isTensor(1) && t_domain.hasDim(3))
-        // {
-        //     return {1, 9};
-        // }
-
-        // template<Domain t_domain, Field t_field>
-        // static constexpr
-        // Integer
-        // getSize()
-        // {
-        //     return getShape<t_domain, t_field>().size_;
-        // }
-
         template<Domain t_domain, Field t_field>
         static constexpr
         Integer
-        getRows()
+        getCols()
         {
             return 1;
         }
@@ -511,7 +450,7 @@ namespace lolita
         template<Domain t_domain, Field t_field>
         static constexpr
         Integer
-        getCols()
+        getRows()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
             return 5;
@@ -520,7 +459,7 @@ namespace lolita
         template<Domain t_domain, Field t_field>
         static constexpr
         Integer
-        getCols()
+        getRows()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
             return 9;
