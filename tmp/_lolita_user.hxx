@@ -14,7 +14,7 @@
 #include <MGIS/Behaviour/Integrate.hxx>
 #include <MGIS/Behaviour/Integrate.h>
 
-#include "lolita/lolita.hxx"
+#include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_algebra.hxx"
 
@@ -27,7 +27,7 @@ namespace lolita
         struct Field
         {
 
-            lolita::integer int_;
+            Integer int_;
 
         };
 
@@ -39,7 +39,7 @@ namespace lolita
          * @brief 
          * 
          */
-        using Point = lolita::matrix::Vector<lolita::real, 3>;
+        using Point = lolita::matrix::Vector<Real, 3>;
 
         /**
          * @brief 
@@ -58,7 +58,7 @@ namespace lolita
             for (auto i = 0; i < lolita::matrix::cols<t_Matrix>(); ++i) {
                 barycenter += point_args.col(i);
             }
-            barycenter /= lolita::real(lolita::matrix::cols<t_Matrix>());
+            barycenter /= Real(lolita::matrix::cols<t_Matrix>());
             return barycenter;
         }
 
@@ -71,10 +71,10 @@ namespace lolita
 
             constexpr
             Frame(
-                    std::basic_string_view<lolita::character> && tag
+                    std::basic_string_view<Character> && tag
             )
             :
-            lolita::utility::Enumeration<Frame>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Frame>(std::forward<std::basic_string_view<Character>>(tag))
             {}
 
             static constexpr
@@ -85,7 +85,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isAxiSymmetric()
             const
             {
@@ -100,7 +100,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isCartesian()
             const
             {
@@ -114,20 +114,20 @@ namespace lolita
 
             constexpr
             Domain(
-                    std::basic_string_view<lolita::character> && tag,
-                    lolita::index dim,
+                    std::basic_string_view<Character> && tag,
+                    Integer dim,
                     lolita::domain::Frame && frame
             )
             :
-            lolita::utility::Enumeration<Domain>(std::forward<std::basic_string_view<lolita::character>>(tag)),
+            lolita::utility::Enumeration<Domain>(std::forward<std::basic_string_view<Character>>(tag)),
             dim_(dim),
             frame_(std::forward<lolita::domain::Frame>(frame))
             {}
 
             constexpr
-            lolita::boolean
+            Boolean
             hasDim(
-                    lolita::integer dim
+                    Integer dim
             )
             const
             {
@@ -135,7 +135,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             hasFrame(
                     lolita::domain::Frame const & frame
             )
@@ -145,7 +145,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             hasFrame(
                     lolita::domain::Frame && frame
             )
@@ -159,7 +159,7 @@ namespace lolita
              * @return
              */
             constexpr
-            lolita::integer
+            Integer
             dim()
             const
             {
@@ -178,7 +178,7 @@ namespace lolita
                 return frame_;
             }
 
-            lolita::index dim_;
+            Integer dim_;
 
             lolita::domain::Frame frame_;
 
@@ -194,10 +194,10 @@ namespace lolita
 
             constexpr
             Mapping(
-                    std::basic_string_view<lolita::character> && tag
+                    std::basic_string_view<Character> && tag
             )
             :
-            lolita::utility::Enumeration<Mapping>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Mapping>(std::forward<std::basic_string_view<Character>>(tag))
             {}
 
             static constexpr
@@ -208,7 +208,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isGradient()
             const
             {
@@ -223,7 +223,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isIdentity()
             const
             {
@@ -238,7 +238,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isDivergence()
             const
             {
@@ -253,7 +253,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isLargeStrain()
             const
             {
@@ -268,7 +268,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isSmallStrain()
             const
             {
@@ -296,22 +296,22 @@ namespace lolita
 
             constexpr
             Field(
-                    std::basic_string_view<lolita::character> && tag,
-                    lolita::index dim
+                    std::basic_string_view<Character> && tag,
+                    Integer dim
             )
             :
-            lolita::utility::Enumeration<Field>(std::forward<std::basic_string_view<lolita::character>>(tag)),
+            lolita::utility::Enumeration<Field>(std::forward<std::basic_string_view<Character>>(tag)),
             ord_(dim)
             {}
 
             constexpr
             Field
             as(
-                    std::basic_string_view<lolita::character> && tag
+                    std::basic_string_view<Character> && tag
             )
             const
             {
-                return Field(std::forward<std::basic_string_view<lolita::character>>(tag), ord_);
+                return Field(std::forward<std::basic_string_view<Character>>(tag), ord_);
             }
 
             static constexpr
@@ -343,7 +343,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isDisplacement()
             const
             {
@@ -358,7 +358,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isDamage()
             const
             {
@@ -370,7 +370,7 @@ namespace lolita
              * @return
              */
             constexpr
-            lolita::boolean
+            Boolean
             isScalar()
             const
             {
@@ -382,7 +382,7 @@ namespace lolita
              * @return
              */
             constexpr
-            lolita::boolean
+            Boolean
             isVector()
             const
             {
@@ -394,16 +394,16 @@ namespace lolita
              * @return
              */
             constexpr
-            lolita::boolean
+            Boolean
             isTensor(
-                    lolita::integer ord
+                    Integer ord
             )
             const
             {
                 return ord_ == ord;
             }
 
-            lolita::index ord_;
+            Integer ord_;
 
         };
 
@@ -434,17 +434,17 @@ namespace lolita
 
             constexpr
             Unknown(
-                    std::basic_string_view<lolita::character> && tag,
-                    lolita::index dim,
+                    std::basic_string_view<Character> && tag,
+                    Integer dim,
                     t_Mapping &&... mappings
             )
             :
-            tensor_(std::forward<lolita::field::Field>(Field(std::forward<std::basic_string_view<lolita::character>>(tag), dim))),
+            tensor_(std::forward<lolita::field::Field>(Field(std::forward<std::basic_string_view<Character>>(tag), dim))),
             mappings_({std::forward<lolita::field::Mapping>(mappings)...})
             {}
 
             constexpr
-            lolita::boolean
+            Boolean
             operator==(
                     Unknown const &
                     other
@@ -452,7 +452,7 @@ namespace lolita
             const = default;
 
             constexpr
-            lolita::boolean
+            Boolean
             operator!=(
                     Unknown const &
                     other
@@ -484,24 +484,24 @@ namespace lolita
     namespace behaviour
     {
 
-        using ParameterFunction = std::function<lolita::real(lolita::domain::Point const &, lolita::real const &)>;
+        using ParameterFunction = std::function<Real(lolita::domain::Point const &, Real const &)>;
 
         struct MgisParameter
         {
 
             MgisParameter(
-                    std::basic_string<lolita::character> &&
+                    std::basic_string<Character> &&
                     parameter_tag,
                     lolita::behaviour::ParameterFunction &&
                     function
             )
             :
-            parameter_tag_(std::forward<std::basic_string<lolita::character>>(parameter_tag)),
+            parameter_tag_(std::forward<std::basic_string<Character>>(parameter_tag)),
             function_(std::forward<lolita::behaviour::ParameterFunction>(function))
             {}
 
             constexpr
-            lolita::boolean
+            Boolean
             operator==(
                     MgisParameter const & other
             )
@@ -511,7 +511,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             operator!=(
                     MgisParameter const & other
             )
@@ -520,7 +520,7 @@ namespace lolita
                 return !(* this == other);
             }
 
-            std::basic_string<lolita::character> parameter_tag_;
+            std::basic_string<Character> parameter_tag_;
 
             lolita::behaviour::ParameterFunction function_;
 
@@ -539,9 +539,9 @@ namespace lolita
         {
 
             MgisBehaviour(
-                    std::basic_string<lolita::character> &&
+                    std::basic_string<Character> &&
                     unknown_tag,
-                    std::basic_string<lolita::character> &&
+                    std::basic_string<Character> &&
                     domain_tag,
                     std::string const &
                     path,
@@ -553,8 +553,8 @@ namespace lolita
                     parameters
             )
             :
-            unknown_tag_(std::forward<std::basic_string<lolita::character>>(unknown_tag)),
-            domain_tag_(std::forward<std::basic_string<lolita::character>>(domain_tag)),
+            unknown_tag_(std::forward<std::basic_string<Character>>(unknown_tag)),
+            domain_tag_(std::forward<std::basic_string<Character>>(domain_tag)),
             behaviour_data_(std::make_shared<lolita::behaviour::MgisBehaviourData>(lolita::behaviour::MgisBehaviourData{
                 mgis::behaviour::load(path, name, hypothesis),
                 std::forward<std::vector<lolita::behaviour::MgisParameter>>(parameters)
@@ -562,9 +562,9 @@ namespace lolita
             {}
 
             MgisBehaviour(
-                    std::basic_string<lolita::character> &&
+                    std::basic_string<Character> &&
                     unknown_tag,
-                    std::basic_string<lolita::character> &&
+                    std::basic_string<Character> &&
                     domain_tag,
                     std::string const &
                     path,
@@ -578,17 +578,17 @@ namespace lolita
                     parameters
             )
             :
-            unknown_tag_(std::forward<std::basic_string<lolita::character>>(unknown_tag)),
-            domain_tag_(std::forward<std::basic_string<lolita::character>>(domain_tag)),
+            unknown_tag_(std::forward<std::basic_string<Character>>(unknown_tag)),
+            domain_tag_(std::forward<std::basic_string<Character>>(domain_tag)),
             behaviour_data_(std::make_shared<lolita::behaviour::MgisBehaviourData>(lolita::behaviour::MgisBehaviourData{
                 mgis::behaviour::load(finite_strain_behaviour_options, path, name, hypothesis),
                 std::forward<std::vector<lolita::behaviour::MgisParameter>>(parameters)
             }))
             {}
 
-            std::basic_string<lolita::character> unknown_tag_;
+            std::basic_string<Character> unknown_tag_;
 
-            std::basic_string<lolita::character> domain_tag_;
+            std::basic_string<Character> domain_tag_;
 
             std::shared_ptr<lolita::behaviour::MgisBehaviourData> behaviour_data_;
 
@@ -611,10 +611,10 @@ namespace lolita
              */
             constexpr
             Quadrature(
-                    std::basic_string_view<lolita::character> && tag
+                    std::basic_string_view<Character> && tag
             )
             :
-            lolita::utility::Enumeration<Quadrature>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Quadrature>(std::forward<std::basic_string_view<Character>>(tag))
             {}
 
             /**
@@ -629,7 +629,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isGauss()
             const
             {
@@ -650,10 +650,10 @@ namespace lolita
              */
             constexpr
             Load(
-                    std::basic_string_view<lolita::character> && tag
+                    std::basic_string_view<Character> && tag
             )
             :
-            lolita::utility::Enumeration<Load>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<Load>(std::forward<std::basic_string_view<Character>>(tag))
             {}
 
             /**
@@ -668,7 +668,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isNatural()
             const
             {
@@ -687,7 +687,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isConstraint()
             const
             {
@@ -699,7 +699,7 @@ namespace lolita
         /**
          * @brief
          */
-        using Loading = std::function<lolita::real(lolita::domain::Point const &, lolita::real const &)>;
+        using Loading = std::function<Real(lolita::domain::Point const &, Real const &)>;
 
         /**
          * @brief
@@ -710,7 +710,7 @@ namespace lolita
             /**
              * @brief
              */
-            auto const static constexpr zero = [] (auto const &, auto const &) constexpr { return lolita::real(0); };
+            auto const static constexpr zero = [] (auto const &, auto const &) constexpr { return Real(0); };
 
             /**
              * @brief
@@ -759,11 +759,11 @@ namespace lolita
              * @param time
              * @return
              */
-            lolita::real
+            Real
             getImposedValue(
                     lolita::domain::Point const &
                     point,
-                    lolita::real const &
+                    Real const &
                     time
             )
             const
@@ -775,7 +775,7 @@ namespace lolita
              * @brief
              * @return
              */
-            lolita::boolean
+            Boolean
             isConstrained()
             const
             {
@@ -810,17 +810,17 @@ namespace lolita
              * @param loading
              */
             LoadEntry(
-                    std::basic_string_view<lolita::character> && unknown_tag,
-                    std::basic_string_view<lolita::character> && domain_tag,
-                    lolita::integer element_dim,
-                    lolita::index row,
-                    lolita::index col,
+                    std::basic_string_view<Character> && unknown_tag,
+                    std::basic_string_view<Character> && domain_tag,
+                    Integer element_dim,
+                    Integer row,
+                    Integer col,
                     lolita::finite_element::Loading && function,
                     lolita::finite_element::Load && loading
             )
             :
-            unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
-            domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
+            unknown_tag_(std::forward<std::basic_string_view<Character>>(unknown_tag)),
+            domain_tag_(std::forward<std::basic_string_view<Character>>(domain_tag)),
             element_dim_(element_dim),
             components_(lolita::matrix::Coordinates{row, col}),
             scalar_load_(std::make_shared<lolita::finite_element::ScalarLoad>(lolita::finite_element::ScalarLoad(
@@ -838,17 +838,17 @@ namespace lolita
              * @param loading
              */
             LoadEntry(
-                    std::basic_string_view<lolita::character> && unknown_tag,
-                    std::basic_string_view<lolita::character> && domain_tag,
-                    lolita::integer element_dim,
-                    lolita::index row,
-                    lolita::index col,
+                    std::basic_string_view<Character> && unknown_tag,
+                    std::basic_string_view<Character> && domain_tag,
+                    Integer element_dim,
+                    Integer row,
+                    Integer col,
                     lolita::finite_element::Loading const & function,
                     lolita::finite_element::Load && loading
             )
             :
-            unknown_tag_(std::forward<std::basic_string_view<lolita::character>>(unknown_tag)),
-            domain_tag_(std::forward<std::basic_string_view<lolita::character>>(domain_tag)),
+            unknown_tag_(std::forward<std::basic_string_view<Character>>(unknown_tag)),
+            domain_tag_(std::forward<std::basic_string_view<Character>>(domain_tag)),
             element_dim_(element_dim),
             components_(lolita::matrix::Coordinates{row, col}),
             scalar_load_(std::make_shared<lolita::finite_element::ScalarLoad>(lolita::finite_element::ScalarLoad(
@@ -859,17 +859,17 @@ namespace lolita
             /**
              * @brief
              */
-            std::basic_string_view<lolita::character> unknown_tag_;
+            std::basic_string_view<Character> unknown_tag_;
 
             /**
              * @brief
              */
-            std::basic_string_view<lolita::character> domain_tag_;
+            std::basic_string_view<Character> domain_tag_;
 
             /**
              * @brief
              */
-            lolita::integer element_dim_;
+            Integer element_dim_;
 
             /**
              * @brief
@@ -909,7 +909,7 @@ namespace lolita
             constexpr
             Basis(
                 lolita::finite_element::Basis::Type type,
-                lolita::integer ord
+                Integer ord
             )
             :
             type_(type),
@@ -920,10 +920,10 @@ namespace lolita
              * @brief 
              * 
              * @param other 
-             * @return constexpr lolita::boolean 
+             * @return constexpr Boolean 
              */
             constexpr
-            lolita::boolean
+            Boolean
             operator==(
                     Basis const & other
             )
@@ -933,10 +933,10 @@ namespace lolita
              * @brief 
              * 
              * @param other 
-             * @return constexpr lolita::boolean 
+             * @return constexpr Boolean 
              */
             constexpr
-            lolita::boolean
+            Boolean
             operator!=(
                     Basis const & other
             )
@@ -953,7 +953,7 @@ namespace lolita
             static constexpr
             lolita::finite_element::Basis
             monomial(
-                lolita::integer ord
+                Integer ord
             )
             {
                 return Basis(lolita::finite_element::Basis::Type::Monomial, ord);
@@ -962,10 +962,10 @@ namespace lolita
             /**
              * @brief 
              * 
-             * @return constexpr lolita::boolean 
+             * @return constexpr Boolean 
              */
             constexpr
-            lolita::boolean
+            Boolean
             isMonomial()
             const
             {
@@ -982,7 +982,7 @@ namespace lolita
              * @brief 
              * 
              */
-            lolita::integer ord_;
+            Integer ord_;
 
         };
         
@@ -998,10 +998,10 @@ namespace lolita
              */
             constexpr
             FiniteElementMethod(
-                    std::basic_string_view<lolita::character> && tag
+                    std::basic_string_view<Character> && tag
             )
             :
-            lolita::utility::Enumeration<FiniteElementMethod>(std::forward<std::basic_string_view<lolita::character>>(tag))
+            lolita::utility::Enumeration<FiniteElementMethod>(std::forward<std::basic_string_view<Character>>(tag))
             {}
 
             /**
@@ -1016,7 +1016,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             isHHO()
             const
             {
@@ -1043,10 +1043,10 @@ namespace lolita
                  */
                 constexpr
                 Stabilization(
-                        std::basic_string_view<lolita::character> && tag
+                        std::basic_string_view<Character> && tag
                 )
                 :
-                lolita::utility::Enumeration<Stabilization>(std::forward<std::basic_string_view<lolita::character>>(tag))
+                lolita::utility::Enumeration<Stabilization>(std::forward<std::basic_string_view<Character>>(tag))
                 {}
 
                 /**
@@ -1061,7 +1061,7 @@ namespace lolita
                 }
 
                 constexpr
-                lolita::boolean
+                Boolean
                 isHHO()
                 const
                 {
@@ -1080,7 +1080,7 @@ namespace lolita
                 }
 
                 constexpr
-                lolita::boolean
+                Boolean
                 isHDG()
                 const
                 {
@@ -1107,8 +1107,8 @@ namespace lolita
              */
             constexpr
             HybridHighOrder(
-                    lolita::integer ord_cell,
-                    lolita::integer ord_face
+                    Integer ord_cell,
+                    Integer ord_face
             )
             :
             lolita::finite_element::FiniteElementMethod(lolita::finite_element::FiniteElementMethod::HHO()),
@@ -1122,7 +1122,7 @@ namespace lolita
              * @return
              */
             constexpr
-            lolita::integer
+            Integer
             ordMapping(
                     lolita::field::Mapping mapping
             )
@@ -1136,7 +1136,7 @@ namespace lolita
              * @return
              */
             constexpr
-            lolita::integer
+            Integer
             ordCell()
             const
             {
@@ -1148,7 +1148,7 @@ namespace lolita
              * @return
              */
             constexpr
-            lolita::integer
+            Integer
             ordFace()
             const
             {
@@ -1158,12 +1158,12 @@ namespace lolita
             /**
              * @brief
              */
-            lolita::integer ord_cell_;
+            Integer ord_cell_;
 
             /**
              * @brief
              */
-            lolita::integer ord_face_;
+            Integer ord_face_;
 
         };
 
@@ -1173,8 +1173,8 @@ namespace lolita
                 lolita::field::Mapping mapping
         )
         {
-            { arg.ord_cell_ } -> std::convertible_to<lolita::index>;
-            { arg.ordMapping(mapping) } -> std::convertible_to<lolita::index>;
+            { arg.ord_cell_ } -> std::convertible_to<Integer>;
+            { arg.ordMapping(mapping) } -> std::convertible_to<Integer>;
         };
 
         template<lolita::field::UnknownConcept auto _unknown, auto _behaviour, lolita::finite_element::FiniteElementMethodConcept auto _finite_element_method>
@@ -1190,7 +1190,7 @@ namespace lolita
             constexpr
             FiniteElement(
                     lolita::finite_element::Quadrature quadrature,
-                    lolita::index ord_quadrature
+                    Integer ord_quadrature
             )
             :
             unknown_(_unknown),
@@ -1213,14 +1213,14 @@ namespace lolita
             {}
 
             constexpr
-            lolita::boolean
+            Boolean
             operator==(
                     FiniteElement const & other
             )
             const = default;
 
             constexpr
-            lolita::boolean
+            Boolean
             operator!=(
                     FiniteElement const & other
             )
@@ -1251,7 +1251,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::integer
+            Integer
             ordQuadrature()
             const
             {
@@ -1267,7 +1267,7 @@ namespace lolita
             }
 
             constexpr
-            lolita::boolean
+            Boolean
             hasMethod(
                     lolita::finite_element::FiniteElementMethod method
             )
@@ -1284,7 +1284,7 @@ namespace lolita
 
             lolita::finite_element::Quadrature quadrature_;
 
-            lolita::index ord_quadrature_;
+            Integer ord_quadrature_;
 
         };
 
@@ -1363,14 +1363,14 @@ namespace lolita
             t_FiniteElements const static constexpr finite_elements_ = {_finite_elements...};
 
             static constexpr
-            lolita::boolean
+            Boolean
             has()
             {
                 return (lolita::finite_element::FiniteElementConcept<std::remove_cvref_t<decltype(_finite_elements)>> && ...);
             }
 
             static constexpr
-            lolita::integer
+            Integer
             size()
             {
                 return sizeof...(_finite_elements);
@@ -1381,7 +1381,7 @@ namespace lolita
              * @tparam _i
              * @return
              */
-            template<lolita::integer _i>
+            template<Integer _i>
             static constexpr
             std::tuple_element_t<_i, t_FiniteElements>
             getFiniteElement()
@@ -1394,7 +1394,7 @@ namespace lolita
              * @return
              */
             static constexpr
-            lolita::integer
+            Integer
             count()
             {
                 if constexpr (has()) {
@@ -1407,14 +1407,14 @@ namespace lolita
 
             template<auto __finite_element>
             static constexpr
-            lolita::boolean
+            Boolean
             hasFiniteElement()
             {
                 if constexpr(has()) {
                     auto index = false;
                     using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
                     auto const constexpr elements = _Elements{_finite_elements...};
-                    auto set_index = [&] <lolita::index _i = 0u> (auto & self) constexpr mutable {
+                    auto set_index = [&] <Integer _i = 0u> (auto & self) constexpr mutable {
                         if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
                             if (__finite_element == std::get<_i>(elements)) {
                                 index = true;
@@ -1436,8 +1436,8 @@ namespace lolita
             static constexpr
             void
             getFiniteElementIndex2(
-                    lolita::integer & index,
-                    lolita::boolean & found
+                    Integer & index,
+                    Boolean & found
             )
             {
                 if constexpr(has()) {
@@ -1445,7 +1445,7 @@ namespace lolita
                         auto index2 = 0;
                         using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
                         auto const constexpr elements = _Elements{_finite_elements...};
-                        auto set_index = [&] <lolita::index _i = 0u> (auto & self) constexpr mutable {
+                        auto set_index = [&] <Integer _i = 0u> (auto & self) constexpr mutable {
                             if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
                                 if (__finite_element == std::get<_i>(elements)) {
                                     index2 = _i;
@@ -1472,18 +1472,18 @@ namespace lolita
 
             template<auto __finite_element>
             static constexpr
-            lolita::integer
+            Integer
             getFiniteElementIndex()
             {
                 auto index = 0;
                 auto found = false;
-//                auto mli = [&] <typename _T, lolita::integer __i = 0> (auto & self1) constexpr mutable {
+//                auto mli = [&] <typename _T, Integer __i = 0> (auto & self1) constexpr mutable {
 //                    if constexpr(_T::has()) {
 //                        if constexpr (_T::template hasFiniteElement<__finite_element>()) {
 //                            auto index2 = 0;
 //                            using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
 //                            auto const constexpr elements = _Elements{_finite_elements...};
-//                            auto set_index = [&] <lolita::index _i = 0u> (auto & self) constexpr mutable {
+//                            auto set_index = [&] <Integer _i = 0u> (auto & self) constexpr mutable {
 //                                if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {
 //                                    if (__finite_element == std::get<_i>(elements)) {
 //                                        index2 = _i;
@@ -1515,7 +1515,7 @@ namespace lolita
 
 //            template<auto __finite_element>
 //            static constexpr
-//            lolita::integer
+//            Integer
 //            getFiniteElementIndex2()
 //            {
 //                auto index = -1;
@@ -1545,14 +1545,14 @@ namespace lolita
              */
 //            template<auto __finite_element>
 //            static constexpr
-//            lolita::index
+//            Integer
 //            getFiniteElementIndex()
 //            requires((lolita::finite_element::FiniteElementConcept<std::remove_cvref_t<decltype(_finite_elements)>>) && ...)
 //            {
 //                auto index = sizeof...(_finite_elements);
 //                using _Elements = std::tuple<std::remove_cvref_t<decltype(_finite_elements)>...>;
 //                auto const constexpr elements = _Elements{_finite_elements...};
-//                auto set_index = [&] <lolita::index _i = 0u> (auto & self)
+//                auto set_index = [&] <Integer _i = 0u> (auto & self)
 //                        constexpr mutable
 //                {
 //                    if constexpr (std::is_same_v<std::tuple_element_t<_i, _Elements>, std::remove_cvref_t<decltype(__finite_element)>>) {

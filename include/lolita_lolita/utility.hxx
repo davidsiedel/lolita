@@ -1,5 +1,5 @@
-#ifndef E5351E45_F2AD_48E4_8AB5_ED530F0DBCDA
-#define E5351E45_F2AD_48E4_8AB5_ED530F0DBCDA
+#ifndef BD1D6E93_67D6_418F_A38E_F9C11C70DB4B
+#define BD1D6E93_67D6_418F_A38E_F9C11C70DB4B
 
 #include <iostream>
 #include <fstream>
@@ -11,29 +11,7 @@
 #include <ostream>
 #include <iomanip>
 
-namespace lolita
-{
-
-    namespace config
-    {
-
-        using Character =   char;
-
-        using Integer =     int;
-
-        using Index =       unsigned short;
-
-        using Natural =     unsigned long long;
-
-        using Real =        double;
-
-        using Boolean =     bool;
-
-    }
-
-    using namespace config;
-
-}
+#include "lolita_lolita/config.hxx"
 
 namespace lolita::utility
 {
@@ -380,94 +358,94 @@ namespace lolita::utility
 
     // ------------------------------------------------------------------------------------------------------
 
-    struct Label
-    {
+    // struct Label
+    // {
 
-        using Tag = std::array<Character, 50>;
+    //     using Tag = std::array<Character, 50>;
 
-    private:
+    // private:
 
-        static constexpr
-        Label::Tag
-        setTag(
-            std::basic_string_view<Character> str
-        )
-        {
-            auto tag = Label::Tag();
-            auto count = Integer(0);
-            for (auto c : str) {
-                tag[count] = c;
-                count ++;
-            }
-            return tag;
-        }
+    //     static constexpr
+    //     Label::Tag
+    //     setTag(
+    //         std::basic_string_view<Character> str
+    //     )
+    //     {
+    //         auto tag = Label::Tag();
+    //         auto count = Integer(0);
+    //         for (auto c : str) {
+    //             tag[count] = c;
+    //             count ++;
+    //         }
+    //         return tag;
+    //     }
 
-    public:
+    // public:
 
-        constexpr
-        Label(
-            std::basic_string_view<Character> str
-        )
-        :
-        tag_(setTag(str))
-        {}
+    //     constexpr
+    //     Label(
+    //         std::basic_string_view<Character> str
+    //     )
+    //     :
+    //     tag_(setTag(str))
+    //     {}
 
-        constexpr
-        Boolean
-        operator==(
-            Label const & other
-        )
-        const = default;
+    //     constexpr
+    //     Boolean
+    //     operator==(
+    //         Label const & other
+    //     )
+    //     const = default;
 
-        constexpr
-        Boolean
-        operator!=(
-            Label const & other
-        )
-        const = default;
+    //     constexpr
+    //     Boolean
+    //     operator!=(
+    //         Label const & other
+    //     )
+    //     const = default;
 
-        constexpr inline
-        Boolean
-        operator==(
-            std::basic_string_view<Character> str
-        )
-        const
-        {
-            return str == this->view();
-        }
+    //     constexpr inline
+    //     Boolean
+    //     operator==(
+    //         std::basic_string_view<Character> str
+    //     )
+    //     const
+    //     {
+    //         return str == this->view();
+    //     }
 
-        constexpr inline
-        Boolean
-        operator!=(
-            std::basic_string_view<Character> str
-        )
-        const
-        {
-            return !(* this == str);
-        }
+    //     constexpr inline
+    //     Boolean
+    //     operator!=(
+    //         std::basic_string_view<Character> str
+    //     )
+    //     const
+    //     {
+    //         return !(* this == str);
+    //     }
 
-        constexpr inline
-        std::basic_string_view<Character>
-        view()
-        const
-        {
-            return std::basic_string_view<Character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), Character())));
-        }
+    //     constexpr inline
+    //     std::basic_string_view<Character>
+    //     view()
+    //     const
+    //     {
+    //         return std::basic_string_view<Character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), Character())));
+    //     }
 
-        friend inline
-        std::ostream &
-        operator<<(
-            std::ostream & os,
-            Label const & label
-        )
-        {
-            os << label.view();
-            return os;
-        }
+    //     friend inline
+    //     std::ostream &
+    //     operator<<(
+    //         std::ostream & os,
+    //         Label const & label
+    //     )
+    //     {
+    //         os << label.view();
+    //         return os;
+    //     }
 
-        Label::Tag tag_;
+    //     Label::Tag tag_;
 
-    };
+    // };
 
     // ------------------------------------------------------------------------------------------------------
 
@@ -528,4 +506,4 @@ namespace lolita::utility
 }
 
 
-#endif /* E5351E45_F2AD_48E4_8AB5_ED530F0DBCDA */
+#endif /* BD1D6E93_67D6_418F_A38E_F9C11C70DB4B */

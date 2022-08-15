@@ -1,23 +1,17 @@
-#ifndef ECF0EB38_E45D_4E38_ACEB_E40188311824
-#define ECF0EB38_E45D_4E38_ACEB_E40188311824
+#ifndef C17BAFB5_3EEB_4E27_8A93_F8EEC5AAF622
+#define C17BAFB5_3EEB_4E27_8A93_F8EEC5AAF622
 
-#include "lolita/lolita.hxx"
+#include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_algebra.hxx"
 #include "lolita/lolita_defs.hxx"
-#include "lolita/lolita_core_n_000.hxx"
-#include "lolita/lolita_core_n_001.hxx"
-#include "lolita/lolita_core_n_002.hxx"
-#include "lolita/lolita_core_n_003.hxx"
+#include "lolita/lolita_core_n_0000.hxx"
+#include "lolita/lolita_core_n_1000.hxx"
+#include "lolita/lolita_core_n_2000.hxx"
+#include "lolita/lolita_core_n_3000.hxx"
 
-namespace lolita2::geometry
+namespace lolita::core
 {
-
-    template<auto... t_args>
-    using RealMatrix = lolita::matrix::Matrix<Real, t_args...>;
-
-    template<auto... t_args>
-    using RealVector = lolita::matrix::Vector<Real, t_args...>;
 
     template<Element t_element, Domain t_domain>
     struct FiniteElementHolder;
@@ -642,6 +636,30 @@ namespace lolita2::geometry
 
     };
 
+    struct QuadraturePoint
+    {
+
+        void
+        integrate(
+            Integer & res
+        )
+        {
+            res = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)), * behavior_);
+        }
+        
+        std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+        
+        std::shared_ptr<mgis::behaviour::BehaviourData> behavior_data_;
+
+    };
+
+    struct QuadraturePoint2 : QuadraturePoint
+    {
+
+        std::vector<lolita::matrix::Matrix<Real>> element_operators_;
+
+    };
+
     template<Domain t_domain>
     struct ElementIntegrationPoints
     {
@@ -691,9 +709,13 @@ namespace lolita2::geometry
 
         std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
 
+        std::vector<std::shared_ptr<mgis::behaviour::BehaviourData>> behavior_data_;
+
         std::vector<lolita::matrix::Matrix<Real>> element_operators_;
 
         std::vector<std::shared_ptr<Load>> loads_;
+        
+        std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
 
         std::shared_ptr<std::basic_string<Character>> label_;
 
@@ -880,21 +902,21 @@ namespace lolita2::geometry
         template<auto t_discretization>
         using t_Disc = typename HybridDiscontinuousGalerkinTraits<t_discretization>::template Implementation<t_element, t_domain>;
         
-        lolita::boolean
+        Boolean
         operator==(
             FiniteElementHolder const & other
         )
         const = default;
         
-        lolita::boolean
+        Boolean
         operator!=(
             FiniteElementHolder const & other
         )
         const = default;
 
-        lolita::boolean
+        Boolean
         isIn(
-            std::basic_string_view<lolita::character> domain
+            std::basic_string_view<Character> domain
         )
         const
         {
@@ -907,7 +929,7 @@ namespace lolita2::geometry
             return std::find_if(domains_.begin(), domains_.end(), has_domain) != domains_.end();
         }
         
-        std::basic_string<lolita::character>
+        std::basic_string<Character>
         getHash()
         const
         requires(t_element.isNode())
@@ -915,11 +937,11 @@ namespace lolita2::geometry
             return std::to_string(this->tag_);
         }
         
-        std::basic_string<lolita::character>
+        std::basic_string<Character>
         getHash()
         const
         {
-            std::basic_stringstream<lolita::character> hash;
+            std::basic_stringstream<Character> hash;
             auto const & nodes = getInnerNeighbors<t_element.dim_ - 1, 0>();
             for (auto const & node : nodes)
             {
@@ -1652,7 +1674,7 @@ namespace lolita2::geometry
         
         t_InnerNeighbors inner_neighbors_;
         
-        lolita::natural tag_;
+        Natural tag_;
 
         std::vector<std::shared_ptr<MeshDomain>> domains_;
         
@@ -1662,9 +1684,10 @@ namespace lolita2::geometry
 
         std::vector<std::shared_ptr<ElementIntegrationPoints<t_domain>>> integration_points_;
 
+        std::vector<std::shared_ptr<ElementIntegrationPoints<t_domain>>> integration_points2_;
+
     };
     
 }
 
-
-#endif /* ECF0EB38_E45D_4E38_ACEB_E40188311824 */
+#endif /* C17BAFB5_3EEB_4E27_8A93_F8EEC5AAF622 */

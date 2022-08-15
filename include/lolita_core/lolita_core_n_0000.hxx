@@ -1,12 +1,9 @@
 #ifndef DA9C5D5A_13CE_4129_A31C_3550B18DAB24
 #define DA9C5D5A_13CE_4129_A31C_3550B18DAB24
 
-#include "lolita/lolita.hxx"
-#include "lolita/lolita_utility.hxx"
-#include "lolita/lolita_algebra.hxx"
-#include "lolita/lolita_defs.hxx"
+#include "lolita_core/lolita.hxx"
 
-namespace lolita2::geometry
+namespace lolita
 {
 
     template<Field t_field>
@@ -15,70 +12,104 @@ namespace lolita2::geometry
 
         template<Domain t_domain>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
         requires(t_field.isTensor(0))
         {
-            return {
-                lolita::numerics::pow(t_domain.dim_, 0),
-                lolita::numerics::pow(t_domain.dim_, 0)
-            };
+            return lolita::numerics::pow(t_domain.dim_, 0);
         }
 
         template<Domain t_domain>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
         requires(t_field.isTensor(1))
         {
-            return {
-                lolita::numerics::pow(t_domain.dim_, 0),
-                lolita::numerics::pow(t_domain.dim_, 1)
-            };
+            return lolita::numerics::pow(t_domain.dim_, 0);
         }
 
         template<Domain t_domain>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
         requires(t_field.isTensor(2))
         {
-            return {
-                lolita::numerics::pow(t_domain.dim_, 1),
-                lolita::numerics::pow(t_domain.dim_, 1)
-            };
+            return lolita::numerics::pow(t_domain.dim_, 1);
         }
 
         template<Domain t_domain>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
         requires(t_field.isTensor(3))
         {
-            return {
-                lolita::numerics::pow(t_domain.dim_, 1),
-                lolita::numerics::pow(t_domain.dim_, 2)
-            };
+            return lolita::numerics::pow(t_domain.dim_, 1);
         }
 
         template<Domain t_domain>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
         requires(t_field.isTensor(4))
         {
-            return {
-                lolita::numerics::pow(t_domain.dim_, 2),
-                lolita::numerics::pow(t_domain.dim_, 2)
-            };
+            return lolita::numerics::pow(t_domain.dim_, 2);
+        }
+
+        // ---
+
+        template<Domain t_domain>
+        static constexpr
+        Integer
+        getCols()
+        requires(t_field.isTensor(0))
+        {
+            return lolita::numerics::pow(t_domain.dim_, 0);
         }
 
         template<Domain t_domain>
         static constexpr
-        lolita::integer
+        Integer
+        getCols()
+        requires(t_field.isTensor(1))
+        {
+            return lolita::numerics::pow(t_domain.dim_, 1);
+        }
+
+        template<Domain t_domain>
+        static constexpr
+        Integer
+        getCols()
+        requires(t_field.isTensor(2))
+        {
+            return lolita::numerics::pow(t_domain.dim_, 1);
+        }
+
+        template<Domain t_domain>
+        static constexpr
+        Integer
+        getCols()
+        requires(t_field.isTensor(3))
+        {
+            return lolita::numerics::pow(t_domain.dim_, 2);
+        }
+
+        template<Domain t_domain>
+        static constexpr
+        Integer
+        getCols()
+        requires(t_field.isTensor(4))
+        {
+            return lolita::numerics::pow(t_domain.dim_, 2);
+        }
+
+        // ---
+
+        template<Domain t_domain>
+        static constexpr
+        Integer
         getSize()
         {
-            return getShape<t_domain>().size_;
+            return getRows<t_domain>() * getCols<t_domain>();
         }
 
     };
@@ -88,10 +119,10 @@ namespace lolita2::geometry
 
         constexpr
         MappingValues(
-            lolita::index row,
-            lolita::index col,
-            lolita::index position,
-            lolita::real coefficient
+            Integer row,
+            Integer col,
+            Integer position,
+            Real coefficient
         )
         :
         row_(row),
@@ -101,7 +132,7 @@ namespace lolita2::geometry
         {}
 
         constexpr
-        lolita::integer
+        Integer
         row()
         const
         {
@@ -109,7 +140,7 @@ namespace lolita2::geometry
         }
 
         constexpr
-        lolita::integer
+        Integer
         col()
         const
         {
@@ -117,7 +148,7 @@ namespace lolita2::geometry
         }
 
         constexpr
-        lolita::integer
+        Integer
         rank()
         const
         {
@@ -125,20 +156,20 @@ namespace lolita2::geometry
         }
 
         constexpr
-        lolita::real
+        Real
         value()
         const
         {
             return coefficient_;
         }
 
-        lolita::index row_;
+        Integer row_;
 
-        lolita::index col_;
+        Integer col_;
 
-        lolita::index position_;
+        Integer position_;
 
-        lolita::real coefficient_;
+        Real coefficient_;
 
     };
 
@@ -150,20 +181,36 @@ namespace lolita2::geometry
     struct MappingTraits<t_mapping>
     {
 
+        // template<Domain t_domain, Field t_field>
+        // static constexpr
+        // lolita::matrix::Shape
+        // getShape()
+        // {
+        //     return FieldTraits<t_field>::template getShape<t_domain>();
+        // }
+
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
         {
-            return FieldTraits<t_field>::template getShape<t_domain>();
+            return FieldTraits<t_field>::template getRows<t_domain>();
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::integer
+        Integer
+        getCols()
+        {
+            return FieldTraits<t_field>::template getCols<t_domain>();
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        Integer
         getSize()
         {
-            return getShape<t_domain, t_field>().size_;
+            return getRows<t_domain, t_field>() * getCols<t_domain, t_field>();
         }
 
         template<Domain t_domain, Field t_field>
@@ -216,20 +263,36 @@ namespace lolita2::geometry
     struct MappingTraits<t_mapping>
     {
 
+        // template<Domain t_domain, Field t_field>
+        // static constexpr
+        // lolita::matrix::Shape
+        // getShape()
+        // {
+        //     return FieldTraits<Field(t_field.dim_ + 1)>::template getShape<t_domain>();
+        // }
+
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
         {
-            return FieldTraits<Field(t_field.dim_ + 1)>::template getShape<t_domain>();
+            return FieldTraits<t_field>::template getRows<t_domain>();
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::integer
+        Integer
+        getCols()
+        {
+            return FieldTraits<t_field>::template getCols<t_domain>();
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        Integer
         getSize()
         {
-            return getShape<t_domain, t_field>().size_;
+            return getRows<t_domain, t_field>() * getCols<t_domain, t_field>();
         }
 
         template<Domain t_domain, Field t_field>
@@ -315,30 +378,56 @@ namespace lolita2::geometry
     struct MappingTraits<t_mapping>
     {
 
+        // template<Domain t_domain, Field t_field>
+        // static constexpr
+        // lolita::matrix::Shape
+        // getShape()
+        // requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        // {
+        //     return {1, 4};
+        // }
+
+        // template<Domain t_domain, Field t_field>
+        // static constexpr
+        // lolita::matrix::Shape
+        // getShape()
+        // requires(t_field.isTensor(1) && t_domain.hasDim(3))
+        // {
+        //     return {1, 6};
+        // }
+
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
+        {
+            return 1;
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        Integer
+        getCols()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
-            return {1, 4};
+            return 4;
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getCols()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
-            return {1, 6};
+            return 6;
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::integer
+        Integer
         getSize()
         {
-            return getShape<t_domain, t_field>().size_;
+            return getRows<t_domain, t_field>() * getCols<t_domain, t_field>();
         }
 
         template<Domain t_domain, Field t_field>
@@ -351,7 +440,7 @@ namespace lolita2::geometry
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
                 MappingValues{2, 2, 2, 1},
-                MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
+                MappingValues{0, 1, 3, lolita::numerics::sqrt(2)},
             };
         }
 
@@ -365,9 +454,9 @@ namespace lolita2::geometry
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
                 MappingValues{2, 2, 2, 1},
-                MappingValues{0, 1, 3, lolita::numerics::sqrt_2},
-                MappingValues{0, 2, 4, lolita::numerics::sqrt_2},
-                MappingValues{1, 2, 5, lolita::numerics::sqrt_2},
+                MappingValues{0, 1, 3, lolita::numerics::sqrt(2)},
+                MappingValues{0, 2, 4, lolita::numerics::sqrt(2)},
+                MappingValues{1, 2, 5, lolita::numerics::sqrt(2)},
             };
         }
         
@@ -385,30 +474,64 @@ namespace lolita2::geometry
     struct MappingTraits<t_mapping>
     {
 
+        // template<Domain t_domain, Field t_field>
+        // static constexpr
+        // lolita::matrix::Shape
+        // getShape()
+        // requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        // {
+        //     return {1, 5};
+        // }
+
+        // template<Domain t_domain, Field t_field>
+        // static constexpr
+        // lolita::matrix::Shape
+        // getShape()
+        // requires(t_field.isTensor(1) && t_domain.hasDim(3))
+        // {
+        //     return {1, 9};
+        // }
+
+        // template<Domain t_domain, Field t_field>
+        // static constexpr
+        // Integer
+        // getSize()
+        // {
+        //     return getShape<t_domain, t_field>().size_;
+        // }
+
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getRows()
+        {
+            return 1;
+        }
+
+        template<Domain t_domain, Field t_field>
+        static constexpr
+        Integer
+        getCols()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
-            return {1, 5};
+            return 5;
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::matrix::Shape
-        getShape()
+        Integer
+        getCols()
         requires(t_field.isTensor(1) && t_domain.hasDim(3))
         {
-            return {1, 9};
+            return 9;
         }
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        lolita::integer
+        Integer
         getSize()
         {
-            return getShape<t_domain, t_field>().size_;
+            return getRows<t_domain, t_field>() * getCols<t_domain, t_field>();
         }
 
         template<Domain t_domain, Field t_field>
@@ -464,12 +587,12 @@ namespace lolita2::geometry
 
         template<Domain t_domain>
         static constexpr
-        lolita::integer
+        Integer
         getSize()
         {
             auto constexpr t_field = t_generalized_strain.getField();
-            auto size = lolita::integer(0);
-            auto set_size = [&] <lolita::integer t_i = 0> (
+            auto size = Integer(0);
+            auto set_size = [&] <Integer t_i = 0> (
                 auto & self
             )
             constexpr mutable
@@ -493,11 +616,11 @@ namespace lolita2::geometry
 
         template<Domain t_domain>
         static constexpr
-        lolita::integer
+        Integer
         getGeneralizedStrainSize()
         {
-            auto p = lolita::integer(0);
-            auto cnt = [&] <lolita::integer t_i = 0> (
+            auto p = Integer(0);
+            auto cnt = [&] <Integer t_i = 0> (
                 auto & self
             )
             constexpr mutable
@@ -520,7 +643,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain>
         static constexpr
-        lolita::integer
+        Integer
         getGeneralizedStrainSize()
         {
             return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template getSize<t_domain>();
@@ -528,13 +651,13 @@ namespace lolita2::geometry
 
         template<Domain t_domain>
         static constexpr
-        lolita::integer
+        Integer
         getGeneralizedStrainOffset()
         {
             auto constexpr t_finite_element_generalized_strain = t_finite_element_method.getGeneralizedStrain();
-            auto offset = lolita::integer(0);
+            auto offset = Integer(0);
             auto is_set = false;
-            auto set_offset = [&] <lolita::integer t_i = 0> (
+            auto set_offset = [&] <Integer t_i = 0> (
                 auto & self
             )
             constexpr mutable
@@ -562,7 +685,7 @@ namespace lolita2::geometry
 
         template<Domain t_domain, Mapping t_mapping>
         static constexpr
-        lolita::integer
+        Integer
         getMappingSize()
         {
             return MappingTraits<t_mapping>::template getSize<t_domain, t_finite_element_method.getField()>();

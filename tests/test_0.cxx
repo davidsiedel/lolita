@@ -1,36 +1,37 @@
 #include "gtest/gtest.h"
-#include "lolita/lolita_core_n_005.hxx"
+#include "lolita_core/lolita_core_n_5000.hxx"
 
 TEST(t0, t0)
 {
     // constants
-    auto constexpr domain = lolita2::Domain::cartesian(2);
-    auto constexpr cell_basis = lolita2::Basis::monomial(1);
-    auto constexpr face_basis = lolita2::Basis::monomial(1);
-    auto constexpr quadrature = lolita2::Quadrature::gauss(2);
-    auto constexpr cells = lolita2::geometry::ElementType::cells(domain);
-    auto constexpr faces = lolita2::geometry::ElementType::faces(domain);
+    auto constexpr domain = lolita::Domain::cartesian(2);
+    auto constexpr cell_basis = lolita::Basis::monomial(1);
+    auto constexpr face_basis = lolita::Basis::monomial(1);
+    auto constexpr quadrature = lolita::Quadrature::gauss(2);
+    auto constexpr cells = lolita::ElementType::cells(domain);
+    auto constexpr faces = lolita::ElementType::faces(domain);
     // fields
-    auto constexpr displacement_field = lolita2::Field::vector();
-    auto constexpr damage_field = lolita2::Field::scalar();
+    auto constexpr displacement_field = lolita::Field::vector();
+    auto constexpr damage_field = lolita::Field::scalar();
     // generalized strains
-    auto constexpr displacement_generalized_strain = lolita2::GeneralizedStrain(displacement_field, lolita2::Mapping::smallStrain());
-    auto constexpr damage_generalized_strain = lolita2::GeneralizedStrain(damage_field, lolita2::Mapping::gradient(), lolita2::Mapping::identity());
+    auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(displacement_field, lolita::Mapping::smallStrain());
+    auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(damage_field, lolita::Mapping::gradient(), lolita::Mapping::identity());
     // behaviors
-    auto constexpr displacement_behavior = lolita2::Behavior(displacement_generalized_strain);
-    auto constexpr damage_behavior = lolita2::Behavior(damage_generalized_strain);
+    auto constexpr displacement_behavior = lolita::Behavior(displacement_generalized_strain);
+    auto constexpr damage_behavior = lolita::Behavior(damage_generalized_strain);
     // discretization
-    auto constexpr hdg = lolita2::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita2::HybridDiscontinuousGalerkin::Stabilization::Hdg);
+    auto constexpr hdg = lolita::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita::HybridDiscontinuousGalerkin::Stabilization::Hdg);
     // finite elements
-    auto constexpr displacement_element =  lolita2::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
-    auto constexpr damage_element =  lolita2::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
+    auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
+    auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
     // mesh    
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
     // dofs
-    auto degree_of_freedom = std::make_shared<lolita2::geometry::DegreeOfFreedom>("FaceDisplacement");
-    auto load_f = std::make_shared<lolita2::geometry::Load>([](lolita2::Point const &p, lolita::real const &t) { return 1.0; }, 0, 0);
+    auto degree_of_freedom = std::make_shared<lolita::DegreeOfFreedom>("FaceDisplacement");
+    // load
+    auto load_f = std::make_shared<lolita::Load>([](lolita::Point const &p, lolita::Real const &t) { return 1.0; }, 0, 0);
     // mesh build
-    auto elements = lolita2::geometry::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
+    auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     elements->addElement<cells>("Displacement", "SQUARE");
     elements->addElement<faces>("Displacement", "SQUARE");
     elements->addElement<cells>("Damage", "SQUARE");
@@ -38,19 +39,32 @@ TEST(t0, t0)
     // dofs
     elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE", degree_of_freedom);
     // load
-    elements->addLoad<faces>("Displacement", "SQUARE", load_f);
+    elements->addLoad<faces>("Displacement", "SQUARE", [](lolita::Point const &p, lolita::Real const &t) { return 1.0; }, 0, 0);
     // bhv
-    auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/behaviour/src/libBehaviour.so";
-    auto lib_name = "Voce";
+    auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic/src/libBehaviour.so";
+    auto lib_name = "MicromorphicDamageII";
     auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
         mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
         mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
     };
     auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
 
-    auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(opts, lib_path, lib_name, hyp));
+    // auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(opts, lib_path, lib_name, hyp));
+    auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(lib_path, lib_name, hyp));
+    //
+    auto behavior_data = std::make_shared<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* bhvv));
+    mgis::behaviour::setMaterialProperty(behavior_data->s0, "FractureEnergy", 1.0);
+    auto behaviour_view = mgis::behaviour::make_view(* behavior_data);
+    auto result = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data)), * bhvv);
+    std::cout << "result : " << result << std::endl;
+    for (auto const val : behavior_data->s1.gradients)
+    {
+        std::cout << val << std::endl;
+    }
+    //
     elements->addBehavior<cells, quadrature>("SQUARE", bhvv);
     elements->addBehavior<cells>("Displacement", "SQUARE", lib_name);
+    // std::cout << lolita::numerics::sqrt_2 << std::endl;
     // elements->makeQuadrature<cells, displacement_field, quadrature, hdg>("SQUARE", "Displacement");
     //
     // problem build
@@ -58,12 +72,12 @@ TEST(t0, t0)
     // elements->activate<faces>("Displacement", "SQUARE");
     // elements->activate<cells>("Damage", "SQUARE");
     // elements->activate<faces>("Damage", "SQUARE");
-    // elements->activate<displacement_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
-    // elements->activate<damage_element, lolita2::geometry::ElementType::cells(domain)>("SQUARE");
-    // elements->activate<damage_element, lolita2::geometry::ElementType::faces(domain)>("SQUARE");
-    // elements->setLoad<displacement_element, lolita2::geometry::ElementType::cells(domain)>(
+    // elements->activate<displacement_element, lolita::core::ElementType::faces(domain)>("SQUARE");
+    // elements->activate<damage_element, lolita::core::ElementType::cells(domain)>("SQUARE");
+    // elements->activate<damage_element, lolita::core::ElementType::faces(domain)>("SQUARE");
+    // elements->setLoad<displacement_element, lolita::core::ElementType::cells(domain)>(
     //     "SQUARE",
-    //     0, 0, [](lolita2::Point const &p, lolita::real const &t) { return 1.0; }
+    //     0, 0, [](lolita::Point const &p, Real const &t) { return 1.0; }
     // );
     // // show mesh
     // std::cout << degree_of_freedom->coefficients_.size() << std::endl;
@@ -77,7 +91,7 @@ TEST(t0, t0)
     //     element.second->getFiniteElement<0>()->getDegreeOfFreedom("FaceDisplacement")->getCoefficients<displacement_field, face_basis>() << std::endl;
     // }
     //
-    std::cout << * elements << std::endl;
+    // std::cout << * elements << std::endl;
 
     
     

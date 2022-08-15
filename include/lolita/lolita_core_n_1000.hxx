@@ -1,92 +1,14 @@
 #ifndef D95DBEAA_910F_4201_AFBF_FEDDCE22F29E
 #define D95DBEAA_910F_4201_AFBF_FEDDCE22F29E
 
-#include "lolita/lolita.hxx"
+#include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_utility.hxx"
 #include "lolita/lolita_algebra.hxx"
 #include "lolita/lolita_defs.hxx"
-#include "lolita/lolita_core_n_000.hxx"
+#include "lolita/lolita_core_n_0000.hxx"
 
-namespace lolita2::geometry
+namespace lolita::core
 {
-
-    // enum struct HJK
-    // {
-    //     Points,
-    //     Curves,
-    //     Facets,
-    //     Solids,
-    //     // Cells,
-    //     // Faces,
-    //     // Edges,
-    //     // Nodes,
-    // };
-
-    struct ElementType
-    {
-
-        enum Type
-        {
-
-            // Points,
-            // Curves,
-            // Facets,
-            // Solids,
-            Cells,
-            Faces,
-            Edges,
-            Nodes,
-
-        };
-
-        static constexpr
-        ElementType
-        cells(
-            Domain domain
-        )
-        {
-            return ElementType(domain, Type::Cells);
-        }
-
-        static constexpr
-        ElementType
-        faces(
-            Domain domain
-        )
-        {
-            return ElementType(domain, Type::Faces);
-        }
-
-        constexpr
-        ElementType(
-            Domain domain,
-            Type type
-        )
-        :
-        domain_(domain),
-        type_(type)
-        {}
-        
-        constexpr
-        lolita::integer
-        getDim()
-        const
-        {
-            switch (type_)
-            {
-                case Type::Cells: return domain_.getDim() - 0;
-                case Type::Faces: return domain_.getDim() - 1;
-                case Type::Edges: return 1;
-                case Type::Nodes: return 0;
-                default : return -1;
-            }
-        }
-
-        Domain domain_;
-
-        Type type_;
-
-    };
     
     struct ElementCoordinates
     {
@@ -100,8 +22,8 @@ namespace lolita2::geometry
         
         constexpr
         ElementCoordinates(
-            lolita::integer dim,
-            lolita::integer tag
+            Integer dim,
+            Integer tag
         )
         :
         dim_(dim),
@@ -109,7 +31,7 @@ namespace lolita2::geometry
         {}
         
         constexpr
-        lolita::integer
+        Integer
         dim()
         const
         {
@@ -117,7 +39,7 @@ namespace lolita2::geometry
         }
         
         constexpr
-        lolita::integer
+        Integer
         tag()
         const
         {
@@ -135,9 +57,9 @@ namespace lolita2::geometry
             return os;
         }
         
-        lolita::integer dim_;
+        Integer dim_;
         
-        lolita::integer tag_;
+        Integer tag_;
 
     };
     
@@ -158,7 +80,7 @@ namespace lolita2::geometry
         };
 
         static constexpr
-        std::basic_string_view<lolita::character>
+        std::basic_string_view<Character>
         getShapeLabel(
             Shape shape
         )
@@ -176,27 +98,15 @@ namespace lolita2::geometry
                 default : return "";
             }
         }
-
-        Shape shape_;
-
-        lolita::integer dim_;
-
-        lolita::integer ord_;
-
-        lolita::integer num_nodes_;
-
-        lolita::integer num_edges_;
-
-        lolita::integer num_faces_;
         
         constexpr
         Element(
                 Shape shape,
-                lolita::integer dim,
-                lolita::integer ord,
-                lolita::integer num_nodes,
-                lolita::integer num_edges,
-                lolita::integer num_faces
+                Integer dim,
+                Integer ord,
+                Integer num_nodes,
+                Integer num_edges,
+                Integer num_faces
         )
         :
         shape_(shape),
@@ -208,21 +118,21 @@ namespace lolita2::geometry
         {}
 
         constexpr
-        lolita::boolean
+        Boolean
         operator==(
                 Element const & other
         )
         const = default;
 
         constexpr
-        lolita::boolean
+        Boolean
         operator!=(
                 Element const & other
         )
         const = default;
 
         constexpr
-        std::basic_string_view<lolita::character>
+        std::basic_string_view<Character>
         getShapeLabel()
         const noexcept
         {
@@ -237,7 +147,7 @@ namespace lolita2::geometry
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         isNode()
         const
         {
@@ -245,7 +155,7 @@ namespace lolita2::geometry
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         isCurve()
         const
         {
@@ -253,7 +163,7 @@ namespace lolita2::geometry
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         isFacet()
         const
         {
@@ -261,7 +171,7 @@ namespace lolita2::geometry
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         isSolid()
         const
         {
@@ -271,16 +181,16 @@ namespace lolita2::geometry
         static constexpr
         Element
         segment(
-            lolita::integer ord
+            Integer ord
         )
         {
             return Element(Shape::Segment, 1, ord, ord + 1, 0, 0);
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         isSegment(
-                lolita::integer ord
+                Integer ord
         )
         const
         {
@@ -290,16 +200,16 @@ namespace lolita2::geometry
         static constexpr
         Element
         triangle(
-            lolita::integer ord
+            Integer ord
         )
         {
             return Element(Shape::Triangle, 2, ord, 3 * ord, 3, 0);
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         isTriangle(
-                lolita::integer ord
+                Integer ord
         )
         const
         {
@@ -309,16 +219,16 @@ namespace lolita2::geometry
         static constexpr
         Element
         quadrangle(
-            lolita::integer ord
+            Integer ord
         )
         {
             return Element(Shape::Quadrangle, 2, ord, 4 * ord, 4, 0);
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         isQuadrangle(
-                lolita::integer ord
+                Integer ord
         )
         const
         {
@@ -328,8 +238,8 @@ namespace lolita2::geometry
         static constexpr
         Element
         polygon(
-            lolita::integer ord,
-            lolita::integer num_edges
+            Integer ord,
+            Integer num_edges
         )
         {
             return Element(Shape::Polygon, 1, ord, num_edges * ord, num_edges, 0);
@@ -338,16 +248,16 @@ namespace lolita2::geometry
         static constexpr
         Element
         tetrahedron(
-            lolita::integer ord
+            Integer ord
         )
         {
             return Element(Shape::Tetrahedron, 3, ord, 4, 6, 4);
         }
 
         constexpr
-        lolita::boolean
+        Boolean
         isTetrahedron(
-            lolita::integer ord
+            Integer ord
         )
         const
         {
@@ -357,17 +267,17 @@ namespace lolita2::geometry
         static constexpr
         Element
         solid(
-            lolita::integer ord,
-            lolita::integer num_edges,
-            lolita::integer num_faces,
-            lolita::integer num_nodes
+            Integer ord,
+            Integer num_edges,
+            Integer num_faces,
+            Integer num_nodes
         )
         {
             return Element(Shape::Segment, 1, ord, num_edges * (ord - 1), num_edges, 0);
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         hasShape(
                 Shape shape
         )
@@ -377,9 +287,9 @@ namespace lolita2::geometry
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         hasOrd(
-                lolita::integer ord
+                Integer ord
         )
         const
         {
@@ -387,21 +297,21 @@ namespace lolita2::geometry
         }
         
         constexpr
-        lolita::boolean
+        Boolean
         isSub(
-                Domain domain,
-                lolita::integer level
+            Domain domain,
+            Integer level
         )
         const
         {
-            return domain.dim_ - dim_ == level;
+            return domain.getDim() - dim_ == level;
         }
 
         friend
         std::ostream &
         operator<<(
-                std::ostream & os,
-                Element const & element
+            std::ostream & os,
+            Element const & element
         )
         {
             os << "{ " << element.getShapeLabel() << " | ";
@@ -410,28 +320,64 @@ namespace lolita2::geometry
             os << element.num_faces_ << " faces }";
             return os;
         }
+        
+        constexpr
+        Integer
+        getNumNodes()
+        const
+        {
+            return num_nodes_;
+        }
+        
+        constexpr
+        Integer
+        getNumEdges()
+        const
+        {
+            return num_edges_;
+        }
+        
+        constexpr
+        Integer
+        getNumFaces()
+        const
+        {
+            return num_faces_;
+        }
+
+        Shape shape_;
+
+        Integer dim_;
+
+        Integer ord_;
+
+        Integer num_nodes_;
+
+        Integer num_edges_;
+
+        Integer num_faces_;
 
     };
     
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     using Points = std::tuple<
-            t_T<Element::node(), t_domain, t_args...>
+        t_T<Element::node(), t_domain, t_args...>
     >;
     
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     using Curves = std::tuple<
-            t_T<Element::segment(1), t_domain, t_args...>
+        t_T<Element::segment(1), t_domain, t_args...>
     >;
     
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     using Facets = std::tuple<
-            t_T<Element::triangle(1), t_domain, t_args...>,
-            t_T<Element::quadrangle(1), t_domain, t_args...>
+        t_T<Element::triangle(1), t_domain, t_args...>,
+        t_T<Element::quadrangle(1), t_domain, t_args...>
     >;
     
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     using Solids = std::tuple<
-            t_T<Element::tetrahedron(1), t_domain, t_args...>
+        t_T<Element::tetrahedron(1), t_domain, t_args...>
     >;
 
     namespace detail
@@ -439,10 +385,10 @@ namespace lolita2::geometry
 
         template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
         using Elements = std::tuple<
-                Points<t_T, t_domain, t_args...>,
-                Curves<t_T, t_domain, t_args...>,
-                Facets<t_T, t_domain, t_args...>,
-                Solids<t_T, t_domain, t_args...>
+            Points<t_T, t_domain, t_args...>,
+            Curves<t_T, t_domain, t_args...>,
+            Facets<t_T, t_domain, t_args...>,
+            Solids<t_T, t_domain, t_args...>
         >;
 
     }
@@ -539,7 +485,7 @@ namespace lolita2::geometry
         struct ElementInnerGeometryTraits;
         
         template<Element t_element, auto...>
-        using ElementNodeConnectivity = std::array<lolita::integer, t_element.num_nodes_>;
+        using ElementNodeConnectivity = std::array<Integer, t_element.getNumNodes()>;
         
         template<Element t_element, Domain t_domain>
         requires (t_element.isNode())
@@ -556,29 +502,29 @@ namespace lolita2::geometry
         public:
         
             static
-            lolita::real
+            Real
             getShapeMappingEvaluation(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point
             )
             {
                 return nodal_field_values(0);
             }
             
             static
-            lolita::real
+            Real
             getShapeMappingDerivative(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point,
-                    lolita::integer derivative_direction
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point,
+                Integer derivative_direction
             )
             {
-                return lolita::real(0);
+                return Real(0);
             }
             
             NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{};
             
-            std::array<std::array<lolita::real, 3>, 1> const static constexpr reference_nodes_ = {
+            std::array<std::array<Real, 3>, 1> const static constexpr reference_nodes_ = {
                     +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
             };
 
@@ -591,9 +537,9 @@ namespace lolita2::geometry
             
             template<template<Element, Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
-                    std::tuple<
-                            std::array<t_T<Element::node(), t_domain, t_args...>, 2>
-                    >
+                std::tuple<
+                    std::array<t_T<Element::node(), t_domain, t_args...>, 2>
+                >
             >;
 
         private:
@@ -603,45 +549,45 @@ namespace lolita2::geometry
         public:
         
             static
-            lolita::real
+            Real
             getShapeMappingEvaluation(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point
             )
             {
-                auto value = lolita::real(0);
+                auto value = Real(0);
                 value += nodal_field_values(0) * (1.0 / 2.0) * (1.0 - reference_point(0));
                 value += nodal_field_values(1) * (1.0 / 2.0) * (1.0 + reference_point(0));
                 return value;
             }
             
             static
-            lolita::real
+            Real
             getShapeMappingDerivative(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point,
-                    lolita::integer derivative_direction
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point,
+                Integer derivative_direction
             )
             {
                 assert(derivative_direction == 0);
-                auto value = lolita::real(0);
+                auto value = Real(0);
                 value += -nodal_field_values(0) * (1.0 / 2.0);
                 value += +nodal_field_values(1) * (1.0 / 2.0);
                 return value;
             }
             
             NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{
+                {
                     {
-                            {
-                                    0,
-                                    1,
-                            }
+                        0,
+                        1,
                     }
+                }
             };
             
-            std::array<std::array<lolita::real, 3>, 2> const static constexpr reference_nodes_ = {
-                    -1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                    +1.0000000000000000, +0.0000000000000000, +0.0000000000000000
+            std::array<std::array<Real, 3>, 2> const static constexpr reference_nodes_ = {
+                -1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+                +1.0000000000000000, +0.0000000000000000, +0.0000000000000000
             };
 
         };
@@ -653,12 +599,12 @@ namespace lolita2::geometry
             
             template<template<Element, Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
-                    std::tuple<
-                            std::array<t_T<Element::segment(1), t_domain, t_args...>, 3>
-                    >,
-                    std::tuple<
-                            std::array<t_T<Element::node(), t_domain, t_args...>, 3>
-                    >
+                std::tuple<
+                    std::array<t_T<Element::segment(1), t_domain, t_args...>, 3>
+                >,
+                std::tuple<
+                    std::array<t_T<Element::node(), t_domain, t_args...>, 3>
+                >
             >;
 
         private:
@@ -668,13 +614,13 @@ namespace lolita2::geometry
         public:
         
             static
-            lolita::real
+            Real
             getShapeMappingEvaluation(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point
             )
             {
-                auto value = lolita::real(0);
+                auto value = Real(0);
                 value += nodal_field_values(0) * (1.0 - reference_point(0) - reference_point(1));
                 value += nodal_field_values(1) * reference_point(0);
                 value += nodal_field_values(2) * reference_point(1);
@@ -682,15 +628,15 @@ namespace lolita2::geometry
             }
             
             static
-            lolita::real
+            Real
             getShapeMappingDerivative(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point,
-                    lolita::integer derivative_direction
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point,
+                Integer derivative_direction
             )
             {
                 assert(0 <= derivative_direction <= 1);
-                auto value = lolita::real(0);
+                auto value = Real(0);
                 if (derivative_direction == 0)
                 {
                     value += -nodal_field_values(0);
@@ -707,26 +653,26 @@ namespace lolita2::geometry
             }
 
             NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{
+                {
                     {
-                            {
-                                    0, 1,
-                                    1, 2,
-                                    2, 0,
-                            }
-                    },
-                    {
-                            {
-                                    0,
-                                    1,
-                                    2,
-                            }
+                        0, 1,
+                        1, 2,
+                        2, 0,
                     }
+                },
+                {
+                    {
+                        0,
+                        1,
+                        2,
+                    }
+                }
             };
             
-            std::array<std::array<lolita::real, 3>, 3> const static constexpr reference_nodes_ = {
-                    +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                    +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                    +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
+            std::array<std::array<Real, 3>, 3> const static constexpr reference_nodes_ = {
+                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+                +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+                +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
             };
 
         };
@@ -738,12 +684,12 @@ namespace lolita2::geometry
             
             template<template<Element, Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
-                    std::tuple<
-                            std::array<t_T<Element::segment(1), t_domain, t_args...>, 4>
-                    >,
-                    std::tuple<
-                            std::array<t_T<Element::node(), t_domain, t_args...>, 4>
-                    >
+                std::tuple<
+                    std::array<t_T<Element::segment(1), t_domain, t_args...>, 4>
+                >,
+                std::tuple<
+                    std::array<t_T<Element::node(), t_domain, t_args...>, 4>
+                >
             >;
 
         private:
@@ -753,13 +699,13 @@ namespace lolita2::geometry
         public:
         
             static
-            lolita::real
+            Real
             getShapeMappingEvaluation(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point
             )
             {
-                auto value = lolita::real(0);
+                auto value = Real(0);
                 value += nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(0)) * (1.0 - reference_point(1));
                 value += nodal_field_values(1) * (1.0 / 4.0) * (1.0 + reference_point(0)) * (1.0 - reference_point(1));
                 value += nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(0)) * (1.0 + reference_point(1));
@@ -768,15 +714,15 @@ namespace lolita2::geometry
             }
             
             static
-            lolita::real
+            Real
             getShapeMappingDerivative(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point,
-                    lolita::integer derivative_direction
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point,
+                Integer derivative_direction
             )
             {
                 assert(0 <= derivative_direction <= 1);
-                auto value = lolita::real(0);
+                auto value = Real(0);
                 if (derivative_direction == 0)
                 {
                     value += -nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(1));
@@ -795,29 +741,29 @@ namespace lolita2::geometry
             }
             
             NodeConnectivity const static constexpr node_connectivity_ = {
+                {
                     {
-                            {
-                                    0, 1,
-                                    1, 2,
-                                    2, 3,
-                                    3, 0,
-                            }
-                    },
-                    {
-                            {
-                                    0,
-                                    1,
-                                    2,
-                                    3,
-                            }
+                        0, 1,
+                        1, 2,
+                        2, 3,
+                        3, 0,
                     }
+                },
+                {
+                    {
+                        0,
+                        1,
+                        2,
+                        3,
+                    }
+                }
             };
             
-            std::array<std::array<lolita::real, 3>, 4> const static constexpr reference_nodes_ = {
-                    -1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
-                    +1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
-                    +1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
-                    -1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
+            std::array<std::array<Real, 3>, 4> const static constexpr reference_nodes_ = {
+                -1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
+                +1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
+                +1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
+                -1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
             };
 
         };
@@ -829,15 +775,15 @@ namespace lolita2::geometry
 
             template<template<Element, Domain, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
-                    std::tuple<
-                            std::array<t_T<Element::triangle(1), t_domain, t_args...>, 4>
-                    >,
-                    std::tuple<
-                            std::array<t_T<Element::segment(1), t_domain, t_args...>, 6>
-                    >,
-                    std::tuple<
-                            std::array<t_T<Element::node(), t_domain, t_args...>, 4>
-                    >
+                std::tuple<
+                    std::array<t_T<Element::triangle(1), t_domain, t_args...>, 4>
+                >,
+                std::tuple<
+                    std::array<t_T<Element::segment(1), t_domain, t_args...>, 6>
+                >,
+                std::tuple<
+                    std::array<t_T<Element::node(), t_domain, t_args...>, 4>
+                >
             >;
 
         private:
@@ -847,26 +793,26 @@ namespace lolita2::geometry
         public:
         
             static
-            lolita::real
+            Real
             getShapeMappingEvaluation(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point
             )
             {
-                auto value = lolita::real(0);
+                auto value = Real(0);
                 return value;
             }
             
             static
-            lolita::real
+            Real
             getShapeMappingDerivative(
-                    lolita::matrix::Vector<lolita::real, t_element.num_nodes_> const &nodal_field_values,
-                    lolita2::Point const &reference_point,
-                    lolita::integer derivative_direction
+                lolita::matrix::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
+                Point const &reference_point,
+                Integer derivative_direction
             )
             {
                 assert(0 <= derivative_direction <= 2);
-                auto value = lolita::real(0);
+                auto value = Real(0);
                 if (derivative_direction == 0)
                 {
 
@@ -879,39 +825,39 @@ namespace lolita2::geometry
             }
             
             NodeConnectivity const static constexpr node_connectivity_ = {
+                {
                     {
-                            {
-                                    0, 1, 3,
-                                    0, 3, 2,
-                                    0, 2, 1,
-                                    1, 2, 3,
-                            }
-                    },
-                    {
-                            {
-                                    0, 1,
-                                    1, 2,
-                                    2, 0,
-                                    0, 3,
-                                    3, 2,
-                                    1, 3,
-                            }
-                    },
-                    {
-                            {
-                                    0,
-                                    1,
-                                    2,
-                                    3,
-                            }
+                        0, 1, 3,
+                        0, 3, 2,
+                        0, 2, 1,
+                        1, 2, 3,
                     }
+                },
+                {
+                    {
+                        0, 1,
+                        1, 2,
+                        2, 0,
+                        0, 3,
+                        3, 2,
+                        1, 3,
+                    }
+                },
+                {
+                    {
+                        0,
+                        1,
+                        2,
+                        3,
+                    }
+                }
             };
             
-            std::array<std::array<lolita::real, 3>, 4> const static constexpr reference_nodes_ = {
-                    +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                    +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                    +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
-                    +0.0000000000000000, +0.0000000000000000, +1.0000000000000000,
+            std::array<std::array<Real, 3>, 4> const static constexpr reference_nodes_ = {
+                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+                +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+                +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
+                +0.0000000000000000, +0.0000000000000000, +1.0000000000000000,
             };
 
         };
@@ -943,9 +889,9 @@ namespace lolita2::geometry
         }
         
         static constexpr
-        lolita::boolean
+        Boolean
         hasDim(
-                lolita::integer i
+                Integer i
         )
         {
             return t_domain.dim_ - t_element.dim_ == i;
@@ -956,7 +902,7 @@ namespace lolita2::geometry
         getCoordinates()
         {
             auto coordinates = ElementCoordinates();
-            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+            auto set_coordinates = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & t_set_coordinates
             )
             constexpr mutable
@@ -987,7 +933,7 @@ namespace lolita2::geometry
         requires(!t_element.isNode())
         {
             auto coordinates = ElementCoordinates();
-            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+            auto set_coordinates = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & t_set_coordinates
             )
             constexpr mutable
@@ -1011,7 +957,7 @@ namespace lolita2::geometry
             return coordinates;
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         static constexpr
         Element
         getInnerNeighbor()
@@ -1020,7 +966,7 @@ namespace lolita2::geometry
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementInnerNeighborhood>>::value_type::getElement();
         }
         
-        // template<lolita::integer t_i, lolita::integer t_j>
+        // template<Integer t_i, Integer t_j>
         // static constexpr
         // ElementTraits<getInnerNeighbor<t_i, t_j>(), t_domain>
         // getInnerNeighborDescription()
@@ -1029,29 +975,29 @@ namespace lolita2::geometry
         //     return ElementTraits<getInnerNeighbor<t_i, t_j>(), t_domain>();
         // }
         
-        template<lolita::integer... t_i>
+        template<Integer... t_i>
         static constexpr
-        lolita::integer
+        Integer
         getNumInnerNeighbors()
         requires(!t_element.isNode() && sizeof...(t_i) == 2)
         {
-            auto const constexpr t_coordinates = std::array<lolita::integer, 2>{t_i...};
+            auto const constexpr t_coordinates = std::array<Integer, 2>{t_i...};
             return std::tuple_size_v<std::tuple_element_t<t_coordinates[1], std::tuple_element_t<t_coordinates[0], t_ElementInnerNeighborhood>>>;
         }
         
-        template<lolita::integer... t_i>
+        template<Integer... t_i>
         static constexpr
-        lolita::integer
+        Integer
         getNumInnerNeighbors()
         requires(!t_element.isNode() && sizeof...(t_i) == 1)
         {
-            auto const constexpr t_coordinates = std::array<lolita::integer, 1>{t_i...};
+            auto const constexpr t_coordinates = std::array<Integer, 1>{t_i...};
             return std::tuple_size_v<std::tuple_element_t<t_coordinates[0], t_ElementInnerNeighborhood>>;
         }
         
-        template<lolita::integer... t_i>
+        template<Integer... t_i>
         static constexpr
-        lolita::integer
+        Integer
         getNumInnerNeighbors()
         requires(!t_element.isNode() && sizeof...(t_i) == 0)
         {
@@ -1064,7 +1010,7 @@ namespace lolita2::geometry
         getOuterNeighborCoordinates()
         {
             auto coordinates = ElementCoordinates();
-            auto set_coordinates = [&] <lolita::integer t_i = 0, lolita::integer t_j = 0> (
+            auto set_coordinates = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & t_set_coordinates
             )
             constexpr mutable
@@ -1088,7 +1034,7 @@ namespace lolita2::geometry
             return coordinates;
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         static constexpr
         Element
         getOuterNeighbor()
@@ -1096,7 +1042,7 @@ namespace lolita2::geometry
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood>>::value_type::getElement();
         }
         
-        // template<lolita::integer t_i, lolita::integer t_j>
+        // template<Integer t_i, Integer t_j>
         // static constexpr
         // ElementTraits<getOuterNeighbor<t_i, t_j>(), t_domain>
         // getOuterNeighborDescription()
@@ -1104,19 +1050,19 @@ namespace lolita2::geometry
         //     return ElementTraits<getOuterNeighbor<t_i, t_j>(), t_domain>();
         // }
         
-        template<lolita::integer... t_i>
+        template<Integer... t_i>
         static constexpr
-        lolita::integer
+        Integer
         getNumOuterNeighbors()
         requires(sizeof...(t_i) == 1)
         {
-            auto const constexpr _coordinates = std::array<lolita::integer, 1>{t_i...};
+            auto const constexpr _coordinates = std::array<Integer, 1>{t_i...};
             return std::tuple_size_v<std::tuple_element_t<_coordinates[0], t_ElementOuterNeighborhood>>;
         }
         
-        template<lolita::integer... t_i>
+        template<Integer... t_i>
         static constexpr
-        lolita::integer
+        Integer
         getNumOuterNeighbors()
         requires(sizeof...(t_i) == 0)
         {
@@ -1148,7 +1094,7 @@ namespace lolita2::geometry
         getElementCoordinates()
         {
             auto coordinates = ElementCoordinates(t_element.dim_, -1);
-            auto set_coordinates = [&] <lolita::integer t_i = 0> (
+            auto set_coordinates = [&] <Integer t_i = 0> (
                 auto & t_set_coordinates
             )
             constexpr mutable
@@ -1167,7 +1113,7 @@ namespace lolita2::geometry
             return coordinates;
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         static constexpr
         Element
         getElement()
@@ -1175,15 +1121,15 @@ namespace lolita2::geometry
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>>::getElement();
         }
         
-        template<lolita::integer... t_i>
+        template<Integer... t_i>
         static constexpr
-        lolita::integer
+        Integer
         getNumElements()
         requires(0 <= sizeof...(t_i) <= 1)
         {
             if constexpr (sizeof...(t_i) == 1)
             {
-                auto const constexpr _coordinates = std::array<lolita::integer, 1>{t_i...};
+                auto const constexpr _coordinates = std::array<Integer, 1>{t_i...};
                 return std::tuple_size_v<std::tuple_element_t<_coordinates[0], t_Elements>>;
             }
             else
@@ -1197,32 +1143,18 @@ namespace lolita2::geometry
     struct MeshDomain
     {
 
-        enum Elements
-        {
-
-            Points,
-            Curves,
-            Facets,
-            Solids,
-            // Cells,
-            // Faces,
-            // Edges,
-            // Nodes,
-
-        };
-
         MeshDomain(
-            lolita::integer dim,
-            std::basic_string<lolita::character> const & tag
+            Integer dim,
+            std::basic_string<Character> const & tag
         )
         :
         dim_(dim),
         tag_(tag)
         {}
 
-        lolita::integer dim_;
+        Integer dim_;
 
-        std::basic_string<lolita::character> tag_;
+        std::basic_string<Character> tag_;
 
     };
     
@@ -1233,13 +1165,13 @@ namespace lolita2::geometry
     private:
 
         template<Element t_element, Domain t__domain, auto... t__args>
-        using t_ElementMap = std::map<std::basic_string<lolita::character>, std::shared_ptr<t_T<t_element, t__domain, t__args...>>>;
+        using t_ElementMap = std::map<std::basic_string<Character>, std::shared_ptr<t_T<t_element, t__domain, t__args...>>>;
 
         using t_Elements = Elements<t_ElementMap, t_domain, t_args...>;
 
     public:
     
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>> const &
         getElements()
         const
@@ -1247,7 +1179,7 @@ namespace lolita2::geometry
             return std::get<t_j>(std::get<t_i>(elements_));
         }
         
-        template<lolita::integer t_i, lolita::integer t_j>
+        template<Integer t_i, Integer t_j>
         std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>> &
         getElements()
         {

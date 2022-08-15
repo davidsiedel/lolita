@@ -1,5 +1,5 @@
-#ifndef AD31B868_1D56_48DB_A2CC_F898A668702D
-#define AD31B868_1D56_48DB_A2CC_F898A668702D
+#ifndef A4BCD9B5_985A_4D19_B3E9_7C559F45A353
+#define A4BCD9B5_985A_4D19_B3E9_7C559F45A353
 
 #include <MGIS/Behaviour/BehaviourData.hxx>
 #include <MGIS/Behaviour/BehaviourData.h>
@@ -10,20 +10,15 @@
 #include <MGIS/Behaviour/Integrate.hxx>
 #include <MGIS/Behaviour/Integrate.h>
 
-#include "lolita/lolita_utility.hxx"
-#include "lolita/lolita_utility.hxx"
-#include "lolita/lolita_algebra.hxx"
+#include "lolita_lolita/utility.hxx"
+#include "lolita_lolita/config.hxx"
+#include "lolita_lolita/numerics.hxx"
+#include "lolita_lolita/algebra.hxx"
 
 namespace lolita
 {
-
-    template<auto... t_args>
-    using RealMatrix = lolita::matrix::Matrix<Real, t_args...>;
-
-    template<auto... t_args>
-    using RealVector = lolita::matrix::Vector<Real, t_args...>;
     
-    using Point = lolita::matrix::Vector<Real, 3>;
+    using Point = RealVector<3>;
 
     using Loading = std::function<Real(Point const &, Real const &)>;
 
@@ -830,5 +825,4 @@ namespace lolita
 
 }
 
-
-#endif /* AD31B868_1D56_48DB_A2CC_F898A668702D */
+#endif /* A4BCD9B5_985A_4D19_B3E9_7C559F45A353 */
