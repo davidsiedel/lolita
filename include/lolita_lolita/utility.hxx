@@ -503,7 +503,7 @@ namespace lolita::utility
 
     };
 
-}
+} // namespace lolita::utility
 
 
 #endif /* BD1D6E93_67D6_418F_A38E_F9C11C70DB4B */

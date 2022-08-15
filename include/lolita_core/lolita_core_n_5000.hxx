@@ -1054,6 +1054,6 @@ namespace lolita
 
     };
     
-}
+} // namespace lolita
 
 #endif /* B1612904_E704_486C_8F8D_294C54B26BC6 */

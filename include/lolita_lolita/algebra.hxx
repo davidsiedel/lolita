@@ -19,7 +19,7 @@
 #include "lolita_lolita/utility.hxx"
 
 namespace lolita
-{
+{    
 
     namespace matrix
     {
@@ -118,7 +118,7 @@ namespace lolita
 
             };
 
-        }
+        } // namespace detail
 
         template<typename t_T, auto... t_args>
         using Vector = typename detail::VectorTraits<t_T, t_args...>::type;
@@ -129,7 +129,7 @@ namespace lolita
         template<typename t_T>
         using Span = Eigen::Map<t_T>;
 
-    }
+    } // namespace matrix
 
     template<auto... t_args>
     using RealVector = matrix::Vector<Real, t_args...>;
@@ -137,6 +137,6 @@ namespace lolita
     template<auto... t_args>
     using RealMatrix = matrix::Matrix<Real, t_args...>;
 
-}
+} // namespace lolita
 
 #endif /* C09B9C41_77CB_4EB9_8DD3_CEAA51EBDEB7 */

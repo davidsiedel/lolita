@@ -180,6 +180,7 @@ namespace lolita::numerics
         return (k > n) ? 0 : (k == 0 || k == n) ? 1 : (k == 1 || k == n - 1) ? n : (k + k < n) ? (binomial(n - 1, k - 1) * n) / k : (binomial(n - 1, k) * n) / (n - k);
     }
 
-}
+} // namespace lolita::numerics
+
 
 #endif /* B7FDA9F4_659F_4665_AE58_B46CDBCCC31A */

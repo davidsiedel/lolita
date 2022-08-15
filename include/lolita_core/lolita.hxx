@@ -823,6 +823,6 @@ namespace lolita
     template<typename t_T>
     concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
 
-}
+} // namespace lolita
 
 #endif /* A4BCD9B5_985A_4D19_B3E9_7C559F45A353 */

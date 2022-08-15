@@ -1187,6 +1187,6 @@ namespace lolita
 
     };
 
-}
+} // namespace lolita
 
 #endif /* D95DBEAA_910F_4201_AFBF_FEDDCE22F29E */

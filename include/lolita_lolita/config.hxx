@@ -19,7 +19,7 @@ namespace lolita
 
         using Boolean =     bool;
 
-    }
+    } // namespace config
 
     using namespace config;
 
