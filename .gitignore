@@ -32,7 +32,6 @@
 *.app
 
 # Perso
-# **/old/
 **/.idea/
 # **/.vscode/
 **/cmake-build**/
