@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "lolita_core/lolita_core_n_5000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_5000.hxx"
 
 TEST(t0, t0)
 {
@@ -26,8 +26,6 @@ TEST(t0, t0)
     auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
     // mesh    
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
-    // dofs
-    auto degree_of_freedom = std::make_shared<lolita::DegreeOfFreedom>("FaceDisplacement");
     // load
     auto load_f = std::make_shared<lolita::Load>([](lolita::Point const &p, lolita::Real const &t) { return 1.0; }, 0, 0);
     // mesh build
@@ -37,9 +35,9 @@ TEST(t0, t0)
     elements->addElement<cells>("Damage", "SQUARE");
     elements->addElement<faces>("Damage", "SQUARE");
     // dofs
-    elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE", degree_of_freedom);
+    auto degree_of_freedom = elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE", "Displacement");
     // load
-    elements->addLoad<faces>("Displacement", "SQUARE", [](lolita::Point const &p, lolita::Real const &t) { return 1.0; }, 0, 0);
+    auto load = elements->addLoad<faces>("Displacement", "SQUARE", [](lolita::Point const &p, lolita::Real const &t) { return 1.0; }, 0, 0);
     // bhv
     auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic/src/libBehaviour.so";
     auto lib_name = "MicromorphicDamageII";

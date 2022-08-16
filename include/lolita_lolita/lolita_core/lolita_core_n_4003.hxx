@@ -1,16 +1,53 @@
 #ifndef AB07387F_F0B7_4F5A_875F_1CC5F0206148
 #define AB07387F_F0B7_4F5A_875F_1CC5F0206148
 
-#include "lolita_core/lolita.hxx"
-#include "lolita_core/lolita_core_n_0000.hxx"
-#include "lolita_core/lolita_core_n_1000.hxx"
-#include "lolita_core/lolita_core_n_2000.hxx"
-#include "lolita_core/lolita_core_n_3000.hxx"
-#include "lolita_core/lolita_core_n_4001.hxx"
-#include "lolita_core/lolita_core_n_4002.hxx"
+#include "lolita_lolita/lolita_core/lolita.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_1000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_2000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_3000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4001.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4002.hxx"
 
 namespace lolita
 {
+
+    struct QuadraturePoint
+    {
+
+        std::shared_ptr<mgis::behaviour::BehaviourData> const &
+        getBehaviourData()
+        const
+        {
+            return behavior_data_;
+        }
+
+        std::shared_ptr<mgis::behaviour::BehaviourData> &
+        getBehaviourData()
+        {
+            return behavior_data_;
+        }
+
+        void
+        integrate(
+            Integer & res
+        )
+        {
+            res = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)), * behavior_);
+        }
+        
+        std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+        
+        std::shared_ptr<mgis::behaviour::BehaviourData> behavior_data_;
+
+    };
+
+    struct QuadraturePoint2 : QuadraturePoint
+    {
+
+        std::vector<lolita::algebra::Matrix<Real>> element_operators_;
+
+    };
 
     struct QuadratureOperator
     {
@@ -98,34 +135,8 @@ namespace lolita
         Point coordinates_;
         
         Real weight_;
-
-        std::vector<QuadratureOperator> quadrature_operators_;
         
         std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
-
-    };
-
-    struct QuadraturePoint
-    {
-
-        void
-        integrate(
-            Integer & res
-        )
-        {
-            res = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)), * behavior_);
-        }
-        
-        std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
-        
-        std::shared_ptr<mgis::behaviour::BehaviourData> behavior_data_;
-
-    };
-
-    struct QuadraturePoint2 : QuadraturePoint
-    {
-
-        std::vector<lolita::algebra::Matrix<Real>> element_operators_;
 
     };
 

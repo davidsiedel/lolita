@@ -1,8 +1,8 @@
 #ifndef D95DBEAA_910F_4201_AFBF_FEDDCE22F29E
 #define D95DBEAA_910F_4201_AFBF_FEDDCE22F29E
 
-#include "lolita_core/lolita.hxx"
-#include "lolita_core/lolita_core_n_0000.hxx"
+#include "lolita_lolita/lolita_core/lolita.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
 
 namespace lolita
 {

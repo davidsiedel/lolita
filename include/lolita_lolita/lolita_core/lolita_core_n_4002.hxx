@@ -1,12 +1,12 @@
 #ifndef B9B48BEA_09F5_41DB_84A1_45A6E708901C
 #define B9B48BEA_09F5_41DB_84A1_45A6E708901C
 
-#include "lolita_core/lolita.hxx"
-#include "lolita_core/lolita_core_n_0000.hxx"
-#include "lolita_core/lolita_core_n_1000.hxx"
-#include "lolita_core/lolita_core_n_2000.hxx"
-#include "lolita_core/lolita_core_n_3000.hxx"
-#include "lolita_core/lolita_core_n_4001.hxx"
+#include "lolita_lolita/lolita_core/lolita.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_1000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_2000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_3000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4001.hxx"
 
 namespace lolita
 {

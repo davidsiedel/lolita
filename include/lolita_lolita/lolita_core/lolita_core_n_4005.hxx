@@ -1,18 +1,105 @@
 #ifndef FC0FBEA8_1C07_47E6_97F1_3D709687C47A
 #define FC0FBEA8_1C07_47E6_97F1_3D709687C47A
 
-#include "lolita_core/lolita.hxx"
-#include "lolita_core/lolita_core_n_0000.hxx"
-#include "lolita_core/lolita_core_n_1000.hxx"
-#include "lolita_core/lolita_core_n_2000.hxx"
-#include "lolita_core/lolita_core_n_3000.hxx"
-#include "lolita_core/lolita_core_n_4001.hxx"
-#include "lolita_core/lolita_core_n_4002.hxx"
-#include "lolita_core/lolita_core_n_4003.hxx"
-#include "lolita_core/lolita_core_n_4004.hxx"
+#include "lolita_lolita/lolita_core/lolita.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_1000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_2000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_3000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4001.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4002.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4003.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4004.hxx"
 
 namespace lolita
 {
+
+    template<Domain t_domain>
+    struct QuadratureElement
+    {
+
+        struct MaterialPoint
+        {
+        
+            std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+
+            std::shared_ptr<mgis::behaviour::BehaviourData> behavior_data_;
+
+        };
+
+        std::vector<RealMatrix<>> operators_;
+
+    };
+
+    // struct FiniteElementDegreeOfFreedom
+    // {
+
+    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
+    //     static constexpr
+    //     Integer
+    //     getSize()
+    //     {
+    //         auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
+    //         auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
+    //         return t_field_size * t_basis_size;
+    //     }
+
+    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
+    //     lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>
+    //     getCoefficients()
+    //     const
+    //     {
+    //         auto const & data = degree_of_freedom_->coefficients_.data() + index_;
+    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>(data);
+    //     }
+
+    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
+    //     lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>
+    //     getCoefficients()
+    //     {
+    //         auto const & data = degree_of_freedom_->coefficients_.data() + index_;
+    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>(data);
+    //     }
+
+    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
+    //     lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
+    //     getCoefficients(
+    //         Integer row,
+    //         Integer col
+    //     )
+    //     {
+    //         auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
+    //         auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
+    //         auto const & data = degree_of_freedom_->coefficients_.data() + index_ + (t_field_shape.cols() * row  + col) * t_basis_size;
+    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+    //     }
+
+    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
+    //     lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
+    //     getCoefficients(
+    //         Integer row,
+    //         Integer col
+    //     )
+    //     const
+    //     {
+    //         auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
+    //         auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
+    //         auto const & data = degree_of_freedom_->coefficients_.data() + index_ + (t_field_shape.cols() * row  + col) * t_basis_size;
+    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+    //     }
+        
+    //     std::shared_ptr<DegreeOfFreedom> const &
+    //     getDegreeOfFreedom()
+    //     const
+    //     {
+    //         return degree_of_freedom_;
+    //     }
+
+    //     Integer index_;
+
+    //     std::shared_ptr<DegreeOfFreedom> degree_of_freedom_;
+
+    // };
 
     template<Element t_element, Domain t_domain>
     struct FiniteElementHolder
@@ -602,6 +689,162 @@ namespace lolita
         }
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // LOAD
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        Boolean
+        hasLoad(
+            std::basic_string_view<Character> label,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto has_load = [&] (
+                std::shared_ptr<Load2> const & load
+            )
+            {
+                return load->getLabel() == label && load->getRow() == row && load->getCol() == col;
+            };
+            return std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end();
+        }
+
+        Integer
+        getLoadIndex(
+            std::basic_string_view<Character> label,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto has_load = [&] (
+                std::shared_ptr<Load2> const & load
+            )
+            {
+                return load->getLabel() == label && load->getRow() == row && load->getCol() == col;
+            };
+            if (std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end())
+            {
+                return std::distance(loads_.begin(), std::find_if(loads_.begin(), loads_.end(), has_load));
+            }
+            else
+            {
+                throw std::runtime_error("NO");
+            }
+        }
+
+        std::shared_ptr<Load2> const &
+        getLoad(
+            std::basic_string_view<Character> label,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return loads_[getLoadIndex(label, row, col)];
+        }
+
+        std::shared_ptr<Load2> &
+        getLoad(
+            std::basic_string_view<Character> label,
+            Integer row,
+            Integer col
+        )
+        {
+            return loads_[getLoadIndex(label, row, col)];
+        }
+        
+        void
+        addLoad(
+            std::shared_ptr<Load2> const & load
+        )
+        {
+            if (!hasLoad(load->getLabel(), load->getRow(), load->getCol()))
+            {
+                loads_.push_back(load);
+            }
+            else
+            {
+                getLoad(load->getLabel(), load->getRow(), load->getCol()) = load;
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // DOF
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        Boolean
+        hasDegreeOfFreedom(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto has_label = [&] (
+                std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const & degree_of_freedom
+            )
+            {
+                return degree_of_freedom->getDegreeOfFreedom()->getLabel() == label;
+            };
+            return std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end();
+        }
+
+        Integer
+        getDegreeOfFreedomIndex(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto has_label = [&] (
+                std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const & degree_of_freedom
+            )
+            {
+                return degree_of_freedom->getDegreeOfFreedom()->getLabel() == label;
+            };
+            if (std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end())
+            {
+                return std::distance(degrees_of_freedom_.begin(), std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label));
+            }
+            else
+            {
+                throw std::runtime_error("NO");
+            }
+        }
+
+        std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const &
+        getDegreeOfFreedom(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
+        }
+
+        std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> &
+        getDegreeOfFreedom(
+            std::basic_string_view<Character> label
+        )
+        {
+            return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        addDegreeOfFreedom(
+            std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
+        )
+        {
+            auto constexpr t_size = FiniteElementDegreeOfFreedom<t_element, t_domain>::template getSize<t_field, t_basis>();
+            if (!hasDegreeOfFreedom(degree_of_freedom->getLabel()))
+            {
+                auto element_dof = std::make_unique<FiniteElementDegreeOfFreedom<t_element, t_domain>>();
+                element_dof->index_ = degree_of_freedom->coefficients_.size();
+                element_dof->degree_of_freedom_ = degree_of_freedom;
+                degree_of_freedom->coefficients_.resize(degree_of_freedom->coefficients_.size() + t_size);
+                degrees_of_freedom_.push_back(std::move(element_dof));
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // NEW
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -820,6 +1063,14 @@ namespace lolita
         std::vector<std::shared_ptr<ElementIntegrationPoints<t_domain>>> integration_points_;
 
         std::vector<std::shared_ptr<ElementIntegrationPoints<t_domain>>> integration_points2_;
+
+        std::vector<std::shared_ptr<std::vector<QuadraturePoint2>>> quadrature_points_;
+
+
+
+        std::vector<std::shared_ptr<Load2>> loads_;
+
+        std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
 
     };
 
