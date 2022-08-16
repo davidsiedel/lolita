@@ -26,8 +26,6 @@ TEST(t0, t0)
     auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
     // mesh    
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
-    // load
-    auto load_f = std::make_shared<lolita::Load>([](lolita::Point const &p, lolita::Real const &t) { return 1.0; }, 0, 0);
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     elements->addElement<cells>("Displacement", "SQUARE");
@@ -35,7 +33,7 @@ TEST(t0, t0)
     elements->addElement<cells>("Damage", "SQUARE");
     elements->addElement<faces>("Damage", "SQUARE");
     // dofs
-    auto degree_of_freedom = elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE", "Displacement");
+    auto degree_of_freedom = elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE");
     // load
     auto load = elements->addLoad<faces>("Displacement", "SQUARE", [](lolita::Point const &p, lolita::Real const &t) { return 1.0; }, 0, 0);
     // bhv
@@ -50,18 +48,29 @@ TEST(t0, t0)
     // auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(opts, lib_path, lib_name, hyp));
     auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(lib_path, lib_name, hyp));
     //
-    auto behavior_data = std::make_shared<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* bhvv));
-    mgis::behaviour::setMaterialProperty(behavior_data->s0, "FractureEnergy", 1.0);
-    auto behaviour_view = mgis::behaviour::make_view(* behavior_data);
-    auto result = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data)), * bhvv);
+    // auto behavior_data = std::make_shared<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* bhvv));
+    auto behavior_data = mgis::behaviour::BehaviourData(* bhvv);
+    // mgis::behaviour::setMaterialProperty(behavior_data->s0, "FractureEnergy", 1.0);
+    mgis::behaviour::setMaterialProperty(behavior_data.s0, "FractureEnergy", 1.0);
+    // auto behaviour_view = mgis::behaviour::make_view(* behavior_data);
+    auto behaviour_view = mgis::behaviour::make_view(behavior_data);
+    // auto result = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(behavior_data)), * bhvv);
+    auto result = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(behavior_data)), * bhvv);
     std::cout << "result : " << result << std::endl;
-    for (auto const val : behavior_data->s1.gradients)
+    for (auto const val : behavior_data.s1.gradients)
     {
         std::cout << val << std::endl;
     }
     //
-    elements->addBehavior<cells, quadrature>("SQUARE", bhvv);
-    elements->addBehavior<cells>("Displacement", "SQUARE", lib_name);
+    elements->addBehavior<cells>("SQUARE", bhvv);
+
+    auto opss = lolita::utility::Holderr<int>();
+    opss.setItem("1", 1);
+    opss.setItem("2", 2);
+    opss.setItem("3", 3);
+    opss.getValue("3") = 4;
+    opss.setItem("3", 5);
+    std::cout << opss.getValue("3") << std::endl;
     // std::cout << lolita::numerics::sqrt_2 << std::endl;
     // elements->makeQuadrature<cells, displacement_field, quadrature, hdg>("SQUARE", "Displacement");
     //

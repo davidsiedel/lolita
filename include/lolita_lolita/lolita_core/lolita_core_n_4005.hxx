@@ -14,93 +14,6 @@
 namespace lolita
 {
 
-    template<Domain t_domain>
-    struct QuadratureElement
-    {
-
-        struct MaterialPoint
-        {
-        
-            std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
-
-            std::shared_ptr<mgis::behaviour::BehaviourData> behavior_data_;
-
-        };
-
-        std::vector<RealMatrix<>> operators_;
-
-    };
-
-    // struct FiniteElementDegreeOfFreedom
-    // {
-
-    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
-    //     static constexpr
-    //     Integer
-    //     getSize()
-    //     {
-    //         auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
-    //         auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
-    //         return t_field_size * t_basis_size;
-    //     }
-
-    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
-    //     lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>
-    //     getCoefficients()
-    //     const
-    //     {
-    //         auto const & data = degree_of_freedom_->coefficients_.data() + index_;
-    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>(data);
-    //     }
-
-    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
-    //     lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>
-    //     getCoefficients()
-    //     {
-    //         auto const & data = degree_of_freedom_->coefficients_.data() + index_;
-    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>(data);
-    //     }
-
-    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
-    //     lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
-    //     getCoefficients(
-    //         Integer row,
-    //         Integer col
-    //     )
-    //     {
-    //         auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
-    //         auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
-    //         auto const & data = degree_of_freedom_->coefficients_.data() + index_ + (t_field_shape.cols() * row  + col) * t_basis_size;
-    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
-    //     }
-
-    //     template<Element t_element, Domain t_domain, Field t_field, Basis t_basis>
-    //     lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
-    //     getCoefficients(
-    //         Integer row,
-    //         Integer col
-    //     )
-    //     const
-    //     {
-    //         auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
-    //         auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
-    //         auto const & data = degree_of_freedom_->coefficients_.data() + index_ + (t_field_shape.cols() * row  + col) * t_basis_size;
-    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
-    //     }
-        
-    //     std::shared_ptr<DegreeOfFreedom> const &
-    //     getDegreeOfFreedom()
-    //     const
-    //     {
-    //         return degree_of_freedom_;
-    //     }
-
-    //     Integer index_;
-
-    //     std::shared_ptr<DegreeOfFreedom> degree_of_freedom_;
-
-    // };
-
     template<Element t_element, Domain t_domain>
     struct FiniteElementHolder
     {
@@ -701,10 +614,10 @@ namespace lolita
         const
         {
             auto has_load = [&] (
-                std::shared_ptr<Load2> const & load
+                ElementLoad2 const & load
             )
             {
-                return load->getLabel() == label && load->getRow() == row && load->getCol() == col;
+                return load.getLoad()->getLabel() == label && load.getLoad()->getRow() == row && load.getLoad()->getCol() == col;
             };
             return std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end();
         }
@@ -718,10 +631,10 @@ namespace lolita
         const
         {
             auto has_load = [&] (
-                std::shared_ptr<Load2> const & load
+                ElementLoad2 const & load
             )
             {
-                return load->getLabel() == label && load->getRow() == row && load->getCol() == col;
+                return load.getLoad()->getLabel() == label && load.getLoad()->getRow() == row && load.getLoad()->getCol() == col;
             };
             if (std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end())
             {
@@ -733,7 +646,7 @@ namespace lolita
             }
         }
 
-        std::shared_ptr<Load2> const &
+        ElementLoad2 const &
         getLoad(
             std::basic_string_view<Character> label,
             Integer row,
@@ -744,7 +657,7 @@ namespace lolita
             return loads_[getLoadIndex(label, row, col)];
         }
 
-        std::shared_ptr<Load2> &
+        ElementLoad2 &
         getLoad(
             std::basic_string_view<Character> label,
             Integer row,
@@ -759,15 +672,18 @@ namespace lolita
             std::shared_ptr<Load2> const & load
         )
         {
+            auto element_load = ElementLoad2(load);
             if (!hasLoad(load->getLabel(), load->getRow(), load->getCol()))
             {
-                loads_.push_back(load);
+                loads_.push_back(element_load);
             }
             else
             {
-                getLoad(load->getLabel(), load->getRow(), load->getCol()) = load;
+                getLoad(load->getLabel(), load->getRow(), load->getCol()) = element_load;
             }
         }
+        
+        std::vector<ElementLoad2> loads_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // DOF
@@ -780,10 +696,10 @@ namespace lolita
         const
         {
             auto has_label = [&] (
-                std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const & degree_of_freedom
+                ElementDegreeOfFreedom const & degree_of_freedom
             )
             {
-                return degree_of_freedom->getDegreeOfFreedom()->getLabel() == label;
+                return degree_of_freedom.getLabel() == label;
             };
             return std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end();
         }
@@ -795,10 +711,10 @@ namespace lolita
         const
         {
             auto has_label = [&] (
-                std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const & degree_of_freedom
+                ElementDegreeOfFreedom const & degree_of_freedom
             )
             {
-                return degree_of_freedom->getDegreeOfFreedom()->getLabel() == label;
+                return degree_of_freedom.getLabel() == label;
             };
             if (std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end())
             {
@@ -810,7 +726,7 @@ namespace lolita
             }
         }
 
-        std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const &
+        ElementDegreeOfFreedom const &
         getDegreeOfFreedom(
             std::basic_string_view<Character> label
         )
@@ -819,7 +735,7 @@ namespace lolita
             return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
         }
 
-        std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> &
+        ElementDegreeOfFreedom &
         getDegreeOfFreedom(
             std::basic_string_view<Character> label
         )
@@ -833,16 +749,86 @@ namespace lolita
             std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
         )
         {
-            auto constexpr t_size = FiniteElementDegreeOfFreedom<t_element, t_domain>::template getSize<t_field, t_basis>();
+            auto element_degree_of_freedom = ElementDegreeOfFreedom::template make<t_element, t_domain, t_field, t_basis>(degree_of_freedom);
             if (!hasDegreeOfFreedom(degree_of_freedom->getLabel()))
             {
-                auto element_dof = std::make_unique<FiniteElementDegreeOfFreedom<t_element, t_domain>>();
-                element_dof->index_ = degree_of_freedom->coefficients_.size();
-                element_dof->degree_of_freedom_ = degree_of_freedom;
-                degree_of_freedom->coefficients_.resize(degree_of_freedom->coefficients_.size() + t_size);
-                degrees_of_freedom_.push_back(std::move(element_dof));
+                degrees_of_freedom_.push_back(element_degree_of_freedom);
+            }
+            else
+            {
+                getDegreeOfFreedom(degree_of_freedom->getLabel()) = element_degree_of_freedom;
             }
         }
+
+        std::vector<ElementDegreeOfFreedom> degrees_of_freedom_;
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // QUAD
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        
+        // Boolean
+        // hasQuad(
+        //     std::basic_string_view<Character> label
+        // )
+        // const
+        // {
+        //     auto has_label = [&] (
+        //         QuadratureElement const & quad
+        //     )
+        //     {
+        //         return quad.getLabel() == label;
+        //     };
+        //     return std::find_if(quadrature_.begin(), quadrature_.end(), has_label) != quadrature_.end();
+        // }
+
+        // Integer
+        // getQuadIndex(
+        //     std::basic_string_view<Character> label
+        // )
+        // const
+        // {
+        //     auto has_label = [&] (
+        //         QuadratureElement const & quad
+        //     )
+        //     {
+        //         return quad.getLabel() == label;
+        //     };
+        //     if (std::find_if(quadrature_.begin(), quadrature_.end(), has_label) != quadrature_.end())
+        //     {
+        //         return std::distance(quadrature_.begin(), std::find_if(quadrature_.begin(), quadrature_.end(), has_label));
+        //     }
+        //     else
+        //     {
+        //         throw std::runtime_error("NO");
+        //     }
+        // }
+
+        // QuadratureElement const &
+        // getQuad(
+        //     std::basic_string_view<Character> label
+        // )
+        // const
+        // {
+        //     return quadrature_[getQuadIndex(label)];
+        // }
+
+        // QuadratureElement &
+        // getQuad(
+        //     std::basic_string_view<Character> label
+        // )
+        // {
+        //     return quadrature_[getQuadIndex(label)];
+        // }
+
+        void
+        addBehavior(
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+        )
+        {
+            quadrature_.setItem(behavior->behaviour, behavior);
+        }
+
+        lolita::utility::Holderr<QuadratureElement> quadrature_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // NEW
@@ -1068,9 +1054,6 @@ namespace lolita
 
 
 
-        std::vector<std::shared_ptr<Load2>> loads_;
-
-        std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
 
     };
 

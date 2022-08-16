@@ -16,6 +16,204 @@
 namespace lolita::utility
 {
 
+    template<typename t_T>
+    struct Holderr
+    {
+
+    private:
+
+        struct Item
+        {
+
+            template<typename... t_U>
+            static
+            Item
+            make(
+                std::basic_string_view<Character> label,
+                t_U const &... args
+            )
+            {
+                return Item(label, t_T(args...));
+            }
+
+            template<typename... t_U>
+            static
+            Item
+            make(
+                std::basic_string_view<Character> label,
+                t_U &&... args
+            )
+            {
+                return Item(label, t_T(std::forward<t_U>(args)...));
+            }
+
+            Item(
+                std::basic_string_view<Character> label,
+                t_T const & value
+            )
+            :
+            label_(label),
+            value_(value)
+            {}
+
+            Item(
+                std::basic_string_view<Character> label,
+                t_T && value
+            )
+            :
+            label_(label),
+            value_(std::forward<t_T>(value))
+            {}
+
+            t_T const &
+            getValue()
+            const
+            {
+                return value_;
+            }
+
+            t_T &
+            getValue()
+            {
+                return value_;
+            }
+
+            std::basic_string_view<Character>
+            getLabel()
+            const
+            {
+                return label_;
+            }
+
+            t_T value_;
+
+            std::basic_string_view<Character> label_;
+
+        };
+
+        Integer
+        getItemIndex(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            return std::distance(items_.begin(), std::find_if(items_.begin(), items_.end(), [&] (Item const & item) { return item.getLabel() == label; }));
+        }
+
+    public:
+
+        Holderr()
+        {}
+
+        t_T const &
+        getValue(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto item_index = getItemIndex(label);
+            if (item_index != items_.size())
+            {
+                return items_[item_index].getValue();
+            }
+            else
+            {
+                throw std::runtime_error("NO");
+            }
+        }
+
+        t_T &
+        getValue(
+            std::basic_string_view<Character> label
+        )
+        {
+            auto item_index = getItemIndex(label);
+            if (item_index != items_.size())
+            {
+                return items_[item_index].getValue();
+            }
+            else
+            {
+                throw std::runtime_error("NO");
+            }
+        }
+
+        // void
+        // setItem(
+        //     std::basic_string_view<Character> label,
+        //     t_T const & value
+        // )
+        // {
+        //     auto item_index = getItemIndex(label);
+        //     if (item_index != items_.size())
+        //     {
+        //         items_[item_index] = Item(label, value);
+        //     }
+        //     else
+        //     {
+        //         items_.push_back(Item(label, value));
+        //     }
+        // }
+
+        // void
+        // setItem(
+        //     std::basic_string_view<Character> label,
+        //     t_T && value
+        // )
+        // {
+        //     auto item_index = getItemIndex(label);
+        //     if (item_index != items_.size())
+        //     {
+        //         items_[item_index] = Item(label, std::forward<t_T>(value));
+        //     }
+        //     else
+        //     {
+        //         items_.push_back(Item(label, std::forward<t_T>(value)));
+        //     }
+        // }
+
+        template<typename... t_U>
+        void
+        setItem(
+            std::basic_string_view<Character> label,
+            t_U const &... args
+        )
+        {
+            auto item_index = getItemIndex(label);
+            if (item_index != items_.size())
+            {
+                items_[item_index] = Item::template make<t_U...>(label, args...);
+            }
+            else
+            {
+                items_.push_back(Item::template make<t_U...>(label, args...));
+            }
+        }
+
+        template<typename... t_U>
+        void
+        setItem(
+            std::basic_string_view<Character> label,
+            t_U &&... args
+        )
+        {
+            auto item_index = getItemIndex(label);
+            if (item_index != items_.size())
+            {
+                items_[item_index] = Item::template make<t_U...>(label, std::forward<t_U>(args)...);
+            }
+            else
+            {
+                items_.push_back(Item::template make<t_U...>(label, std::forward<t_U>(args)...));
+            }
+        }
+
+    private:
+
+        std::vector<Item> items_;
+
+    };
+
     template<auto t_value>
     struct Holder
     {

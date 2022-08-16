@@ -59,8 +59,6 @@ namespace lolita
 
         std::basic_string_view<Character> label_;
 
-        Integer tag_;
-
         ElementType element_type_;
 
         lolita::algebra::Vector<Real> coefficients_;
@@ -120,17 +118,6 @@ namespace lolita
         const
         {
             return label_;
-        }
-        
-        inline
-        Real
-        getImposedValue(
-            Point const & point,
-            Real const & time
-        )
-        const
-        {
-            return loading_(point, time);
         }
         
         inline

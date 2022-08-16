@@ -21,13 +21,13 @@ namespace lolita
 
         std::shared_ptr<ElementIntegrationPoints<t_domain>> element_integration_points_;
 
-        std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
+        // std::vector<std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>>> degrees_of_freedom_;
 
         std::vector<std::shared_ptr<mgis::behaviour::BehaviourData>> behavior_data_;
 
         std::vector<lolita::algebra::Matrix<Real>> element_operators_;
 
-        std::vector<std::shared_ptr<Load>> loads_;
+        // std::vector<std::shared_ptr<Load>> loads_;
         
         std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
 
@@ -47,149 +47,149 @@ namespace lolita
             return std::basic_string_view<Character>(* label_);
         }
 
-        Boolean
-        hasLoad(
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            auto has_load = [&] (
-                std::shared_ptr<Load> const & load
-            )
-            {
-                return load->getRow() == row && load->getCol() == col;
-            };
-            return std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end();
-        }
+        // Boolean
+        // hasLoad(
+        //     Integer row,
+        //     Integer col
+        // )
+        // const
+        // {
+        //     auto has_load = [&] (
+        //         std::shared_ptr<Load> const & load
+        //     )
+        //     {
+        //         return load->getRow() == row && load->getCol() == col;
+        //     };
+        //     return std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end();
+        // }
 
-        Integer
-        getLoadIndex(
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            auto has_load = [&] (
-                std::shared_ptr<Load> const & load
-            )
-            {
-                return load->getRow() == row && load->getCol() == col;
-            };
-            if (std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end())
-            {
-                return std::distance(loads_.begin(), std::find_if(loads_.begin(), loads_.end(), has_load));
-            }
-            else
-            {
-                throw std::runtime_error("NO");
-            }
-        }
+        // Integer
+        // getLoadIndex(
+        //     Integer row,
+        //     Integer col
+        // )
+        // const
+        // {
+        //     auto has_load = [&] (
+        //         std::shared_ptr<Load> const & load
+        //     )
+        //     {
+        //         return load->getRow() == row && load->getCol() == col;
+        //     };
+        //     if (std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end())
+        //     {
+        //         return std::distance(loads_.begin(), std::find_if(loads_.begin(), loads_.end(), has_load));
+        //     }
+        //     else
+        //     {
+        //         throw std::runtime_error("NO");
+        //     }
+        // }
         
-        void
-        addLoad(
-            std::shared_ptr<Load> const & load
-        )
-        {
-            if (!hasLoad(load->getRow(), load->getCol()))
-            {
-                loads_.push_back(load);
-            }
-            else
-            {
-                getLoad(load->getRow(), load->getCol()) = load;
-            }
-        }
+        // void
+        // addLoad(
+        //     std::shared_ptr<Load> const & load
+        // )
+        // {
+        //     if (!hasLoad(load->getRow(), load->getCol()))
+        //     {
+        //         loads_.push_back(load);
+        //     }
+        //     else
+        //     {
+        //         getLoad(load->getRow(), load->getCol()) = load;
+        //     }
+        // }
 
-        Boolean
-        hasDegreeOfFreedom(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto has_label = [&] (
-                std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const & degree_of_freedom
-            )
-            {
-                return degree_of_freedom->getDegreeOfFreedom()->getLabel() == label;
-            };
-            return std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end();
-        }
+        // Boolean
+        // hasDegreeOfFreedom(
+        //     std::basic_string_view<Character> label
+        // )
+        // const
+        // {
+        //     auto has_label = [&] (
+        //         std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const & degree_of_freedom
+        //     )
+        //     {
+        //         return degree_of_freedom->getDegreeOfFreedom()->getLabel() == label;
+        //     };
+        //     return std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end();
+        // }
 
-        Integer
-        getDegreeOfFreedomIndex(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto has_label = [&] (
-                std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const & degree_of_freedom
-            )
-            {
-                return degree_of_freedom->getDegreeOfFreedom()->getLabel() == label;
-            };
-            if (std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end())
-            {
-                return std::distance(degrees_of_freedom_.begin(), std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label));
-            }
-            else
-            {
-                throw std::runtime_error("NO");
-            }
-        }
+        // Integer
+        // getDegreeOfFreedomIndex(
+        //     std::basic_string_view<Character> label
+        // )
+        // const
+        // {
+        //     auto has_label = [&] (
+        //         std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const & degree_of_freedom
+        //     )
+        //     {
+        //         return degree_of_freedom->getDegreeOfFreedom()->getLabel() == label;
+        //     };
+        //     if (std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end())
+        //     {
+        //         return std::distance(degrees_of_freedom_.begin(), std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label));
+        //     }
+        //     else
+        //     {
+        //         throw std::runtime_error("NO");
+        //     }
+        // }
 
-        template<Field t_field, Basis t_basis>
-        void
-        addDegreeOfFreedom(
-            std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
-        )
-        {
-            auto constexpr t_size = FiniteElementDegreeOfFreedom<t_element, t_domain>::template getSize<t_field, t_basis>();
-            if (!hasDegreeOfFreedom(degree_of_freedom->getLabel()))
-            {
-                auto element_dof = std::make_unique<FiniteElementDegreeOfFreedom<t_element, t_domain>>();
-                element_dof->index_ = degree_of_freedom->coefficients_.size();
-                element_dof->degree_of_freedom_ = degree_of_freedom;
-                degree_of_freedom->coefficients_.resize(degree_of_freedom->coefficients_.size() + t_size);
-                degrees_of_freedom_.push_back(std::move(element_dof));
-            }
-        }
+        // template<Field t_field, Basis t_basis>
+        // void
+        // addDegreeOfFreedom(
+        //     std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
+        // )
+        // {
+        //     auto constexpr t_size = FiniteElementDegreeOfFreedom<t_element, t_domain>::template getSize<t_field, t_basis>();
+        //     if (!hasDegreeOfFreedom(degree_of_freedom->getLabel()))
+        //     {
+        //         auto element_dof = std::make_unique<FiniteElementDegreeOfFreedom<t_element, t_domain>>();
+        //         element_dof->index_ = degree_of_freedom->coefficients_.size();
+        //         element_dof->degree_of_freedom_ = degree_of_freedom;
+        //         degree_of_freedom->coefficients_.resize(degree_of_freedom->coefficients_.size() + t_size);
+        //         degrees_of_freedom_.push_back(std::move(element_dof));
+        //     }
+        // }
 
-        std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const &
-        getDegreeOfFreedom(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
-        }
+        // std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> const &
+        // getDegreeOfFreedom(
+        //     std::basic_string_view<Character> label
+        // )
+        // const
+        // {
+        //     return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
+        // }
 
-        std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> &
-        getDegreeOfFreedom(
-            std::basic_string_view<Character> label
-        )
-        {
-            return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
-        }
+        // std::unique_ptr<FiniteElementDegreeOfFreedom<t_element, t_domain>> &
+        // getDegreeOfFreedom(
+        //     std::basic_string_view<Character> label
+        // )
+        // {
+        //     return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
+        // }
 
-        std::shared_ptr<Load> const &
-        getLoad(
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            return loads_[getLoadIndex(row, col)];
-        }
+        // std::shared_ptr<Load> const &
+        // getLoad(
+        //     Integer row,
+        //     Integer col
+        // )
+        // const
+        // {
+        //     return loads_[getLoadIndex(row, col)];
+        // }
 
-        std::shared_ptr<Load> &
-        getLoad(
-            Integer row,
-            Integer col
-        )
-        {
-            return loads_[getLoadIndex(row, col)];
-        }
+        // std::shared_ptr<Load> &
+        // getLoad(
+        //     Integer row,
+        //     Integer col
+        // )
+        // {
+        //     return loads_[getLoadIndex(row, col)];
+        // }
 
     };
     
