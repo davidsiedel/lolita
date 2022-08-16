@@ -602,386 +602,8 @@ namespace lolita
         }
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
-        // LOAD
+        // ICI
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
-
-        Boolean
-        hasLoad(
-            std::basic_string_view<Character> label,
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            auto has_load = [&] (
-                ElementLoad2 const & load
-            )
-            {
-                return load.getLoad()->getLabel() == label && load.getLoad()->getRow() == row && load.getLoad()->getCol() == col;
-            };
-            return std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end();
-        }
-
-        Integer
-        getLoadIndex(
-            std::basic_string_view<Character> label,
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            auto has_load = [&] (
-                ElementLoad2 const & load
-            )
-            {
-                return load.getLoad()->getLabel() == label && load.getLoad()->getRow() == row && load.getLoad()->getCol() == col;
-            };
-            if (std::find_if(loads_.begin(), loads_.end(), has_load) != loads_.end())
-            {
-                return std::distance(loads_.begin(), std::find_if(loads_.begin(), loads_.end(), has_load));
-            }
-            else
-            {
-                throw std::runtime_error("NO");
-            }
-        }
-
-        ElementLoad2 const &
-        getLoad(
-            std::basic_string_view<Character> label,
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            return loads_[getLoadIndex(label, row, col)];
-        }
-
-        ElementLoad2 &
-        getLoad(
-            std::basic_string_view<Character> label,
-            Integer row,
-            Integer col
-        )
-        {
-            return loads_[getLoadIndex(label, row, col)];
-        }
-        
-        void
-        addLoad(
-            std::shared_ptr<Load2> const & load
-        )
-        {
-            auto element_load = ElementLoad2(load);
-            if (!hasLoad(load->getLabel(), load->getRow(), load->getCol()))
-            {
-                loads_.push_back(element_load);
-            }
-            else
-            {
-                getLoad(load->getLabel(), load->getRow(), load->getCol()) = element_load;
-            }
-        }
-        
-        std::vector<ElementLoad2> loads_;
-
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
-        // DOF
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
-
-        Boolean
-        hasDegreeOfFreedom(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto has_label = [&] (
-                ElementDegreeOfFreedom const & degree_of_freedom
-            )
-            {
-                return degree_of_freedom.getLabel() == label;
-            };
-            return std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end();
-        }
-
-        Integer
-        getDegreeOfFreedomIndex(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto has_label = [&] (
-                ElementDegreeOfFreedom const & degree_of_freedom
-            )
-            {
-                return degree_of_freedom.getLabel() == label;
-            };
-            if (std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label) != degrees_of_freedom_.end())
-            {
-                return std::distance(degrees_of_freedom_.begin(), std::find_if(degrees_of_freedom_.begin(), degrees_of_freedom_.end(), has_label));
-            }
-            else
-            {
-                throw std::runtime_error("NO");
-            }
-        }
-
-        ElementDegreeOfFreedom const &
-        getDegreeOfFreedom(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
-        }
-
-        ElementDegreeOfFreedom &
-        getDegreeOfFreedom(
-            std::basic_string_view<Character> label
-        )
-        {
-            return degrees_of_freedom_[getDegreeOfFreedomIndex(label)];
-        }
-
-        template<Field t_field, Basis t_basis>
-        void
-        addDegreeOfFreedom(
-            std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
-        )
-        {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom::template make<t_element, t_domain, t_field, t_basis>(degree_of_freedom);
-            if (!hasDegreeOfFreedom(degree_of_freedom->getLabel()))
-            {
-                degrees_of_freedom_.push_back(element_degree_of_freedom);
-            }
-            else
-            {
-                getDegreeOfFreedom(degree_of_freedom->getLabel()) = element_degree_of_freedom;
-            }
-        }
-
-        std::vector<ElementDegreeOfFreedom> degrees_of_freedom_;
-
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
-        // QUAD
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
-        
-        // Boolean
-        // hasQuad(
-        //     std::basic_string_view<Character> label
-        // )
-        // const
-        // {
-        //     auto has_label = [&] (
-        //         QuadratureElement const & quad
-        //     )
-        //     {
-        //         return quad.getLabel() == label;
-        //     };
-        //     return std::find_if(quadrature_.begin(), quadrature_.end(), has_label) != quadrature_.end();
-        // }
-
-        // Integer
-        // getQuadIndex(
-        //     std::basic_string_view<Character> label
-        // )
-        // const
-        // {
-        //     auto has_label = [&] (
-        //         QuadratureElement const & quad
-        //     )
-        //     {
-        //         return quad.getLabel() == label;
-        //     };
-        //     if (std::find_if(quadrature_.begin(), quadrature_.end(), has_label) != quadrature_.end())
-        //     {
-        //         return std::distance(quadrature_.begin(), std::find_if(quadrature_.begin(), quadrature_.end(), has_label));
-        //     }
-        //     else
-        //     {
-        //         throw std::runtime_error("NO");
-        //     }
-        // }
-
-        // QuadratureElement const &
-        // getQuad(
-        //     std::basic_string_view<Character> label
-        // )
-        // const
-        // {
-        //     return quadrature_[getQuadIndex(label)];
-        // }
-
-        // QuadratureElement &
-        // getQuad(
-        //     std::basic_string_view<Character> label
-        // )
-        // {
-        //     return quadrature_[getQuadIndex(label)];
-        // }
-
-        void
-        addBehavior(
-            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
-        )
-        {
-            quadrature_.setItem(behavior->behaviour, behavior);
-        }
-
-        lolita::utility::Holderr<QuadratureElement> quadrature_;
-
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
-        // NEW
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
-
-        Boolean
-        hasFiniteElement(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto has_label = [&] (
-                std::shared_ptr<FiniteElement<t_element, t_domain>> const & finite_element
-            )
-            {
-                return finite_element->getLabel() == label;
-            };
-            return std::find_if(finite_elements_.begin(), finite_elements_.end(), has_label) != finite_elements_.end();
-        }
-
-        Boolean
-        hasBehavior(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto has_label = [&] (
-                std::shared_ptr<ElementIntegrationPoints<t_domain>> const & element_integration_points
-            )
-            {
-                return element_integration_points->getLabel() == label;
-            };
-            return std::find_if(integration_points_.begin(), integration_points_.end(), has_label) != integration_points_.end();
-        }
-
-        Integer
-        getFiniteElementIndex(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto has_label = [&] (
-                std::shared_ptr<FiniteElement<t_element, t_domain>> const & finite_element
-            )
-            {
-                return finite_element->getLabel() == label;
-            };
-            if (std::find_if(finite_elements_.begin(), finite_elements_.end(), has_label) != finite_elements_.end())
-            {
-                return std::distance(finite_elements_.begin(), std::find_if(finite_elements_.begin(), finite_elements_.end(), has_label));
-            }
-            else
-            {
-                throw std::runtime_error("NO");
-            }
-        }
-
-        Integer
-        getBehaviorIndex(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto has_label = [&] (
-                std::shared_ptr<ElementIntegrationPoints<t_domain>> const & element_integration_points
-            )
-            {
-                return element_integration_points->getLabel() == label;
-            };
-            if (std::find_if(integration_points_.begin(), integration_points_.end(), has_label) != integration_points_.end())
-            {
-                return std::distance(integration_points_.begin(), std::find_if(integration_points_.begin(), integration_points_.end(), has_label));
-            }
-            else
-            {
-                throw std::runtime_error("NO");
-            }
-        }
-        
-        std::shared_ptr<FiniteElement<t_element, t_domain>> const &
-        getFiniteElement(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            return finite_elements_[getFiniteElementIndex(label)];
-        }
-        
-        std::shared_ptr<FiniteElement<t_element, t_domain>> &
-        getFiniteElement(
-            std::basic_string_view<Character> label
-        )
-        {
-            return finite_elements_[getFiniteElementIndex(label)];
-        }
-        
-        std::shared_ptr<ElementIntegrationPoints<t_domain>> const &
-        getIntegrationPoints(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            return integration_points_[getBehaviorIndex(label)];
-        }
-        
-        std::shared_ptr<ElementIntegrationPoints<t_domain>> &
-        getIntegrationPoints(
-            std::basic_string_view<Character> label
-        )
-        {
-            return integration_points_[getBehaviorIndex(label)];
-        }
-
-        void
-        addElement(
-            std::shared_ptr<std::basic_string<Character>> const & label
-        )
-        {
-            if (!hasFiniteElement(* label))
-            {
-                finite_elements_.push_back(std::make_shared<FiniteElement<t_element, t_domain>>(label));
-            }
-        }
-
-        template<Quadrature t_quadrature>
-        void
-        addBehavior(
-            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
-        )
-        {
-            if (!hasBehavior(behavior->behaviour))
-            {
-                auto element_integration_points = std::make_shared<ElementIntegrationPoints<t_domain>>(behavior);
-                for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
-                {
-                    auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
-                    auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                    auto integration_point = IntegrationPoint<t_domain>(point, weight, behavior);
-                    element_integration_points->integration_points_.push_back(std::move(integration_point));
-                }
-                std::cout << "dt : " << element_integration_points->integration_points_[0].behavior_data_->dt << std::endl;
-                integration_points_.push_back(element_integration_points);
-            }
-        }
-
-        void
-        addBehavior(
-            std::basic_string_view<Character> finite_element_label,
-            std::basic_string_view<Character> behavior_label
-        )
-        {
-            getFiniteElement(finite_element_label)->element_integration_points_ = getIntegrationPoints(behavior_label);
-        }
         
         template<Basis t_basis>
         RealVector<t_Basis<t_basis>::getSize()>
@@ -1014,25 +636,81 @@ namespace lolita
             return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping, t_field>(point);
         }
 
-        template<Field t_field, Quadrature t_quadrature, auto t_discretization>
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // LOAD
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        
+        void
+        addLoad(
+            std::shared_ptr<Load> const & load
+        )
+        {
+            loads_[load->getLabel()] = ElementLoad::make(load);
+        }
+        
+        std::map<std::basic_string_view<Character>, ElementLoad> loads_;
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // DOF
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        template<Field t_field, Basis t_basis>
+        void
+        addDegreeOfFreedom(
+            std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
+        )
+        {
+            degrees_of_freedom_[degree_of_freedom->getLabel()] = ElementDegreeOfFreedom::template make<t_element, t_domain, t_field, t_basis>(degree_of_freedom);
+        }
+        
+        std::map<std::basic_string_view<Character>, ElementDegreeOfFreedom> degrees_of_freedom_;
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // QUAD
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        void
+        addBehavior(
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+        )
+        {
+            quadrature_[behavior->behaviour] = QuadratureElement::make(behavior);
+        }
+
+        template<Quadrature t_quadrature>
         void
         makeQuadrature(
             std::basic_string_view<Character> label
         )
         {
-            for (auto i = 0; i < getFiniteElement(label)->element_integration_points_->getSize(); i++)
+            for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
             {
-                auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
-                auto mapp = this->template getMapping<t_field, Mapping::gradient(), t_discretization>(point);
-                // element_integration_points_->integration_points_[i].quadrature_operators_[0] = mapp;
+                auto point = getCurrentQuadraturePoint<t_quadrature>(i);
+                auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
+                quadrature_[label].ips_.push_back(QuadratureElement::IntegrationPoint(point, weight, quadrature_[label].behavior_));
             }
-            // for (auto const & integration_point : element_integration_points_->integration_points_)
-            // {
-            //     integration_point.quadrature_operators_[0] = 
-            // }
-            // std::cout << "mapp : " << std::endl;
-            // std::cout << mapp << std::endl;
+            
         }
+
+        template<Field t_field, auto t_discretization>
+        void
+        makeQuadrature(
+            std::basic_string_view<Character> label,
+            std::basic_string_view<Character> label2
+        )
+        {
+            for (auto & ip : quadrature_[label].ips_)
+            {
+                auto mapp = this->template getMapping<t_field, Mapping::gradient(), t_discretization>(ip.coordinates_);
+                ip.ops_[label2] = mapp;
+            }
+        }
+
+        std::map<std::basic_string_view<Character>, QuadratureElement> quadrature_;
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // NEW
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
         
         t_OuterNeighbors outer_neighbors_;
         
@@ -1043,14 +721,6 @@ namespace lolita
         std::vector<std::shared_ptr<MeshDomain>> domains_;
         
         std::shared_ptr<Point> coordinates_;
-
-        std::vector<std::shared_ptr<FiniteElement<t_element, t_domain>>> finite_elements_;
-
-        std::vector<std::shared_ptr<ElementIntegrationPoints<t_domain>>> integration_points_;
-
-        std::vector<std::shared_ptr<ElementIntegrationPoints<t_domain>>> integration_points2_;
-
-        std::vector<std::shared_ptr<std::vector<QuadraturePoint2>>> quadrature_points_;
 
 
 

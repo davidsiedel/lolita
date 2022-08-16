@@ -12,174 +12,174 @@
 namespace lolita
 {
 
-    struct QuadraturePoint
-    {
+    // struct QuadraturePoint
+    // {
 
-        std::shared_ptr<mgis::behaviour::BehaviourData> const &
-        getBehaviourData()
-        const
-        {
-            return behavior_data_;
-        }
+    //     std::shared_ptr<mgis::behaviour::BehaviourData> const &
+    //     getBehaviourData()
+    //     const
+    //     {
+    //         return behavior_data_;
+    //     }
 
-        std::shared_ptr<mgis::behaviour::BehaviourData> &
-        getBehaviourData()
-        {
-            return behavior_data_;
-        }
+    //     std::shared_ptr<mgis::behaviour::BehaviourData> &
+    //     getBehaviourData()
+    //     {
+    //         return behavior_data_;
+    //     }
 
-        void
-        integrate(
-            Integer & res
-        )
-        {
-            res = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)), * behavior_);
-        }
+    //     void
+    //     integrate(
+    //         Integer & res
+    //     )
+    //     {
+    //         res = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)), * behavior_);
+    //     }
         
-        std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+    //     std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
         
-        std::shared_ptr<mgis::behaviour::BehaviourData> behavior_data_;
+    //     std::shared_ptr<mgis::behaviour::BehaviourData> behavior_data_;
 
-    };
+    // };
 
-    struct QuadraturePoint2 : QuadraturePoint
-    {
+    // struct QuadraturePoint2 : QuadraturePoint
+    // {
 
-        std::vector<lolita::algebra::Matrix<Real>> element_operators_;
+    //     std::vector<lolita::algebra::Matrix<Real>> element_operators_;
 
-    };
+    // };
 
-    struct QuadratureOperator
-    {
+    // struct QuadratureOperator
+    // {
 
-        inline
-        std::basic_string_view<Character>
-        getLabel()
-        const
-        {
-            return label_;
-        }
+    //     inline
+    //     std::basic_string_view<Character>
+    //     getLabel()
+    //     const
+    //     {
+    //         return label_;
+    //     }
 
-        inline
-        lolita::algebra::Matrix<Real>
-        getOperator(
-            Integer i
-        )
-        const
-        {
-            return operators_[i];
-        }
+    //     inline
+    //     lolita::algebra::Matrix<Real>
+    //     getOperator(
+    //         Integer i
+    //     )
+    //     const
+    //     {
+    //         return operators_[i];
+    //     }
 
-        std::basic_string_view<Character> label_;
+    //     std::basic_string_view<Character> label_;
 
-        std::vector<lolita::algebra::Matrix<Real>> operators_;
+    //     std::vector<lolita::algebra::Matrix<Real>> operators_;
 
-    };
+    // };
     
-    template<Domain t_domain>
-    struct IntegrationPoint
-    {
+    // template<Domain t_domain>
+    // struct IntegrationPoint
+    // {
 
-        IntegrationPoint(
-            Point const & coordinates,
-            Real const & weight,
-            std::shared_ptr<mgis::behaviour::Behaviour> const & behaviour
-        )
-        :
-        coordinates_(coordinates),
-        weight_(weight),
-        behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behaviour)))
-        {}
+    //     IntegrationPoint(
+    //         Point const & coordinates,
+    //         Real const & weight,
+    //         std::shared_ptr<mgis::behaviour::Behaviour> const & behaviour
+    //     )
+    //     :
+    //     coordinates_(coordinates),
+    //     weight_(weight),
+    //     behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behaviour)))
+    //     {}
 
-        std::unique_ptr<mgis::behaviour::BehaviourData> const &
-        getMaterialPoint()
-        const
-        {
-            return behavior_data_;
-        }
+    //     std::unique_ptr<mgis::behaviour::BehaviourData> const &
+    //     getMaterialPoint()
+    //     const
+    //     {
+    //         return behavior_data_;
+    //     }
 
-        std::unique_ptr<mgis::behaviour::BehaviourData> &
-        getMaterialPoint()
-        {
-            return behavior_data_;
-        }
+    //     std::unique_ptr<mgis::behaviour::BehaviourData> &
+    //     getMaterialPoint()
+    //     {
+    //         return behavior_data_;
+    //     }
         
-        template<BehaviorConcept auto t_behavior>
-        lolita::algebra::Span<lolita::algebra::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
-        getGeneralizedStrain()
-        const
-        {
-            auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
-            return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
-        }
+    //     template<BehaviorConcept auto t_behavior>
+    //     lolita::algebra::Span<lolita::algebra::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
+    //     getGeneralizedStrain()
+    //     const
+    //     {
+    //         auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
+    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
+    //     }
         
-        template<auto t_finite_element_method>
-        lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
-        getGeneralizedStrain()
-        const
-        {
-            auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-            auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-            return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
-        }
+    //     template<auto t_finite_element_method>
+    //     lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
+    //     getGeneralizedStrain()
+    //     const
+    //     {
+    //         auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+    //         auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
+    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
+    //     }
         
-        template<auto t_finite_element_method>
-        lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
-        getGeneralizedStrain()
-        {
-            auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-            auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-            return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
-        }
+    //     template<auto t_finite_element_method>
+    //     lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
+    //     getGeneralizedStrain()
+    //     {
+    //         auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+    //         auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
+    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
+    //     }
         
-        Point coordinates_;
+    //     Point coordinates_;
         
-        Real weight_;
+    //     Real weight_;
         
-        std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
+    //     std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
 
-    };
+    // };
 
-    template<Domain t_domain>
-    struct ElementIntegrationPoints
-    {
+    // template<Domain t_domain>
+    // struct ElementIntegrationPoints
+    // {
 
-        ElementIntegrationPoints(
-            std::shared_ptr<mgis::behaviour::Behaviour> const & behaviour
-        )
-        :
-        behavior_(behaviour)
-        {}
+    //     ElementIntegrationPoints(
+    //         std::shared_ptr<mgis::behaviour::Behaviour> const & behaviour
+    //     )
+    //     :
+    //     behavior_(behaviour)
+    //     {}
 
-        Integer
-        getSize()
-        const
-        {
-            return integration_points_.size();
-        }
+    //     Integer
+    //     getSize()
+    //     const
+    //     {
+    //         return integration_points_.size();
+    //     }
 
-        std::basic_string_view<Character>
-        getLabel()
-        const
-        {
-            return behavior_->behaviour;
-        }
+    //     std::basic_string_view<Character>
+    //     getLabel()
+    //     const
+    //     {
+    //         return behavior_->behaviour;
+    //     }
 
-        void
-        integrate()
-        {
-            for (auto const & integration_point : integration_points_)
-            {
-                auto behaviour_view = mgis::behaviour::make_view(integration_point->behavior_data_);
-                auto result = mgis::behaviour::integrate(behaviour_view, * behavior_);
-            }
-        }
+    //     void
+    //     integrate()
+    //     {
+    //         for (auto const & integration_point : integration_points_)
+    //         {
+    //             auto behaviour_view = mgis::behaviour::make_view(integration_point->behavior_data_);
+    //             auto result = mgis::behaviour::integrate(behaviour_view, * behavior_);
+    //         }
+    //     }
         
-        std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+    //     std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
 
-        std::vector<IntegrationPoint<t_domain>> integration_points_;
+    //     std::vector<IntegrationPoint<t_domain>> integration_points_;
 
-    };
+    // };
     
 } // namespace lolita
 

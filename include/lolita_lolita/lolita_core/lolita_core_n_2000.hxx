@@ -65,10 +65,10 @@ namespace lolita
 
     };
 
-    struct Load2
+    struct Load
     {
 
-        Load2(
+        Load(
             ElementType element_type,
             std::basic_string_view<Character> label,
             Loading const & loading,
@@ -83,7 +83,7 @@ namespace lolita
         loading_(loading)
         {}
 
-        Load2(
+        Load(
             ElementType element_type,
             std::basic_string_view<Character> label,
             Loading && loading,
@@ -101,14 +101,14 @@ namespace lolita
         inline
         Boolean
         operator==(
-            Load2 const & other
+            Load const & other
         )
         const = default;
         
         inline
         Boolean
         operator!=(
-            Load2 const & other
+            Load const & other
         )
         const = default;
         

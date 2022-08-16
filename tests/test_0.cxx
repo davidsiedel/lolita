@@ -28,25 +28,32 @@ TEST(t0, t0)
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
-    elements->addElement<cells>("Displacement", "SQUARE");
-    elements->addElement<faces>("Displacement", "SQUARE");
-    elements->addElement<cells>("Damage", "SQUARE");
-    elements->addElement<faces>("Damage", "SQUARE");
     // dofs
     auto degree_of_freedom = elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE");
     // load
-    auto load = elements->addLoad<faces>("Displacement", "SQUARE", [](lolita::Point const &p, lolita::Real const &t) { return 1.0; }, 0, 0);
+    auto load = elements->addLoad<faces>("Pull", "TOP", [](lolita::Point const &p, lolita::Real const &t) { return t; }, 0, 0);
     // bhv
     auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic/src/libBehaviour.so";
     auto lib_name = "MicromorphicDamageII";
-    auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
-        mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
-        mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
-    };
+    auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{mgis::behaviour::FiniteStrainBehaviourOptions::PK1, mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF};
     auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
-
     // auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(opts, lib_path, lib_name, hyp));
     auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(lib_path, lib_name, hyp));
+    elements->addBehavior<cells>("SQUARE", bhvv);
+    elements->makeQuadrature<cells, quadrature>("SQUARE", "MicromorphicDamageII");
+    elements->makeQuadrature<cells, displacement_field, hdg>("SQUARE", "MicromorphicDamageII", "DisplacementStrain");
+    
+
+
+    auto matt = lolita::RealMatrix<>();
+    auto mat_map = std::map<std::string, lolita::RealMatrix<>>();
+    auto matt_t = lolita::RealMatrix<2, 2>();
+    mat_map["Hey"] = matt_t;
+
+
+
+
+
     //
     // auto behavior_data = std::make_shared<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* bhvv));
     auto behavior_data = mgis::behaviour::BehaviourData(* bhvv);
@@ -61,8 +68,6 @@ TEST(t0, t0)
     {
         std::cout << val << std::endl;
     }
-    //
-    elements->addBehavior<cells>("SQUARE", bhvv);
 
     auto opss = lolita::utility::Holderr<int>();
     opss.setItem("1", 1);
@@ -71,6 +76,45 @@ TEST(t0, t0)
     opss.getValue("3") = 4;
     opss.setItem("3", 5);
     std::cout << opss.getValue("3") << std::endl;
+
+
+    auto map = std::unordered_map<std::basic_string_view<lolita::Character>, int>();
+    auto map_set_tick = std::chrono::high_resolution_clock::now();
+    map["1"] = 1;
+    // map["2"] = 2;
+    // map["3"] = 3;
+    auto map_set_tock = std::chrono::high_resolution_clock::now();
+    auto map_set_time = std::chrono::duration<double>(map_set_tock - map_set_tick);
+    std::cout << "map_set_time : " << map_set_time.count() << std::endl;
+
+    auto hld = lolita::utility::Holderr<int>();
+    auto hld_set_tick = std::chrono::high_resolution_clock::now();
+    hld.setItem("1", 1);
+    // hld.setItem("2", 2);
+    // hld.setItem("3", 3);
+    auto hld_set_tock = std::chrono::high_resolution_clock::now();
+    auto hld_set_time = std::chrono::duration<double>(hld_set_tock - hld_set_tick);
+    std::cout << "hld_set_time : " << hld_set_time.count() << std::endl;
+    
+    auto map_get_tick = std::chrono::high_resolution_clock::now();
+    map.at("1");
+    auto map_get_tock = std::chrono::high_resolution_clock::now();
+    auto map_get_time = std::chrono::duration<double>(map_get_tock - map_get_tick);
+    std::cout << "map_get_time : " << map_get_time.count() << std::endl;
+    
+    auto vec = std::vector<int>();
+    vec.push_back(1);
+    auto hld_get_tick = std::chrono::high_resolution_clock::now();
+    // hld.getValue("1");
+    auto val = vec[0];
+    auto hld_get_tock = std::chrono::high_resolution_clock::now();
+    auto hld_get_time = std::chrono::duration<double>(hld_get_tock - hld_get_tick);
+    std::cout << "hld_get_time : " << hld_get_time.count() << std::endl;
+
+    std::cout << "map size : " << sizeof(hld) << std::endl;
+    std::cout << "hld size : " << sizeof(map) << std::endl;
+
+
     // std::cout << lolita::numerics::sqrt_2 << std::endl;
     // elements->makeQuadrature<cells, displacement_field, quadrature, hdg>("SQUARE", "Displacement");
     //

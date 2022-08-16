@@ -31,19 +31,10 @@ namespace lolita
             std::shared_ptr<DegreeOfFreedom> const & degree_of_freedom
         )
         {
-            auto a = ElementDegreeOfFreedom(degree_of_freedom, degree_of_freedom->coefficients_.size());
+            auto element_degree_of_freedom = ElementDegreeOfFreedom{degree_of_freedom, Natural(degree_of_freedom->coefficients_.size())};
             degree_of_freedom->coefficients_.resize(degree_of_freedom->coefficients_.size() + getSize<t_element, t_domain, t_field, t_basis>());
-            return a;
+            return element_degree_of_freedom;
         }
-        
-        ElementDegreeOfFreedom(
-            std::shared_ptr<DegreeOfFreedom> const & degree_of_freedom,
-            Integer tag
-        )
-        :
-        degree_of_freedom_(degree_of_freedom),
-        tag_(tag)
-        {}
         
         inline
         Boolean
@@ -83,7 +74,7 @@ namespace lolita
         }
 
         inline
-        Integer
+        Natural
         getTag()
         const
         {
@@ -136,42 +127,44 @@ namespace lolita
 
         std::shared_ptr<DegreeOfFreedom> degree_of_freedom_;
 
-        Integer tag_;
+        Natural tag_;
 
     };
 
-    struct ElementLoad2
+    struct ElementLoad
     {
 
-        ElementLoad2(
-            std::shared_ptr<Load2> const & load
+        static inline
+        ElementLoad
+        make(
+            std::shared_ptr<Load> const & load
         )
-        :
-        load_(load)
-        {}
+        {
+            return ElementLoad{load};
+        }
         
         inline
         Boolean
         operator==(
-            ElementLoad2 const & other
+            ElementLoad const & other
         )
         const = default;
         
         inline
         Boolean
         operator!=(
-            ElementLoad2 const & other
+            ElementLoad const & other
         )
         const = default;
 
-        std::shared_ptr<Load2> const &
+        std::shared_ptr<Load> const &
         getLoad()
         const
         {
             return load_;
         }
 
-        std::shared_ptr<Load2> &
+        std::shared_ptr<Load> &
         getLoad()
         {
             return load_;
@@ -188,7 +181,7 @@ namespace lolita
             return load_->loading_(point, time);
         }
 
-        std::shared_ptr<Load2> load_;
+        std::shared_ptr<Load> load_;
 
     };
 
@@ -197,6 +190,24 @@ namespace lolita
 
         struct IntegrationPoint
         {
+
+            // static inline
+            // IntegrationPoint
+            // make(
+            //     Point const & coordinates,
+            //     Real const & weight,
+            //     std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+            // )
+            // {
+            //     auto behavior_data = mgis::behaviour::BehaviourData(* behavior);
+            //     return IntegrationPoint{
+            //         .coordinates_ = coordinates,
+            //         .weight_ = weight,
+            //         .behavior_ = behavior,
+            //         .behavior_data_ = behavior_data,
+            //         .behavior_data_view_ = mgis::behaviour::make_view(behavior_data)
+            //     };
+            // }
 
             IntegrationPoint(
                 Point const & coordinates,
@@ -207,9 +218,23 @@ namespace lolita
             coordinates_(coordinates),
             weight_(weight),
             behavior_(behavior),
-            behavior_data_(mgis::behaviour::BehaviourData(* behavior)),
-            behavior_data_view_(mgis::behaviour::make_view(behavior_data_))
+            behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behavior))),
+            behavior_data_view_(std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)))
             {}
+        
+            inline
+            Boolean
+            operator==(
+                IntegrationPoint const & other
+            )
+            const = default;
+            
+            inline
+            Boolean
+            operator!=(
+                IntegrationPoint const & other
+            )
+            const = default;
             
             template<Domain t_domain, BehaviorConcept auto t_behavior>
             lolita::algebra::Span<lolita::algebra::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
@@ -217,7 +242,7 @@ namespace lolita
             const
             {
                 auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
-                return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_.s1.gradients.data());
+                return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
             }
             
             template<Domain t_domain, auto t_finite_element_method>
@@ -227,7 +252,7 @@ namespace lolita
             {
                 auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
                 auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-                return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_.s1.gradients.data() + offset);
+                return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
             }
             
             template<Domain t_domain, auto t_finite_element_method>
@@ -236,7 +261,7 @@ namespace lolita
             {
                 auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
                 auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-                return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_.s1.gradients.data() + offset);
+                return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
             }
         
             Point coordinates_;
@@ -245,20 +270,55 @@ namespace lolita
         
             std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
 
-            mgis::behaviour::BehaviourData behavior_data_;
+            std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
 
-            mgis::behaviour::BehaviourDataView behavior_data_view_;
+            std::unique_ptr<mgis::behaviour::BehaviourDataView> behavior_data_view_;
 
-            lolita::utility::Holderr<RealMatrix<>> ops_;
+            std::map<std::basic_string_view<Character>, RealMatrix<>> ops_;
 
         };
 
-        QuadratureElement(
+        static inline
+        QuadratureElement
+        make(
             std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
         )
-        :
-        behavior_(behavior)
-        {}
+        {
+            return QuadratureElement{.ips_ = {}, .behavior_ = behavior};
+        }
+        
+        inline
+        Boolean
+        operator==(
+            QuadratureElement const & other
+        )
+        const = default;
+        
+        inline
+        Boolean
+        operator!=(
+            QuadratureElement const & other
+        )
+        const = default;
+
+        // QuadratureElement()
+        // {}
+
+        // explicit
+        // QuadratureElement(
+        //     std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+        // )
+        // :
+        // behavior_(behavior)
+        // {}
+
+        // explicit
+        // QuadratureElement(
+        //     std::shared_ptr<mgis::behaviour::Behaviour> && behavior
+        // )
+        // :
+        // behavior_(std::forward<std::shared_ptr<mgis::behaviour::Behaviour>>(behavior))
+        // {}
 
         // void inline
         // integrate(

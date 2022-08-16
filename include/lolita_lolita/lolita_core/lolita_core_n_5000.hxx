@@ -88,7 +88,7 @@ namespace lolita
         }
 
         template<ElementType t_ii>
-        std::shared_ptr<Load2>
+        std::shared_ptr<Load>
         addLoad(
             std::basic_string_view<Character> finite_element_label,
             std::basic_string_view<Character> domain,
@@ -97,7 +97,7 @@ namespace lolita
             Integer col
         )
         {
-            auto load = std::make_shared<Load2>(t_ii, finite_element_label, loading, row, col);
+            auto load = std::make_shared<Load>(t_ii, finite_element_label, loading, row, col);
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
             )
@@ -122,7 +122,7 @@ namespace lolita
         }
 
         template<ElementType t_ii>
-        std::shared_ptr<Load2>
+        std::shared_ptr<Load>
         addLoad(
             std::basic_string_view<Character> finite_element_label,
             std::basic_string_view<Character> domain,
@@ -131,7 +131,7 @@ namespace lolita
             Integer col
         )
         {
-            auto load = std::make_shared<Load2>(t_ii, finite_element_label, std::forward<Loading>(loading), row, col);
+            auto load = std::make_shared<Load>(t_ii, finite_element_label, std::forward<Loading>(loading), row, col);
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
             )
@@ -243,7 +243,7 @@ namespace lolita
             activate_elements(activate_elements);
         }
 
-        template<ElementType t_ii, Field t_field, Quadrature t_quadrature, auto t_discretization>
+        template<ElementType t_ii, Quadrature t_quadrature>
         void
         makeQuadrature(
             std::basic_string_view<Character> domain,
@@ -261,7 +261,37 @@ namespace lolita
                 {
                     if (element.second->isIn(domain))
                     {
-                        element.second->template makeQuadrature<t_field, t_quadrature, t_discretization>(finite_element_label);
+                        element.second->template makeQuadrature<t_quadrature>(finite_element_label);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<ElementType t_ii, Field t_field, auto t_discretization>
+        void
+        makeQuadrature(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> finite_element_label,
+            std::basic_string_view<Character> finite_element_label2
+        )
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->template makeQuadrature<t_field, t_discretization>(finite_element_label, finite_element_label2);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
