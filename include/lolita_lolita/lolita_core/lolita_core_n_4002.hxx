@@ -259,13 +259,13 @@ namespace lolita
             {
                 auto behaviour_data_view = mgis::behaviour::make_view(* behavior_data_);
                 auto res = mgis::behaviour::integrate(behaviour_data_view, * behavior_);
-                auto strain_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.gradients.data(), behavior_data_->s1.gradients.size());
-                auto stress_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.thermodynamic_forces.data(), behavior_data_->s1.thermodynamic_forces.size());
-                auto K = lolita::algebra::View<Vector<Real> const>(behavior_data_->K.data(), behavior_data_->K.size());
-                std::cout << "strain : " << strain_view << std::endl;
-                std::cout << "stress : " << stress_view << std::endl;
-                std::cout << "K : " << K << std::endl;
-                std::cout << "res : " << res << std::endl;
+                // auto strain_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.gradients.data(), behavior_data_->s1.gradients.size());
+                // auto stress_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.thermodynamic_forces.data(), behavior_data_->s1.thermodynamic_forces.size());
+                // auto K = lolita::algebra::View<Vector<Real> const>(behavior_data_->K.data(), behavior_data_->K.size());
+                // std::cout << "strain : " << strain_view << std::endl;
+                // std::cout << "stress : " << stress_view << std::endl;
+                // std::cout << "K : " << K << std::endl;
+                // std::cout << "res : " << res << std::endl;
             }
 
             void

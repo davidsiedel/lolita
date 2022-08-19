@@ -8,15 +8,6 @@
 namespace lolita
 {
 
-    struct System
-    {
-
-        std::vector<Eigen::Triplet<Real>> lhs_values_;
-
-        std::vector<Real> rhs_values_;
-
-    };
-
     struct Dof
     {
 
@@ -43,9 +34,133 @@ namespace lolita
         )
         const = default;
 
+        Natural
+        getTag()
+        const
+        {
+            return tag_;
+        }
+
+        void
+        setTag(
+            Natural tag
+        )
+        {
+            tag_ = tag;
+        }
+
+        std::shared_ptr<Vector<Real>> const &
+        getCoefficients()
+        const
+        {
+            return coefficients_;
+        }
+
+        std::shared_ptr<Vector<Real>> &
+        getCoefficients()
+        {
+            return coefficients_;
+        }
+
         Natural tag_;
 
         std::shared_ptr<Vector<Real>> coefficients_;
+
+    };
+
+    struct System
+    {
+
+        using MatrixEntry = Eigen::Triplet<Real>;
+
+        System(
+            Integer size
+        )
+        :
+        rhs_values_(Vector<Real>::Zero(size))
+        {}
+
+        void
+        setDof(
+            Integer i,
+            Integer j,
+            Real value
+        )
+        {
+            lhs_values_.push_back(MatrixEntry(i, j, value));
+        }
+
+        void
+        addLhsValue(
+            Integer i,
+            Integer j,
+            Real value
+        )
+        {
+            lhs_values_.push_back(MatrixEntry(i, j, value));
+        }
+
+        void
+        addRhsValue(
+            Integer i,
+            Real value
+        )
+        {
+            rhs_values_(i) += value;
+        }
+
+        Vector<Real>
+        getCorrection()
+        // const
+        {
+            auto lhs = Eigen::SparseMatrix<Real>(rhs_values_.size(), rhs_values_.size());
+            lhs_values_ = std::vector<MatrixEntry>();
+            rhs_values_.setZero();
+            for(auto i = 0; i < rhs_values_.size(); i++)
+            {
+                addLhsValue(i, i, 1);
+            }
+            lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
+            auto solver = Eigen::SparseLU<Eigen::SparseMatrix<Real>>();
+            solver.analyzePattern(lhs);
+            solver.factorize(lhs);
+            auto x = Vector<Real>(solver.solve(rhs_values_));
+            std::cout << "solution :" << std::endl;
+            std::cout << x << std::endl;
+            // Eigen::PardisoLDLT<Eigen::SparseMatrix<T>>  solver;
+
+            // if (params.out_of_core >= 0 && params.out_of_core <= 2)
+            //     solver.pardisoParameterArray()[59] = params.out_of_core;
+
+            // if (params.report_factorization_Mflops)
+            //     solver.pardisoParameterArray()[18] = -1; //report flops
+
+            // solver.analyzePattern(A);
+            // solver.factorize(A);
+            // if (solver.info() != Eigen::Success) {
+            // std::cerr << "ERROR: Could not factorize the matrix" << std::endl;
+            // }
+
+            // x = solver.solve(b);
+            // if (solver.info() != Eigen::Success) {
+            // std::cerr << "ERROR: Could not solve the linear system" << std::endl;
+            // }
+
+            // if (params.report_factorization_Mflops)
+            // {
+            //     int mflops = solver.pardisoParameterArray()[18];
+            //     std::cout << "[PARDISO] Factorization Mflops: " << mflops << std::endl;
+            // }
+            // auto chol = Eigen::SparseLU<Eigen::SparseMatrix<Real>>(lhs);  // performs a Cholesky factorization of A
+            // auto x = Vector<Real>(chol.solve(rhs_values_));         // use the factorization to solve for the given right hand side
+            return x;
+        }
+
+        std::vector<Dof> degrees_of_freedom_;
+
+        std::vector<MatrixEntry> lhs_values_;
+
+        Vector<Real> rhs_values_;
 
     };
 

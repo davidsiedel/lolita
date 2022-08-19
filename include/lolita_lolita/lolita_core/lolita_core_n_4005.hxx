@@ -670,6 +670,21 @@ namespace lolita
         std::map<std::basic_string<Character>, ElementLoad> loads_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // LOAD
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        
+        void
+        setConstraint(
+            std::shared_ptr<Load> const & load
+        )
+        {
+            auto label = std::basic_string<Character>(load->getLabel());
+            constraints_[label] = ElementLoad::make(load);
+        }
+        
+        std::map<std::basic_string<Character>, ElementLoad> constraints_;
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // DOF
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -767,11 +782,11 @@ namespace lolita
         assemble(
             std::basic_string_view<Character> behavior_label,
             std::basic_string_view<Character> degree_of_freedom_label,
-            std::vector<Eigen::Triplet<Real>> & matrix
+            System & system
         )
         const
         {
-            static_cast<t_Disc<t_discretization> const *>(this)->template assemble<t_finite_element_method>(behavior_label, degree_of_freedom_label, matrix);
+            static_cast<t_Disc<t_discretization> const *>(this)->template assemble<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
         }
 
         void
@@ -843,6 +858,18 @@ namespace lolita
         std::shared_ptr<Point> coordinates_;
 
     };
+        
+    template<Element t_element, Domain t_domain>
+    static
+    void
+    setConstraint(
+        std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & element,
+        std::shared_ptr<Load> const & load
+    )
+    {
+        auto label = std::basic_string<Character>(load->getLabel());
+        element->constraints_[label] = ElementLoad::make(load);
+    }
 
 } // namespace lolita
 

@@ -22,30 +22,115 @@
 namespace lolita
 {
 
+    template<Domain t_domain, ElementType t_ii>
+    struct FiniteElementSubSet : ElementSubSet<FiniteElementHolder, t_domain, t_ii>
+    {
+
+        template<Field t_field, Basis t_basis>
+        std::shared_ptr<DegreeOfFreedom>
+        setDegreeOfFreedom(
+            std::basic_string_view<Character> finite_element_label
+        )
+        {
+            auto degree_of_freedom = std::make_shared<DegreeOfFreedom>(t_ii, finite_element_label);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<t_j>())
+                {
+                    element->template setDegreeOfFreedom<t_field, t_basis>(degree_of_freedom);
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_ii.getDim()>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return degree_of_freedom;
+        }
+
+        std::shared_ptr<Load>
+        setLoad(
+            std::basic_string_view<Character> finite_element_label,
+            Loading const & loading,
+            Integer row,
+            Integer col
+        )
+        {
+            auto load = std::make_shared<Load>(t_ii, finite_element_label, loading, row, col);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<t_j>())
+                {
+                    element->setLoad(load);
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_ii.getDim()>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return load;
+        }
+
+        std::shared_ptr<Load>
+        setLoad(
+            std::basic_string_view<Character> finite_element_label,
+            Loading && loading,
+            Integer row,
+            Integer col
+        )
+        {
+            auto load = std::make_shared<Load>(t_ii, finite_element_label, std::forward<Loading>(loading), row, col);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<t_j>())
+                {
+                    element->setLoad(load);
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_ii.getDim()>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return load;
+        }
+
+    };
+
     template<Domain t_domain>
     struct FiniteElementSet : ElementSet<FiniteElementHolder, t_domain>
     {
-
+        
         template<ElementType t_ii>
-        void
-        setElement(
-            std::basic_string_view<Character> finite_element_label,
+        std::unique_ptr<FiniteElementSubSet<t_domain, t_ii>>
+        getSubSet(
             std::basic_string_view<Character> domain
         )
+        const
         {
-            auto element_label = std::make_shared<std::basic_string<Character>>(finite_element_label);
+            auto sub_set = std::make_unique<FiniteElementSubSet<t_domain, t_ii>>();
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
             )
             mutable
             {
                 auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                //auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
                     if (element.second->isIn(domain))
                     {
-                        element.second->setElement(element_label);
+                        sub_set->template getElements<t_j>().push_back(element.second);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -54,13 +139,14 @@ namespace lolita
                 }
             }; 
             activate_elements(activate_elements);
+            return sub_set;
         }
 
         template<ElementType t_ii, Field t_field, Basis t_basis>
         std::shared_ptr<DegreeOfFreedom>
         setDegreeOfFreedom(
-            std::basic_string_view<Character> finite_element_label,
-            std::basic_string_view<Character> domain
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> finite_element_label
         )
         {
             auto degree_of_freedom = std::make_shared<DegreeOfFreedom>(t_ii, finite_element_label);
@@ -90,8 +176,8 @@ namespace lolita
         template<ElementType t_ii>
         std::shared_ptr<Load>
         setLoad(
-            std::basic_string_view<Character> finite_element_label,
             std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> finite_element_label,
             Loading const & loading,
             Integer row,
             Integer col
@@ -124,8 +210,8 @@ namespace lolita
         template<ElementType t_ii>
         std::shared_ptr<Load>
         setLoad(
-            std::basic_string_view<Character> finite_element_label,
             std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> finite_element_label,
             Loading && loading,
             Integer row,
             Integer col
@@ -144,6 +230,74 @@ namespace lolita
                     if (element.second->isIn(domain))
                     {
                         element.second->setLoad(load);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return load;
+        }
+
+        template<ElementType t_ii>
+        std::shared_ptr<Load>
+        setConstraint(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> finite_element_label,
+            Loading const & loading,
+            Integer row,
+            Integer col
+        )
+        {
+            auto load = std::make_shared<Load>(t_ii, finite_element_label, loading, row, col);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->setConstraint(load);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return load;
+        }
+
+        template<ElementType t_ii>
+        std::shared_ptr<Load>
+        setConstraint(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> finite_element_label,
+            Loading && loading,
+            Integer row,
+            Integer col
+        )
+        {
+            auto load = std::make_shared<Load>(t_ii, finite_element_label, std::forward<Loading>(loading), row, col);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->setConstraint(load);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -401,7 +555,7 @@ namespace lolita
             std::basic_string_view<Character> domain,
             std::basic_string_view<Character> behavior_label,
             std::basic_string_view<Character> degree_of_freedom_label,
-            std::vector<Eigen::Triplet<Real>> & matrix
+            System & system
         )
         {
             auto activate_elements = [&] <Integer t_j = 0> (
@@ -415,7 +569,7 @@ namespace lolita
                 {
                     if (element.second->isIn(domain))
                     {
-                        element.second->template assemble<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, matrix);
+                        element.second->template assemble<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, system);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -751,13 +905,60 @@ namespace lolita
         std::vector<std::shared_ptr<MeshDomain>> domains_;
 
     };
-    
+        
     template<Domain t_domain>
-    struct MeshElementSet : ElementSet<MeshElement, t_domain>
+    struct MeshElementSet : ElementSet2<MeshElement, t_domain>
     {
 
         MeshElementSet()
         {}
+        
+        // std::unique_ptr<FiniteElementSet<t_domain>>
+        // makeFiniteElementSet()
+        // const
+        // {
+        //     auto element_set = std::make_unique<FiniteElementSet<t_domain>>();
+        //     auto make_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         for (auto const & element : this->template getElements<t_i, t_j>())
+        //         {
+        //             element.second->template makeElement(* element_set);
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1u>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::getNumElements() - 1)
+        //         {
+        //             self.template operator()<t_i + 1u, 0u>(self);
+        //         }
+        //     };
+        //     make_elements(make_elements);
+        //     auto make_elements_outer_neighborhood = [&] <Integer t_i = 0, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         auto const constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+        //         for (auto & element : element_set->template getElements<t_i, t_j>())
+        //         {
+        //             MeshElement<t_element, t_domain>::initialize(element.second);
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::getNumElements() - 1)
+        //         {
+        //             self.template operator()<t_i + 1, 0>(self);
+        //         }
+        //     };
+        //     make_elements_outer_neighborhood(make_elements_outer_neighborhood);
+        //     return element_set;
+        // }
         
         std::unique_ptr<FiniteElementSet<t_domain>>
         makeFiniteElementSet()
@@ -771,7 +972,7 @@ namespace lolita
             {
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    element.second->template makeElement(* element_set);
+                    element->template makeElement(* element_set);
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
                 {
@@ -1049,7 +1250,7 @@ namespace lolita
                 offset += 1;
                 for (Integer j = 0; j < num_nodes_in_block; ++j)
                 {
-                    auto mesh_element = std::make_shared<MeshElement<t_element, t_domain>>(MeshElement<t_element, t_domain>());
+                    auto mesh_element = std::make_shared<MeshElement<t_element, t_domain>>();
                     auto tag = Natural();
                     auto coordinates_ = Point();
                     auto domains_ = std::vector<std::shared_ptr<std::basic_string<Character>>>();
@@ -1065,8 +1266,9 @@ namespace lolita
                     {
                         mesh_element->domains_.push_back(physical_entity->mesh_domain_);
                     }
-                    auto const element_hash = MeshElement<t_element, t_domain>::getHash(mesh_element->tag_);
-                    elements[element_hash] = mesh_element;
+                    // auto const element_hash = MeshElement<t_element, t_domain>::getHash(mesh_element->tag_);
+                    // elements[element_hash] = mesh_element;
+                    elements.push_back(mesh_element);
                     offset += 1;
                 }
                 offset += num_nodes_in_block;
@@ -1107,7 +1309,7 @@ namespace lolita
                 {
                     for (Integer j = 0; j < num_elements_in_block; ++j)
                     {
-                        auto mesh_element = std::make_shared<MeshElement<t_element, t_domain>>(MeshElement<t_element, t_domain>());
+                        auto mesh_element = std::make_shared<MeshElement<t_element, t_domain>>();
                         line_stream = std::basic_stringstream<Character>(file_lines[line_start + offset]);
                         auto tag = Integer();
                         line_stream >> tag;
@@ -1117,8 +1319,9 @@ namespace lolita
                             line_stream >> node_tag;
                             mesh_element->node_tags_[k] = node_tag - 1;
                         }
-                        auto const element_hash = MeshElement<t_element, t_domain>::getHash(mesh_element->node_tags_);
-                        elements[element_hash] = mesh_element;
+                        // auto const element_hash = MeshElement<t_element, t_domain>::getHash(mesh_element->node_tags_);
+                        // elements[element_hash] = mesh_element;
+                        elements.push_back(mesh_element);
                         offset += 1;
                     }
                 }
