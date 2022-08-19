@@ -275,6 +275,35 @@ namespace lolita
             activate_elements(activate_elements);
         }
 
+        template<ElementType t_ii>
+        void
+        integrate(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->integrate(behavior_label);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
         template<ElementType t_ii, auto t_arg, auto t_discretization>
         void
         setElementOperators(
@@ -310,7 +339,7 @@ namespace lolita
             std::basic_string_view<Character> domain,
             std::basic_string_view<Character> behavior_label,
             std::basic_string_view<Character> material_property_label,
-            std::function<Real(Point const &)> function
+            std::function<Real(Point const &)> && function
         )
         {
             auto activate_elements = [&] <Integer t_j = 0> (
@@ -324,7 +353,69 @@ namespace lolita
                 {
                     if (element.second->isIn(domain))
                     {
-                        element.second->setMaterialProperty(behavior_label, material_property_label, function);
+                        element.second->setMaterialProperty(behavior_label, material_property_label, std::forward<std::function<Real(Point const &)>>(function));
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<ElementType t_ii>
+        void
+        setExternalVariable(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> material_property_label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->setExternalVariable(behavior_label, material_property_label, std::forward<std::function<Real(Point const &)>>(function));
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        assemble(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> degree_of_freedom_label,
+            std::vector<Eigen::Triplet<Real>> & matrix
+        )
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element.second->isIn(domain))
+                    {
+                        element.second->template assemble<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, matrix);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)

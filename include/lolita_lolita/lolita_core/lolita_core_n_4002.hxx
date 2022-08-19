@@ -209,6 +209,22 @@ namespace lolita
             //     };
             // }
 
+            template<Domain t_domain, FiniteElementMethodConcept auto t_finite_element_method>
+            static constexpr
+            Integer
+            getGeneralizedStrainSize()
+            {
+                return FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            }
+
+            template<Domain t_domain, BehaviorConcept auto t_behavior>
+            static constexpr
+            Integer
+            getGeneralizedStrainSize()
+            {
+                return BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
+            }
+
             IntegrationPoint(
                 Point const & coordinates,
                 Real const & weight,
@@ -220,7 +236,9 @@ namespace lolita
             behavior_(behavior),
             behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behavior))),
             behavior_data_view_(std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)))
-            {}
+            {
+                behavior_data_->K[0] = 4;
+            }
         
             inline
             Boolean
@@ -235,6 +253,42 @@ namespace lolita
                 IntegrationPoint const & other
             )
             const = default;
+
+            void
+            integrate()
+            {
+                auto behaviour_data_view = mgis::behaviour::make_view(* behavior_data_);
+                auto res = mgis::behaviour::integrate(behaviour_data_view, * behavior_);
+                auto strain_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.gradients.data(), behavior_data_->s1.gradients.size());
+                auto stress_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.thermodynamic_forces.data(), behavior_data_->s1.thermodynamic_forces.size());
+                auto K = lolita::algebra::View<Vector<Real> const>(behavior_data_->K.data(), behavior_data_->K.size());
+                std::cout << "strain : " << strain_view << std::endl;
+                std::cout << "stress : " << stress_view << std::endl;
+                std::cout << "K : " << K << std::endl;
+                std::cout << "res : " << res << std::endl;
+            }
+
+            void
+            setMaterialProperty(
+                std::basic_string_view<Character> material_property_label,
+                std::function<Real(Point const &)> && function
+            )
+            {
+                auto value = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
+                mgis::behaviour::setMaterialProperty(behavior_data_->s0, std::string(material_property_label), value);
+                mgis::behaviour::setMaterialProperty(behavior_data_->s1, std::string(material_property_label), value);
+            }
+
+            void
+            setExternalVariable(
+                std::basic_string_view<Character> material_property_label,
+                std::function<Real(Point const &)> && function
+            )
+            {
+                auto value = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
+                mgis::behaviour::setExternalStateVariable(behavior_data_->s0, std::string(material_property_label), value);
+                mgis::behaviour::setExternalStateVariable(behavior_data_->s1, std::string(material_property_label), value);
+            }
             
             template<Domain t_domain, BehaviorConcept auto t_behavior>
             lolita::algebra::Span<lolita::algebra::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
@@ -246,7 +300,7 @@ namespace lolita
             }
             
             template<Domain t_domain, auto t_finite_element_method>
-            lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
+            lolita::algebra::Span<RealVector<getGeneralizedStrainSize<t_finite_element_method, t_domain>()> const>
             getGeneralizedStrain()
             const
             {
@@ -256,12 +310,41 @@ namespace lolita
             }
             
             template<Domain t_domain, auto t_finite_element_method>
-            lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
+            lolita::algebra::Span<RealVector<getGeneralizedStrainSize<t_finite_element_method, t_domain>()>>
             getGeneralizedStrain()
             {
                 auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
                 auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
                 return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
+            }
+
+            template<Domain t_domain, FiniteElementMethodConcept auto t_finite_element_method>
+            Matrix<Real, getGeneralizedStrainSize<t_domain, t_finite_element_method>(), getGeneralizedStrainSize<t_domain, t_finite_element_method>()>
+            getJacobian()
+            const
+            {
+                auto constexpr strain_operator_num_rows = getGeneralizedStrainSize<t_domain, t_finite_element_method>();
+                using Jac = Matrix<Real, strain_operator_num_rows, strain_operator_num_rows>;
+                auto jac = Jac();
+                jac.setZero();
+                auto set_mapping_block = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
+                    auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
+                    auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
+                    auto jacobian_block_view = algebra::View<Matrix<Real, mapping_size, mapping_size> const>(behavior_data_->K.data() + offset * offset);
+                    auto tangent_block_view = jac.template block<mapping_size, mapping_size>(offset, offset);
+                    tangent_block_view = jacobian_block_view;
+                    if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_mapping_block(set_mapping_block);
+                return jac;
             }
         
             Point coordinates_;

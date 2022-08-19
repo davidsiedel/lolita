@@ -713,76 +713,101 @@ namespace lolita
             std::basic_string_view<Character> label2
         )
         {
-            auto constexpr size1 = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-            auto constexpr size2 = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
-            auto constexpr field = t_finite_element_method.getField();
-            auto count = 0;
+            auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
             for (auto & ip : quadrature_.at(std::string(label)).ips_)
             {
-                auto strain_operator = Matrix<Real, size1, size2>();
+                auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
                 auto set_mapping_block = [&] <Integer t_i = 0> (
                     auto & self
                 )
                 constexpr mutable
                 {
                     auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
-                    auto constexpr size3 = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
+                    auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
                     auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-                    auto mapping_block = this->template getMapping<field, mapping, t_discretization>(ip.coordinates_);
-                    auto block = strain_operator.template block<size3, size2>(offset, 0);
-                    block = mapping_block;
+                    auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(ip.coordinates_);
+                    auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
+                    mapping_block = mapping_operator;
                     if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
                     {
                         self.template operator ()<t_i + 1>(self);
                     }
                 };
                 set_mapping_block(set_mapping_block);
-                std::cout << "strain_operator " << count << " :" << std::endl;
                 ip.ops_[std::string(label2)] = strain_operator;
-                std::cout << ip.ops_.at(std::string(label2)) << std::endl;
-                count ++;
             }
         }
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
         setStrainValues(
-            std::basic_string_view<Character> label,
-            std::basic_string_view<Character> label2
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> degree_of_freedom_label
         )
         {
-            auto count = 0;
             auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
             auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
             using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+            using StrainView = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>;
             using StrainValue = Vector<Real, strain_operator_num_rows>;
-            auto unknown = this->template getUnknowns<t_finite_element_method.getField(), t_discretization>(label2);
-            for (auto & ip : quadrature_.at(std::string(label)).ips_)
+            auto unknown = this->template getUnknowns<t_finite_element_method.getField(), t_discretization>(degree_of_freedom_label);
+            for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
             {
-                auto strain_operator = StrainOperatorView(ip.ops_.at(std::string(label2)).data());
+                auto strain_operator = StrainOperatorView(ip.ops_.at(std::string(degree_of_freedom_label)).data());
                 auto strain_value = StrainValue(strain_operator * unknown);
-                std::cout << "strain op of size " << strain_operator_num_rows << ", " << strain_operator_num_cols << " at qp " <<  count << " :" << std::endl;
-                std::cout << strain_operator << std::endl;
-                std::cout << "strain value at qp " <<  count << " :" << std::endl;
-                std::cout << strain_value << std::endl;
-                count ++;
-                // auto ip.ops_[label2];
-            }   
+                auto strain_view = StrainView(ip.behavior_data_->s1.gradients.data());
+                strain_view = strain_value;
+                strain_view.setZero();
+            }
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        assemble(
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> degree_of_freedom_label,
+            std::vector<Eigen::Triplet<Real>> & matrix
+        )
+        const
+        {
+            static_cast<t_Disc<t_discretization> const *>(this)->template assemble<t_finite_element_method>(behavior_label, degree_of_freedom_label, matrix);
+        }
+
+        void
+        integrate(
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
+            {
+                ip.integrate();
+            }
         }
 
         void
         setMaterialProperty(
             std::basic_string_view<Character> behavior_label,
             std::basic_string_view<Character> material_property_label,
-            std::function<Real(Point const &)> function
+            std::function<Real(Point const &)> && function
         )
         {
-            auto label = std::string(material_property_label);
             for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
             {
-                auto value = function(ip.coordinates_);
-                mgis::behaviour::setMaterialProperty(ip.behavior_data_->s0, label, value);
-                mgis::behaviour::setMaterialProperty(ip.behavior_data_->s1, label, value);
+                ip.setMaterialProperty(material_property_label, std::forward<std::function<Real(Point const &)>>(function));
+            }
+        }
+
+        void
+        setExternalVariable(
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> material_property_label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
+            {
+                ip.setExternalVariable(material_property_label, std::forward<std::function<Real(Point const &)>>(function));
             }
         }
 

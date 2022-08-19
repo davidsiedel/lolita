@@ -8,6 +8,15 @@
 namespace lolita
 {
 
+    struct System
+    {
+
+        std::vector<Eigen::Triplet<Real>> lhs_values_;
+
+        std::vector<Real> rhs_values_;
+
+    };
+
     struct Dof
     {
 

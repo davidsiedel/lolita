@@ -567,6 +567,148 @@ namespace lolita
                 return unknown;
             }
 
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Vector<Real, getNumElementUnknowns<t_finite_element_method.getField()>()>
+            getInternalForces(
+                std::basic_string_view<Character> behavior_label,
+                std::basic_string_view<Character> degree_of_freedom_label
+            )
+            const
+            {
+                auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+                auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+                using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+                using StrainView = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>;
+                auto unknown = this->template getUnknowns<t_finite_element_method.getField()>(degree_of_freedom_label);
+                auto internal_forces = Vector<Real, strain_operator_num_cols>();
+                internal_forces.setZero();
+                for (auto & ip : this->quadrature_.at(std::string(behavior_label)).ips_)
+                {
+                    auto strain_operator_view = StrainOperatorView(ip.ops_.at(std::string(degree_of_freedom_label)).data());
+                    auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+                    internal_forces += ip.weight_ * strain_operator_view.transpose() * stress_view;
+                }
+                internal_forces += this->operators_.at("Stabilization") * unknown;
+                return internal_forces;
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Vector<Real, getNumElementUnknowns<t_finite_element_method.getField()>()>
+            getExternalForces(
+                std::basic_string_view<Character> behavior_label,
+                std::basic_string_view<Character> degree_of_freedom_label
+            )
+            const
+            {
+                auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+                auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+                auto external_forces = Vector<Real, strain_operator_num_cols>();
+                external_forces.setZero();
+                return external_forces;
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Matrix<Real, getNumElementUnknowns<t_finite_element_method.getField()>(), getNumElementUnknowns<t_finite_element_method.getField()>()>
+            getJacobianMatrix(
+                std::basic_string_view<Character> behavior_label,
+                std::basic_string_view<Character> degree_of_freedom_label
+            )
+            const
+            {
+                auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+                auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+                using JacobianOperator = Matrix<Real, strain_operator_num_cols, strain_operator_num_cols>;
+                using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+                auto jacobian = Matrix<Real, strain_operator_num_cols, strain_operator_num_cols>();
+                jacobian.setZero();
+                for (auto & ip : this->quadrature_.at(std::string(behavior_label)).ips_)
+                {
+                    auto strain_operator_view = StrainOperatorView(ip.ops_.at(std::string(degree_of_freedom_label)).data());
+                    auto jacob = ip.template getJacobian<t_domain, t_finite_element_method>();
+                    // auto jacob = Matrix<Real, strain_operator_num_rows, strain_operator_num_rows>();
+                    jacobian += ip.weight_ * strain_operator_view.transpose() * jacob * strain_operator_view;
+                }
+                jacobian += this->operators_.at("Stabilization");
+                return jacobian;
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            void
+            assemble(
+                std::basic_string_view<Character> behavior_label,
+                std::basic_string_view<Character> degree_of_freedom_label,
+                std::vector<Eigen::Triplet<Real>> & matrix
+            )
+            const
+            {
+                auto constexpr num_cell_unknowns = getNumCellUnknowns<t_element, t_domain, t_finite_element_method.getField()>();
+                auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+                auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
+                auto internal_forces = getInternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                auto external_forces = getExternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                auto jac = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                auto residual = internal_forces - external_forces;
+                auto k_tt = jac.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
+                auto k_tf = jac.template block<num_cell_unknowns, num_face_unknowns>(0, num_cell_unknowns);
+                auto k_ft = jac.template block<num_face_unknowns, num_cell_unknowns>(num_cell_unknowns, 0);
+                auto k_ff = jac.template block<num_face_unknowns, num_face_unknowns>(num_cell_unknowns, num_cell_unknowns);
+                auto r_t = residual.template segment<num_cell_unknowns>(0);
+                auto r_f = residual.template segment<num_face_unknowns>(num_cell_unknowns);
+                // auto k_tt_inv = k_tt.llt().solve(decltype(k_tt)::Identity());
+                //
+                //
+                auto constexpr t_field = t_finite_element_method.getField();
+                auto offset_i = 0;
+                auto offset_j = 0;
+                auto set_faces_unknowns = [&] <Integer t_i = 0, Integer t_j = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr t_inner_neighbor_i = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_i>();
+                    auto constexpr t_inner_neighbor_j = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_i>();
+                    for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        auto size_i = ElementDegreeOfFreedom::template getSize<t_inner_neighbor_i, t_domain, t_field, getFaceBasis()>();
+                        auto index_i = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label)).getTag();
+                        offset_i += size_i;
+                        for (auto const & face_j : this->template getInnerNeighbors<0, t_j>())
+                        {
+                            auto size_j = ElementDegreeOfFreedom::template getSize<t_inner_neighbor_j, t_domain, t_field, getFaceBasis()>();
+                            auto index_j = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label)).getTag();
+                            offset_j += size_j;
+                        }
+                    }
+                    if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i, t_j + 1>(self);
+                    }
+                    else if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i + 1, 0>(self);
+                    }
+                };
+                set_faces_unknowns(set_faces_unknowns);
+                //
+                //
+                std::cout << "jac" << std::endl;
+                std::cout << jac << std::endl;
+                // auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+                // auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+                // using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+                // using StrainView = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>;
+                // auto unknown = this->template getUnknowns<t_finite_element_method.getField()>(degree_of_freedom_label);
+                // auto internal_forces = Vector<Real, strain_operator_num_cols>();
+                // internal_forces.setZero();
+                // for (auto & ip : this->quadrature_.at(std::string(behavior_label)).ips_)
+                // {
+                //     auto strain_operator_view = StrainOperatorView(ip.ops_.at(std::string(degree_of_freedom_label)).data());
+                //     auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+                //     internal_forces += ip.weight_ * strain_operator_view.transpose() * stress_view;
+                // }
+                // internal_forces + this->operators_.at("Stabilization") * unknown;
+            }
+
         };
 
     };
