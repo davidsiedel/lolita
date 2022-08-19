@@ -68,9 +68,9 @@ TEST(t0, t0)
 
 
 
-    auto my_cells = elements->getSubSet<cells>("SQUARE");
-    auto lll = my_cells->template setDegreeOfFreedom<displacement_field, hdg.getFaceBasis()>("Displacement");
-    auto llm = my_cells->setLoad("Pull", [](lolita::Point const & p, lolita::Real const & t) { return t; }, 0, 0);
+    auto my_cells = elements->makeFiniteElementSubSet("SQUARE");
+    // auto lll = my_cells->setDegreeOfFreedom<cells, displacement_field, hdg.getFaceBasis()>("Displacement");
+    // auto llm = my_cells->setLoad<cells>("Pull", [](lolita::Point const & p, lolita::Real const & t) { return t; }, 0, 0);
 
     // lolita::setConstraint
 
