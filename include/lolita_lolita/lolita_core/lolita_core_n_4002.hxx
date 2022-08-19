@@ -274,7 +274,7 @@ namespace lolita
 
             std::unique_ptr<mgis::behaviour::BehaviourDataView> behavior_data_view_;
 
-            std::map<std::basic_string_view<Character>, RealMatrix<>> ops_;
+            std::map<std::basic_string<Character>, RealMatrix<>> ops_;
 
         };
 

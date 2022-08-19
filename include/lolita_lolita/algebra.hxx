@@ -1,7 +1,7 @@
 #ifndef C09B9C41_77CB_4EB9_8DD3_CEAA51EBDEB7
 #define C09B9C41_77CB_4EB9_8DD3_CEAA51EBDEB7
 
-#define EIGEN_USE_MKL_ALL
+// #define EIGEN_USE_MKL_ALL
 
 //#define EIGEN_USE_LAPACKE
 //#define EIGEN_USE_MKL_VML
@@ -129,6 +129,9 @@ namespace lolita
         template<typename t_T>
         using Span = Eigen::Map<t_T>;
 
+        template<typename t_T>
+        using View = Eigen::Map<t_T>;
+
     } // namespace matrix
 
     template<auto... t_args>
@@ -136,6 +139,12 @@ namespace lolita
 
     template<auto... t_args>
     using RealMatrix = algebra::Matrix<Real, t_args...>;
+
+    template<typename t_T, auto... t_args>
+    using Vector = algebra::Vector<t_T, t_args...>;
+
+    template<typename t_T, auto... t_args>
+    using Matrix = algebra::Matrix<t_T, t_args...>;
 
 } // namespace lolita
 

@@ -397,14 +397,14 @@ namespace lolita
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, getSize<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>() - 1>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
             return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
-                MappingValues{2, 2, 2, 1},
+                // MappingValues{2, 2, 2, 0},
                 MappingValues{0, 1, 3, lolita::numerics::sqrt(2)},
             };
         }
@@ -428,7 +428,7 @@ namespace lolita
         static
         void
         non_linear(
-                auto & gradient
+            auto & gradient
         )
         {}
         
@@ -475,14 +475,14 @@ namespace lolita
 
         template<Domain t_domain, Field t_field>
         static constexpr
-        std::array<MappingValues, getSize<t_domain, t_field>()>
+        std::array<MappingValues, getSize<t_domain, t_field>() - 1>
         getValues()
         requires(t_field.isTensor(1) && t_domain.hasDim(2))
         {
             return {
                 MappingValues{0, 0, 0, 1},
                 MappingValues{1, 1, 1, 1},
-                MappingValues{2, 2, 2, 1},
+                // MappingValues{2, 2, 2, 1},
                 MappingValues{0, 1, 3, 1},
                 MappingValues{1, 0, 4, 1},
             };
@@ -529,15 +529,13 @@ namespace lolita
         Integer
         getSize()
         {
-            auto constexpr t_field = t_generalized_strain.getField();
             auto size = Integer(0);
             auto set_size = [&] <Integer t_i = 0> (
                 auto & self
             )
             constexpr mutable
             {
-                auto constexpr t_mapping = t_generalized_strain.template getMapping<t_i>();
-                size += MappingTraits<t_mapping>::template getSize<t_domain, t_field>();
+                size += MappingTraits<t_generalized_strain.template getMapping<t_i>()>::template getSize<t_domain, t_generalized_strain.getField()>();
                 if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
                 {
                     self.template operator ()<t_i + 1>(self);
@@ -545,6 +543,43 @@ namespace lolita
             };
             set_size(set_size);
             return size;
+        }
+
+        template<Domain t_domain, Mapping t_mapping>
+        static constexpr
+        Integer
+        getMappingSize()
+        {
+            return MappingTraits<t_mapping>::template getSize<t_domain, t_generalized_strain.getField()>();
+        }
+
+        template<Domain t_domain, Mapping t_mapping>
+        static constexpr
+        Integer
+        getMappingOffset()
+        {
+            auto offset = Integer(0);
+            auto is_set = false;
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                if constexpr (utility::areEqual(t_generalized_strain.template getMapping<t_i>(), t_mapping))
+                {
+                    is_set = true;
+                }
+                if (!is_set)
+                {
+                    offset += MappingTraits<t_generalized_strain.template getMapping<t_i>()>::template getSize<t_domain, t_generalized_strain.getField()>();
+                }
+                if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
         }
 
     };
@@ -628,6 +663,14 @@ namespace lolita
         getMappingSize()
         {
             return MappingTraits<t_mapping>::template getSize<t_domain, t_finite_element_method.getField()>();
+        }
+
+        template<Domain t_domain, Mapping t_mapping>
+        static constexpr
+        Integer
+        getMappingOffset()
+        {
+            return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template getMappingOffset<t_domain, t_mapping>();
         }
 
     };

@@ -5,8 +5,8 @@ TEST(t0, t0)
 {
     // constants
     auto constexpr domain = lolita::Domain::cartesian(2);
-    auto constexpr cell_basis = lolita::Basis::monomial(1);
-    auto constexpr face_basis = lolita::Basis::monomial(1);
+    // auto constexpr cell_basis = lolita::Basis::monomial(1);
+    // auto constexpr face_basis = lolita::Basis::monomial(1);
     auto constexpr quadrature = lolita::Quadrature::gauss(2);
     auto constexpr cells = lolita::ElementType::cells(domain);
     auto constexpr faces = lolita::ElementType::faces(domain);
@@ -20,7 +20,7 @@ TEST(t0, t0)
     auto constexpr displacement_behavior = lolita::Behavior(displacement_generalized_strain);
     auto constexpr damage_behavior = lolita::Behavior(damage_generalized_strain);
     // discretization
-    auto constexpr hdg = lolita::HybridDiscontinuousGalerkin(cell_basis, face_basis, lolita::HybridDiscontinuousGalerkin::Stabilization::Hdg);
+    auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
     // finite elements
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
@@ -29,19 +29,27 @@ TEST(t0, t0)
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // dofs
-    auto degree_of_freedom = elements->addDegreeOfFreedom<faces, displacement_field, face_basis>("Displacement", "SQUARE");
+    auto face_displacement = elements->setDegreeOfFreedom<faces, displacement_field, hdg.getFaceBasis()>("Displacement", "SQUARE");
+    auto cell_displacement = elements->setDegreeOfFreedom<cells, displacement_field, hdg.getCellBasis()>("Displacement", "SQUARE");
+    auto face_damage = elements->setDegreeOfFreedom<faces, damage_field, hdg.getFaceBasis()>("Damage", "SQUARE");
+    auto cell_damage = elements->setDegreeOfFreedom<cells, damage_field, hdg.getCellBasis()>("Damage", "SQUARE");
     // load
-    auto load = elements->addLoad<faces>("Pull", "TOP", [](lolita::Point const &p, lolita::Real const &t) { return t; }, 0, 0);
-    // bhv
+    auto load = elements->setLoad<faces>("Pull", "TOP", [](lolita::Point const & p, lolita::Real const & t) { return t; }, 0, 0);
+    // declaring behavior
     auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic/src/libBehaviour.so";
     auto lib_name = "MicromorphicDamageII";
-    auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{mgis::behaviour::FiniteStrainBehaviourOptions::PK1, mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF};
+    auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
+        mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
+        mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
+    };
     auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
-    // auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(opts, lib_path, lib_name, hyp));
-    auto bhvv = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(lib_path, lib_name, hyp));
-    elements->addBehavior<cells>("SQUARE", bhvv);
-    elements->makeQuadrature<cells, quadrature>("SQUARE", "MicromorphicDamageII");
-    elements->makeQuadrature<cells, displacement_field, hdg>("SQUARE", "MicromorphicDamageII", "DisplacementStrain");
+    // adding behavior
+    auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
+    //making operators
+    elements->setStrainOperators<cells, damage_element, hdg>("SQUARE", "MicromorphicDamageII", "Damage");
+    elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "FractureEnergy", [](lolita::Point const & p) { return 1.0; });
+    elements->setElementOperators<cells, damage_element, hdg>("SQUARE", "Stabilization");
+    elements->setStrainValues<cells, damage_element, hdg>("SQUARE", "MicromorphicDamageII", "Damage");
     
 
 
@@ -56,13 +64,13 @@ TEST(t0, t0)
 
     //
     // auto behavior_data = std::make_shared<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* bhvv));
-    auto behavior_data = mgis::behaviour::BehaviourData(* bhvv);
+    auto behavior_data = mgis::behaviour::BehaviourData(* micromorphic_damage);
     // mgis::behaviour::setMaterialProperty(behavior_data->s0, "FractureEnergy", 1.0);
     mgis::behaviour::setMaterialProperty(behavior_data.s0, "FractureEnergy", 1.0);
     // auto behaviour_view = mgis::behaviour::make_view(* behavior_data);
     auto behaviour_view = mgis::behaviour::make_view(behavior_data);
     // auto result = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(behavior_data)), * bhvv);
-    auto result = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(behavior_data)), * bhvv);
+    auto result = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(behavior_data)), * micromorphic_damage);
     std::cout << "result : " << result << std::endl;
     for (auto const val : behavior_data.s1.gradients)
     {

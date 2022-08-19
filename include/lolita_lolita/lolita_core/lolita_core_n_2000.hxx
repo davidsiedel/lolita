@@ -8,6 +8,38 @@
 namespace lolita
 {
 
+    struct Dof
+    {
+
+        Dof(
+            Natural tag,
+            std::shared_ptr<Vector<Real>> coefficients
+        )
+        :
+        tag_(tag),
+        coefficients_(coefficients)
+        {}
+        
+        inline
+        Boolean
+        operator==(
+            Dof const & other
+        )
+        const = default;
+        
+        inline
+        Boolean
+        operator!=(
+            Dof const & other
+        )
+        const = default;
+
+        Natural tag_;
+
+        std::shared_ptr<Vector<Real>> coefficients_;
+
+    };
+
     struct DegreeOfFreedom
     {
 
@@ -61,7 +93,7 @@ namespace lolita
 
         ElementType element_type_;
 
-        lolita::algebra::Vector<Real> coefficients_;
+        Vector<Real> coefficients_;
 
     };
 

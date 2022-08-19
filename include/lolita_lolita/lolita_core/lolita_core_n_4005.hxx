@@ -636,19 +636,38 @@ namespace lolita
             return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping, t_field>(point);
         }
 
+        template<Field t_field, auto t_discretization>
+        Matrix<Real, t_Disc<t_discretization>::template getNumElementUnknowns<t_field>(), t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
+        getStabilization()
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getStabilization<t_field>();
+        }
+
+        template<Field t_field, auto t_discretization>
+        Vector<Real, t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
+        getUnknowns(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknowns<t_field>(label);
+        }
+
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // LOAD
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         
         void
-        addLoad(
+        setLoad(
             std::shared_ptr<Load> const & load
         )
         {
-            loads_[load->getLabel()] = ElementLoad::make(load);
+            auto label = std::basic_string<Character>(load->getLabel());
+            loads_[label] = ElementLoad::make(load);
         }
         
-        std::map<std::basic_string_view<Character>, ElementLoad> loads_;
+        std::map<std::basic_string<Character>, ElementLoad> loads_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // DOF
@@ -656,57 +675,133 @@ namespace lolita
 
         template<Field t_field, Basis t_basis>
         void
-        addDegreeOfFreedom(
+        setDegreeOfFreedom(
             std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
         )
         {
-            degrees_of_freedom_[degree_of_freedom->getLabel()] = ElementDegreeOfFreedom::template make<t_element, t_domain, t_field, t_basis>(degree_of_freedom);
+            auto label = std::basic_string<Character>(degree_of_freedom->getLabel());
+            degrees_of_freedom_[label] = ElementDegreeOfFreedom::template make<t_element, t_domain, t_field, t_basis>(degree_of_freedom);
         }
         
-        std::map<std::basic_string_view<Character>, ElementDegreeOfFreedom> degrees_of_freedom_;
+        std::map<std::basic_string<Character>, ElementDegreeOfFreedom> degrees_of_freedom_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // QUAD
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+        template<Quadrature t_quadrature>
         void
-        addBehavior(
+        setBehavior(
             std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
         )
         {
-            quadrature_[behavior->behaviour] = QuadratureElement::make(behavior);
-        }
-
-        template<Quadrature t_quadrature>
-        void
-        makeQuadrature(
-            std::basic_string_view<Character> label
-        )
-        {
+            auto behavior_label = behavior->behaviour;
+            quadrature_[behavior_label] = QuadratureElement::make(behavior);
             for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
             {
                 auto point = getCurrentQuadraturePoint<t_quadrature>(i);
                 auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
-                quadrature_[label].ips_.push_back(QuadratureElement::IntegrationPoint(point, weight, quadrature_[label].behavior_));
+                quadrature_.at(behavior_label).ips_.push_back(QuadratureElement::IntegrationPoint(point, weight, quadrature_.at(behavior_label).behavior_));
             }
             
         }
 
-        template<Field t_field, auto t_discretization>
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
-        makeQuadrature(
+        setStrainOperators(
             std::basic_string_view<Character> label,
             std::basic_string_view<Character> label2
         )
         {
-            for (auto & ip : quadrature_[label].ips_)
+            auto constexpr size1 = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr size2 = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
+            auto constexpr field = t_finite_element_method.getField();
+            auto count = 0;
+            for (auto & ip : quadrature_.at(std::string(label)).ips_)
             {
-                auto mapp = this->template getMapping<t_field, Mapping::gradient(), t_discretization>(ip.coordinates_);
-                ip.ops_[label2] = mapp;
+                auto strain_operator = Matrix<Real, size1, size2>();
+                auto set_mapping_block = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
+                    auto constexpr size3 = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
+                    auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
+                    auto mapping_block = this->template getMapping<field, mapping, t_discretization>(ip.coordinates_);
+                    auto block = strain_operator.template block<size3, size2>(offset, 0);
+                    block = mapping_block;
+                    if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_mapping_block(set_mapping_block);
+                std::cout << "strain_operator " << count << " :" << std::endl;
+                ip.ops_[std::string(label2)] = strain_operator;
+                std::cout << ip.ops_.at(std::string(label2)) << std::endl;
+                count ++;
             }
         }
 
-        std::map<std::basic_string_view<Character>, QuadratureElement> quadrature_;
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        setStrainValues(
+            std::basic_string_view<Character> label,
+            std::basic_string_view<Character> label2
+        )
+        {
+            auto count = 0;
+            auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
+            using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+            using StrainValue = Vector<Real, strain_operator_num_rows>;
+            auto unknown = this->template getUnknowns<t_finite_element_method.getField(), t_discretization>(label2);
+            for (auto & ip : quadrature_.at(std::string(label)).ips_)
+            {
+                auto strain_operator = StrainOperatorView(ip.ops_.at(std::string(label2)).data());
+                auto strain_value = StrainValue(strain_operator * unknown);
+                std::cout << "strain op of size " << strain_operator_num_rows << ", " << strain_operator_num_cols << " at qp " <<  count << " :" << std::endl;
+                std::cout << strain_operator << std::endl;
+                std::cout << "strain value at qp " <<  count << " :" << std::endl;
+                std::cout << strain_value << std::endl;
+                count ++;
+                // auto ip.ops_[label2];
+            }   
+        }
+
+        void
+        setMaterialProperty(
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> material_property_label,
+            std::function<Real(Point const &)> function
+        )
+        {
+            auto label = std::string(material_property_label);
+            for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
+            {
+                auto value = function(ip.coordinates_);
+                mgis::behaviour::setMaterialProperty(ip.behavior_data_->s0, label, value);
+                mgis::behaviour::setMaterialProperty(ip.behavior_data_->s1, label, value);
+            }
+        }
+
+        std::map<std::basic_string<Character>, QuadratureElement> quadrature_;
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // ELEM OPS
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        setElementOperator(
+            std::basic_string_view<Character> label
+        )
+        {
+            operators_[std::string(label)] = this->template getStabilization<t_finite_element_method.getField(), t_discretization>();
+        }
+
+        std::map<std::basic_string<Character>, Matrix<Real>> operators_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // NEW
@@ -721,9 +816,6 @@ namespace lolita
         std::vector<std::shared_ptr<MeshDomain>> domains_;
         
         std::shared_ptr<Point> coordinates_;
-
-
-
 
     };
 

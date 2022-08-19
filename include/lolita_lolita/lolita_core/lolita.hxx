@@ -503,9 +503,43 @@ namespace lolita
         {
 
             Hdg,
-            Hho,
+            HybridHighOrder,
 
         };
+
+        static constexpr
+        HybridDiscontinuousGalerkin
+        hybridDiscontinuousGalerkin(
+            Integer ord_cell,
+            Integer ord_face
+        )
+        {
+            return HybridDiscontinuousGalerkin(Basis::monomial(ord_cell), Basis::monomial(ord_face), Basis::monomial(ord_face), Hdg);
+        }
+
+        static constexpr
+        HybridDiscontinuousGalerkin
+        hybridHighOrder(
+            Integer ord_cell,
+            Integer ord_face
+        )
+        {
+            return HybridDiscontinuousGalerkin(Basis::monomial(ord_cell), Basis::monomial(ord_face), Basis::monomial(ord_face), HybridHighOrder);
+        }
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            Basis cell_basis,
+            Basis face_basis,
+            Basis grad_basis,
+            Stabilization stabilization
+        )
+        :
+        cell_basis_(cell_basis),
+        face_basis_(face_basis),
+        grad_basis_(grad_basis),
+        stabilization_(stabilization)
+        {}
 
         constexpr
         HybridDiscontinuousGalerkin(
@@ -535,6 +569,30 @@ namespace lolita
         const = default;
 
         constexpr
+        Basis
+        getCellBasis()
+        const
+        {
+            return cell_basis_;
+        }
+
+        constexpr
+        Basis
+        getFaceBasis()
+        const
+        {
+            return face_basis_;
+        }
+
+        constexpr
+        Basis
+        getGradBasis()
+        const
+        {
+            return grad_basis_;
+        }
+
+        constexpr
         Boolean
         isHybridDiscontinuousGalerkin()
         const
@@ -555,7 +613,7 @@ namespace lolita
         isHho()
         const
         {
-            return stabilization_ == Stabilization::Hho;
+            return stabilization_ == Stabilization::HybridHighOrder;
         }
 
         Basis cell_basis_;
