@@ -1188,7 +1188,7 @@ namespace lolita
     };
     
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
-    struct ElementSet2
+    struct ElementSet
     {
 
     private:

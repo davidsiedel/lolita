@@ -36,6 +36,22 @@ namespace lolita
 
         template<auto t_discretization>
         using t_Disc = typename HybridDiscontinuousGalerkinTraits<t_discretization>::template Implementation<t_element, t_domain>;
+
+        template<Basis t_basis>
+        static constexpr
+        Integer
+        getBasisSize()
+        {
+            return t_Basis<t_basis>::getSize();
+        }
+
+        template<Field t_field, Basis t_basis>
+        static constexpr
+        Integer
+        getFieldSize()
+        {
+            return t_Basis<t_basis>::getSize() * FieldTraits<t_field>::template getSize<t_domain>();
+        }
         
         Boolean
         operator==(
@@ -874,10 +890,23 @@ namespace lolita
                 std::shared_ptr<Dof> const & dof
             )
             {
-                auto element_degree_of_freedom = DegreeOfFreedom{Natural(dof->getCoefficients().size()), dof};
+                // auto element_degree_of_freedom = DegreeOfFreedom{Natural(dof->getCoefficients().size()), dof};
+                auto element_degree_of_freedom = DegreeOfFreedom(dof->getCoefficients().size(), dof);
                 dof->getCoefficients().resize(dof->getCoefficients().size() + getSize<t_field, t_basis>());
                 return element_degree_of_freedom;
             }
+
+            DegreeOfFreedom()
+            {}
+
+            DegreeOfFreedom(
+                Natural tag,
+                std::shared_ptr<Dof> const & dof
+            )
+            :
+            tag_(tag),
+            dof_(dof)
+            {}
             
             Boolean
             operator==(
@@ -1255,19 +1284,6 @@ namespace lolita
         {
             static_cast<t_Disc<t_discretization> const *>(this)->template assemble<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
         }
-
-        // template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
-        // void
-        // makeLoad(
-        //     std::basic_string_view<Character> behavior_label,
-        //     std::basic_string_view<Character> degree_of_freedom_label,
-        //     std::function<Real(Point const &)> && function,
-        //     std::unique_ptr<System> const & system
-        // )
-        // const
-        // {
-        //     static_cast<t_Disc<t_discretization> const *>(this)->template makeLoad<t_finite_element_method>(behavior_label, degree_of_freedom_label, std::forward<std::function<Real(Point const &)>>(function), system);
-        // }
 
         void
         integrate(

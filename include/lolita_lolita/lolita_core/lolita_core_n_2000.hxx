@@ -144,6 +144,87 @@ namespace lolita
         Vector<Real> coefficients_;
 
     };
+    
+    struct Dof2
+    {
+
+        Dof2(
+            Natural tag,
+            Integer dim,
+            std::basic_string_view<Character> label
+        )
+        :
+        tag_(tag),
+        dim_(dim),
+        label_(std::make_shared<std::basic_string<Character>>(label))
+        {}
+
+        Natural tag_;
+
+        Integer dim_;
+
+        std::shared_ptr<std::basic_string<Character>> label_;
+
+        std::shared_ptr<Vector<Real>> coefficients_;
+        
+        inline
+        Boolean
+        operator==(
+            Dof2 const & other
+        )
+        const = default;
+        
+        inline
+        Boolean
+        operator!=(
+            Dof2 const & other
+        )
+        const = default;
+        
+        inline
+        Boolean
+        operator==(
+            std::shared_ptr<Vector<Real>> const & coefficients
+        )
+        const
+        {
+            return coefficients_ == coefficients;
+        }
+        
+        inline
+        Boolean
+        operator!=(
+            std::shared_ptr<Vector<Real>> const & coefficients
+        )
+        const
+        {
+            return !(* this == coefficients);
+        }
+
+        inline
+        Natural
+        getTag()
+        const
+        {
+            return tag_;
+        }
+
+        inline
+        Vector<Real> const &
+        getCoefficients()
+        const
+        {
+            return * coefficients_;
+        }
+
+        inline
+        Vector<Real> &
+        getCoefficients()
+        {
+            return * coefficients_;
+        }
+
+    };
 
     struct System
     {
@@ -165,19 +246,22 @@ namespace lolita
         inline
         void
         setUnknown(
+            std::basic_string<Character> && label,
             std::shared_ptr<Dof> const & dof
         )
         {
-            unknowns_.push_back(dof);
+            unknowns_[label] = dof;
         }
 
         inline
         void
         setBinding(
+            std::basic_string<Character> && label,
             std::shared_ptr<Dof> const & dof
         )
         {
-            bindings_.push_back(dof);
+            // bindings_.push_back(dof);
+            bindings_[label] = dof;
         }
 
         inline
@@ -188,7 +272,7 @@ namespace lolita
             auto size = Natural(0);
             for (auto const & unknown : unknowns_)
             {
-                size += unknown->getCoefficients().size();
+                size += unknown.second->getCoefficients().size();
             }
             return size;
         }
@@ -201,7 +285,7 @@ namespace lolita
             auto size = Natural(0);
             for (auto const & binding : bindings_)
             {
-                size += binding->getCoefficients().size();
+                size += binding.second->getCoefficients().size();
             }
             return size;
         }
@@ -220,13 +304,13 @@ namespace lolita
         {
             for (auto & unknown : unknowns_)
             {
-                unknown->setTag(rhs_values_.size());
-                rhs_values_.resize(rhs_values_.size() + unknown->getCoefficients().size());
+                unknown.second->setTag(rhs_values_.size());
+                rhs_values_.resize(rhs_values_.size() + unknown.second->getCoefficients().size());
             }
             for (auto & binding : bindings_)
             {
-                binding->setTag(rhs_values_.size());
-                rhs_values_.resize(rhs_values_.size() + binding->getCoefficients().size());
+                binding.second->setTag(rhs_values_.size());
+                rhs_values_.resize(rhs_values_.size() + binding.second->getCoefficients().size());
             }
         }
 
@@ -297,9 +381,9 @@ namespace lolita
             return x;
         }
 
-        std::vector<std::shared_ptr<Dof>> unknowns_;
+        std::map<std::basic_string<Character>, std::shared_ptr<Dof>> unknowns_;
 
-        std::vector<std::shared_ptr<Dof>> bindings_;
+        std::map<std::basic_string<Character>, std::shared_ptr<Dof>> bindings_;
 
         std::vector<MatrixEntry> lhs_values_;
 

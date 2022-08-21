@@ -23,7 +23,7 @@ namespace lolita
 {
 
     template<Domain t_domain>
-    struct FiniteElementSet : ElementSet2<FiniteElementHolder, t_domain>
+    struct FiniteElementSet : ElementSet<FiniteElementHolder, t_domain>
     {
         
         std::unique_ptr<FiniteElementSet>
@@ -871,7 +871,7 @@ namespace lolita
     };
         
     template<Domain t_domain>
-    struct MeshElementSet : ElementSet2<MeshElement, t_domain>
+    struct MeshElementSet : ElementSet<MeshElement, t_domain>
     {
 
         MeshElementSet()

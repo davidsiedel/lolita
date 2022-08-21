@@ -40,16 +40,16 @@ TEST(t0, t0)
     // dofs
     auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
     auto cell_displacement = elements->setDegreeOfFreedom<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
-    auto top_force_y = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "ForceY");
-    auto bottom_force_x = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "ForceX");
-    auto bottom_force_y = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "ForceY");
+    auto top_force_y = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForceY");
+    auto bottom_force_x = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceX");
+    auto bottom_force_y = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceY");
     auto cell_rhs = lolita::Vector<lolita::Real>(cell_displacement->getCoefficients().size());
     // systems
     auto displacement_system = lolita::System::make();
-    displacement_system->setUnknown(face_displacement);
-    displacement_system->setBinding(top_force_y);
-    displacement_system->setBinding(bottom_force_x);
-    displacement_system->setBinding(bottom_force_y);
+    displacement_system->setUnknown("Displacement", face_displacement);
+    displacement_system->setBinding("TopForceY", top_force_y);
+    displacement_system->setBinding("BottomForceX", bottom_force_x);
+    displacement_system->setBinding("BottomForceY", bottom_force_y);
     displacement_system->initialize();
     std::cout << "displacement_system u size : " << displacement_system->getUnknownsSize() << std::endl;
     std::cout << "displacement_system b size : " << displacement_system->getBindingsSize() << std::endl;

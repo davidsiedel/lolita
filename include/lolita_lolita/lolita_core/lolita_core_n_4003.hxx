@@ -604,6 +604,19 @@ namespace lolita
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
                 auto external_forces = Vector<Real, strain_operator_num_cols>();
                 external_forces.setZero();
+                for (auto const & load : this->loads_)
+                {
+                    auto constexpr sizee = Implementation::template getBasisSize<getCellBasis()>();
+                    auto offset = load.second.getFunction().getCol() * sizee;
+                    auto cell_block = external_forces.template segment<sizee>(offset);
+                    for (auto & ip : this->quadrature_.at(std::string(behavior_label)).ips_)
+                    {
+                        auto const & point = ip.coordinates_;
+                        auto vector = load.second.getFunction().getImposedValue(point, 0.0) * this->template getBasisEvaluation<getCellBasis()>(point);
+                        cell_block += vector;
+                    }
+                }
+                
                 return external_forces;
             }
 
@@ -668,7 +681,7 @@ namespace lolita
                     {
                         auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
                         auto size_i = face_i_dof.template getSize<t_field, getFaceBasis()>();
-                        auto index_i = face_i_dof.getTag();
+                        auto index_i = face_i_dof.getTag() + system->unknowns_.at(std::string(degree_of_freedom_label))->getTag();
                         for (auto i = index_i; i < index_i + size_i; i++)
                         {
                             system->addRhsValue(i, r_f(offset_i));
