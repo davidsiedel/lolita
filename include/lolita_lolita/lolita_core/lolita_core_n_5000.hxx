@@ -59,13 +59,14 @@ namespace lolita
         }
 
         template<ElementType t_ii, Field t_field, Basis t_basis>
-        std::shared_ptr<DegreeOfFreedom>
+        std::shared_ptr<Dof>
         setDegreeOfFreedom(
             std::basic_string_view<Character> domain,
-            std::basic_string_view<Character> finite_element_label
+            std::basic_string_view<Character> label
         )
         {
-            auto degree_of_freedom = std::make_shared<DegreeOfFreedom>(t_ii, finite_element_label);
+            auto dof = std::make_shared<Dof>();
+            auto lab = std::basic_string<Character>(label);
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
             )
@@ -75,10 +76,9 @@ namespace lolita
                 auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    element->template setDegreeOfFreedom<t_field, t_basis>(degree_of_freedom);
                     if (element->isIn(domain))
                     {
-                        element->template setDegreeOfFreedom<t_field, t_basis>(degree_of_freedom);
+                        element->template setDegreeOfFreedom<t_field, t_basis>(lab, dof);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -87,32 +87,36 @@ namespace lolita
                 }
             }; 
             activate_elements(activate_elements);
-            return degree_of_freedom;
+            dof->getCoefficients().setZero();
+            return dof;
         }
 
         template<ElementType t_ii>
-        std::shared_ptr<Load>
+        // std::shared_ptr<Loading>
+        std::shared_ptr<Function>
         setLoad(
             std::basic_string_view<Character> domain,
-            std::basic_string_view<Character> finite_element_label,
+            std::basic_string_view<Character> label,
             Loading const & loading,
             Integer row,
             Integer col
         )
         {
-            auto load = std::make_shared<Load>(t_ii, finite_element_label, loading, row, col);
+            // auto load = std::make_shared<Loading>(loading);
+            auto load = std::make_shared<Function>(loading, row, col);
+            auto lab = std::basic_string<Character>(label);
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
             )
             mutable
             {
                 auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
                     if (element->isIn(domain))
                     {
-                        element->setLoad(load);
+                        // element->setLoad(lab, load, row, col);
+                        element->setLoad(lab, load);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -125,28 +129,31 @@ namespace lolita
         }
 
         template<ElementType t_ii>
-        std::shared_ptr<Load>
+        // std::shared_ptr<Loading>
+        std::shared_ptr<Function>
         setLoad(
             std::basic_string_view<Character> domain,
-            std::basic_string_view<Character> finite_element_label,
+            std::basic_string_view<Character> label,
             Loading && loading,
             Integer row,
             Integer col
         )
         {
-            auto load = std::make_shared<Load>(t_ii, finite_element_label, std::forward<Loading>(loading), row, col);
+            // auto load = std::make_shared<Loading>(std::forward<Loading>(loading));
+            auto load = std::make_shared<Function>(std::forward<Loading>(loading), row, col);
+            auto lab = std::basic_string<Character>(label);
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
             )
             mutable
             {
                 auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
                     if (element->isIn(domain))
                     {
-                        element->setLoad(load);
+                        // element->setLoad(lab, load, row, col);
+                        element->setLoad(lab, load);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -159,28 +166,31 @@ namespace lolita
         }
 
         template<ElementType t_ii>
-        std::shared_ptr<Load>
+        // std::shared_ptr<Loading>
+        std::shared_ptr<Function>
         setConstraint(
             std::basic_string_view<Character> domain,
-            std::basic_string_view<Character> finite_element_label,
+            std::basic_string_view<Character> label,
             Loading const & loading,
             Integer row,
             Integer col
         )
         {
-            auto load = std::make_shared<Load>(t_ii, finite_element_label, loading, row, col);
+            // auto load = std::make_shared<Loading>(loading);
+            auto load = std::make_shared<Function>(loading, row, col);
+            auto lab = std::basic_string<Character>(label);
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
             )
             mutable
             {
                 auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
                     if (element->isIn(domain))
                     {
-                        element->setConstraint(load);
+                        // element->setConstraint(lab, load, row, col);
+                        element->setConstraint(lab, load);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -193,16 +203,19 @@ namespace lolita
         }
 
         template<ElementType t_ii>
-        std::shared_ptr<Load>
+        // std::shared_ptr<Loading>
+        std::shared_ptr<Function>
         setConstraint(
             std::basic_string_view<Character> domain,
-            std::basic_string_view<Character> finite_element_label,
+            std::basic_string_view<Character> label,
             Loading && loading,
             Integer row,
             Integer col
         )
         {
-            auto load = std::make_shared<Load>(t_ii, finite_element_label, std::forward<Loading>(loading), row, col);
+            // auto load = std::make_shared<Loading>(std::forward<Loading>(loading));
+            auto load = std::make_shared<Function>(std::forward<Loading>(loading), row, col);
+            auto lab = std::basic_string<Character>(label);
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
             )
@@ -214,7 +227,8 @@ namespace lolita
                 {
                     if (element->isIn(domain))
                     {
-                        element->setConstraint(load);
+                        // element->setConstraint(lab, load, row, col);
+                        element->setConstraint(lab, load);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
@@ -472,7 +486,7 @@ namespace lolita
             std::basic_string_view<Character> domain,
             std::basic_string_view<Character> behavior_label,
             std::basic_string_view<Character> degree_of_freedom_label,
-            System & system
+            std::unique_ptr<System> const & system
         )
         {
             auto activate_elements = [&] <Integer t_j = 0> (

@@ -626,6 +626,44 @@ namespace lolita
             return static_cast<t_Basis<t_basis> const *>(this)->getBasisDerivative(point, derivative_direction);
         }
 
+        template<Basis t_row_basis, Basis t_col_basis, Quadrature t_quadrature>
+        Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>
+        getMassMatrix()
+        const
+        {
+            auto mass_matrix = Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>();
+            mass_matrix.setZero();
+            for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
+            {
+                auto point = getCurrentQuadraturePoint<t_quadrature>(i);
+                auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
+                auto row_vector = getBasisEvaluation<t_row_basis>(point);
+                auto col_vector = getBasisEvaluation<t_col_basis>(point);
+                mass_matrix += weight * row_vector * col_vector.transpose();
+            }
+            return mass_matrix;
+        }
+
+        template<Basis t_row_basis, Basis t_col_basis>
+        Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>
+        getMassMatrix(
+            std::basic_string<Character> const & label
+        )
+        const
+        {
+            auto mass_matrix = Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>();
+            mass_matrix.setZero();
+            for (auto const & ip : quadrature_.at(label).ips_)
+            {
+                auto point = ip.coordinates_;
+                auto weight = ip.weight_;
+                auto row_vector = getBasisEvaluation<t_row_basis>(point);
+                auto col_vector = getBasisEvaluation<t_col_basis>(point);
+                mass_matrix += weight * row_vector * col_vector.transpose();
+            }
+            return mass_matrix;
+        }
+
         template<Field t_field, Mapping t_mapping, auto t_discretization>
         RealMatrix<MappingTraits<t_mapping>::template getSize<t_domain, t_field>(), t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
         getMapping(
@@ -657,52 +695,480 @@ namespace lolita
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // LOAD
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        // struct Prescription
+        // {
+
+        //     Prescription()
+        //     {}
+
+        //     Prescription(
+        //         std::shared_ptr<Loading> const & function,
+        //         Integer row,
+        //         Integer col
+        //     )
+        //     :
+        //     function_(function),
+        //     row_(row),
+        //     col_(col)
+        //     {}
+            
+        //     inline
+        //     Boolean
+        //     operator==(
+        //         Prescription const & other
+        //     )
+        //     const = default;
+            
+        //     inline
+        //     Boolean
+        //     operator!=(
+        //         Prescription const & other
+        //     )
+        //     const = default;
+            
+        //     inline
+        //     Real
+        //     getImposedValue(
+        //         Point const & point,
+        //         Real const & time
+        //     )
+        //     const
+        //     {
+        //         return function_->operator()(point, time);
+        //     }
+            
+        //     Integer
+        //     getRow()
+        //     const
+        //     {
+        //         return row_;
+        //     }
+            
+        //     Integer
+        //     getCol()
+        //     const
+        //     {
+        //         return col_;
+        //     }
+
+        //     Index row_;
+
+        //     Index col_;
+
+        //     std::shared_ptr<Loading> function_;
+
+        // };
+        
+        // void
+        // setLoad(
+        //     std::basic_string<Character> const & label,
+        //     std::shared_ptr<Loading> const & function,
+        //     Integer row,
+        //     Integer col
+        // )
+        // {
+        //     loads_[label] = Prescription(function, row, col);
+        // }
+        
+        // void
+        // setConstraint(
+        //     std::basic_string<Character> const & label,
+        //     std::shared_ptr<Loading> const & function,
+        //     Integer row,
+        //     Integer col
+        // )
+        // {
+        //     constraints_[label] = Prescription(function, row, col);
+        // }
+        
+        // std::map<std::basic_string<Character>, Prescription> loads_;
+        
+        // std::map<std::basic_string<Character>, Prescription> constraints_;
+
+        struct Load2
+        {
+
+            Load2()
+            {}
+
+            Load2(
+                std::shared_ptr<Function> const & function
+            )
+            :
+            function_(function)
+            {}
+            
+            Boolean
+            operator==(
+                Load2 const & other
+            )
+            const = default;
+            
+            Boolean
+            operator!=(
+                Load2 const & other
+            )
+            const = default;
+
+            Function const &
+            getFunction()
+            const
+            {
+                return * function_;
+            }
+
+            Function &
+            getFunction()
+            {
+                return * function_;
+            }
+
+            std::shared_ptr<Function> function_;
+
+        };
         
         void
         setLoad(
-            std::shared_ptr<Load> const & load
+            std::basic_string<Character> const & label,
+            std::shared_ptr<Function> const & function
         )
         {
-            auto label = std::basic_string<Character>(load->getLabel());
-            loads_[label] = ElementLoad::make(load);
+            loads_[label] = Load2(function);
         }
-        
-        std::map<std::basic_string<Character>, ElementLoad> loads_;
-
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
-        // LOAD
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
         
         void
         setConstraint(
-            std::shared_ptr<Load> const & load
+            std::basic_string<Character> const & label,
+            std::shared_ptr<Function> const & function
         )
         {
-            auto label = std::basic_string<Character>(load->getLabel());
-            constraints_[label] = ElementLoad::make(load);
+            constraints_[label] = Load2(function);
         }
         
-        std::map<std::basic_string<Character>, ElementLoad> constraints_;
+        std::map<std::basic_string<Character>, Load2> loads_;
+        
+        std::map<std::basic_string<Character>, Load2> constraints_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // DOF
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+        struct DegreeOfFreedom
+        {
+
+            template<Field t_field, Basis t_basis>
+            static constexpr
+            Integer
+            getSize()
+            {
+                auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
+                auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
+                return t_field_size * t_basis_size;
+            }
+
+            template<Field t_field, Basis t_basis>
+            static
+            DegreeOfFreedom
+            make(
+                std::shared_ptr<Dof> const & dof
+            )
+            {
+                auto element_degree_of_freedom = DegreeOfFreedom{Natural(dof->getCoefficients().size()), dof};
+                dof->getCoefficients().resize(dof->getCoefficients().size() + getSize<t_field, t_basis>());
+                return element_degree_of_freedom;
+            }
+            
+            Boolean
+            operator==(
+                DegreeOfFreedom const & other
+            )
+            const = default;
+            
+            Boolean
+            operator!=(
+                DegreeOfFreedom const & other
+            )
+            const = default;
+            
+            Natural
+            getTag()
+            const
+            {
+                return tag_;
+            }
+
+            template<Field t_field, Basis t_basis>
+            lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>
+            getCoefficients()
+            {
+                auto const & data = dof_->getCoefficients().data() + tag_;
+                return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>(data);
+            }
+
+            template<Field t_field, Basis t_basis>
+            lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>
+            getCoefficients()
+            const
+            {
+                auto const & data = dof_->getCoefficients().data() + tag_;
+                return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>(data);
+            }
+
+            template<Field t_field, Basis t_basis>
+            lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
+            getCoefficients(
+                Integer row,
+                Integer col
+            )
+            {
+                auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
+                auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
+                auto const & data = dof_->getCoefficients().data() + tag_ + (t_field_shape.cols() * row  + col) * t_basis_size;
+                return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+            }
+
+            template<Field t_field, Basis t_basis>
+            lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
+            getCoefficients(
+                Integer row,
+                Integer col
+            )
+            const
+            {
+                auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
+                auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
+                auto const & data = dof_->getCoefficients().data() + tag_ + (t_field_shape.cols() * row  + col) * t_basis_size;
+                return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+            }
+
+            Natural tag_;
+
+            std::shared_ptr<Dof> dof_;
+
+        };
+
         template<Field t_field, Basis t_basis>
         void
         setDegreeOfFreedom(
-            std::shared_ptr<DegreeOfFreedom> & degree_of_freedom
+            std::basic_string<Character> const & label,
+            std::shared_ptr<Dof> const & dof
         )
         {
-            auto label = std::basic_string<Character>(degree_of_freedom->getLabel());
-            degrees_of_freedom_[label] = ElementDegreeOfFreedom::template make<t_element, t_domain, t_field, t_basis>(degree_of_freedom);
+            degrees_of_freedom_[label] = DegreeOfFreedom::template make<t_field, t_basis>(dof);
         }
         
-        std::map<std::basic_string<Character>, ElementDegreeOfFreedom> degrees_of_freedom_;
+        std::map<std::basic_string<Character>, DegreeOfFreedom> degrees_of_freedom_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // QUAD
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        struct QuadratureElement
+        {
+
+            struct IntegrationPoint
+            {
+
+            private:
+
+                template<FiniteElementMethodConcept auto t_finite_element_method>
+                static constexpr
+                Integer
+                getGeneralizedStrainSize()
+                {
+                    return FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+                }
+
+                template<BehaviorConcept auto t_behavior>
+                static constexpr
+                Integer
+                getGeneralizedStrainSize()
+                {
+                    return BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
+                }
+
+            public:
+
+                IntegrationPoint(
+                    Point const & coordinates,
+                    Real const & weight,
+                    std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+                )
+                :
+                coordinates_(coordinates),
+                weight_(weight),
+                behavior_(behavior),
+                behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behavior))),
+                behavior_data_view_(std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)))
+                {
+                    behavior_data_->K[0] = 4;
+                }
+            
+                inline
+                Boolean
+                operator==(
+                    IntegrationPoint const & other
+                )
+                const = default;
+                
+                inline
+                Boolean
+                operator!=(
+                    IntegrationPoint const & other
+                )
+                const = default;
+
+                void
+                integrate()
+                {
+                    auto behaviour_data_view = mgis::behaviour::make_view(* behavior_data_);
+                    auto res = mgis::behaviour::integrate(behaviour_data_view, * behavior_);
+                    // auto strain_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.gradients.data(), behavior_data_->s1.gradients.size());
+                    // auto stress_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.thermodynamic_forces.data(), behavior_data_->s1.thermodynamic_forces.size());
+                    // auto K = lolita::algebra::View<Vector<Real> const>(behavior_data_->K.data(), behavior_data_->K.size());
+                    // std::cout << "strain : " << strain_view << std::endl;
+                    // std::cout << "stress : " << stress_view << std::endl;
+                    // std::cout << "K : " << K << std::endl;
+                    // std::cout << "res : " << res << std::endl;
+                }
+
+                void
+                setMaterialProperty(
+                    std::basic_string_view<Character> material_property_label,
+                    std::function<Real(Point const &)> && function
+                )
+                {
+                    auto value = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
+                    mgis::behaviour::setMaterialProperty(behavior_data_->s0, std::string(material_property_label), value);
+                    mgis::behaviour::setMaterialProperty(behavior_data_->s1, std::string(material_property_label), value);
+                }
+
+                void
+                setExternalVariable(
+                    std::basic_string_view<Character> material_property_label,
+                    std::function<Real(Point const &)> && function
+                )
+                {
+                    auto value = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
+                    mgis::behaviour::setExternalStateVariable(behavior_data_->s0, std::string(material_property_label), value);
+                    mgis::behaviour::setExternalStateVariable(behavior_data_->s1, std::string(material_property_label), value);
+                }
+                
+                template<BehaviorConcept auto t_behavior>
+                lolita::algebra::Span<lolita::algebra::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
+                getGeneralizedStrain()
+                const
+                {
+                    auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
+                    return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
+                }
+                
+                template<auto t_finite_element_method>
+                lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
+                getGeneralizedStrain()
+                const
+                {
+                    auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+                    auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
+                    return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
+                }
+                
+                template<auto t_finite_element_method>
+                lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
+                getGeneralizedStrain()
+                {
+                    auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+                    auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
+                    return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
+                }
+
+                template<FiniteElementMethodConcept auto t_finite_element_method>
+                Matrix<Real, getGeneralizedStrainSize<t_finite_element_method>(), getGeneralizedStrainSize<t_finite_element_method>()>
+                getJacobian()
+                const
+                {
+                    auto constexpr strain_operator_num_rows = getGeneralizedStrainSize<t_finite_element_method>();
+                    using Jac = Matrix<Real, strain_operator_num_rows, strain_operator_num_rows>;
+                    auto jac = Jac();
+                    jac.setZero();
+                    auto set_mapping_block = [&] <Integer t_i = 0> (
+                        auto & self
+                    )
+                    constexpr mutable
+                    {
+                        auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
+                        auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
+                        auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
+                        auto jacobian_block_view = algebra::View<Matrix<Real, mapping_size, mapping_size> const>(behavior_data_->K.data() + offset * offset);
+                        auto tangent_block_view = jac.template block<mapping_size, mapping_size>(offset, offset);
+                        tangent_block_view = jacobian_block_view;
+                        if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+                        {
+                            self.template operator ()<t_i + 1>(self);
+                        }
+                    };
+                    set_mapping_block(set_mapping_block);
+                    return jac;
+                }
+            
+                Point coordinates_;
+                
+                Real weight_;
+            
+                std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+
+                std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
+
+                std::unique_ptr<mgis::behaviour::BehaviourDataView> behavior_data_view_;
+
+                std::map<std::basic_string<Character>, RealMatrix<>> ops_;
+
+            };
+
+            static inline
+            QuadratureElement
+            make(
+                std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+            )
+            {
+                return QuadratureElement(behavior);
+            }
+
+            QuadratureElement()
+            :
+            ips_(),
+            behavior_()
+            {}
+
+            explicit
+            QuadratureElement(
+                std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+            )
+            :
+            ips_(),
+            behavior_(behavior)
+            {}
+            
+            inline
+            Boolean
+            operator==(
+                QuadratureElement const & other
+            )
+            const = default;
+            
+            inline
+            Boolean
+            operator!=(
+                QuadratureElement const & other
+            )
+            const = default;
+
+            std::vector<IntegrationPoint> ips_;
+            
+            std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+
+        };
 
         template<Quadrature t_quadrature>
         void
@@ -716,7 +1182,8 @@ namespace lolita
             {
                 auto point = getCurrentQuadraturePoint<t_quadrature>(i);
                 auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
-                quadrature_.at(behavior_label).ips_.push_back(QuadratureElement::IntegrationPoint(point, weight, quadrature_.at(behavior_label).behavior_));
+                auto ip = typename QuadratureElement::IntegrationPoint(point, weight, quadrature_.at(behavior_label).behavior_);
+                quadrature_.at(behavior_label).ips_.push_back(std::move(ip));
             }
             
         }
@@ -782,12 +1249,25 @@ namespace lolita
         assemble(
             std::basic_string_view<Character> behavior_label,
             std::basic_string_view<Character> degree_of_freedom_label,
-            System & system
+            std::unique_ptr<System> const & system
         )
         const
         {
             static_cast<t_Disc<t_discretization> const *>(this)->template assemble<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
         }
+
+        // template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        // void
+        // makeLoad(
+        //     std::basic_string_view<Character> behavior_label,
+        //     std::basic_string_view<Character> degree_of_freedom_label,
+        //     std::function<Real(Point const &)> && function,
+        //     std::unique_ptr<System> const & system
+        // )
+        // const
+        // {
+        //     static_cast<t_Disc<t_discretization> const *>(this)->template makeLoad<t_finite_element_method>(behavior_label, degree_of_freedom_label, std::forward<std::function<Real(Point const &)>>(function), system);
+        // }
 
         void
         integrate(
@@ -858,18 +1338,6 @@ namespace lolita
         std::shared_ptr<Point> coordinates_;
 
     };
-        
-    template<Element t_element, Domain t_domain>
-    static
-    void
-    setConstraint(
-        std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & element,
-        std::shared_ptr<Load> const & load
-    )
-    {
-        auto label = std::basic_string<Character>(load->getLabel());
-        element->constraints_[label] = ElementLoad::make(load);
-    }
 
 } // namespace lolita
 

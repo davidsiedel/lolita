@@ -8,16 +8,89 @@
 namespace lolita
 {
 
+    struct Function
+    {
+
+        Function(
+            Loading const & loading,
+            Integer row,
+            Integer col
+        )
+        :
+        loading_(loading),
+        row_(row),
+        col_(col)
+        {}
+
+        Function(
+            Loading && loading,
+            Integer row,
+            Integer col
+        )
+        :
+        loading_(std::forward<Loading>(loading)),
+        row_(row),
+        col_(col)
+        {}
+        
+        inline
+        Boolean
+        operator==(
+            Function const & other
+        )
+        const = default;
+        
+        inline
+        Boolean
+        operator!=(
+            Function const & other
+        )
+        const = default;
+        
+        inline
+        Real
+        getImposedValue(
+            Point const & point,
+            Real const & time
+        )
+        const
+        {
+            return loading_(point, time);
+        }
+        
+        inline
+        Integer
+        getRow()
+        const
+        {
+            return row_;
+        }
+        
+        inline
+        Integer
+        getCol()
+        const
+        {
+            return col_;
+        }
+
+    private:
+
+        Integer row_;
+
+        Integer col_;
+
+        Loading loading_;
+
+    };
+
     struct Dof
     {
 
-        Dof(
-            Natural tag,
-            std::shared_ptr<Vector<Real>> coefficients
-        )
+        Dof()
         :
-        tag_(tag),
-        coefficients_(coefficients)
+        tag_(0),
+        coefficients_(Vector<Real>(0))
         {}
         
         inline
@@ -34,6 +107,7 @@ namespace lolita
         )
         const = default;
 
+        inline
         Natural
         getTag()
         const
@@ -41,6 +115,7 @@ namespace lolita
             return tag_;
         }
 
+        inline
         void
         setTag(
             Natural tag
@@ -49,14 +124,16 @@ namespace lolita
             tag_ = tag;
         }
 
-        std::shared_ptr<Vector<Real>> const &
+        inline
+        Vector<Real> const &
         getCoefficients()
         const
         {
             return coefficients_;
         }
 
-        std::shared_ptr<Vector<Real>> &
+        inline
+        Vector<Real> &
         getCoefficients()
         {
             return coefficients_;
@@ -64,7 +141,7 @@ namespace lolita
 
         Natural tag_;
 
-        std::shared_ptr<Vector<Real>> coefficients_;
+        Vector<Real> coefficients_;
 
     };
 
@@ -73,21 +150,84 @@ namespace lolita
 
         using MatrixEntry = Eigen::Triplet<Real>;
 
-        System(
-            Integer size
-        )
+        static inline
+        std::unique_ptr<System>
+        make()
+        {
+            return std::make_unique<System>();
+        }
+
+        System()
         :
-        rhs_values_(Vector<Real>::Zero(size))
+        rhs_values_(Vector<Real>(0))
         {}
 
+        inline
         void
-        setDof(
-            Integer i,
-            Integer j,
-            Real value
+        setUnknown(
+            std::shared_ptr<Dof> const & dof
         )
         {
-            lhs_values_.push_back(MatrixEntry(i, j, value));
+            unknowns_.push_back(dof);
+        }
+
+        inline
+        void
+        setBinding(
+            std::shared_ptr<Dof> const & dof
+        )
+        {
+            bindings_.push_back(dof);
+        }
+
+        inline
+        Natural
+        getUnknownsSize()
+        const
+        {
+            auto size = Natural(0);
+            for (auto const & unknown : unknowns_)
+            {
+                size += unknown->getCoefficients().size();
+            }
+            return size;
+        }
+
+        inline
+        Natural
+        getBindingsSize()
+        const
+        {
+            auto size = Natural(0);
+            for (auto const & binding : bindings_)
+            {
+                size += binding->getCoefficients().size();
+            }
+            return size;
+        }
+
+        inline
+        Natural
+        getSize()
+        const
+        {
+            return rhs_values_.size();
+        }
+
+        inline
+        void
+        initialize()
+        {
+            for (auto & unknown : unknowns_)
+            {
+                unknown->setTag(rhs_values_.size());
+                rhs_values_.resize(rhs_values_.size() + unknown->getCoefficients().size());
+            }
+            for (auto & binding : bindings_)
+            {
+                binding->setTag(rhs_values_.size());
+                rhs_values_.resize(rhs_values_.size() + binding->getCoefficients().size());
+            }
         }
 
         void
@@ -113,10 +253,11 @@ namespace lolita
         getCorrection()
         // const
         {
-            auto lhs = Eigen::SparseMatrix<Real>(rhs_values_.size(), rhs_values_.size());
+            auto lhs = Eigen::SparseMatrix<Real>(getSize(), getSize());
             lhs_values_ = std::vector<MatrixEntry>();
-            rhs_values_.setZero();
-            for(auto i = 0; i < rhs_values_.size(); i++)
+            rhs_values_ = Vector<Real>::Zero(getSize());
+            // rhs_values_.setZero();
+            for(auto i = 0; i < getSize(); i++)
             {
                 addLhsValue(i, i, 1);
             }
@@ -156,7 +297,9 @@ namespace lolita
             return x;
         }
 
-        std::vector<Dof> degrees_of_freedom_;
+        std::vector<std::shared_ptr<Dof>> unknowns_;
+
+        std::vector<std::shared_ptr<Dof>> bindings_;
 
         std::vector<MatrixEntry> lhs_values_;
 
@@ -164,145 +307,145 @@ namespace lolita
 
     };
 
-    struct DegreeOfFreedom
-    {
+    // struct DegreeOfFreedom
+    // {
 
-        DegreeOfFreedom(
-            ElementType element_type,
-            std::basic_string_view<Character> label
-        )
-        :
-        element_type_(element_type),
-        label_(label)
-        {}
+    //     DegreeOfFreedom(
+    //         ElementType element_type,
+    //         std::basic_string_view<Character> label
+    //     )
+    //     :
+    //     element_type_(element_type),
+    //     label_(label)
+    //     {}
         
-        inline
-        Boolean
-        operator==(
-            DegreeOfFreedom const & other
-        )
-        const = default;
+    //     inline
+    //     Boolean
+    //     operator==(
+    //         DegreeOfFreedom const & other
+    //     )
+    //     const = default;
         
-        inline
-        Boolean
-        operator!=(
-            DegreeOfFreedom const & other
-        )
-        const = default;
+    //     inline
+    //     Boolean
+    //     operator!=(
+    //         DegreeOfFreedom const & other
+    //     )
+    //     const = default;
         
-        inline
-        std::basic_string_view<Character>
-        getLabel()
-        const
-        {
-            return label_;
-        }
+    //     inline
+    //     std::basic_string_view<Character>
+    //     getLabel()
+    //     const
+    //     {
+    //         return label_;
+    //     }
         
-        inline
-        lolita::algebra::Vector<Real> const &
-        getCoefficients()
-        const
-        {
-            return coefficients_;
-        }
+    //     inline
+    //     lolita::algebra::Vector<Real> const &
+    //     getCoefficients()
+    //     const
+    //     {
+    //         return coefficients_;
+    //     }
         
-        inline
-        lolita::algebra::Vector<Real> &
-        getCoefficients()
-        {
-            return coefficients_;
-        }
+    //     inline
+    //     lolita::algebra::Vector<Real> &
+    //     getCoefficients()
+    //     {
+    //         return coefficients_;
+    //     }
 
-        std::basic_string_view<Character> label_;
+    //     std::basic_string_view<Character> label_;
 
-        ElementType element_type_;
+    //     ElementType element_type_;
 
-        Vector<Real> coefficients_;
+    //     Vector<Real> coefficients_;
 
-    };
+    // };
 
-    struct Load
-    {
+    // struct Load
+    // {
 
-        Load(
-            ElementType element_type,
-            std::basic_string_view<Character> label,
-            Loading const & loading,
-            Integer row,
-            Integer col
-        )
-        :
-        element_type_(element_type),
-        label_(label),
-        row_(row),
-        col_(col),
-        loading_(loading)
-        {}
+    //     Load(
+    //         ElementType element_type,
+    //         std::basic_string_view<Character> label,
+    //         Loading const & loading,
+    //         Integer row,
+    //         Integer col
+    //     )
+    //     :
+    //     element_type_(element_type),
+    //     label_(label),
+    //     row_(row),
+    //     col_(col),
+    //     loading_(loading)
+    //     {}
 
-        Load(
-            ElementType element_type,
-            std::basic_string_view<Character> label,
-            Loading && loading,
-            Integer row,
-            Integer col
-        )
-        :
-        element_type_(element_type),
-        label_(label),
-        row_(row),
-        col_(col),
-        loading_(std::forward<Loading>(loading))
-        {}
+    //     Load(
+    //         ElementType element_type,
+    //         std::basic_string_view<Character> label,
+    //         Loading && loading,
+    //         Integer row,
+    //         Integer col
+    //     )
+    //     :
+    //     element_type_(element_type),
+    //     label_(label),
+    //     row_(row),
+    //     col_(col),
+    //     loading_(std::forward<Loading>(loading))
+    //     {}
         
-        inline
-        Boolean
-        operator==(
-            Load const & other
-        )
-        const = default;
+    //     inline
+    //     Boolean
+    //     operator==(
+    //         Load const & other
+    //     )
+    //     const = default;
         
-        inline
-        Boolean
-        operator!=(
-            Load const & other
-        )
-        const = default;
+    //     inline
+    //     Boolean
+    //     operator!=(
+    //         Load const & other
+    //     )
+    //     const = default;
         
-        inline
-        std::basic_string_view<Character>
-        getLabel()
-        const
-        {
-            return label_;
-        }
+    //     inline
+    //     std::basic_string_view<Character>
+    //     getLabel()
+    //     const
+    //     {
+    //         return label_;
+    //     }
         
-        inline
-        Integer
-        getRow()
-        const
-        {
-            return row_;
-        }
+    //     inline
+    //     Integer
+    //     getRow()
+    //     const
+    //     {
+    //         return row_;
+    //     }
         
-        inline
-        Integer
-        getCol()
-        const
-        {
-            return col_;
-        }
+    //     inline
+    //     Integer
+    //     getCol()
+    //     const
+    //     {
+    //         return col_;
+    //     }
 
-        std::basic_string_view<Character> label_;
+    //     std::basic_string_view<Character> label_;
 
-        ElementType element_type_;
+    //     ElementType element_type_;
 
-        Integer row_;
+    //     Integer row_;
 
-        Integer col_;
+    //     Integer col_;
 
-        Loading loading_;
+    //     Loading loading_;
 
-    };
+    // };
 
 } // namespace lolita
 

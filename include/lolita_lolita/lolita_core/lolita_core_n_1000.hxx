@@ -1218,38 +1218,6 @@ namespace lolita
         t_Elements elements_;
 
     };
-    
-    template<template<Element, Domain, auto...> typename t_T, Domain t_domain, ElementType t_ii, auto... t_args>
-    struct ElementSubSet
-    {
-
-    private:
-
-        template<Element t_element, Domain t__domain, auto... t__args>
-        using t_ElementMap = std::vector<std::shared_ptr<t_T<t_element, t__domain, t__args...>>>;
-
-        using t_Elements = std::tuple_element_t<t_ii.getDim(), Elements<t_ElementMap, t_domain, t_args...>>;
-
-    public:
-    
-        template<Integer t_j>
-        std::tuple_element_t<t_j, t_Elements> const &
-        getElements()
-        const
-        {
-            return std::get<t_j>(elements_);
-        }
-        
-        template<Integer t_j>
-        std::tuple_element_t<t_j, t_Elements> &
-        getElements()
-        {
-            return std::get<t_j>(elements_);
-        }
-        
-        t_Elements elements_;
-
-    };
 
 } // namespace lolita
 

@@ -21,54 +21,60 @@ TEST(t0, t0)
     auto constexpr faces = lolita::ElementType::faces(domain);
     // fields
     auto constexpr displacement_field = lolita::Field::vector();
-    auto constexpr damage_field = lolita::Field::scalar();
+    // auto constexpr damage_field = lolita::Field::scalar();
     // generalized strains
     auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(lolita::Field::vector(), lolita::Mapping::smallStrain());
-    auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(lolita::Field::scalar(), lolita::Mapping::gradient(), lolita::Mapping::identity());
+    // auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(lolita::Field::scalar(), lolita::Mapping::gradient(), lolita::Mapping::identity());
     // behaviors
     auto constexpr displacement_behavior = lolita::Behavior(displacement_generalized_strain);
-    auto constexpr damage_behavior = lolita::Behavior(damage_generalized_strain);
+    // auto constexpr damage_behavior = lolita::Behavior(damage_generalized_strain);
     // discretization
     auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
     // finite elements
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
-    auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
+    // auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
     // mesh    
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // dofs
-    auto face_displacement = elements->setDegreeOfFreedom<faces, displacement_field, hdg.getFaceBasis()>("SQUARE", "Displacement");
-    auto cell_displacement = elements->setDegreeOfFreedom<cells, displacement_field, hdg.getCellBasis()>("SQUARE", "Displacement");
-    auto face_damage = elements->setDegreeOfFreedom<faces, damage_field, hdg.getFaceBasis()>("SQUARE", "Damage");
-    auto cell_damage = elements->setDegreeOfFreedom<cells, damage_field, hdg.getCellBasis()>("SQUARE", "Damage");
-    face_displacement->coefficients_.setZero();
-    cell_displacement->coefficients_.setZero();
-    face_damage->coefficients_.setZero();
-    cell_damage->coefficients_.setZero();
+    auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
+    auto cell_displacement = elements->setDegreeOfFreedom<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
+    auto top_force_y = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "ForceY");
+    auto bottom_force_x = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "ForceX");
+    auto bottom_force_y = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "ForceY");
+    auto cell_rhs = lolita::Vector<lolita::Real>(cell_displacement->getCoefficients().size());
     // systems
-    auto displacement_system = lolita::System(face_displacement->coefficients_.size());
-    auto damage_system = lolita::System(face_damage->coefficients_.size());
+    auto displacement_system = lolita::System::make();
+    displacement_system->setUnknown(face_displacement);
+    displacement_system->setBinding(top_force_y);
+    displacement_system->setBinding(bottom_force_x);
+    displacement_system->setBinding(bottom_force_y);
+    displacement_system->initialize();
+    std::cout << "displacement_system u size : " << displacement_system->getUnknownsSize() << std::endl;
+    std::cout << "displacement_system b size : " << displacement_system->getBindingsSize() << std::endl;
     // load
-    auto load = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return t; }, 0, 0);
+    auto load0 = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return t; }, 0, 1);
+    auto load1 = elements->setConstraint<faces>("BOTTOM", "ClampedX", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 0);
+    auto load2 = elements->setConstraint<faces>("BOTTOM", "ClampedY", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 1);
     // adding behavior
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
     //making operators
-    elements->setStrainOperators<cells, damage_element, hdg>("SQUARE", "MicromorphicDamageII", "Damage");
+    elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement");
     elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "FractureEnergy", [](lolita::Point const & p) { return 1.0; });
     elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "CharacteristicLength", [](lolita::Point const & p) { return 1.0; });
     elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "PenalisationFactor", [](lolita::Point const & p) { return 1.0; });
     elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageII", "Temperature", [](lolita::Point const & p) { return 1.0; });
     elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageII", "EnergyReleaseRate", [](lolita::Point const & p) { return 1.0; });
-    elements->setElementOperators<cells, damage_element, hdg>("SQUARE", "Stabilization");
-    elements->setStrainValues<cells, damage_element, hdg>("SQUARE", "MicromorphicDamageII", "Damage");
+    elements->setElementOperators<cells, displacement_element, hdg>("SQUARE", "Stabilization");
+    elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement");
     elements->integrate<cells>("SQUARE", "MicromorphicDamageII");
-    elements->assemble<cells, damage_element, hdg>("SQUARE", "MicromorphicDamageII", "Damage", damage_system);
-    damage_system.getCorrection();
+    elements->assemble<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement", displacement_system);
+    displacement_system->getCorrection();
 
 
 
-    auto my_cells = elements->makeFiniteElementSubSet("SQUARE");
+    // auto my_cells = elements->makeFiniteElementSubSet("SQUARE");
     // auto lll = my_cells->setDegreeOfFreedom<cells, displacement_field, hdg.getFaceBasis()>("Displacement");
     // auto llm = my_cells->setLoad<cells>("Pull", [](lolita::Point const & p, lolita::Real const & t) { return t; }, 0, 0);
 

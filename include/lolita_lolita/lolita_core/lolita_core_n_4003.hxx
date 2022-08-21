@@ -541,10 +541,10 @@ namespace lolita
             {
                 auto offset = 0;
                 auto unknown = Vector<Real, getNumElementUnknowns<t_field>()>();
-                auto cell_block = unknown.template segment<getNumCellUnknowns<t_element, t_domain, t_field>()>(offset);
-                offset += ElementDegreeOfFreedom::template getSize<t_element, t_domain, t_field, getCellBasis()>();
                 auto const & cell_dof = this->degrees_of_freedom_.at(std::string(label));
-                cell_block = cell_dof.template getCoefficients<t_element, t_domain, t_field, getCellBasis()>();
+                auto cell_block = unknown.template segment<cell_dof.template getSize<t_field, getCellBasis()>()>(offset);
+                cell_block = cell_dof.template getCoefficients<t_field, getCellBasis()>();
+                offset += cell_dof.template getSize<t_field, getCellBasis()>();
                 auto set_faces_unknowns = [&] <Integer t_i = 0> (
                     auto & self
                 )
@@ -553,10 +553,10 @@ namespace lolita
                     auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_i>();
                     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                     {
-                        auto face_block = unknown.template segment<getNumFaceUnknowns<t_inner_neighbor, t_domain, t_field>()>(offset);
                         auto const & face_dof = face->degrees_of_freedom_.at(std::string(label));
-                        face_block = face_dof.template getCoefficients<t_inner_neighbor, t_domain, t_field, getFaceBasis()>();
-                        offset += ElementDegreeOfFreedom::template getSize<t_inner_neighbor, t_domain, t_field, getFaceBasis()>();
+                        auto face_block = unknown.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(offset);
+                        face_block = face_dof.template getCoefficients<t_field, getFaceBasis()>();
+                        offset += face_dof.template getSize<t_field, getFaceBasis()>();
                     }
                     if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
                     {
@@ -624,7 +624,7 @@ namespace lolita
                 for (auto & ip : this->quadrature_.at(std::string(behavior_label)).ips_)
                 {
                     auto strain_operator_view = StrainOperatorView(ip.ops_.at(std::string(degree_of_freedom_label)).data());
-                    auto jacob = ip.template getJacobian<t_domain, t_finite_element_method>();
+                    auto jacob = ip.template getJacobian<t_finite_element_method>();
                     // auto jacob = Matrix<Real, strain_operator_num_rows, strain_operator_num_rows>();
                     jacobian += ip.weight_ * strain_operator_view.transpose() * jacob * strain_operator_view;
                 }
@@ -637,7 +637,7 @@ namespace lolita
             assemble(
                 std::basic_string_view<Character> behavior_label,
                 std::basic_string_view<Character> degree_of_freedom_label,
-                System & system
+                std::unique_ptr<System> const & system
             )
             const
             {
@@ -664,28 +664,28 @@ namespace lolita
                 )
                 constexpr mutable
                 {
-                    auto constexpr t_inner_neighbor_i = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_i>();
                     for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
                     {
-                        auto size_i = ElementDegreeOfFreedom::template getSize<t_inner_neighbor_i, t_domain, t_field, getFaceBasis()>();
-                        auto index_i = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label)).getTag();
+                        auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+                        auto size_i = face_i_dof.template getSize<t_field, getFaceBasis()>();
+                        auto index_i = face_i_dof.getTag();
                         for (auto i = index_i; i < index_i + size_i; i++)
                         {
-                            system.addRhsValue(i, r_f(offset_i));
+                            system->addRhsValue(i, r_f(offset_i));
                             auto offset_j = 0;
                             auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
                                 auto & self2
                             )
                             constexpr mutable
                             {
-                                auto constexpr t_inner_neighbor_j = ElementTraits<t_element, t_domain>::template getInnerNeighbor<0, t_j>();
                                 for (auto const & face_j : this->template getInnerNeighbors<0, t_j>())
                                 {
-                                    auto size_j = ElementDegreeOfFreedom::template getSize<t_inner_neighbor_j, t_domain, t_field, getFaceBasis()>();
-                                    auto index_j = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label)).getTag();
+                                    auto const & face_j_dof = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+                                    auto size_j = face_j_dof.template getSize<t_field, getFaceBasis()>();
+                                    auto index_j = face_j_dof.getTag();
                                     for (auto j = index_j; j < index_j + size_j; j++)
                                     {
-                                        system.addLhsValue(i, j, k_ff(offset_i, offset_j));
+                                        system->addLhsValue(i, j, k_ff(offset_i, offset_j));
                                         offset_j ++;
                                     }
                                 }
@@ -705,6 +705,84 @@ namespace lolita
                 };
                 set_faces_unknowns(set_faces_unknowns);
             }
+
+            // template<FiniteElementMethodConcept auto t_finite_element_method>
+            // void
+            // makeLoad(
+            //     std::basic_string_view<Character> behavior_label,
+            //     std::basic_string_view<Character> degree_of_freedom_label,
+            //     std::function<Real(Point const &)> && function,
+            //     std::unique_ptr<System> const & system
+            // )
+            // const
+            // {
+            //     auto tangent_tt = this->operators_.at("KTT");
+            //     auto tangent_tt = this->operators_.at("KFT");
+            //     auto tangent_tt = this->operators_.at("KTF");
+            //     auto constexpr num_cell_unknowns = getNumCellUnknowns<t_element, t_domain, t_finite_element_method.getField()>();
+            //     auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+            //     auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
+            //     auto internal_forces = getInternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+            //     auto external_forces = getExternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+            //     auto jac = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+            //     auto residual = internal_forces - external_forces;
+            //     auto k_tt = jac.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
+            //     auto k_tf = jac.template block<num_cell_unknowns, num_face_unknowns>(0, num_cell_unknowns);
+            //     auto k_ft = jac.template block<num_face_unknowns, num_cell_unknowns>(num_cell_unknowns, 0);
+            //     auto k_ff = jac.template block<num_face_unknowns, num_face_unknowns>(num_cell_unknowns, num_cell_unknowns);
+            //     auto r_t = residual.template segment<num_cell_unknowns>(0);
+            //     auto r_f = residual.template segment<num_face_unknowns>(num_cell_unknowns);
+            //     // auto k_tt_inv = k_tt.llt().solve(decltype(k_tt)::Identity());
+            //     //
+            //     //
+            //     auto constexpr t_field = t_finite_element_method.getField();
+            //     auto offset_i = 0;
+            //     auto set_faces_unknowns = [&] <Integer t_i = 0> (
+            //         auto & self
+            //     )
+            //     constexpr mutable
+            //     {
+            //         for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
+            //         {
+            //             auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+            //             auto size_i = face_i_dof.template getSize<t_field, getFaceBasis()>();
+            //             auto index_i = face_i_dof.getTag();
+            //             for (auto i = index_i; i < index_i + size_i; i++)
+            //             {
+            //                 system->addRhsValue(i, r_f(offset_i));
+            //                 auto offset_j = 0;
+            //                 auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
+            //                     auto & self2
+            //                 )
+            //                 constexpr mutable
+            //                 {
+            //                     for (auto const & face_j : this->template getInnerNeighbors<0, t_j>())
+            //                     {
+            //                         auto const & face_j_dof = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+            //                         auto size_j = face_j_dof.template getSize<t_field, getFaceBasis()>();
+            //                         auto index_j = face_j_dof.getTag();
+            //                         for (auto j = index_j; j < index_j + size_j; j++)
+            //                         {
+            //                             system->addLhsValue(i, j, k_ff(offset_i, offset_j));
+            //                             offset_j ++;
+            //                         }
+            //                     }
+            //                     if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+            //                     {
+            //                         self2.template operator ()<t_j + 1>(self2);
+            //                     }
+            //                 };
+            //                 set_faces_unknowns2(set_faces_unknowns2);
+            //                 offset_i ++;
+            //             }
+            //         }
+            //         if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+            //         {
+            //             self.template operator ()<t_i + 1>(self);
+            //         }
+            //     };
+            //     set_faces_unknowns(set_faces_unknowns);
+            // }
 
         };
 
