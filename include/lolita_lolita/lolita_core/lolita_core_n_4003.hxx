@@ -681,7 +681,7 @@ namespace lolita
                     {
                         auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
                         auto size_i = face_i_dof.template getSize<t_field, getFaceBasis()>();
-                        auto index_i = face_i_dof.getTag() + system->unknowns_.at(std::string(degree_of_freedom_label))->getTag();
+                        auto index_i = face_i_dof.getTag() + system->getUnknownOffset(degree_of_freedom_label);
                         for (auto i = index_i; i < index_i + size_i; i++)
                         {
                             system->addRhsValue(i, r_f(offset_i));

@@ -59,13 +59,13 @@ namespace lolita
         }
 
         template<ElementType t_ii, Field t_field, Basis t_basis>
-        std::shared_ptr<Dof>
+        std::shared_ptr<Vector<Real>>
         setDegreeOfFreedom(
             std::basic_string_view<Character> domain,
             std::basic_string_view<Character> label
         )
         {
-            auto dof = std::make_shared<Dof>();
+            auto dof = std::make_shared<Vector<Real>>();
             auto lab = std::basic_string<Character>(label);
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
@@ -87,7 +87,7 @@ namespace lolita
                 }
             }; 
             activate_elements(activate_elements);
-            dof->getCoefficients().setZero();
+            dof->setZero();
             return dof;
         }
 

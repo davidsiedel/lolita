@@ -226,10 +226,15 @@ namespace lolita
 
     };
 
+    
     struct System
     {
 
         using MatrixEntry = Eigen::Triplet<Real>;
+
+        std::map<std::basic_string<Character>, Natural> unknowns_;
+
+        std::map<std::basic_string<Character>, Natural> bindings_;
 
         static inline
         std::unique_ptr<System>
@@ -247,21 +252,20 @@ namespace lolita
         void
         setUnknown(
             std::basic_string<Character> && label,
-            std::shared_ptr<Dof> const & dof
+            Natural size
         )
         {
-            unknowns_[label] = dof;
+            unknowns_[label] = size;
         }
 
         inline
         void
         setBinding(
             std::basic_string<Character> && label,
-            std::shared_ptr<Dof> const & dof
+            Natural size
         )
         {
-            // bindings_.push_back(dof);
-            bindings_[label] = dof;
+            bindings_[label] = size;
         }
 
         inline
@@ -270,9 +274,9 @@ namespace lolita
         const
         {
             auto size = Natural(0);
-            for (auto const & unknown : unknowns_)
+            for (auto const & dof : unknowns_)
             {
-                size += unknown.second->getCoefficients().size();
+                size += dof.second;
             }
             return size;
         }
@@ -283,9 +287,9 @@ namespace lolita
         const
         {
             auto size = Natural(0);
-            for (auto const & binding : bindings_)
+            for (auto const & dof : bindings_)
             {
-                size += binding.second->getCoefficients().size();
+                size += dof.second;
             }
             return size;
         }
@@ -295,23 +299,61 @@ namespace lolita
         getSize()
         const
         {
-            return rhs_values_.size();
+            auto size = Natural(0);
+            for (auto const & dof : unknowns_)
+            {
+                size += dof.second;
+            }
+            for (auto const & dof : bindings_)
+            {
+                size += dof.second;
+            }
+            return size;
+        }
+
+        inline
+        Natural
+        getUnknownOffset(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto offset = Natural(0);
+            for (auto const & dof : unknowns_)
+            {
+                if (dof.first == label)
+                {
+                    break;
+                }
+                offset += dof.second;
+            }
+            return offset;
+        }
+
+        inline
+        Natural
+        getBindingOffset(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto offset = getUnknownsSize();
+            for (auto const & dof : bindings_)
+            {
+                if (dof.first == label)
+                {
+                    break;
+                }
+                offset += dof.second;
+            }
+            return offset;
         }
 
         inline
         void
         initialize()
         {
-            for (auto & unknown : unknowns_)
-            {
-                unknown.second->setTag(rhs_values_.size());
-                rhs_values_.resize(rhs_values_.size() + unknown.second->getCoefficients().size());
-            }
-            for (auto & binding : bindings_)
-            {
-                binding.second->setTag(rhs_values_.size());
-                rhs_values_.resize(rhs_values_.size() + binding.second->getCoefficients().size());
-            }
+            rhs_values_.resize(getSize());
         }
 
         void
@@ -380,10 +422,6 @@ namespace lolita
             // auto x = Vector<Real>(chol.solve(rhs_values_));         // use the factorization to solve for the given right hand side
             return x;
         }
-
-        std::map<std::basic_string<Character>, std::shared_ptr<Dof>> unknowns_;
-
-        std::map<std::basic_string<Character>, std::shared_ptr<Dof>> bindings_;
 
         std::vector<MatrixEntry> lhs_values_;
 

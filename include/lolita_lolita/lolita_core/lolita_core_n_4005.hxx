@@ -887,12 +887,11 @@ namespace lolita
             static
             DegreeOfFreedom
             make(
-                std::shared_ptr<Dof> const & dof
+                std::shared_ptr<Vector<Real>> const & dof
             )
             {
-                // auto element_degree_of_freedom = DegreeOfFreedom{Natural(dof->getCoefficients().size()), dof};
-                auto element_degree_of_freedom = DegreeOfFreedom(dof->getCoefficients().size(), dof);
-                dof->getCoefficients().resize(dof->getCoefficients().size() + getSize<t_field, t_basis>());
+                auto element_degree_of_freedom = DegreeOfFreedom(dof->size(), dof);
+                dof->resize(dof->size() + getSize<t_field, t_basis>());
                 return element_degree_of_freedom;
             }
 
@@ -901,7 +900,7 @@ namespace lolita
 
             DegreeOfFreedom(
                 Natural tag,
-                std::shared_ptr<Dof> const & dof
+                std::shared_ptr<Vector<Real>> const & dof
             )
             :
             tag_(tag),
@@ -931,7 +930,7 @@ namespace lolita
             lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>
             getCoefficients()
             {
-                auto const & data = dof_->getCoefficients().data() + tag_;
+                auto const & data = dof_->data() + tag_;
                 return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>(data);
             }
 
@@ -940,7 +939,7 @@ namespace lolita
             getCoefficients()
             const
             {
-                auto const & data = dof_->getCoefficients().data() + tag_;
+                auto const & data = dof_->data() + tag_;
                 return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>(data);
             }
 
@@ -953,7 +952,7 @@ namespace lolita
             {
                 auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
                 auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
-                auto const & data = dof_->getCoefficients().data() + tag_ + (t_field_shape.cols() * row  + col) * t_basis_size;
+                auto const & data = dof_->data() + tag_ + (t_field_shape.cols() * row  + col) * t_basis_size;
                 return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
             }
 
@@ -967,13 +966,13 @@ namespace lolita
             {
                 auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
                 auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
-                auto const & data = dof_->getCoefficients().data() + tag_ + (t_field_shape.cols() * row  + col) * t_basis_size;
+                auto const & data = dof_->data() + tag_ + (t_field_shape.cols() * row  + col) * t_basis_size;
                 return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
             }
 
             Natural tag_;
 
-            std::shared_ptr<Dof> dof_;
+            std::shared_ptr<Vector<Real>> dof_;
 
         };
 
@@ -981,7 +980,7 @@ namespace lolita
         void
         setDegreeOfFreedom(
             std::basic_string<Character> const & label,
-            std::shared_ptr<Dof> const & dof
+            std::shared_ptr<Vector<Real>> const & dof
         )
         {
             degrees_of_freedom_[label] = DegreeOfFreedom::template make<t_field, t_basis>(dof);
