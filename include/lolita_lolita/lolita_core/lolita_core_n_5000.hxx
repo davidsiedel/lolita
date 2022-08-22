@@ -91,6 +91,68 @@ namespace lolita
             return dof;
         }
 
+        template<ElementType t_ii, Field t_field, Basis t_basis>
+        void
+        addDegreeOfFreedomCoefficients(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> label,
+            lolita::algebra::View<Vector<Real> const> const & vector
+        )
+        {
+            auto lab = std::basic_string<Character>(label);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        element->template addDegreeOfFreedomCoefficients<t_field, t_basis>(lab, vector);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<ElementType t_ii, Field t_field, Basis t_basis>
+        void
+        setDegreeOfFreedomCoefficients(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> label,
+            lolita::algebra::View<Vector<Real> const> const & vector
+        )
+        {
+            auto lab = std::basic_string<Character>(label);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        element->template setDegreeOfFreedomCoefficients<t_field, t_basis>(lab, vector);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
         template<ElementType t_ii>
         // std::shared_ptr<Loading>
         std::shared_ptr<Function>
@@ -482,7 +544,7 @@ namespace lolita
 
         template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
-        assemble(
+        assembleUnknownBlock(
             std::basic_string_view<Character> domain,
             std::basic_string_view<Character> behavior_label,
             std::basic_string_view<Character> degree_of_freedom_label,
@@ -500,7 +562,39 @@ namespace lolita
                 {
                     if (element->isIn(domain))
                     {
-                        element->template assemble<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, system);
+                        element->template assembleUnknownBlock<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, system);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
+        template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        assembleBindingBlock(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> binding_label,
+            std::basic_string_view<Character> unknown_label,
+            std::basic_string_view<Character> constraint_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        element->template assembleBindingBlock<t_finite_element_method, t_discretization>(binding_label, unknown_label, constraint_label, system);
                     }
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)

@@ -244,7 +244,7 @@ namespace lolita
         static
         Real
         getShapeMappingEvaluation(
-            lolita::algebra::Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
+            Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
             Point const & reference_point
         )
         {
@@ -254,7 +254,7 @@ namespace lolita
         static
         Real
         getShapeMappingDerivative(
-            lolita::algebra::Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
+            Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
             Point const & reference_point,
             Integer derivative_direction
         )
@@ -573,7 +573,7 @@ namespace lolita
             auto const & elt_reference_nodes = ElementTraits<t_element, t_domain>::reference_nodes_;
             for (auto i = 0; i < 3; ++i)
             {
-                auto cpt_coordinates = lolita::algebra::Vector<Real, _component.getNumNodes()>();
+                auto cpt_coordinates = Vector<Real, _component.getNumNodes()>();
                 for (auto j = 0; j < _component.getNumNodes(); ++j)
                 {
                     auto const node_tag = getInnerNeighborNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);
@@ -927,47 +927,65 @@ namespace lolita
             }
 
             template<Field t_field, Basis t_basis>
-            lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>
+            lolita::algebra::View<Vector<Real, getSize<t_field, t_basis>()>>
             getCoefficients()
             {
                 auto const & data = dof_->data() + tag_;
-                return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()>>(data);
+                return lolita::algebra::View<Vector<Real, getSize<t_field, t_basis>()>>(data);
             }
 
             template<Field t_field, Basis t_basis>
-            lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>
+            lolita::algebra::View<Vector<Real, getSize<t_field, t_basis>()> const>
             getCoefficients()
             const
             {
                 auto const & data = dof_->data() + tag_;
-                return lolita::algebra::Span<lolita::algebra::Vector<Real, getSize<t_field, t_basis>()> const>(data);
+                return lolita::algebra::View<Vector<Real, getSize<t_field, t_basis>()> const>(data);
             }
 
             template<Field t_field, Basis t_basis>
-            lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
+            lolita::algebra::View<Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>
             getCoefficients(
                 Integer row,
                 Integer col
             )
             {
-                auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
+                auto constexpr field_num_cols = FieldTraits<t_field>::template getCols<t_domain>();
                 auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
-                auto const & data = dof_->data() + tag_ + (t_field_shape.cols() * row  + col) * t_basis_size;
-                return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+                auto const & data = dof_->data() + tag_ + (field_num_cols * row  + col) * t_basis_size;
+                return lolita::algebra::View<Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
             }
 
             template<Field t_field, Basis t_basis>
-            lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
+            lolita::algebra::View<Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>
             getCoefficients(
                 Integer row,
                 Integer col
             )
             const
             {
-                auto constexpr t_field_shape = FieldTraits<t_field>::template shape<t_domain>();
+                auto constexpr field_num_cols = FieldTraits<t_field>::template getCols<t_domain>();
                 auto constexpr t_basis_size = FiniteElementBasisTraits<t_basis>::template getSize<t_element>();
-                auto const & data = dof_->data() + tag_ + (t_field_shape.cols() * row  + col) * t_basis_size;
-                return lolita::algebra::Span<lolita::algebra::Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>>(data);
+                auto const & data = dof_->data() + tag_ + (field_num_cols * row  + col) * t_basis_size;
+                return lolita::algebra::View<Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()> const>(data);
+            }
+
+            template<Field t_field, Basis t_basis>
+            void
+            addCoefficients(
+                lolita::algebra::View<Vector<Real> const> const & vector
+            )
+            {
+                getCoefficients<t_field, t_basis>() += vector.template segment<getSize<t_field, t_basis>()>(tag_);
+            }
+
+            template<Field t_field, Basis t_basis>
+            void
+            setCoefficients(
+                lolita::algebra::View<Vector<Real> const> const & vector
+            )
+            {
+                getCoefficients<t_field, t_basis>() = vector.template segment<getSize<t_field, t_basis>()>(tag_);
             }
 
             Natural tag_;
@@ -984,6 +1002,26 @@ namespace lolita
         )
         {
             degrees_of_freedom_[label] = DegreeOfFreedom::template make<t_field, t_basis>(dof);
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        addDegreeOfFreedomCoefficients(
+            std::basic_string<Character> const & label,
+            lolita::algebra::View<Vector<Real> const> const & vector
+        )
+        {
+            degrees_of_freedom_.at(label).template addCoefficients<t_field, t_basis>(vector);
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        setDegreeOfFreedomCoefficients(
+            std::basic_string<Character> const & label,
+            lolita::algebra::View<Vector<Real> const> const & vector
+        )
+        {
+            degrees_of_freedom_.at(label).template setCoefficients<t_field, t_basis>(vector);
         }
         
         std::map<std::basic_string<Character>, DegreeOfFreedom> degrees_of_freedom_;
@@ -1084,12 +1122,12 @@ namespace lolita
                 }
                 
                 template<BehaviorConcept auto t_behavior>
-                lolita::algebra::Span<lolita::algebra::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
+                lolita::algebra::Span<Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
                 getGeneralizedStrain()
                 const
                 {
                     auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
-                    return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
+                    return lolita::algebra::Span<Vector<Real, size> const>(behavior_data_->s1.gradients.data());
                 }
                 
                 template<auto t_finite_element_method>
@@ -1099,7 +1137,7 @@ namespace lolita
                 {
                     auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
                     auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-                    return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
+                    return lolita::algebra::Span<Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
                 }
                 
                 template<auto t_finite_element_method>
@@ -1108,7 +1146,7 @@ namespace lolita
                 {
                     auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
                     auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-                    return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
+                    return lolita::algebra::Span<Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
                 }
 
                 template<FiniteElementMethodConcept auto t_finite_element_method>
@@ -1274,14 +1312,30 @@ namespace lolita
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
-        assemble(
+        assembleUnknownBlock(
             std::basic_string_view<Character> behavior_label,
             std::basic_string_view<Character> degree_of_freedom_label,
             std::unique_ptr<System> const & system
         )
         const
         {
-            static_cast<t_Disc<t_discretization> const *>(this)->template assemble<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
+            static_cast<t_Disc<t_discretization> const *>(this)->template assembleUnknownBlock<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        assembleBindingBlock(
+            // std::basic_string_view<Character> behavior_label,
+            // std::basic_string_view<Character> degree_of_freedom_label,
+            // std::unique_ptr<System> const & system
+            std::basic_string_view<Character> binding_label,
+            std::basic_string_view<Character> unknown_label,
+            std::basic_string_view<Character> constraint_label,
+            std::unique_ptr<System> const & system
+        )
+        const
+        {
+            static_cast<t_Disc<t_discretization> const *>(this)->template assembleBindingBlock<t_finite_element_method>(binding_label, unknown_label, constraint_label, system);
         }
 
         void

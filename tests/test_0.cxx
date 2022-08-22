@@ -54,23 +54,39 @@ TEST(t0, t0)
     std::cout << "displacement_system u size : " << displacement_system->getUnknownsSize() << std::endl;
     std::cout << "displacement_system b size : " << displacement_system->getBindingsSize() << std::endl;
     // load
-    auto load0 = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return t; }, 0, 1);
-    auto load1 = elements->setConstraint<faces>("BOTTOM", "ClampedX", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 0);
-    auto load2 = elements->setConstraint<faces>("BOTTOM", "ClampedY", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 1);
+    auto load0 = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return 1.0; }, 1, 0);
+    auto load1 = elements->setConstraint<faces>("BOTTOM", "ClampedX", [](lolita::Point const & p, lolita::Real const & t) { return 2.0; }, 0, 0);
+    auto load2 = elements->setConstraint<faces>("BOTTOM", "ClampedY", [](lolita::Point const & p, lolita::Real const & t) { return 3.0; }, 1, 0);
     // adding behavior
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
     //making operators
     elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement");
+    //
     elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "FractureEnergy", [](lolita::Point const & p) { return 1.0; });
     elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "CharacteristicLength", [](lolita::Point const & p) { return 1.0; });
     elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "PenalisationFactor", [](lolita::Point const & p) { return 1.0; });
     elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageII", "Temperature", [](lolita::Point const & p) { return 1.0; });
     elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageII", "EnergyReleaseRate", [](lolita::Point const & p) { return 1.0; });
+    //
     elements->setElementOperators<cells, displacement_element, hdg>("SQUARE", "Stabilization");
     elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement");
     elements->integrate<cells>("SQUARE", "MicromorphicDamageII");
-    elements->assemble<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement", displacement_system);
-    displacement_system->getCorrection();
+    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement", displacement_system);
+    elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForceY", "Displacement", "Pull", displacement_system);
+    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForceX", "Displacement", "ClampedX", displacement_system);
+    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForceY", "Displacement", "ClampedY", displacement_system);
+    // std::cout << displacement_system->rhs_values_ << "\n";
+    displacement_system->setCorrection();
+    // std::cout << "corr \n";
+    // std::cout << displacement_system->getUnknownCorrection("Displacement") << "\n";
+    * face_displacement += displacement_system->getUnknownCorrection("Displacement");
+    std::cout << displacement_system->getUnknownCorrection("Displacement").segment<2>(3);
+    //
+    elements->addDegreeOfFreedomCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement", displacement_system->getUnknownCorrection("Displacement"));
+    elements->addDegreeOfFreedomCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForceY", displacement_system->getBindingCorrection("TopForceY"));
+    elements->addDegreeOfFreedomCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceX", displacement_system->getBindingCorrection("BottomForceX"));
+    elements->addDegreeOfFreedomCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceY", displacement_system->getBindingCorrection("BottomForceY"));
+    // displacement_system->getCorrection();
 
 
 

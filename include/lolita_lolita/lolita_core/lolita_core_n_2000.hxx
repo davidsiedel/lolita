@@ -318,16 +318,23 @@ namespace lolita
         )
         const
         {
-            auto offset = Natural(0);
-            for (auto const & dof : unknowns_)
+            if (unknowns_.contains(std::string(label)))
             {
-                if (dof.first == label)
+                auto offset = Natural(0);
+                for (auto const & dof : unknowns_)
                 {
-                    break;
+                    if (dof.first == label)
+                    {
+                        break;
+                    }
+                    offset += dof.second;
                 }
-                offset += dof.second;
+                return offset;
             }
-            return offset;
+            else
+            {
+                throw std::runtime_error("NO");
+            }
         }
 
         inline
@@ -337,23 +344,54 @@ namespace lolita
         )
         const
         {
-            auto offset = getUnknownsSize();
-            for (auto const & dof : bindings_)
+            if (bindings_.contains(std::string(label)))
             {
-                if (dof.first == label)
+                auto offset = getUnknownsSize();
+                for (auto const & dof : bindings_)
                 {
-                    break;
+                    if (dof.first == label)
+                    {
+                        break;
+                    }
+                    offset += dof.second;
                 }
-                offset += dof.second;
+                return offset;
             }
-            return offset;
+            else
+            {
+                throw std::runtime_error("NO");
+            }
+        }
+
+        inline
+        algebra::View<Vector<Real> const>
+        getUnknownCorrection(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto offset = getUnknownOffset(label);
+            auto size = unknowns_.at(std::string(label));
+            return algebra::View<Vector<Real> const>(correction_values_.data() + offset, size);
+        }
+
+        inline
+        algebra::View<Vector<Real> const>
+        getBindingCorrection(
+            std::basic_string_view<Character> label
+        )
+        const
+        {
+            auto offset = getBindingOffset(label);
+            auto size = bindings_.at(std::string(label));
+            return algebra::View<Vector<Real> const>(correction_values_.data() + offset, size);
         }
 
         inline
         void
         initialize()
         {
-            rhs_values_.resize(getSize());
+            rhs_values_ = Vector<Real>::Zero(getSize());
         }
 
         void
@@ -375,8 +413,8 @@ namespace lolita
             rhs_values_(i) += value;
         }
 
-        Vector<Real>
-        getCorrection()
+        void
+        setCorrection()
         // const
         {
             auto lhs = Eigen::SparseMatrix<Real>(getSize(), getSize());
@@ -391,9 +429,9 @@ namespace lolita
             auto solver = Eigen::SparseLU<Eigen::SparseMatrix<Real>>();
             solver.analyzePattern(lhs);
             solver.factorize(lhs);
-            auto x = Vector<Real>(solver.solve(rhs_values_));
-            std::cout << "solution :" << std::endl;
-            std::cout << x << std::endl;
+            correction_values_ = solver.solve(rhs_values_);
+            // std::cout << "solution :" << std::endl;
+            // std::cout << correction_values_ << std::endl;
             // Eigen::PardisoLDLT<Eigen::SparseMatrix<T>>  solver;
 
             // if (params.out_of_core >= 0 && params.out_of_core <= 2)
@@ -420,12 +458,13 @@ namespace lolita
             // }
             // auto chol = Eigen::SparseLU<Eigen::SparseMatrix<Real>>(lhs);  // performs a Cholesky factorization of A
             // auto x = Vector<Real>(chol.solve(rhs_values_));         // use the factorization to solve for the given right hand side
-            return x;
         }
 
         std::vector<MatrixEntry> lhs_values_;
 
         Vector<Real> rhs_values_;
+
+        Vector<Real> correction_values_;
 
     };
 

@@ -12,7 +12,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getRows()
+        getCols()
         requires(t_field.isTensor(0))
         {
             return lolita::numerics::pow(t_domain.dim_, 0);
@@ -21,7 +21,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getRows()
+        getCols()
         requires(t_field.isTensor(1))
         {
             return lolita::numerics::pow(t_domain.dim_, 0);
@@ -30,7 +30,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getRows()
+        getCols()
         requires(t_field.isTensor(2))
         {
             return lolita::numerics::pow(t_domain.dim_, 1);
@@ -39,7 +39,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getRows()
+        getCols()
         requires(t_field.isTensor(3))
         {
             return lolita::numerics::pow(t_domain.dim_, 1);
@@ -48,7 +48,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getRows()
+        getCols()
         requires(t_field.isTensor(4))
         {
             return lolita::numerics::pow(t_domain.dim_, 2);
@@ -59,7 +59,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getCols()
+        getRows()
         requires(t_field.isTensor(0))
         {
             return lolita::numerics::pow(t_domain.dim_, 0);
@@ -68,7 +68,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getCols()
+        getRows()
         requires(t_field.isTensor(1))
         {
             return lolita::numerics::pow(t_domain.dim_, 1);
@@ -77,7 +77,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getCols()
+        getRows()
         requires(t_field.isTensor(2))
         {
             return lolita::numerics::pow(t_domain.dim_, 1);
@@ -86,7 +86,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getCols()
+        getRows()
         requires(t_field.isTensor(3))
         {
             return lolita::numerics::pow(t_domain.dim_, 2);
@@ -95,7 +95,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getCols()
+        getRows()
         requires(t_field.isTensor(4))
         {
             return lolita::numerics::pow(t_domain.dim_, 2);
