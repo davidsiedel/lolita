@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 #include "lolita_lolita/lolita_core/lolita_core_n_5000.hxx"
 
-TEST(test_triangle, test_triangle)
+TEST(test_quadrangle, test_quadrangle)
 {
     auto constexpr domain = lolita::Domain::cartesian(2);
     auto constexpr node = lolita::Element::node();
     auto constexpr segment = lolita::Element::segment(1);
-    auto constexpr triangle = lolita::Element::triangle(1);
+    auto constexpr quadrangle = lolita::Element::quadrangle(1);
     //
     auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
     auto constexpr quadrature = lolita::Quadrature::gauss(4);
@@ -17,18 +17,22 @@ TEST(test_triangle, test_triangle)
     auto node_0 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
     auto node_1 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
     auto node_2 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
+    auto node_3 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
     //
     auto segment_0 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
     auto segment_1 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
     auto segment_2 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
+    auto segment_3 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
     //
-    auto triangle_0 = std::make_shared<lolita::FiniteElementHolder<triangle, domain>>();
+    auto quadrangle_0 = std::make_shared<lolita::FiniteElementHolder<quadrangle, domain>>();
     // node 0
-    node_0->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({0.1, 0., 0.}));
+    node_0->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({0.0, 0.0, 0.0}));
     // node 1
-    node_1->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({1.2, 0., 0.}));
+    node_1->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({1.0, 0.0, 0.0}));
     // node 2
-    node_2->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({0., 0.9, 0.}));
+    node_2->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({1.0, 1.0, 0.0}));
+    // node 3
+    node_3->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({0.0, 1.0, 0.0}));
     // segment 0 / nodes
     segment_0->getInnerNeighbors<0, 0>()[0] = node_0;
     node_0->getOuterNeighbors<0, 0>().push_back(segment_0);
@@ -42,24 +46,33 @@ TEST(test_triangle, test_triangle)
     // segment 2 / nodes
     segment_2->getInnerNeighbors<0, 0>()[0] = node_2;
     node_2->getOuterNeighbors<0, 0>().push_back(segment_2);
-    segment_2->getInnerNeighbors<0, 0>()[1] = node_0;
-    node_0->getOuterNeighbors<0, 0>().push_back(segment_2);
-    // triangle 0 / segments
-    triangle_0->getInnerNeighbors<0, 0>()[0] = segment_0;
-    segment_0->getOuterNeighbors<1, 0>().push_back(triangle_0);
-    triangle_0->getInnerNeighbors<0, 0>()[1] = segment_1;
-    segment_1->getOuterNeighbors<1, 0>().push_back(triangle_0);
-    triangle_0->getInnerNeighbors<0, 0>()[2] = segment_2;
-    segment_2->getOuterNeighbors<1, 0>().push_back(triangle_0);
-    // triangle 0 / nodes
-    triangle_0->getInnerNeighbors<1, 0>()[0] = node_0;
-    node_0->getOuterNeighbors<1, 0>().push_back(triangle_0);
-    triangle_0->getInnerNeighbors<1, 0>()[1] = node_1;
-    node_1->getOuterNeighbors<1, 0>().push_back(triangle_0);
-    triangle_0->getInnerNeighbors<1, 0>()[2] = node_2;
-    node_2->getOuterNeighbors<1, 0>().push_back(triangle_0);
+    segment_2->getInnerNeighbors<0, 0>()[1] = node_3;
+    node_3->getOuterNeighbors<0, 0>().push_back(segment_2);
+    // segment 3 / nodes
+    segment_3->getInnerNeighbors<0, 0>()[0] = node_3;
+    node_3->getOuterNeighbors<0, 0>().push_back(segment_3);
+    segment_3->getInnerNeighbors<0, 0>()[1] = node_0;
+    node_0->getOuterNeighbors<0, 0>().push_back(segment_3);
+    // quadrangle 0 / segments
+    quadrangle_0->getInnerNeighbors<0, 0>()[0] = segment_0;
+    segment_0->getOuterNeighbors<1, 1>().push_back(quadrangle_0);
+    quadrangle_0->getInnerNeighbors<0, 0>()[1] = segment_1;
+    segment_1->getOuterNeighbors<1, 1>().push_back(quadrangle_0);
+    quadrangle_0->getInnerNeighbors<0, 0>()[2] = segment_2;
+    segment_2->getOuterNeighbors<1, 1>().push_back(quadrangle_0);
+    quadrangle_0->getInnerNeighbors<0, 0>()[3] = segment_3;
+    segment_3->getOuterNeighbors<1, 1>().push_back(quadrangle_0);
+    // quadrangle 0 / nodes
+    quadrangle_0->getInnerNeighbors<1, 0>()[0] = node_0;
+    node_0->getOuterNeighbors<1, 1>().push_back(quadrangle_0);
+    quadrangle_0->getInnerNeighbors<1, 0>()[1] = node_1;
+    node_1->getOuterNeighbors<1, 1>().push_back(quadrangle_0);
+    quadrangle_0->getInnerNeighbors<1, 0>()[2] = node_2;
+    node_2->getOuterNeighbors<1, 1>().push_back(quadrangle_0);
+    quadrangle_0->getInnerNeighbors<1, 0>()[3] = node_3;
+    node_3->getOuterNeighbors<1, 1>().push_back(quadrangle_0);
 
-    // triangle_0->template getSymmetricGradientRhs<lolita::Field::vector(), hdg>(0, 1);
+    // quadrangle_0->template getSymmetricGradientRhs<lolita::Field::vector(), hdg>(0, 1);
 
     // auto count_seg = 0;
     // for (auto const & seg : {segment_0, segment_1, segment_2})
@@ -94,21 +107,20 @@ TEST(test_triangle, test_triangle)
     //     count_seg ++;
     // }
 
-    triangle_0->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(lolita::Point({0., 0., 0.}));
-    for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<triangle, lolita::Quadrature::gauss(2)>::getSize(); ++q)
+    for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<quadrangle, lolita::Quadrature::gauss(2)>::getSize(); ++q)
     {
-        auto point = triangle_0->template getCurrentQuadraturePoint<lolita::Quadrature::gauss(2)>(q);
-        auto r_point = triangle_0->template getReferenceQuadraturePoint<lolita::Quadrature::gauss(2)>(q);
-        auto weight = triangle_0->template getCurrentQuadratureWeight<lolita::Quadrature::gauss(2)>(q);
-        auto basis_vector = triangle_0->template getBasisEvaluation<lolita::Basis::monomial(1)>(point);
+        auto point = quadrangle_0->template getCurrentQuadraturePoint<lolita::Quadrature::gauss(2)>(q);
+        auto r_point = quadrangle_0->template getReferenceQuadraturePoint<lolita::Quadrature::gauss(2)>(q);
+        auto weight = quadrangle_0->template getCurrentQuadratureWeight<lolita::Quadrature::gauss(2)>(q);
+        auto basis_vector = quadrangle_0->template getBasisEvaluation<lolita::Basis::monomial(1)>(point);
         // std::cout << "basis_vector" << "\n";
         // std::cout << basis_vector << "\n";
-        auto grad = triangle_0->template getMapping<lolita::Field::vector(), lolita::Mapping::largeStrain(), hdg>(r_point);
+        auto grad = quadrangle_0->template getMapping<lolita::Field::vector(), lolita::Mapping::largeStrain(), hdg>(r_point);
         std::cout << "grad ------------------ " << q << "\n";
         std::cout << grad << "\n";
         std::cout << "------------------ " << q << "\n";
     }
-    auto stab = triangle_0->template getStabilization<lolita::Field::vector(), hdg>();
+    auto stab = quadrangle_0->template getStabilization<lolita::Field::vector(), hdg>();
     std::cout << "stab ------------------ " << "\n";
     std::cout << stab << "\n";
     std::cout << "------------------ " << "\n";
@@ -122,10 +134,10 @@ TEST(test_triangle, test_triangle)
     //     for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<segment, lolita::Quadrature::gauss(4)>::getSize(); ++q)
     //     {
     //         auto point = seg->template getReferenceQuadraturePoint<lolita::Quadrature::gauss(4)>(q);
-    //         auto i_point = triangle_0->getInnerNeighborReferenceQuadraturePoint<lolita::Quadrature::gauss(4), 0, 0>(count_seg, q);
+    //         auto i_point = quadrangle_0->getInnerNeighborReferenceQuadraturePoint<lolita::Quadrature::gauss(4), 0, 0>(count_seg, q);
     //         auto c_point = seg->template getCurrentQuadraturePoint<lolita::Quadrature::gauss(4)>(q);
     //         auto weight = seg->template getCurrentQuadratureWeight<lolita::Quadrature::gauss(4)>(q);
-    //         auto basis_vector = triangle_0->template getBasisEvaluation<lolita::Basis::monomial(1)>(i_point);
+    //         auto basis_vector = quadrangle_0->template getBasisEvaluation<lolita::Basis::monomial(1)>(i_point);
     //         std::cout << "basis_vector " << q <<" is :\n" << basis_vector << "\n";
     //         // auto dist = seg->getLocalFrameDistance(seg->getReferenceCentroid(), point, 0);
     //         // auto diams = seg->getLocalFrameDiameters();
