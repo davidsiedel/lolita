@@ -853,7 +853,26 @@ namespace lolita
             return static_cast<t_Disc<t_discretization> const *>(this)->template getStabilization<t_field>();
         }
 
+        template<Field t_field, auto t_discretization>
+        auto
+        getGradientRhs(
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getGradientRhs<t_field>(row, col);
+        }
 
+        template<Field t_field, auto t_discretization>
+        auto
+        getPotential(
+            Point const & point
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getPotential<t_field>(point);
+        }
 
         template<Field t_field, auto t_discretization>
         auto
@@ -1440,6 +1459,7 @@ namespace lolita
             for (auto & ip : quadrature_.at(std::string(label)).ips_)
             {
                 auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
+                strain_operator.setZero();
                 auto set_mapping_block = [&] <Integer t_i = 0> (
                     auto & self
                 )

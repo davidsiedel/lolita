@@ -59,55 +59,59 @@ TEST(test_triangle, test_triangle)
     triangle_0->getInnerNeighbors<1, 0>()[2] = node_2;
     node_2->getOuterNeighbors<1, 0>().push_back(triangle_0);
 
-    triangle_0->template getSymmetricGradientRhs<lolita::Field::vector(), hdg>(0, 1);
+    // triangle_0->template getSymmetricGradientRhs<lolita::Field::vector(), hdg>(0, 1);
 
-    // auto count_seg = 1;
-    // for (auto const & seg : {segment_1, segment_2})
-    // {
-    //     auto mass = lolita::Matrix<lolita::Real, 2, 2>();
-    //     mass.setZero();
-    //     std::cout << "--- seg " << count_seg << "\n\n";
-    //     for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<segment, quadrature>::getSize(); ++q)
-    //     {
-    //         auto point = seg->template getReferenceQuadraturePoint<quadrature>(q);
-    //         auto c_point = seg->template getCurrentQuadraturePoint<quadrature>(q);
-    //         auto weight = seg->template getCurrentQuadratureWeight<quadrature>(q);
-    //         auto dist = seg->getLocalFrameDistance(seg->getReferenceCentroid(), point, 0);
-    //         auto diams = seg->getLocalFrameDiameters();
-    //         auto n = seg->getNormalVector(point);
-    //         auto rot = seg->getRotationMatrix(seg->getReferenceCentroid());
-    //         auto s_q_f = rot * c_point;
-    //         auto s_f = rot * seg->getCurrentCentroid();
-    //         std::cout << "weight " << q <<" is :\n" << weight << "\n";
-    //         std::cout << "point " << q <<" is :\n" << c_point << "\n";
-    //         std::cout << "n " << q <<" is :\n" << n << "\n";
-    //         std::cout << "s_q_f " << q <<" is :\n" << s_q_f << "\n";
-    //         std::cout << "s_f " << q <<" is :\n" << s_f << "\n";
-    //         std::cout << "dist " << q <<" is :\n" << dist << "\n";
-    //         std::cout << "diams " << q <<" is :\n" << diams << "\n";
-    //         std::cout << "rot " << q <<" is :\n" << rot << "\n";
-    //         auto basis_vector = seg->template getBasisEvaluation<lolita::Basis::monomial(1)>(point);
-    //         mass += weight * basis_vector * basis_vector.transpose();
-    //     }
-    //     std::cout << "mass " << "\n";
-    //     std::cout << mass << "\n\n";
-    //     count_seg ++;
-    // }
+    auto count_seg = 0;
+    for (auto const & seg : {segment_0, segment_1, segment_2})
+    {
+        auto mass = lolita::Matrix<lolita::Real, 2, 2>();
+        mass.setZero();
+        std::cout << "--- seg " << count_seg << "\n\n";
+        for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<segment, quadrature>::getSize(); ++q)
+        {
+            auto point = seg->template getReferenceQuadraturePoint<quadrature>(q);
+            auto c_point = seg->template getCurrentQuadraturePoint<quadrature>(q);
+            auto weight = seg->template getCurrentQuadratureWeight<quadrature>(q);
+            auto dist = seg->getLocalFrameDistance(seg->getReferenceCentroid(), point, 0);
+            auto diams = seg->getLocalFrameDiameters();
+            auto n = seg->getNormalVector(point);
+            auto rot = seg->getRotationMatrix(seg->getReferenceCentroid());
+            auto s_q_f = rot * c_point;
+            auto s_f = rot * seg->getCurrentCentroid();
+            std::cout << "weight " << q <<" is :\n" << weight << "\n";
+            std::cout << "point " << q <<" is :\n" << c_point << "\n";
+            std::cout << "n " << q <<" is :\n" << n << "\n";
+            std::cout << "s_q_f " << q <<" is :\n" << s_q_f << "\n";
+            std::cout << "s_f " << q <<" is :\n" << s_f << "\n";
+            std::cout << "dist " << q <<" is :\n" << dist << "\n";
+            std::cout << "diams " << q <<" is :\n" << diams << "\n";
+            std::cout << "rot " << q <<" is :\n" << rot << "\n";
+            auto basis_vector = seg->template getBasisEvaluation<lolita::Basis::monomial(1)>(point);
+            mass += weight * basis_vector * basis_vector.transpose();
+        }
+        std::cout << "mass " << "\n";
+        std::cout << mass << "\n\n";
+        count_seg ++;
+    }
 
     // triangle_0->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(lolita::Point({0., 0., 0.}));
-    for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<triangle, lolita::Quadrature::gauss(2)>::getSize(); ++q)
-    {
-        auto point = triangle_0->template getCurrentQuadraturePoint<lolita::Quadrature::gauss(2)>(q);
-        auto r_point = triangle_0->template getReferenceQuadraturePoint<lolita::Quadrature::gauss(2)>(q);
-        auto weight = triangle_0->template getCurrentQuadratureWeight<lolita::Quadrature::gauss(2)>(q);
-        auto basis_vector = triangle_0->template getBasisEvaluation<lolita::Basis::monomial(1)>(point);
-        // std::cout << "basis_vector" << "\n";
-        // std::cout << basis_vector << "\n";
-        auto grad = triangle_0->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(r_point);
-        std::cout << "------------------ " << q << "\n";
-        std::cout << grad << "\n";
-        std::cout << "------------------ " << q << "\n";
-    }
+    // for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<triangle, lolita::Quadrature::gauss(2)>::getSize(); ++q)
+    // {
+    //     auto point = triangle_0->template getCurrentQuadraturePoint<lolita::Quadrature::gauss(2)>(q);
+    //     auto r_point = triangle_0->template getReferenceQuadraturePoint<lolita::Quadrature::gauss(2)>(q);
+    //     auto weight = triangle_0->template getCurrentQuadratureWeight<lolita::Quadrature::gauss(2)>(q);
+    //     auto basis_vector = triangle_0->template getBasisEvaluation<lolita::Basis::monomial(1)>(point);
+    //     // std::cout << "basis_vector" << "\n";
+    //     // std::cout << basis_vector << "\n";
+    //     auto grad = triangle_0->template getMapping<lolita::Field::vector(), lolita::Mapping::largeStrain(), hdg>(r_point);
+    //     std::cout << "grad ------------------ " << q << "\n";
+    //     std::cout << grad << "\n";
+    //     std::cout << "------------------ " << q << "\n";
+    // }
+    // auto stab = triangle_0->template getStabilization<lolita::Field::vector(), hdg>();
+    // std::cout << "stab ------------------ " << "\n";
+    // std::cout << stab << "\n";
+    // std::cout << "------------------ " << "\n";
 
     // auto count_seg = 0;
     // for (auto const & seg : {segment_0, segment_1, segment_2})
