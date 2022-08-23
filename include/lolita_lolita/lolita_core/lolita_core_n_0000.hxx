@@ -247,6 +247,38 @@ namespace lolita
         )
         {}
         
+        template<Domain t_domain, Field t_field>
+        static
+        std::array<Real, getSize<t_domain, t_field>()>
+        getStressValues(
+            auto const & thermodynamic_forces,
+            Integer offset
+        )
+        {
+            auto stress = std::array<Real, getSize<t_domain, t_field>()>();
+            for (auto i = 0; i < getSize<t_domain, t_field>(); i++)
+            {
+                stress[i] = thermodynamic_forces[i + offset];
+            }
+            return stress;
+        }
+        
+        template<Domain t_domain, Field t_field>
+        static
+        std::array<Real, getSize<t_domain, t_field>()>
+        getStrainValues(
+            auto const & gradients,
+            Integer offset
+        )
+        {
+            auto strain = std::array<Real, getSize<t_domain, t_field>()>();
+            for (auto i = 0; i < getSize<t_domain, t_field>(); i++)
+            {
+                strain[i] = gradients[i + offset];
+            }
+            return strain;
+        }
+        
     };
 
     template<Mapping t_mapping>
@@ -354,6 +386,38 @@ namespace lolita
         )
         {}
         
+        template<Domain t_domain, Field t_field>
+        static
+        std::array<Real, getSize<t_domain, t_field>()>
+        getStressValues(
+            auto const & thermodynamic_forces,
+            Integer offset
+        )
+        {
+            auto stress = std::array<Real, getSize<t_domain, t_field>()>();
+            for (auto i = 0; i < getSize<t_domain, t_field>(); i++)
+            {
+                stress[i] = thermodynamic_forces[i + offset];
+            }
+            return stress;
+        }
+        
+        template<Domain t_domain, Field t_field>
+        static
+        std::array<Real, getSize<t_domain, t_field>()>
+        getStrainValues(
+            auto const & gradients,
+            Integer offset
+        )
+        {
+            auto strain = std::array<Real, getSize<t_domain, t_field>()>();
+            for (auto i = 0; i < getSize<t_domain, t_field>(); i++)
+            {
+                strain[i] = gradients[i + offset];
+            }
+            return strain;
+        }
+        
     };
 
     template<Mapping t_mapping>
@@ -431,6 +495,50 @@ namespace lolita
             auto & gradient
         )
         {}
+        
+        template<Domain t_domain, Field t_field>
+        static
+        std::array<Real, 9>
+        getStressValues(
+            auto const & thermodynamic_forces,
+            Integer offset
+        )
+        requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        {
+            auto stress = std::array<Real, 9>();
+            stress[0] = thermodynamic_forces[0 + offset];
+            stress[1] = thermodynamic_forces[1 + offset];
+            stress[2] = thermodynamic_forces[2 + offset];
+            stress[3] = (1.0 / std::sqrt(2.0)) * thermodynamic_forces[3 + offset];
+            stress[4] = (1.0 / std::sqrt(2.0)) * thermodynamic_forces[3 + offset];
+            stress[5] = 0;
+            stress[6] = 0;
+            stress[7] = 0;
+            stress[8] = 0;
+            return stress;
+        }
+        
+        template<Domain t_domain, Field t_field>
+        static
+        std::array<Real, 9>
+        getStrainValues(
+            auto const & gradients,
+            Integer offset
+        )
+        requires(t_field.isTensor(1) && t_domain.hasDim(2))
+        {
+            auto strain = std::array<Real, 9>();
+            strain[0] = gradients[0 + offset];
+            strain[1] = gradients[1 + offset];
+            strain[2] = gradients[2 + offset];
+            strain[3] = (1.0 / std::sqrt(2.0)) * gradients[3 + offset];
+            strain[4] = (1.0 / std::sqrt(2.0)) * gradients[3 + offset];
+            strain[5] = 0;
+            strain[6] = 0;
+            strain[7] = 0;
+            strain[8] = 0;
+            return strain;
+        }
         
     };
 

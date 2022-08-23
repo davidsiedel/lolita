@@ -1158,6 +1158,25 @@ namespace lolita
             }
 
             template<Field t_field, Basis t_basis>
+            Vector<Real, getSize<t_field, t_basis>()>
+            getCoefficientsCopy()
+            const
+            {
+                return Vector<Real, getSize<t_field, t_basis>()>(getCoefficients<t_field, t_basis>());
+            }
+
+            template<Field t_field, Basis t_basis>
+            Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>
+            getCoefficientsCopy(
+                Integer row,
+                Integer col
+            )
+            const
+            {
+                return Vector<Real, FiniteElementBasisTraits<t_basis>::template getSize<t_element>()>(getCoefficients<t_field, t_basis>(row, col));
+            }
+
+            template<Field t_field, Basis t_basis>
             void
             addCoefficients(
                 lolita::algebra::View<Vector<Real> const> const & vector
@@ -1209,6 +1228,57 @@ namespace lolita
         )
         {
             degrees_of_freedom_.at(label).template setCoefficients<t_field, t_basis>(vector);
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        updateUnknown(
+            std::basic_string_view<Character> unknown_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template updateUnknown<t_finite_element_method>(unknown_label, system);
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        updateUnknown(
+            std::basic_string_view<Character> unknown_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            degrees_of_freedom_.at(std::string(unknown_label)).template addCoefficients<t_field, t_basis>(system->getUnknownCorrection(unknown_label));
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        updateBinding(
+            std::basic_string_view<Character> binding_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template updateBinding<t_finite_element_method>(binding_label, system);
+            // constexpr bool has_method = requires(t_Disc<t_discretization> & t) {
+            //     t.hello();
+            // };
+            // if constexpr (has_method)
+            // {
+            //     std::cout << "HAS !\n";
+            // }
+            // else
+            // {
+            //     std::cout << "HAS NOT !\n";
+            // }
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        updateBinding(
+            std::basic_string_view<Character> binding_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            degrees_of_freedom_.at(std::string(binding_label)).template addCoefficients<t_field, t_basis>(system->getBindingCorrection(binding_label));
         }
         
         std::map<std::basic_string<Character>, DegreeOfFreedom> degrees_of_freedom_;
@@ -1513,9 +1583,8 @@ namespace lolita
             std::basic_string_view<Character> degree_of_freedom_label,
             std::unique_ptr<System> const & system
         )
-        const
         {
-            static_cast<t_Disc<t_discretization> const *>(this)->template assembleUnknownBlock<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
+            static_cast<t_Disc<t_discretization> *>(this)->template assembleUnknownBlock<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
         }
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
@@ -1571,6 +1640,15 @@ namespace lolita
             }
         }
 
+        void
+        setParameter(
+            std::basic_string<Character> const & parameter_label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            parameters_[parameter_label] = std::forward<std::function<Real(Point const &)>>(function)(* coordinates_);
+        }
+
         std::map<std::basic_string<Character>, QuadratureElement> quadrature_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1587,6 +1665,8 @@ namespace lolita
         }
 
         std::map<std::basic_string<Character>, Matrix<Real>> operators_;
+
+        std::map<std::basic_string<Character>, Real> parameters_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // NEW

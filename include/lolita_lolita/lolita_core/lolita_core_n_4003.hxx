@@ -933,7 +933,7 @@ namespace lolita
                     auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
                     internal_forces += ip.weight_ * strain_operator_view.transpose() * stress_view;
                 }
-                internal_forces += this->operators_.at("Stabilization") * unknown;
+                internal_forces += this->parameters_.at("Stabilization") * this->operators_.at("Stabilization") * unknown;
                 return internal_forces;
             }
 
@@ -954,14 +954,16 @@ namespace lolita
                     auto constexpr sizee = Implementation::template getBasisSize<getCellBasis()>();
                     auto offset = load.second.getFunction().getCol() * sizee;
                     auto cell_block = external_forces.template segment<sizee>(offset);
+                    auto i_quadrature = 0;
                     for (auto & ip : this->quadrature_.at(std::string(behavior_label)).ips_)
                     {
-                        auto const & point = ip.coordinates_;
-                        auto vector = load.second.getFunction().getImposedValue(point, 0.0) * this->template getBasisEvaluation<getCellBasis()>(point);
+                        auto const & current_point = ip.coordinates_;
+                        auto const & point = ip.reference_coordinates_;
+                        auto vector = load.second.getFunction().getImposedValue(current_point, 0.0) * this->template getBasisEvaluation<getCellBasis()>(point);
                         cell_block += vector;
+                        i_quadrature ++;
                     }
-                }
-                
+                }                
                 return external_forces;
             }
 
@@ -986,7 +988,7 @@ namespace lolita
                     // auto jacob = Matrix<Real, strain_operator_num_rows, strain_operator_num_rows>();
                     jacobian += ip.weight_ * strain_operator_view.transpose() * jacob * strain_operator_view;
                 }
-                jacobian += this->operators_.at("Stabilization");
+                jacobian += this->parameters_.at("Stabilization") * this->operators_.at("Stabilization");
                 return jacobian;
             }
 
@@ -997,13 +999,17 @@ namespace lolita
                 std::basic_string_view<Character> degree_of_freedom_label,
                 std::unique_ptr<System> const & system
             )
-            const
             {
                 auto constexpr num_cell_unknowns = getNumCellUnknowns<t_finite_element_method.getField()>();
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
                 auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
                 auto internal_forces = getInternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
                 auto external_forces = getExternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                auto eval = external_forces.cwiseAbs().maxCoeff();
+                if (eval > system->getNormalization())
+                {
+                    system->setNormalization(eval);
+                }
                 auto jac = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
                 auto residual = internal_forces - external_forces;
                 auto k_tt = jac.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
@@ -1012,7 +1018,12 @@ namespace lolita
                 auto k_ff = jac.template block<num_face_unknowns, num_face_unknowns>(num_cell_unknowns, num_cell_unknowns);
                 auto r_t = residual.template segment<num_cell_unknowns>(0);
                 auto r_f = residual.template segment<num_face_unknowns>(num_cell_unknowns);
-                // auto k_tt_inv = k_tt.llt().solve(decltype(k_tt)::Identity());
+                auto k_tt_inv = k_tt.llt().solve(decltype(k_tt)::Identity());
+                this->operators_["KTT"] = k_tt_inv;
+                this->operators_["KTF"] = k_tf;
+                this->operators_["RT"] = r_t;
+                auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
+                auto r_c = r_f - k_ft * k_tt_inv * r_t;
                 //
                 //
                 auto constexpr t_field = t_finite_element_method.getField();
@@ -1029,7 +1040,7 @@ namespace lolita
                         auto index_i = face_i_dof.getTag() + system->getUnknownOffset(degree_of_freedom_label);
                         for (auto i = index_i; i < index_i + size_i; i++)
                         {
-                            system->addRhsValue(i, r_f(offset_i));
+                            system->addRhsValue(i, r_c(offset_i));
                             auto offset_j = 0;
                             auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
                                 auto & self2
@@ -1043,7 +1054,7 @@ namespace lolita
                                     auto index_j = face_j_dof.getTag() + system->getUnknownOffset(degree_of_freedom_label);
                                     for (auto j = index_j; j < index_j + size_j; j++)
                                     {
-                                        system->addLhsValue(i, j, k_ff(offset_i, offset_j));
+                                        system->addLhsValue(i, j, k_c(offset_i, offset_j));
                                         offset_j ++;
                                     }
                                 }
@@ -1076,36 +1087,145 @@ namespace lolita
             requires(t_element.isSub(t_domain, 1))
             {
                 auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
+                auto constexpr field = t_finite_element_method.getField();
                 auto const & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
                 auto const & constraint = this->constraints_.at(std::string(constraint_label)).getFunction();
                 auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
-                auto vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto binding_external_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
+                auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
+                auto lagrange_parameter = this->parameters_.at("Lagrange");
                 matrix.setZero();
-                vector.setZero();
+                binding_external_forces_vector.setZero();
+                binding_internal_forces_vector.setZero();
+                unknown_internal_forces_vector.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, quadrature>::getSize(); i++)
                 {
                     auto point = this->template getCurrentQuadraturePoint<quadrature>(i);
                     auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
                     auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point);
-                    auto unknown_vector = face_unknown.template getCoefficients<t_finite_element_method.getField(), getFaceBasis()>(constraint.getRow(), constraint.getCol());
-                    matrix += weight * basis_vector * basis_vector.transpose();
-                    vector += basis_vector * (constraint.getImposedValue(point, 0.0) - unknown_vector.dot(basis_vector));
+                    binding_external_forces_vector += weight * lagrange_parameter * constraint.getImposedValue(point, 0.0) * basis_vector;
+                    binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector.dot(basis_vector) * basis_vector;
+                    unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
+                    matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
                 }
-                auto binding_offset = face_binding.getTag() + system->getBindingOffset(binding_label);
-                auto rwo_offset_l = 0;
-                for (auto row_offset_g = binding_offset; row_offset_g < binding_offset + getFaceBasisSize<t_element>(); row_offset_g++)
+                auto binding_residual_vector = binding_external_forces_vector - binding_internal_forces_vector;
+                auto eval = binding_external_forces_vector.cwiseAbs().maxCoeff();
+                if (eval > system->getNormalization())
                 {
-                    system->addRhsValue(row_offset_g, vector(rwo_offset_l));
-                    auto col_offset_l = 0;
-                    for (auto col_offset_g = binding_offset; col_offset_g < binding_offset + getFaceBasisSize<t_element>(); col_offset_g++)
-                    {
-                        system->addLhsValue(row_offset_g, col_offset_g, matrix(rwo_offset_l, col_offset_l));
-                        system->addLhsValue(col_offset_g, row_offset_g, matrix(rwo_offset_l, col_offset_l));
-                        col_offset_l ++;
-                    }
-                    rwo_offset_l ++;
+                    system->setNormalization(eval);
                 }
+                auto binding_offset = system->getBindingOffset(binding_label) + face_binding.getTag();
+                auto i_binding_row_l = 0;
+                for (auto i_binding_row_g = binding_offset; i_binding_row_g < binding_offset + getFaceBasisSize<t_element>(); i_binding_row_g++)
+                {
+                    system->addRhsValue(i_binding_row_g, binding_residual_vector(i_binding_row_l));
+                    auto i_binding_col_l = 0;
+                    for (auto i_binding_col_g = binding_offset; i_binding_col_g < binding_offset + getFaceBasisSize<t_element>(); i_binding_col_g++)
+                    {
+                        system->addLhsValue(i_binding_row_g, i_binding_col_g, matrix(i_binding_row_l, i_binding_col_l));
+                        system->addLhsValue(i_binding_col_g, i_binding_row_g, matrix(i_binding_row_l, i_binding_col_l));
+                        i_binding_col_l ++;
+                    }
+                    i_binding_row_l ++;
+                }
+                auto unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
+                auto i_unknown_row_l = 0;
+                for (auto i_unknown_row_g = unknown_offset; i_unknown_row_g < unknown_offset + getFaceBasisSize<t_element>(); i_unknown_row_g++)
+                {
+                    system->addRhsValue(i_unknown_row_g, unknown_internal_forces_vector(i_unknown_row_l));
+                    i_unknown_row_l ++;
+                }
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            void
+            updateUnknown(
+                std::basic_string_view<Character> unknown_label,
+                std::unique_ptr<System> const & system
+            )
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr field = t_finite_element_method.getField();
+                auto constexpr num_cell_unknowns = getNumCellUnknowns<t_finite_element_method.getField()>();
+                auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+                auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
+                //
+                auto faces_correction = Vector<Real, num_face_unknowns>();
+                faces_correction.setZero();
+                auto faces_correction_offset = 0;
+                auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        auto const & face_unknown = face->degrees_of_freedom_.at(std::string(unknown_label));
+                        auto constexpr face_unknown_size = face_unknown.template getSize<field, getFaceBasis()>();
+                        auto face_unknown_offset = face_unknown.getTag() + system->getUnknownOffset(unknown_label);
+                        auto face_correction = system->getUnknownCorrection(unknown_label).template segment<face_unknown_size>(face_unknown_offset);
+                        faces_correction.template segment<face_unknown_size>(faces_correction_offset) = face_correction;
+                        faces_correction_offset += face_unknown_size;
+                    }
+                    if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_unknowns(set_faces_unknowns);
+                auto k_tt_inv = algebra::View<Matrix<Real, num_cell_unknowns, num_cell_unknowns> const>(this->operators_["KTT"].data());
+                auto k_tf = algebra::View<Matrix<Real, num_cell_unknowns, num_face_unknowns> const>(this->operators_["KTF"].data());
+                auto r_t = algebra::View<Vector<Real, num_cell_unknowns> const>(this->operators_["RT"].data());
+                auto cell_corr = - (k_tt_inv * r_t + k_tt_inv * k_tf * faces_correction);
+                //
+                // auto & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
+                // auto unknown_vector = face_unknown.template getCoefficientsCopy<field, getFaceBasis()>();
+                // face_unknown.template addCoefficients<field, getFaceBasis()>(system->getUnknownCorrection(unknown_label));
+                // auto unknown_increment = face_unknown.template getCoefficients<field, getFaceBasis()>() - unknown_vector;
+                // auto k_tf = this->operators_["KTF"];
+                // auto r_t = this->operators_["RT"];
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            void
+            updateUnknown(
+                std::basic_string_view<Character> unknown_label,
+                std::unique_ptr<System> const & system
+            )
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto constexpr field = t_finite_element_method.getField();
+                auto & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
+                face_unknown.template addCoefficients<field, getFaceBasis()>(system->getUnknownCorrection(unknown_label));
+                // auto constexpr face_unknown_size = face_unknown.template getSize<field, getFaceBasis()>();
+                // auto face_unknown_offset = face_unknown.getTag() + system->getUnknownOffset(unknown_label);
+                // auto face_correction = system->getUnknownCorrection(unknown_label).template segment<face_unknown_size>(face_unknown_offset);
+                // faces_correction.template segment<face_unknown_size>(faces_correction_offset) = face_correction;
+                // faces_correction_offset += face_unknown_size;
+                // auto constexpr field = t_finite_element_method.getField();
+                // auto constexpr num_cell_unknowns = getNumCellUnknowns<t_finite_element_method.getField()>();
+                // auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+                // auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
+                // auto & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
+                // auto unknown_vector = face_unknown.template getCoefficientsCopy<field, getFaceBasis()>();
+                // face_unknown.template addCoefficients<field, getFaceBasis()>(system->getUnknownCorrection(unknown_label));
+                // auto unknown_increment = face_unknown.template getCoefficients<field, getFaceBasis()>() - unknown_vector;
+                // auto k_tt_inv = algebra::View<Matrix<Real, num_cell_unknowns, num_cell_unknowns> const>(this->operators_["KTT"].data());
+                // // auto k_tf = this->operators_["KTF"];
+                // // auto r_t = this->operators_["RT"];
+                // auto k_tf = algebra::View<Matrix<Real, num_cell_unknowns, num_face_unknowns> const>(this->operators_["KTF"].data());
+                // auto r_t = algebra::View<Vector<Real, num_cell_unknowns> const>(this->operators_["RT"].data());
+                // auto cell_corr = - (k_tt_inv * r_t + k_tt_inv * k_tf * unknown_increment);
+            }
+
+            void
+            hello()
+            {
+
             }
 
         };

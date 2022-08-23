@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
-#include "lolita_lolita/lolita_core/lolita_core_n_5000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_6000.hxx"
 
 TEST(t0, t0)
 {
     // declaring behavior
-    auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic/src/libBehaviour.so";
-    auto lib_name = "MicromorphicDamageII";
+    auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic_displacement/src/libBehaviour.so";
+    auto lib_name = "MicromorphicDamageI_SpectralSplit";
     auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
         mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
         mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
@@ -21,20 +21,16 @@ TEST(t0, t0)
     auto constexpr faces = lolita::ElementType::faces(domain);
     // fields
     auto constexpr displacement_field = lolita::Field::vector();
-    // auto constexpr damage_field = lolita::Field::scalar();
     // generalized strains
     auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(lolita::Field::vector(), lolita::Mapping::smallStrain());
-    // auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(lolita::Field::scalar(), lolita::Mapping::gradient(), lolita::Mapping::identity());
     // behaviors
     auto constexpr displacement_behavior = lolita::Behavior(displacement_generalized_strain);
-    // auto constexpr damage_behavior = lolita::Behavior(damage_generalized_strain);
     // discretization
     auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
     // finite elements
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
-    // auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
     // mesh    
-    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/applications/data/meshes/unit_square_3_cpp.msh";
+    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // dofs
@@ -60,18 +56,23 @@ TEST(t0, t0)
     // adding behavior
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
     //making operators
-    elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement");
+    elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Displacement");
     //
-    elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "FractureEnergy", [](lolita::Point const & p) { return 1.0; });
-    elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "CharacteristicLength", [](lolita::Point const & p) { return 1.0; });
-    elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageII", "PenalisationFactor", [](lolita::Point const & p) { return 1.0; });
-    elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageII", "Temperature", [](lolita::Point const & p) { return 1.0; });
-    elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageII", "EnergyReleaseRate", [](lolita::Point const & p) { return 1.0; });
+    elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit", "YoungModulus", [](lolita::Point const & p) { return 1.0; });
+    elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit", "PoissonRatio", [](lolita::Point const & p) { return 0.0; });
+    elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Temperature", [](lolita::Point const & p) { return 293.15; });
+    elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Damage", [](lolita::Point const & p) { return 0.0; });
+    elements->setParameter<faces>("TOP", "Lagrange", [](lolita::Point const & p) { return 1.0; });
+    elements->setParameter<faces>("BOTTOM", "Lagrange", [](lolita::Point const & p) { return 1.0; });
+    elements->setParameter<cells>("SQUARE", "Stabilization", [](lolita::Point const & p) { return 1.0; });
     //
     elements->setElementOperators<cells, displacement_element, hdg>("SQUARE", "Stabilization");
-    elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement");
-    elements->integrate<cells>("SQUARE", "MicromorphicDamageII");
-    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageII", "Displacement", displacement_system);
+    //
+    elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Displacement");
+    //
+    elements->integrate<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit");
+    //
+    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Displacement", displacement_system);
     elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForceY", "Displacement", "Pull", displacement_system);
     elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForceX", "Displacement", "ClampedX", displacement_system);
     elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForceY", "Displacement", "ClampedY", displacement_system);
@@ -79,15 +80,16 @@ TEST(t0, t0)
     displacement_system->setCorrection();
     // std::cout << "corr \n";
     // std::cout << displacement_system->getUnknownCorrection("Displacement") << "\n";
-    * face_displacement += displacement_system->getUnknownCorrection("Displacement");
-    std::cout << displacement_system->getUnknownCorrection("Displacement").segment<2>(3);
+    // * face_displacement += displacement_system->getUnknownCorrection("Displacement");
+    // std::cout << displacement_system->getUnknownCorrection("Displacement").segment<2>(3);
+    std::cout << "normalization : " << displacement_system->getNormalization() << "\n";
+    elements->updateUnknown<cells, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
+    elements->updateUnknown<faces, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
+    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForceY", displacement_system);
+    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceX", displacement_system);
+    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceY", displacement_system);
     //
-    elements->addDegreeOfFreedomCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement", displacement_system->getUnknownCorrection("Displacement"));
-    elements->addDegreeOfFreedomCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForceY", displacement_system->getBindingCorrection("TopForceY"));
-    elements->addDegreeOfFreedomCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceX", displacement_system->getBindingCorrection("BottomForceX"));
-    elements->addDegreeOfFreedomCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceY", displacement_system->getBindingCorrection("BottomForceY"));
-    // displacement_system->getCorrection();
-
+    elements->addOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out.msh");
 
 
     // auto my_cells = elements->makeFiniteElementSubSet("SQUARE");

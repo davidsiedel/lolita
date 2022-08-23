@@ -84,157 +84,11 @@ namespace lolita
 
     };
 
-    struct Dof
-    {
-
-        Dof()
-        :
-        tag_(0),
-        coefficients_(Vector<Real>(0))
-        {}
-        
-        inline
-        Boolean
-        operator==(
-            Dof const & other
-        )
-        const = default;
-        
-        inline
-        Boolean
-        operator!=(
-            Dof const & other
-        )
-        const = default;
-
-        inline
-        Natural
-        getTag()
-        const
-        {
-            return tag_;
-        }
-
-        inline
-        void
-        setTag(
-            Natural tag
-        )
-        {
-            tag_ = tag;
-        }
-
-        inline
-        Vector<Real> const &
-        getCoefficients()
-        const
-        {
-            return coefficients_;
-        }
-
-        inline
-        Vector<Real> &
-        getCoefficients()
-        {
-            return coefficients_;
-        }
-
-        Natural tag_;
-
-        Vector<Real> coefficients_;
-
-    };
-    
-    struct Dof2
-    {
-
-        Dof2(
-            Natural tag,
-            Integer dim,
-            std::basic_string_view<Character> label
-        )
-        :
-        tag_(tag),
-        dim_(dim),
-        label_(std::make_shared<std::basic_string<Character>>(label))
-        {}
-
-        Natural tag_;
-
-        Integer dim_;
-
-        std::shared_ptr<std::basic_string<Character>> label_;
-
-        std::shared_ptr<Vector<Real>> coefficients_;
-        
-        inline
-        Boolean
-        operator==(
-            Dof2 const & other
-        )
-        const = default;
-        
-        inline
-        Boolean
-        operator!=(
-            Dof2 const & other
-        )
-        const = default;
-        
-        inline
-        Boolean
-        operator==(
-            std::shared_ptr<Vector<Real>> const & coefficients
-        )
-        const
-        {
-            return coefficients_ == coefficients;
-        }
-        
-        inline
-        Boolean
-        operator!=(
-            std::shared_ptr<Vector<Real>> const & coefficients
-        )
-        const
-        {
-            return !(* this == coefficients);
-        }
-
-        inline
-        Natural
-        getTag()
-        const
-        {
-            return tag_;
-        }
-
-        inline
-        Vector<Real> const &
-        getCoefficients()
-        const
-        {
-            return * coefficients_;
-        }
-
-        inline
-        Vector<Real> &
-        getCoefficients()
-        {
-            return * coefficients_;
-        }
-
-    };
-
     
     struct System
     {
 
         using MatrixEntry = Eigen::Triplet<Real>;
-
-        std::map<std::basic_string<Character>, Natural> unknowns_;
-
-        std::map<std::basic_string<Character>, Natural> bindings_;
 
         static inline
         std::unique_ptr<System>
@@ -245,7 +99,8 @@ namespace lolita
 
         System()
         :
-        rhs_values_(Vector<Real>(0))
+        rhs_values_(Vector<Real>(0)),
+        normalization_(0)
         {}
 
         inline
@@ -394,6 +249,7 @@ namespace lolita
             rhs_values_ = Vector<Real>::Zero(getSize());
         }
 
+        inline
         void
         addLhsValue(
             Integer i,
@@ -404,6 +260,7 @@ namespace lolita
             lhs_values_.push_back(MatrixEntry(i, j, value));
         }
 
+        inline
         void
         addRhsValue(
             Integer i,
@@ -413,23 +270,25 @@ namespace lolita
             rhs_values_(i) += value;
         }
 
+        inline
         void
         setCorrection()
-        // const
         {
+            auto solver = Eigen::SparseLU<Eigen::SparseMatrix<Real>>();
             auto lhs = Eigen::SparseMatrix<Real>(getSize(), getSize());
+            lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
+            // std::cout << lhs << "\n";
+            solver.analyzePattern(lhs);
+            solver.factorize(lhs);
+            correction_values_ = solver.solve(- rhs_values_);
             lhs_values_ = std::vector<MatrixEntry>();
             rhs_values_ = Vector<Real>::Zero(getSize());
             // rhs_values_.setZero();
-            for(auto i = 0; i < getSize(); i++)
-            {
-                addLhsValue(i, i, 1);
-            }
-            lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
-            auto solver = Eigen::SparseLU<Eigen::SparseMatrix<Real>>();
-            solver.analyzePattern(lhs);
-            solver.factorize(lhs);
-            correction_values_ = solver.solve(rhs_values_);
+            // for(auto i = 0; i < getSize(); i++)
+            // {
+            //     addLhsValue(i, i, 1);
+            // }
+            // lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
             // std::cout << "solution :" << std::endl;
             // std::cout << correction_values_ << std::endl;
             // Eigen::PardisoLDLT<Eigen::SparseMatrix<T>>  solver;
@@ -460,6 +319,29 @@ namespace lolita
             // auto x = Vector<Real>(chol.solve(rhs_values_));         // use the factorization to solve for the given right hand side
         }
 
+        inline
+        Real
+        getNormalization()
+        const
+        {
+            return normalization_;
+        }
+
+        inline
+        void
+        setNormalization(
+            Real value
+        )
+        {
+            normalization_ = value;
+        }
+
+        Real normalization_;
+
+        std::map<std::basic_string<Character>, Natural> unknowns_;
+
+        std::map<std::basic_string<Character>, Natural> bindings_;
+
         std::vector<MatrixEntry> lhs_values_;
 
         Vector<Real> rhs_values_;
@@ -467,6 +349,148 @@ namespace lolita
         Vector<Real> correction_values_;
 
     };
+
+    // struct Dof
+    // {
+
+    //     Dof()
+    //     :
+    //     tag_(0),
+    //     coefficients_(Vector<Real>(0))
+    //     {}
+        
+    //     inline
+    //     Boolean
+    //     operator==(
+    //         Dof const & other
+    //     )
+    //     const = default;
+        
+    //     inline
+    //     Boolean
+    //     operator!=(
+    //         Dof const & other
+    //     )
+    //     const = default;
+
+    //     inline
+    //     Natural
+    //     getTag()
+    //     const
+    //     {
+    //         return tag_;
+    //     }
+
+    //     inline
+    //     void
+    //     setTag(
+    //         Natural tag
+    //     )
+    //     {
+    //         tag_ = tag;
+    //     }
+
+    //     inline
+    //     Vector<Real> const &
+    //     getCoefficients()
+    //     const
+    //     {
+    //         return coefficients_;
+    //     }
+
+    //     inline
+    //     Vector<Real> &
+    //     getCoefficients()
+    //     {
+    //         return coefficients_;
+    //     }
+
+    //     Natural tag_;
+
+    //     Vector<Real> coefficients_;
+
+    // };
+    
+    // struct Dof2
+    // {
+
+    //     Dof2(
+    //         Natural tag,
+    //         Integer dim,
+    //         std::basic_string_view<Character> label
+    //     )
+    //     :
+    //     tag_(tag),
+    //     dim_(dim),
+    //     label_(std::make_shared<std::basic_string<Character>>(label))
+    //     {}
+
+    //     Natural tag_;
+
+    //     Integer dim_;
+
+    //     std::shared_ptr<std::basic_string<Character>> label_;
+
+    //     std::shared_ptr<Vector<Real>> coefficients_;
+        
+    //     inline
+    //     Boolean
+    //     operator==(
+    //         Dof2 const & other
+    //     )
+    //     const = default;
+        
+    //     inline
+    //     Boolean
+    //     operator!=(
+    //         Dof2 const & other
+    //     )
+    //     const = default;
+        
+    //     inline
+    //     Boolean
+    //     operator==(
+    //         std::shared_ptr<Vector<Real>> const & coefficients
+    //     )
+    //     const
+    //     {
+    //         return coefficients_ == coefficients;
+    //     }
+        
+    //     inline
+    //     Boolean
+    //     operator!=(
+    //         std::shared_ptr<Vector<Real>> const & coefficients
+    //     )
+    //     const
+    //     {
+    //         return !(* this == coefficients);
+    //     }
+
+    //     inline
+    //     Natural
+    //     getTag()
+    //     const
+    //     {
+    //         return tag_;
+    //     }
+
+    //     inline
+    //     Vector<Real> const &
+    //     getCoefficients()
+    //     const
+    //     {
+    //         return * coefficients_;
+    //     }
+
+    //     inline
+    //     Vector<Real> &
+    //     getCoefficients()
+    //     {
+    //         return * coefficients_;
+    //     }
+
+    // };
 
     // struct DegreeOfFreedom
     // {
