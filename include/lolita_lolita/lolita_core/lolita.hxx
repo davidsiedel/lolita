@@ -248,6 +248,16 @@ namespace lolita
             return rule_ == Rule::Gauss;
         }
         
+        constexpr
+        Boolean
+        hasOrd(
+            Integer ord
+        )
+        const
+        {
+            return ord_ == ord;
+        }
+        
         Quadrature::Rule rule_;
         
         Integer ord_;
@@ -308,7 +318,7 @@ namespace lolita
 
         constexpr
         Integer
-        getOrder()
+        getOrd()
         const
         {
             return ord_;

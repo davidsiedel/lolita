@@ -3,7 +3,8 @@ find_package(GTest REQUIRED)
 
 add_executable(${PROJECT_NAME}_test
         main.cxx
-        test_0.cxx
+        # test_0.cxx
+        test_triangle.cxx
         # test_misc.cxx
         # test_integ.cxx
         # test_nnn.cxx

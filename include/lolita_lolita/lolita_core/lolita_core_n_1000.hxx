@@ -187,7 +187,7 @@ namespace lolita
         constexpr
         Boolean
         isSegment(
-                Integer ord
+            Integer ord
         )
         const
         {
@@ -206,7 +206,7 @@ namespace lolita
         constexpr
         Boolean
         isTriangle(
-                Integer ord
+            Integer ord
         )
         const
         {
@@ -225,7 +225,7 @@ namespace lolita
         constexpr
         Boolean
         isQuadrangle(
-                Integer ord
+            Integer ord
         )
         const
         {
@@ -276,7 +276,7 @@ namespace lolita
         constexpr
         Boolean
         hasShape(
-                Shape shape
+            Shape shape
         )
         const
         {
@@ -286,7 +286,7 @@ namespace lolita
         constexpr
         Boolean
         hasOrd(
-                Integer ord
+            Integer ord
         )
         const
         {
@@ -316,6 +316,22 @@ namespace lolita
             os << element.num_edges_ << " edges | ";
             os << element.num_faces_ << " faces }";
             return os;
+        }
+        
+        constexpr
+        Integer
+        getDim()
+        const
+        {
+            return dim_;
+        }
+        
+        constexpr
+        Integer
+        getOrd()
+        const
+        {
+            return ord_;
         }
         
         constexpr

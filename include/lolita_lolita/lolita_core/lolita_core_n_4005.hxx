@@ -217,13 +217,58 @@ namespace lolita
         {
             return * this->coordinates_;
         }
+    
+        Point &
+        getCurrentCoordinates(
+            Integer node_tag
+        )
+        requires(t_element.isNode())
+        {
+            return * this->coordinates_;
+        }
         
-        lolita::algebra::Matrix<Real, 3, t_element.getNumNodes()>
+        Point const &
+        getCurrentCoordinates(
+            Integer node_tag
+        )
+        const
+        requires(t_element.isNode())
+        {
+            return * this->coordinates_;
+        }
+    
+        Point &
+        getCurrentCoordinates(
+            Integer node_tag
+        )
+        {
+            return this->template getInnerNeighbors<t_element.getDim() - 1, 0>()[node_tag]->getCurrentCoordinates();
+        }
+        
+        Point const &
+        getCurrentCoordinates(
+            Integer node_tag
+        )
+        const
+        {
+            return this->template getInnerNeighbors<t_element.getDim() - 1, 0>()[node_tag]->getCurrentCoordinates();
+        }
+    
+        static
+        algebra::View<Point const>
+        getReferenceCoordinates(
+            Integer node_tag
+        )
+        {
+            return algebra::View<Point const>(ElementTraits<t_element, t_domain>::reference_nodes_[node_tag].data());
+        }
+        
+        Matrix<Real, 3, t_element.getNumNodes()>
         getCurrentCoordinates()
         const
         requires(!t_element.isNode())
         {
-            auto current_nodes_coordinates = lolita::algebra::Matrix<Real, 3, t_element.getNumNodes()>();
+            auto current_nodes_coordinates = Matrix<Real, 3, t_element.getNumNodes()>();
             auto count = Integer(0);
             for (auto const & node : this->template getInnerNeighbors<t_element.dim_ - 1, 0>())
             {
@@ -234,10 +279,10 @@ namespace lolita
         }
         
         static
-        lolita::algebra::Span<lolita::algebra::Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>
+        lolita::algebra::Span<Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>
         getReferenceCoordinates()
         {
-            using t_ReferenceCoordinates = lolita::algebra::Span<lolita::algebra::Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>;
+            using t_ReferenceCoordinates = lolita::algebra::Span<Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>;
             return t_ReferenceCoordinates(ElementTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
         }
         
@@ -269,7 +314,7 @@ namespace lolita
         const
         {
             auto const current_coordinates = this->getCurrentCoordinates();
-            auto ru = lolita::algebra::Matrix<Real, 3, 3>();
+            auto ru = Matrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
             for (auto i = 0; i < t_domain.dim_; ++i)
@@ -311,13 +356,15 @@ namespace lolita
         )
         const
         {
-            if constexpr (t_ElementTraits::hasDim(0))
+            if constexpr (t_element.isSub(t_domain, 0))
             {
                 auto const & current_coordinates = this->getCurrentCoordinates();
                 auto distance = Real();
                 auto mp0 = Point();
                 auto mp1 = Point();
-                for (auto i = 0; i < t_element.dim_; ++i)
+                mp0.setZero();
+                mp1.setZero();
+                for (auto i = 0; i < t_domain.getDim(); ++i)
                 {
                     mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
                     mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
@@ -331,18 +378,19 @@ namespace lolita
                 auto distance = Real(0);
                 auto dt = Real();
                 auto const current_nodes_coordinates = this->getCurrentCoordinates();
-                for (auto q = 0; q < SegmentQuadrature::dim_; ++q)
+                for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
                 {
                     auto pq = SegmentQuadrature::reference_points_[q][0];
                     auto wq = SegmentQuadrature::reference_weights_[q];
-                    auto ru = lolita::algebra::Matrix<Real, 3, 3>().setZero();
+                    auto ru = Matrix<Real, 3, 3>();
                     auto difference = second_point - first_point;
                     auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                    ru.setZero();
                     for (auto i = 0; i < t_domain.dim_; ++i)
                     {
                         for (auto j = 0; j < t_element.dim_; ++j)
                         {
-                            if (direction == -1 || i == static_cast<Integer>(direction))
+                            if (direction == -1 || i == direction)
                             {
                                 auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
                                 auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
@@ -372,12 +420,77 @@ namespace lolita
             }
         }
         
+        Real
+        getLocalFrameDistance(
+            Point const & first_point,
+            Point const & second_point,
+            Integer kkk
+        )
+        const
+        {
+            auto mp_0 = Point();
+            auto mp_1 = Point();
+            auto const & current_coordinates = this->getCurrentCoordinates();
+            mp_0.setZero();
+            mp_1.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
+            {
+                mp_0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                mp_1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            }
+            if constexpr (t_element.isSub(t_domain, 0))
+            {
+                return (mp_1 - mp_0)(kkk);
+            }
+            else if constexpr (t_element.isSub(t_domain, 1))
+            {
+                auto rot = getRotationMatrix(getReferenceCentroid());
+                return (rot * (mp_1 - mp_0))(kkk);
+            }
+        }
+        
+        Point
+        getLocalFrameDiameters()
+        const
+        {
+            if constexpr (t_element.isSub(t_domain, 0))
+            {
+                return getCurrentDiameters();
+            }
+            else if constexpr (t_element.isSub(t_domain, 1))
+            {
+                auto rot = getRotationMatrix(getReferenceCentroid());
+                auto proj_v = rot * this->getCurrentCoordinates();
+                auto current_diameters = Point();
+                current_diameters.setZero();
+                for (auto i = 0; i < t_element.getNumNodes(); ++i)
+                {
+                    for (auto j = i + 1; j < t_element.getNumNodes(); ++j)
+                    {
+                        auto pt0 = proj_v.col(i);
+                        auto pt1 = proj_v.col(j);
+                        for (auto k = 0; k < 3; ++k)
+                        {
+                            auto new_value = (pt1 - pt0)(k);
+                            auto & current_value = current_diameters(k);
+                            if (new_value > current_value)
+                            {
+                                current_value = new_value;
+                            }
+                        }
+                    }
+                }
+                return current_diameters;
+            }
+        }
+        
         Point
         getCurrentDiameters()
         const
         {
             auto reference_coordinates = FiniteElementHolder::getReferenceCoordinates();
-            auto current_diameters = Point().setZero();
+            auto current_diameters = Point();
+            current_diameters.setZero();
             for (auto i = 0; i < t_element.getNumNodes(); ++i)
             {
                 for (auto j = i + 1; j < t_element.getNumNodes(); ++j)
@@ -459,7 +572,7 @@ namespace lolita
         requires(t_element.isSub(t_domain, 1))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto ru = lolita::algebra::Matrix<Real, 3, t_element.dim_>();
+            auto ru = Matrix<Real, 3, t_element.dim_>();
             ru.setZero();
             for (auto i = 0; i < 3; ++i)
             {
@@ -478,6 +591,48 @@ namespace lolita
             else
             {
                 return (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
+            }
+        }
+
+        Matrix<Real, 3, 3>
+        getRotationMatrix(
+            Point const & point
+        )
+        const
+        requires(t_element.isSub(t_domain, 1))
+        {
+            if constexpr (t_domain.hasDim(3))
+            {
+                auto e_0 = getNormalVector(point);
+                auto e_1 = (getCurrentCoordinates(0) - getCurrentCentroid()) / (getCurrentCoordinates(0) - getCurrentCentroid()).norm();
+                auto e_2 = e_0.cross(e_1);
+                auto rotation_matrix = Matrix<Real, 3, 3>();
+                rotation_matrix.setZero();
+                rotation_matrix(0, 0) = + e_0(0);
+                rotation_matrix(0, 1) = + e_0(1);
+                rotation_matrix(0, 2) = + e_0(2);
+                rotation_matrix(1, 0) = + e_1(0);
+                rotation_matrix(1, 1) = + e_1(1);
+                rotation_matrix(1, 2) = + e_1(2);
+                rotation_matrix(2, 0) = + e_2(0);
+                rotation_matrix(2, 1) = + e_2(1);
+                rotation_matrix(2, 2) = + e_2(2);
+                return rotation_matrix;
+            }
+            else if constexpr (t_domain.hasDim(2))
+            {
+                auto e_0 = getNormalVector(point);
+                auto rotation_matrix = Matrix<Real, 3, 3>();
+                rotation_matrix.setZero();
+                rotation_matrix(0, 0) = - e_0(1);
+                rotation_matrix(0, 1) = + e_0(0);
+                rotation_matrix(1, 0) = + e_0(0);
+                rotation_matrix(1, 1) = + e_0(1);
+                return rotation_matrix;
+            }
+            else
+            {
+                return Matrix<Real, 3, 3>::Identity();
             }
         }
         
@@ -696,6 +851,19 @@ namespace lolita
         const
         {
             return static_cast<t_Disc<t_discretization> const *>(this)->template getStabilization<t_field>();
+        }
+
+
+
+        template<Field t_field, auto t_discretization>
+        auto
+        getSymmetricGradientRhs(
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getSymmetricGradientRhs<t_field>(row, col);
         }
 
         template<Field t_field, auto t_discretization>
@@ -1057,11 +1225,13 @@ namespace lolita
             public:
 
                 IntegrationPoint(
+                    algebra::View<Point const> ref_pt,
                     Point const & coordinates,
                     Real const & weight,
                     std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
                 )
                 :
+                reference_coordinates_(ref_pt),
                 coordinates_(coordinates),
                 weight_(weight),
                 behavior_(behavior),
@@ -1177,6 +1347,8 @@ namespace lolita
                     set_mapping_block(set_mapping_block);
                     return jac;
                 }
+
+                algebra::View<Point const> reference_coordinates_;
             
                 Point coordinates_;
                 
@@ -1247,8 +1419,9 @@ namespace lolita
             for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
             {
                 auto point = getCurrentQuadraturePoint<t_quadrature>(i);
+                auto r_point = getReferenceQuadraturePoint<t_quadrature>(i);
                 auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
-                auto ip = typename QuadratureElement::IntegrationPoint(point, weight, quadrature_.at(behavior_label).behavior_);
+                auto ip = typename QuadratureElement::IntegrationPoint(r_point, point, weight, quadrature_.at(behavior_label).behavior_);
                 quadrature_.at(behavior_label).ips_.push_back(std::move(ip));
             }
             
@@ -1263,6 +1436,7 @@ namespace lolita
         {
             auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
             auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
+            auto quadrature_point_count = 0;
             for (auto & ip : quadrature_.at(std::string(label)).ips_)
             {
                 auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
@@ -1274,7 +1448,8 @@ namespace lolita
                     auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
                     auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
                     auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-                    auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(ip.coordinates_);
+                    auto point = ip.reference_coordinates_;
+                    auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
                     auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
                     mapping_block = mapping_operator;
                     if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
@@ -1284,6 +1459,7 @@ namespace lolita
                 };
                 set_mapping_block(set_mapping_block);
                 ip.ops_[std::string(label2)] = strain_operator;
+                quadrature_point_count ++;
             }
         }
 
