@@ -1181,6 +1181,7 @@ namespace lolita
                 auto k_tf = algebra::View<Matrix<Real, num_cell_unknowns, num_face_unknowns> const>(this->operators_["KTF"].data());
                 auto r_t = algebra::View<Vector<Real, num_cell_unknowns> const>(this->operators_["RT"].data());
                 auto cell_corr = - (k_tt_inv * r_t + k_tt_inv * k_tf * faces_correction);
+                this->degrees_of_freedom_.at(std::string(unknown_label)).template getCoefficients<field, getCellBasis()>() += cell_corr;
                 //
                 // auto & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
                 // auto unknown_vector = face_unknown.template getCoefficientsCopy<field, getFaceBasis()>();
@@ -1222,6 +1223,87 @@ namespace lolita
                 // auto cell_corr = - (k_tt_inv * r_t + k_tt_inv * k_tf * unknown_increment);
             }
 
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Real
+            getUnknownValue(
+                std::basic_string_view<Character> unknown_label,
+                Point const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            {
+                return 0.0;
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Real
+            getUnknownValue(
+                std::basic_string_view<Character> unknown_label,
+                Point const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr field = t_finite_element_method.getField();
+                auto coefficients = this->degrees_of_freedom_.at(std::string(unknown_label)).template getCoefficients<field, getCellBasis()>(row, col);
+                auto basis_vector = this->template getBasisEvaluation<getCellBasis()>(point);
+                return coefficients.dot(basis_vector);
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Real
+            getUnknownValue(
+                std::basic_string_view<Character> unknown_label,
+                Point const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto constexpr field = t_finite_element_method.getField();
+                auto coefficients = this->degrees_of_freedom_.at(std::string(unknown_label)).template getCoefficients<field, getFaceBasis()>(row, col);
+                auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point);
+                return coefficients.dot(basis_vector);
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Real
+            getBindingValue(
+                std::basic_string_view<Character> binding_label,
+                Point const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr field = t_finite_element_method.getField();
+                auto coefficients = this->degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<field, getCellBasis()>(row, col);
+                auto basis_vector = this->template getBasisEvaluation<getCellBasis()>(point);
+                return coefficients.dot(basis_vector);
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Real
+            getBindingValue(
+                std::basic_string_view<Character> binding_label,
+                Point const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto constexpr field = t_finite_element_method.getField();
+                auto coefficients = this->degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<field, getFaceBasis()>(row, col);
+                auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point);
+                return coefficients.dot(basis_vector);
+            }
+
             void
             hello()
             {
@@ -1231,175 +1313,6 @@ namespace lolita
         };
 
     };
-
-    // struct QuadraturePoint
-    // {
-
-    //     std::shared_ptr<mgis::behaviour::BehaviourData> const &
-    //     getBehaviourData()
-    //     const
-    //     {
-    //         return behavior_data_;
-    //     }
-
-    //     std::shared_ptr<mgis::behaviour::BehaviourData> &
-    //     getBehaviourData()
-    //     {
-    //         return behavior_data_;
-    //     }
-
-    //     void
-    //     integrate(
-    //         Integer & res
-    //     )
-    //     {
-    //         res = mgis::behaviour::integrate(* std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)), * behavior_);
-    //     }
-        
-    //     std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
-        
-    //     std::shared_ptr<mgis::behaviour::BehaviourData> behavior_data_;
-
-    // };
-
-    // struct QuadraturePoint2 : QuadraturePoint
-    // {
-
-    //     std::vector<lolita::algebra::Matrix<Real>> element_operators_;
-
-    // };
-
-    // struct QuadratureOperator
-    // {
-
-    //     inline
-    //     std::basic_string_view<Character>
-    //     getLabel()
-    //     const
-    //     {
-    //         return label_;
-    //     }
-
-    //     inline
-    //     lolita::algebra::Matrix<Real>
-    //     getOperator(
-    //         Integer i
-    //     )
-    //     const
-    //     {
-    //         return operators_[i];
-    //     }
-
-    //     std::basic_string_view<Character> label_;
-
-    //     std::vector<lolita::algebra::Matrix<Real>> operators_;
-
-    // };
-    
-    // template<Domain t_domain>
-    // struct IntegrationPoint
-    // {
-
-    //     IntegrationPoint(
-    //         Point const & coordinates,
-    //         Real const & weight,
-    //         std::shared_ptr<mgis::behaviour::Behaviour> const & behaviour
-    //     )
-    //     :
-    //     coordinates_(coordinates),
-    //     weight_(weight),
-    //     behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behaviour)))
-    //     {}
-
-    //     std::unique_ptr<mgis::behaviour::BehaviourData> const &
-    //     getMaterialPoint()
-    //     const
-    //     {
-    //         return behavior_data_;
-    //     }
-
-    //     std::unique_ptr<mgis::behaviour::BehaviourData> &
-    //     getMaterialPoint()
-    //     {
-    //         return behavior_data_;
-    //     }
-        
-    //     template<BehaviorConcept auto t_behavior>
-    //     lolita::algebra::Span<lolita::algebra::Vector<Real, BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>()> const>
-    //     getGeneralizedStrain()
-    //     const
-    //     {
-    //         auto constexpr size = BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
-    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data());
-    //     }
-        
-    //     template<auto t_finite_element_method>
-    //     lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()> const>
-    //     getGeneralizedStrain()
-    //     const
-    //     {
-    //         auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-    //         auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, size> const>(behavior_data_->s1.gradients.data() + offset);
-    //     }
-        
-    //     template<auto t_finite_element_method>
-    //     lolita::algebra::Span<RealVector<FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>()>>
-    //     getGeneralizedStrain()
-    //     {
-    //         auto constexpr size = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-    //         auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainOffset<t_domain>();
-    //         return lolita::algebra::Span<lolita::algebra::Vector<Real, size>>(behavior_data_->s1.gradients.data() + offset);
-    //     }
-        
-    //     Point coordinates_;
-        
-    //     Real weight_;
-        
-    //     std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
-
-    // };
-
-    // template<Domain t_domain>
-    // struct ElementIntegrationPoints
-    // {
-
-    //     ElementIntegrationPoints(
-    //         std::shared_ptr<mgis::behaviour::Behaviour> const & behaviour
-    //     )
-    //     :
-    //     behavior_(behaviour)
-    //     {}
-
-    //     Integer
-    //     getSize()
-    //     const
-    //     {
-    //         return integration_points_.size();
-    //     }
-
-    //     std::basic_string_view<Character>
-    //     getLabel()
-    //     const
-    //     {
-    //         return behavior_->behaviour;
-    //     }
-
-    //     void
-    //     integrate()
-    //     {
-    //         for (auto const & integration_point : integration_points_)
-    //         {
-    //             auto behaviour_view = mgis::behaviour::make_view(integration_point->behavior_data_);
-    //             auto result = mgis::behaviour::integrate(behaviour_view, * behavior_);
-    //         }
-    //     }
-        
-    //     std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
-
-    //     std::vector<IntegrationPoint<t_domain>> integration_points_;
-
-    // };
     
 } // namespace lolita
 

@@ -994,7 +994,7 @@ namespace lolita
         getNumInnerNeighbors()
         requires(!t_element.isNode() && sizeof...(t_i) == 2)
         {
-            auto const constexpr t_coordinates = std::array<Integer, 2>{t_i...};
+            auto constexpr t_coordinates = std::array<Integer, 2>{t_i...};
             return std::tuple_size_v<std::tuple_element_t<t_coordinates[1], std::tuple_element_t<t_coordinates[0], t_ElementInnerNeighborhood>>>;
         }
         
@@ -1004,7 +1004,7 @@ namespace lolita
         getNumInnerNeighbors()
         requires(!t_element.isNode() && sizeof...(t_i) == 1)
         {
-            auto const constexpr t_coordinates = std::array<Integer, 1>{t_i...};
+            auto constexpr t_coordinates = std::array<Integer, 1>{t_i...};
             return std::tuple_size_v<std::tuple_element_t<t_coordinates[0], t_ElementInnerNeighborhood>>;
         }
         

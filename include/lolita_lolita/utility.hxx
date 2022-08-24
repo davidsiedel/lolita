@@ -10,6 +10,7 @@
 #include <map>
 #include <ostream>
 #include <iomanip>
+#include <filesystem>
 
 #include "lolita_lolita/config.hxx"
 

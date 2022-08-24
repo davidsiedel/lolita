@@ -51,8 +51,8 @@ TEST(t0, t0)
     std::cout << "displacement_system b size : " << displacement_system->getBindingsSize() << std::endl;
     // load
     auto load0 = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return 1.0; }, 1, 0);
-    auto load1 = elements->setConstraint<faces>("BOTTOM", "ClampedX", [](lolita::Point const & p, lolita::Real const & t) { return 2.0; }, 0, 0);
-    auto load2 = elements->setConstraint<faces>("BOTTOM", "ClampedY", [](lolita::Point const & p, lolita::Real const & t) { return 3.0; }, 1, 0);
+    auto load1 = elements->setConstraint<faces>("BOTTOM", "ClampedX", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 0);
+    auto load2 = elements->setConstraint<faces>("BOTTOM", "ClampedY", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 1, 0);
     // adding behavior
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
     //making operators
@@ -89,7 +89,15 @@ TEST(t0, t0)
     elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceX", displacement_system);
     elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceY", displacement_system);
     //
-    elements->addOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out.msh");
+    // elements->setOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", "MicromorphicDamageI_SpectralSplit");
+    // elements->addOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", 0, 0.0, "MicromorphicDamageI_SpectralSplit");
+    auto out_file = "/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh";
+    lolita::GmshFileParser::setOutput<domain>(out_file, elements, "MicromorphicDamageI_SpectralSplit");
+    lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, 0, 0.0, "MicromorphicDamageI_SpectralSplit", 0);
+    lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 0, 0);
+    lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", "MicromorphicDamageI_SpectralSplit", 0, 0);
+
+    // std::cout << * elements << "\n";
 
 
     // auto my_cells = elements->makeFiniteElementSubSet("SQUARE");

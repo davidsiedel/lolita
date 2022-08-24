@@ -785,90 +785,636 @@ namespace lolita
             return os;
         }
 
-        void
-        addOutput(
-            std::basic_string<Character> && file_path
-        )
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // Num elements
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumElements()
+        const
+        requires(sizeof...(t_coordinates) == 2)
         {
-            auto outfile = std::ofstream();
-            outfile.open(std::forward<std::basic_string<Character>>(file_path), std::ios_base::app);
-            std::cout << "ICI !!!\n";
-            // outfile << "\n Data";
+            auto constexpr coordinates = std::array<Integer, 2>{t_coordinates...};
+            return this->template getElements<coordinates[0], coordinates[1]>().size();
         }
 
-    // def create_output(self, res_folder_path: str):
-    //     res_file_path = os.path.join(res_folder_path, "output.msh")
-    //     with open(res_file_path, "w") as res_output_file:
-    //         res_output_file.write("$MeshFormat\n2.2 0 8\n$EndMeshFormat\n$Nodes\n")
-    //         # res_output_file.write("$MeshFormat\n4.1 0 8\n$EndMeshFormat\n$Nodes\n")
-    //         nnodes = self.mesh.number_of_vertices_in_mesh + self.mesh.number_of_cell_quadrature_points_in_mesh
-    //         res_output_file.write("{}\n".format(nnodes))
-    //         # res_output_file.write("1 {} 1 {}\n".format(nnodes, nnodes))
-    //         for v_count in range(self.mesh.number_of_vertices_in_mesh):
-    //             vertex_fill = np.zeros((3,), dtype=real)
-    //             vertex_fill[:len(self.mesh.vertices[:,v_count])] = self.mesh.vertices[:,v_count]
-    //             res_output_file.write("{} {} {} {}\n".format(v_count + 1, vertex_fill[0], vertex_fill[1], vertex_fill[2]))
-    //         q_count = self.mesh.number_of_vertices_in_mesh
-    //         for element in self.elements:
-    //             cell_quadrature_size = element.cell.get_quadrature_size(
-    //                 # element.finite_element.construction_integration_order
-    //                 element.finite_element.computation_integration_order
-    //             )
-    //             cell_quadrature_points = element.cell.get_quadrature_points(
-    //                 # element.finite_element.construction_integration_order
-    //                 element.finite_element.computation_integration_order
-    //             )
-    //             for qc in range(cell_quadrature_size):
-    //                 x_q_c = cell_quadrature_points[:, qc]
-    //                 qp_fill = np.zeros((3,), dtype=real)
-    //                 qp_fill[:len(x_q_c)] = x_q_c
-    //                 res_output_file.write("{} {} {} {}\n".format(q_count + 1, qp_fill[0], qp_fill[1], qp_fill[2]))
-    //                 q_count += 1
-    //         res_output_file.write("$EndNodes\n")
-    //         res_output_file.write("$Elements\n")
-    //         n_elems = nnodes + len(self.mesh.faces_vertices_connectivity) + len(self.mesh.cells_vertices_connectivity)
-    //         res_output_file.write("{}\n".format(n_elems))
-    //         elem_count = 1
-    //         for v_count in range(self.mesh.number_of_vertices_in_mesh):
-    //             res_output_file.write("{} 15 2 0 0 {}\n".format(elem_count, elem_count))
-    //             elem_count += 1
-    //         # q_count = self.mesh.number_of_vertices_in_mesh
-    //         for element in self.elements:
-    //             cell_quadrature_size = element.cell.get_quadrature_size(
-    //                 # element.finite_element.construction_integration_order
-    //                 element.finite_element.computation_integration_order
-    //             )
-    //             cell_quadrature_points = element.cell.get_quadrature_points(
-    //                 # element.finite_element.construction_integration_order
-    //                 element.finite_element.computation_integration_order
-    //             )
-    //             for qc in range(cell_quadrature_size):
-    //                 x_q_c = cell_quadrature_points[:, qc]
-    //                 qp_fill = np.zeros((3,), dtype=real)
-    //                 qp_fill[:len(x_q_c)] = x_q_c
-    //                 res_output_file.write("{} 15 2 1 1 {}\n".format(elem_count, elem_count))
-    //                 elem_count += 1
-    //                 # res_output_file.write("{} {} {} {}\n".format(q_count + 1, qp_fill[0], qp_fill[1], qp_fill[2]))
-    //                 # q_count += 1
-    //         for face_connectivity, face_shape in zip(self.mesh.faces_vertices_connectivity, self.mesh.faces_shape_types):
-    //             elem_tag = get_element_tag(face_shape)
-    //             res_output_file.write("{} {} 2 0 0 ".format(elem_count, elem_tag))
-    //             for i_loc, coord in enumerate(face_connectivity):
-    //                 if i_loc != len(face_connectivity) - 1:
-    //                     res_output_file.write("{} ".format(coord + 1))
-    //                 else:
-    //                     res_output_file.write("{}\n".format(coord + 1))
-    //             elem_count += 1
-    //         for cell_connectivity, cell_shape in zip(self.mesh.cells_vertices_connectivity, self.mesh.cells_shape_types):
-    //             elem_tag = get_element_tag(cell_shape)
-    //             res_output_file.write("{} {} 2 0 0 ".format(elem_count, elem_tag))
-    //             for i_loc, coord in enumerate(cell_connectivity):
-    //                 if i_loc != len(cell_connectivity) - 1:
-    //                     res_output_file.write("{} ".format(coord + 1))
-    //                 else:
-    //                     res_output_file.write("{}\n".format(coord + 1))
-    //             elem_count += 1
-    //         res_output_file.write("$EndElements\n")
+        template<Integer... t_coordinates>
+        Natural
+        getNumElements()
+        const
+        requires(sizeof...(t_coordinates) == 1)
+        {
+            auto constexpr coordinates = std::array<Integer, 1>{t_coordinates...};
+            auto num_elements = Natural(0);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                num_elements += this->template getElements<coordinates[0], t_j>().size();
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<coordinates[0]>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return num_elements;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumElements()
+        const
+        requires(sizeof...(t_coordinates) == 0)
+        {
+            auto num_elements = Natural(0);
+            auto activate_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                num_elements += this->template getElements<t_i, t_j>().size();
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+                {
+                    self.template operator()<t_i + 1, 0>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return num_elements;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumElements(
+            std::basic_string_view<Character> domain
+        )
+        const
+        requires(sizeof...(t_coordinates) == 2)
+        {
+            auto num_elements = Natural(0);
+            auto constexpr coordinates = std::array<Integer, 2>{t_coordinates...};
+            for (auto const & element : this->template getElements<coordinates[0], coordinates[1]>())
+            {
+                if (element->isIn(domain))
+                {
+                    num_elements ++;
+                }
+            }
+            return num_elements;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumElements(
+            std::basic_string_view<Character> domain
+        )
+        const
+        requires(sizeof...(t_coordinates) == 1)
+        {
+            auto constexpr coordinates = std::array<Integer, 1>{t_coordinates...};
+            auto num_elements = Natural(0);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<coordinates[0], t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        num_elements ++;
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<coordinates[0]>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return num_elements;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumElements(
+            std::basic_string_view<Character> domain
+        )
+        const
+        requires(sizeof...(t_coordinates) == 0)
+        {
+            auto num_elements = Natural(0);
+            auto activate_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        num_elements ++;
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+                {
+                    self.template operator()<t_i + 1, 0>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return num_elements;
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // Num integration points
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumIntegrationPoints(
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        requires(sizeof...(t_coordinates) == 2)
+        {
+            auto constexpr coordinates = std::array<Integer, 2>{t_coordinates...};
+            auto num_integration_points = Natural(0);
+            for (auto const & element : this->template getElements<coordinates[0], coordinates[1]>())
+            {
+                num_integration_points += element->getNumIntegrationPoints(behavior_label);
+            }
+            return num_integration_points;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumIntegrationPoints(
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        requires(sizeof...(t_coordinates) == 1)
+        {
+            auto constexpr coordinates = std::array<Integer, 1>{t_coordinates...};
+            auto num_integration_points = Natural(0);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<coordinates[0], t_j>())
+                {
+                    num_integration_points += element->getNumIntegrationPoints(behavior_label);
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<coordinates[0]>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return num_integration_points;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumIntegrationPoints(
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        requires(sizeof...(t_coordinates) == 0)
+        {
+            auto num_integration_points = Natural(0);
+            auto activate_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    num_integration_points += element->getNumIntegrationPoints(behavior_label);
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+                {
+                    self.template operator()<t_i + 1, 0>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return num_integration_points;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumIntegrationPoints(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        requires(sizeof...(t_coordinates) == 2)
+        {
+            auto constexpr coordinates = std::array<Integer, 2>{t_coordinates...};
+            auto num_integration_points = Natural(0);
+            for (auto const & element : this->template getElements<coordinates[0], coordinates[1]>())
+            {
+                if (element->isIn(domain))
+                {
+                    num_integration_points += element->getNumIntegrationPoints(behavior_label);
+                }
+            }
+            return num_integration_points;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumIntegrationPoints(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        requires(sizeof...(t_coordinates) == 1)
+        {
+            auto constexpr coordinates = std::array<Integer, 1>{t_coordinates...};
+            auto num_integration_points = Natural(0);
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<coordinates[0], t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        num_integration_points += element->getNumIntegrationPoints(behavior_label);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<coordinates[0]>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return num_integration_points;
+        }
+
+        template<Integer... t_coordinates>
+        Natural
+        getNumIntegrationPoints(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        requires(sizeof...(t_coordinates) == 0)
+        {
+            auto num_integration_points = Natural(0);
+            auto activate_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        num_integration_points += element->getNumIntegrationPoints(behavior_label);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_i, t_j + 1>(self);
+                }
+                else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+                {
+                    self.template operator()<t_i + 1, 0>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+            return num_integration_points;
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        // Output
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        template<Integer t_coordinate, auto... t_args>
+        std::vector<Real>
+        getNodalValues(
+            std::basic_string_view<Character> unknown_label,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto nodal_values = std::vector<Real>(getNumElements<0>(), 0);
+            auto nodal_indices = std::vector<Integer>(getNumElements<0>(), 0);
+            auto set_nodal_values = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<t_coordinate, t_j>())
+                {
+                    if (element->degrees_of_freedom_.contains(std::string(unknown_label)))
+                    {
+                        auto c_element_node = 0;
+                        for (auto const & node : element->template getInnerNeighbors<t_coordinate - 1, 0>())
+                        {
+                            auto point = element->getReferenceCoordinates(c_element_node);
+                            nodal_values[node->getTag()] += element->template getUnknownValue<t_args...>(unknown_label, point, row, col);
+                            nodal_indices[node->getTag()] += 1;
+                            c_element_node ++;
+                        }
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_coordinate>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            };
+            set_nodal_values(set_nodal_values);
+            for (auto const & node : this->template getElements<0, 0>())
+            {
+                if (node->degrees_of_freedom_.contains(std::string(unknown_label)))
+                {
+                    auto point = node->getReferenceCoordinates();
+                    nodal_values[node->getTag()] += node->template getUnknownValue<t_args...>(unknown_label, point, row, col);
+                    nodal_indices[node->getTag()] += 1;
+                }
+                nodal_values[node->getTag()] /= nodal_indices[node->getTag()];
+            }
+            return nodal_values;
+        }
+
+        template<Integer t_coordinate, auto... t_args>
+        std::vector<Real>
+        getQuadratureValues(
+            std::basic_string_view<Character> unknown_label,
+            std::basic_string_view<Character> quadrature_label,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto quadrature_values = std::vector<Real>(getNumIntegrationPoints<t_coordinate>(quadrature_label), 0);
+            auto set_quadrature_values = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto tag = 0;
+                for (auto const & element : this->template getElements<t_coordinate, t_j>())
+                {
+                    if (element->degrees_of_freedom_.contains(std::string(unknown_label)))
+                    {
+                        if (element->quadrature_.contains(std::string(quadrature_label)))
+                        {
+                            for (auto const & integration_point : element->quadrature_.at(std::string(quadrature_label)).ips_)
+                            {
+                                auto const & point = integration_point.getReferenceCoordinates();
+                                quadrature_values[tag] += element->template getUnknownValue<t_args...>(unknown_label, point, row, col);
+                                tag ++;
+                            }
+                        }
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_coordinate>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            };
+            set_quadrature_values(set_quadrature_values);
+            return quadrature_values;
+        }
+
+        // void
+        // setOutput(
+        //     std::basic_string<Character> && file_path,
+        //     auto... behavior_label
+        // )
+        // {
+        //     auto labels = std::array<std::basic_string<Character>, sizeof...(behavior_label)>{behavior_label...};
+        //     auto outfile = std::ofstream();
+        //     outfile.open(std::forward<std::basic_string<Character>>(file_path));
+        //     outfile << "$MeshFormat\n";
+        //     outfile << "2.2 0 8\n";
+        //     outfile << "$EndMeshFormat\n";
+        //     outfile << "$Nodes\n";
+        //     outfile << getNumElements<0>() + numerics::sum(getNumIntegrationPoints<>(behavior_label)...) << "\n";
+        //     auto c_node = Natural(1);
+        //     for (auto const & node : this->template getElements<0, 0>())
+        //     {
+        //         auto const & coordinates = node->getCurrentCoordinates();
+        //         outfile << c_node << " " << coordinates(0) << " " << coordinates(1) << " " << coordinates(2) << "\n";
+        //         c_node ++;
+        //     }
+        //     auto set_integration_nodes = [&] <Integer t_i = 0, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         for (auto const & element : this->template getElements<t_i, t_j>())
+        //         {
+        //             for (auto const & label : labels)
+        //             {
+        //                 if (element->quadrature_.contains(label))
+        //                 {
+        //                     for (auto const & integration_point : element->quadrature_.at(label).ips_)
+        //                     {
+        //                         auto const & coordinates = integration_point.getCurrentCoordinates();
+        //                         outfile << c_node << " " << coordinates(0) << " " << coordinates(1) << " " << coordinates(2) << "\n";
+        //                         c_node ++;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+        //         {
+        //             self.template operator()<t_i + 1, 0>(self);
+        //         }
+        //     };
+        //     set_integration_nodes(set_integration_nodes);
+        //     outfile << "$EndNodes\n";
+        //     outfile << "$Elements\n";
+        //     outfile << getNumElements<>() + numerics::sum(getNumIntegrationPoints<>(behavior_label)...) << "\n";
+        //     auto c_element = Natural(1);
+        //     for (auto const & node : this->template getElements<0, 0>())
+        //     {
+        //         outfile << c_element << " 15 2 0 0 " << c_element << "\n";
+        //         c_element ++;
+        //     }
+        //     auto set_integration_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         for (auto const & element : this->template getElements<t_i, t_j>())
+        //         {
+        //             for (auto const & label : labels)
+        //             {
+        //                 if (element->quadrature_.contains(label))
+        //                 {
+        //                     for (auto const & integration_point : element->quadrature_.at(label).ips_)
+        //                     {
+        //                         outfile << c_element << " 15 2 1 1 " << c_element << "\n";
+        //                         c_element ++;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+        //         {
+        //             self.template operator()<t_i + 1, 0>(self);
+        //         }
+        //     };
+        //     set_integration_elements(set_integration_elements);
+        //     auto set_elements = [&] <Integer t_i = 1, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         for (auto const & element : this->template getElements<t_i, t_j>())
+        //         {
+        //             outfile << c_element << " " << tag << " 2 0 0 " << c_element;
+        //             for (auto const & node : element->template getInnerNeighbors<t_i - 1, 0>())
+        //             {
+        //                 outfile << " " << node->getTag() + 1;
+        //             }
+        //             outfile << "\n";
+        //             c_element ++;
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+        //         {
+        //             self.template operator()<t_i + 1, 0>(self);
+        //         }
+        //     };
+        //     set_elements(set_elements);
+        //     outfile << "$EndElements\n";
+        // }
+
+        // void
+        // addOutput(
+        //     std::basic_string<Character> && file_path,
+        //     Integer time_step_index,
+        //     Real time_step_value,
+        //     auto... behavior_label
+        // )
+        // {
+        //     // if (!std::filesystem::exists(std::forward<std::basic_string<Character>>(file_path)))
+        //     // {
+        //     //     throw std::runtime_error("File does not exist");
+        //     // }
+        //     auto labels = std::array<std::basic_string<Character>, sizeof...(behavior_label)>{behavior_label...};
+        //     auto outfile = std::ofstream();
+        //     auto c_element = Natural();
+        //     outfile.open(std::forward<std::basic_string<Character>>(file_path), std::ios_base::app);
+        //     // writing strain
+        //     outfile << "$NodeData\n";
+        //     outfile << "1\n";
+        //     outfile << "\"" << labels[0] << "Strain\"\n";
+        //     outfile << "1\n";
+        //     outfile << time_step_value << "\n";
+        //     outfile << "3\n";
+        //     outfile << time_step_index << "\n";
+        //     outfile << 4 << "\n"; // size of gradients
+        //     outfile << getNumIntegrationPoints<>(labels[0]) << "\n"; // number of quad pts
+        //     c_element = getNumElements<0>() + 1;
+        //     auto set_strain = [&] <Integer t_i = 0, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         for (auto const & element : this->template getElements<t_i, t_j>())
+        //         {
+        //             if (element->quadrature_.contains(labels[0]))
+        //             {
+        //                 for (auto const & integration_point : element->quadrature_.at(labels[0]).ips_)
+        //                 {
+        //                     outfile << c_element;
+        //                     for (auto val : integration_point.behavior_data_->s1.gradients)
+        //                     {
+        //                         outfile << " " << val;
+        //                     }
+        //                     outfile << "\n";
+        //                     c_element ++;
+        //                 }
+        //             }
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+        //         {
+        //             self.template operator()<t_i + 1, 0>(self);
+        //         }
+        //     };
+        //     set_strain(set_strain);
+        //     outfile << "$EndNodeData\n";
+        //     // writing stress
+        //     outfile << "$NodeData\n";
+        //     outfile << "1\n";
+        //     outfile << "\"" << labels[0] << "Stress\"";
+        //     outfile << "1\n";
+        //     outfile << time_step_value << "\n";
+        //     outfile << "3\n";
+        //     outfile << time_step_index << "\n";
+        //     outfile << 4 << "\n"; // size of gradients
+        //     outfile << getNumIntegrationPoints<>(labels[0]) << "\n"; // number of quad pts
+        //     c_element = getNumElements<0>() + 1;
+        //     auto set_stress = [&] <Integer t_i = 0, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         for (auto const & element : this->template getElements<t_i, t_j>())
+        //         {
+        //             if (element->quadrature_.contains(labels[0]))
+        //             {
+        //                 for (auto const & integration_point : element->quadrature_.at(labels[0]).ips_)
+        //                 {
+        //                     outfile << c_element;
+        //                     for (auto val : integration_point.behavior_data_->s1.thermodynamic_forces)
+        //                     {
+        //                         outfile << " " << val;
+        //                     }
+        //                     outfile << "\n";
+        //                     c_element ++;
+        //                 }
+        //             }
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+        //         {
+        //             self.template operator()<t_i + 1, 0>(self);
+        //         }
+        //     };
+        //     set_stress(set_stress);
+        //     outfile << "$EndNodeData\n";
+        // }
 
     };
     

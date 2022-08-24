@@ -1280,6 +1280,62 @@ namespace lolita
         {
             degrees_of_freedom_.at(std::string(binding_label)).template addCoefficients<t_field, t_basis>(system->getBindingCorrection(binding_label));
         }
+
+        template<Field t_field, Basis t_basis>
+        Real
+        getUnknownValue(
+            std::basic_string_view<Character> binding_label,
+            Point const & point,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto coefficients = degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<t_field, t_basis>(row, col);
+            auto basis_vector = this->getBasisEvaluation<t_basis>(point);
+            return coefficients.dot(basis_vector);
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        Real
+        getUnknownValue(
+            std::basic_string_view<Character> binding_label,
+            Point const & point,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknownValue<t_finite_element_method>(binding_label, point, row, col);
+        }
+
+        template<Field t_field, Basis t_basis>
+        Real
+        getBindingValue(
+            std::basic_string_view<Character> binding_label,
+            Point const & point,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto coefficients = degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<t_field, t_basis>(row, col);
+            auto basis_vector = this->getBasisEvaluation<t_basis>(point);
+            return coefficients.dot(basis_vector);
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        Real
+        getBindingValue(
+            std::basic_string_view<Character> binding_label,
+            Point const & point,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getBindingValue<t_finite_element_method>(binding_label, point, row, col);
+        }
         
         std::map<std::basic_string<Character>, DegreeOfFreedom> degrees_of_freedom_;
 
@@ -1435,6 +1491,26 @@ namespace lolita
                     };
                     set_mapping_block(set_mapping_block);
                     return jac;
+                }
+    
+                Point &
+                getCurrentCoordinates()
+                {
+                    return coordinates_;
+                }
+                
+                Point const &
+                getCurrentCoordinates()
+                const
+                {
+                    return coordinates_;
+                }
+                
+                algebra::View<Point const>
+                getReferenceCoordinates()
+                const
+                {
+                    return reference_coordinates_;
                 }
 
                 algebra::View<Point const> reference_coordinates_;
@@ -1649,6 +1725,27 @@ namespace lolita
             parameters_[parameter_label] = std::forward<std::function<Real(Point const &)>>(function)(* coordinates_);
         }
 
+        Integer
+        getNumIntegrationPoints(
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        {
+            return quadrature_.contains(std::string(behavior_label)) ? quadrature_.at(std::string(behavior_label)).ips_.size() : 0;
+        }
+
+        Integer
+        getNumIntegrationPoints()
+        const
+        {
+            auto num_integration_points = 0;
+            for (auto const & quadrature : quadrature_)
+            {
+                num_integration_points += quadrature.second.ips_.size();
+            }
+            return num_integration_points;
+        }
+
         std::map<std::basic_string<Character>, QuadratureElement> quadrature_;
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1671,6 +1768,13 @@ namespace lolita
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
         // NEW
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        Natural const &
+        getTag()
+        const
+        {
+            return tag_;
+        }
         
         t_OuterNeighbors outer_neighbors_;
         
