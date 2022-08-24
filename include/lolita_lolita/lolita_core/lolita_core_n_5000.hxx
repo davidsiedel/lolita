@@ -1115,7 +1115,31 @@ namespace lolita
         const
         {
             auto nodal_values = std::vector<Real>(getNumElements<0>(), 0);
-            auto nodal_indices = std::vector<Integer>(getNumElements<0>(), 0);
+            // //
+            // for (auto const & node : this->template getElements<0, 0>())
+            // {
+            //     auto nodal_value = 0.0;
+            //     auto set_nodal_values = [&] <Integer t_j = 0> (
+            //         auto & self
+            //     )
+            //     mutable
+            //     {
+            //         auto c_element_node = 0;
+            //         for (auto const & outer_neighbor : node->template getInnerNeighbors<t_coordinate - 1, t_j>())
+            //         {
+            //             auto point = outer_neighbor->getReferenceCoordinates().col(c_element_node);
+            //             outer_neighbor.template getUnknownValue<t_args...>(unknown_label, point, row, col);
+            //         }
+            //     };
+            //     // if (node->degrees_of_freedom_.contains(std::string(unknown_label)))
+            //     // {
+            //     //     auto point = node->getReferenceCoordinates();
+            //     //     nodal_values[node->getTag()] += node->template getUnknownValue<t_args...>(unknown_label, point, row, col);
+            //     //     nodal_indices[node->getTag()] += 1;
+            //     // }
+            // }
+            // //
+            // auto nodal_indices = std::vector<Integer>(getNumElements<0>(), 0);
             auto set_nodal_values = [&] <Integer t_j = 0> (
                 auto & self
             )
@@ -1130,7 +1154,7 @@ namespace lolita
                         {
                             auto point = element->getReferenceCoordinates(c_element_node);
                             nodal_values[node->getTag()] += element->template getUnknownValue<t_args...>(unknown_label, point, row, col);
-                            nodal_indices[node->getTag()] += 1;
+                            // nodal_indices[node->getTag()] += 1;
                             c_element_node ++;
                         }
                     }
@@ -1141,16 +1165,40 @@ namespace lolita
                 }
             };
             set_nodal_values(set_nodal_values);
+            // for (auto const & node : this->template getElements<0, 0>())
+            // {
+            //     if (node->degrees_of_freedom_.contains(std::string(unknown_label)))
+            //     {
+            //         auto point = node->getReferenceCoordinates();
+            //         nodal_values[node->getTag()] += node->template getUnknownValue<t_args...>(unknown_label, point, row, col);
+            //         // nodal_indices[node->getTag()] += 1;
+            //     }
+            // }
+            auto c_nds = 0;
             for (auto const & node : this->template getElements<0, 0>())
             {
-                if (node->degrees_of_freedom_.contains(std::string(unknown_label)))
+                // nodal_values[c_nds] *= (1.0 / node->template getInnerNeighbors<t_coordinate - 1, t_j>().size());
+                auto sum = 0.0;
+                auto set_nodal_values2 = [&] <Integer t_j = 0> (
+                    auto & self
+                )
+                mutable
                 {
-                    auto point = node->getReferenceCoordinates();
-                    nodal_values[node->getTag()] += node->template getUnknownValue<t_args...>(unknown_label, point, row, col);
-                    nodal_indices[node->getTag()] += 1;
-                }
-                nodal_values[node->getTag()] /= nodal_indices[node->getTag()];
+                    sum += node->template getOuterNeighbors<t_coordinate - 1, t_j>().size();
+                    if constexpr (t_j < ElementTraits<Element::node(), t_domain>::template getNumOuterNeighbors<t_coordinate - 1>() - 1)
+                    {
+                        self.template operator()<t_j + 1>(self);
+                    }
+                };
+                set_nodal_values2(set_nodal_values2);
+                nodal_values[c_nds] *= (1.0 / sum);
+                c_nds ++;
             }
+            // for (auto & val : nodal_values)
+            // {
+            //     val /= Real(nodal_indices[c_nds]);
+            //     c_nds ++;
+            // }
             return nodal_values;
         }
 

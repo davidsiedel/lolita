@@ -147,6 +147,41 @@ namespace lolita
     template<typename t_T, auto... t_args>
     using Matrix = algebra::Matrix<t_T, t_args...>;
 
+    auto static const print_format = Eigen::IOFormat(3, 0, ", ", "\n", "[", "]");
+
+    static inline
+    void
+    prettyPrint(
+        auto const & mat
+    )
+    {
+        for (auto i = 0; i < mat.rows(); i++)
+        {
+            std::cout << "[ ";
+            for (auto j = 0; j < mat.cols(); j++)
+            {
+                if (mat(i, j) < 0.0)
+                {
+                    std::cout << std::fixed << std::setprecision(3) << mat(i, j) << ", ";
+                }
+                else
+                {
+                    std::cout << "+" << std::fixed << std::setprecision(3) << mat(i, j) << ", ";
+                }
+                
+                // if (-1.e-10 <= mat(i, j) <= 1.e-10)
+                // {
+                //     std::cout << 0 << ", ";
+                // }
+                // else
+                // {
+                //     std::cout << std::fixed << std::setprecision(3) << mat(i, j) << ", ";
+                // }
+            }
+            std::cout << "]\n";
+        }
+    }
+
 } // namespace lolita
 
 #endif /* C09B9C41_77CB_4EB9_8DD3_CEAA51EBDEB7 */

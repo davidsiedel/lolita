@@ -981,14 +981,31 @@ namespace lolita
                 using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
                 auto jacobian = Matrix<Real, strain_operator_num_cols, strain_operator_num_cols>();
                 jacobian.setZero();
+                auto ipcount = 0;
                 for (auto & ip : this->quadrature_.at(std::string(behavior_label)).ips_)
                 {
                     auto strain_operator_view = StrainOperatorView(ip.ops_.at(std::string(degree_of_freedom_label)).data());
                     auto jacob = ip.template getJacobian<t_finite_element_method>();
+                    std::cout << "B " << ipcount << " :" <<"\n";
+                    std::cout << strain_operator_view.format(print_format) << "\n";
+                    std::cout << "jacob " << ipcount << " :" <<"\n";
+                    std::cout << jacob.format(print_format) << "\n";
                     // auto jacob = Matrix<Real, strain_operator_num_rows, strain_operator_num_rows>();
                     jacobian += ip.weight_ * strain_operator_view.transpose() * jacob * strain_operator_view;
                 }
+                std::cout << "**********************" <<"\n";
+                std::cout << "K before stab :" <<"\n";
+                std::cout << jacobian.format(print_format) << "\n";
                 jacobian += this->parameters_.at("Stabilization") * this->operators_.at("Stabilization");
+                std::cout << "**********************" <<"\n";
+                std::cout << "stab :" <<"\n";
+                std::cout << this->operators_.at("Stabilization").format(print_format) << "\n";
+                std::cout << "**********************" <<"\n";
+                std::cout << "stab param :" <<"\n";
+                std::cout << this->parameters_.at("Stabilization") << "\n";
+                std::cout << "**********************" <<"\n";
+                std::cout << "K after stab :" <<"\n";
+                std::cout << jacobian.format(print_format) << "\n";
                 return jacobian;
             }
 
@@ -1105,40 +1122,57 @@ namespace lolita
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, quadrature>::getSize(); i++)
                 {
                     auto point = this->template getCurrentQuadraturePoint<quadrature>(i);
+                    auto point_ref = this->template getReferenceQuadraturePoint<quadrature>(i);
                     auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
-                    auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point);
+                    auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point_ref);
                     binding_external_forces_vector += weight * lagrange_parameter * constraint.getImposedValue(point, 0.0) * basis_vector;
                     binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector.dot(basis_vector) * basis_vector;
                     unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
                     matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
                 }
-                auto binding_residual_vector = binding_external_forces_vector - binding_internal_forces_vector;
+                auto binding_residual_vector = binding_internal_forces_vector - binding_external_forces_vector;
                 auto eval = binding_external_forces_vector.cwiseAbs().maxCoeff();
                 if (eval > system->getNormalization())
                 {
                     system->setNormalization(eval);
                 }
                 auto binding_offset = system->getBindingOffset(binding_label) + face_binding.getTag();
-                auto i_binding_row_l = 0;
-                for (auto i_binding_row_g = binding_offset; i_binding_row_g < binding_offset + getFaceBasisSize<t_element>(); i_binding_row_g++)
-                {
-                    system->addRhsValue(i_binding_row_g, binding_residual_vector(i_binding_row_l));
-                    auto i_binding_col_l = 0;
-                    for (auto i_binding_col_g = binding_offset; i_binding_col_g < binding_offset + getFaceBasisSize<t_element>(); i_binding_col_g++)
-                    {
-                        system->addLhsValue(i_binding_row_g, i_binding_col_g, matrix(i_binding_row_l, i_binding_col_l));
-                        system->addLhsValue(i_binding_col_g, i_binding_row_g, matrix(i_binding_row_l, i_binding_col_l));
-                        i_binding_col_l ++;
-                    }
-                    i_binding_row_l ++;
-                }
                 auto unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
-                auto i_unknown_row_l = 0;
-                for (auto i_unknown_row_g = unknown_offset; i_unknown_row_g < unknown_offset + getFaceBasisSize<t_element>(); i_unknown_row_g++)
+                auto i_binding_row_l = 0;
+                for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
                 {
-                    system->addRhsValue(i_unknown_row_g, unknown_internal_forces_vector(i_unknown_row_l));
-                    i_unknown_row_l ++;
+                    system->addRhsValue(iii + binding_offset, binding_residual_vector(iii));
+                    system->addRhsValue(iii + unknown_offset, unknown_internal_forces_vector(iii));
+                    for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
+                    {
+                        system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));
+                        system->addLhsValue(jjj + unknown_offset, iii + binding_offset, matrix(iii, jjj));
+                    }
                 }
+                // for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
+                // {
+                // }
+                // std::cout << "binding_offset :";
+                // std::cout << binding_offset;
+                // auto i_binding_row_l = 0;
+                // for (auto i_binding_row_g = binding_offset; i_binding_row_g < binding_offset + getFaceBasisSize<t_element>(); i_binding_row_g++)
+                // {
+                //     system->addRhsValue(i_binding_row_g, binding_residual_vector(i_binding_row_l));
+                //     auto i_binding_col_l = 0;
+                //     for (auto i_binding_col_g = binding_offset; i_binding_col_g < binding_offset + getFaceBasisSize<t_element>(); i_binding_col_g++)
+                //     {
+                //         system->addLhsValue(i_binding_row_g, i_binding_col_g, matrix(i_binding_row_l, i_binding_col_l));
+                //         system->addLhsValue(i_binding_col_g, i_binding_row_g, matrix(i_binding_row_l, i_binding_col_l));
+                //         i_binding_col_l ++;
+                //     }
+                //     i_binding_row_l ++;
+                // }
+                // auto i_unknown_row_l = 0;
+                // for (auto i_unknown_row_g = unknown_offset; i_unknown_row_g < unknown_offset + getFaceBasisSize<t_element>(); i_unknown_row_g++)
+                // {
+                //     system->addRhsValue(i_unknown_row_g, unknown_internal_forces_vector(i_unknown_row_l));
+                //     i_unknown_row_l ++;
+                // }
             }
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
@@ -1177,6 +1211,8 @@ namespace lolita
                     }
                 };
                 set_faces_unknowns(set_faces_unknowns);
+                std::cout << "faces_correction : " << "\n";
+                std::cout << faces_correction << "\n";
                 auto k_tt_inv = algebra::View<Matrix<Real, num_cell_unknowns, num_cell_unknowns> const>(this->operators_["KTT"].data());
                 auto k_tf = algebra::View<Matrix<Real, num_cell_unknowns, num_face_unknowns> const>(this->operators_["KTF"].data());
                 auto r_t = algebra::View<Vector<Real, num_cell_unknowns> const>(this->operators_["RT"].data());

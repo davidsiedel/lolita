@@ -695,7 +695,7 @@ namespace lolita
             for (auto const & node : element_set->template getElements<0, 0>())
             {
                 auto const & coordinates = node->getCurrentCoordinates();
-                outfile << c_node << " " << coordinates(0) << " " << coordinates(1) << " " << coordinates(2) << "\n";
+                outfile << node->getTag() << " " << coordinates(0) << " " << coordinates(1) << " " << coordinates(2) << "\n";
                 c_node ++;
             }
             auto set_integration_nodes = [&] <Integer t_i = 0, Integer t_j = 0> (
@@ -793,113 +793,6 @@ namespace lolita
             set_elements(set_elements);
             outfile << "$EndElements\n";
         }
-
-        // template<Domain t_domain>
-        // static
-        // void
-        // addOutput(
-        //     std::basic_string<Character> const & file_path,
-        //     std::unique_ptr<FiniteElementSet<t_domain>> const & element_set,
-        //     Integer time_step_index,
-        //     Real time_step_value,
-        //     auto... behavior_label
-        // )
-        // {
-        //     if (!std::filesystem::exists(file_path))
-        //     {
-        //         throw std::runtime_error("File does not exist");
-        //     }
-        //     auto labels = std::array<std::basic_string<Character>, sizeof...(behavior_label)>{behavior_label...};
-        //     auto outfile = std::ofstream();
-        //     auto c_element = Natural();
-        //     outfile.open(file_path, std::ios_base::app);
-        //     // writing strain
-        //     outfile << "$NodeData\n";
-        //     outfile << "1\n";
-        //     outfile << "\"" << labels[0] << "Strain\"\n";
-        //     outfile << "1\n";
-        //     outfile << time_step_value << "\n";
-        //     outfile << "3\n";
-        //     outfile << time_step_index << "\n";
-        //     outfile << 4 << "\n"; // size of gradients
-        //     outfile << element_set->template getNumIntegrationPoints<>(labels[0]) << "\n"; // number of quad pts
-        //     c_element = element_set->template getNumElements<0>() + 1;
-        //     auto set_strain = [&] <Integer t_i = 0, Integer t_j = 0> (
-        //         auto & self
-        //     )
-        //     mutable
-        //     {
-        //         for (auto const & element : element_set->template getElements<t_i, t_j>())
-        //         {
-        //             if (element->quadrature_.contains(labels[0]))
-        //             {
-        //                 for (auto const & integration_point : element->quadrature_.at(labels[0]).ips_)
-        //                 {
-        //                     outfile << c_element;
-        //                     for (auto val : integration_point.behavior_data_->s1.gradients)
-        //                     {
-        //                         outfile << " " << val;
-        //                     }
-        //                     outfile << "\n";
-        //                     c_element ++;
-        //                 }
-        //             }
-        //         }
-        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-        //         {
-        //             self.template operator()<t_i, t_j + 1>(self);
-        //         }
-        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
-        //         {
-        //             self.template operator()<t_i + 1, 0>(self);
-        //         }
-        //     };
-        //     set_strain(set_strain);
-        //     outfile << "$EndNodeData\n";
-        //     // writing stress
-        //     outfile << "$NodeData\n";
-        //     outfile << "1\n";
-        //     outfile << "\"" << labels[0] << "Stress\"";
-        //     outfile << "1\n";
-        //     outfile << time_step_value << "\n";
-        //     outfile << "3\n";
-        //     outfile << time_step_index << "\n";
-        //     outfile << 4 << "\n"; // size of gradients
-        //     outfile << element_set->template getNumIntegrationPoints<>(labels[0]) << "\n"; // number of quad pts
-        //     c_element = element_set->template getNumElements<0>() + 1;
-        //     auto set_stress = [&] <Integer t_i = 0, Integer t_j = 0> (
-        //         auto & self
-        //     )
-        //     mutable
-        //     {
-        //         for (auto const & element : element_set->template getElements<t_i, t_j>())
-        //         {
-        //             if (element->quadrature_.contains(labels[0]))
-        //             {
-        //                 for (auto const & integration_point : element->quadrature_.at(labels[0]).ips_)
-        //                 {
-        //                     outfile << c_element;
-        //                     for (auto val : integration_point.behavior_data_->s1.thermodynamic_forces)
-        //                     {
-        //                         outfile << " " << val;
-        //                     }
-        //                     outfile << "\n";
-        //                     c_element ++;
-        //                 }
-        //             }
-        //         }
-        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-        //         {
-        //             self.template operator()<t_i, t_j + 1>(self);
-        //         }
-        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
-        //         {
-        //             self.template operator()<t_i + 1, 0>(self);
-        //         }
-        //     };
-        //     set_stress(set_stress);
-        //     outfile << "$EndNodeData\n";
-        // }
 
         template<Integer t_coordinate, Domain t_domain>
         static

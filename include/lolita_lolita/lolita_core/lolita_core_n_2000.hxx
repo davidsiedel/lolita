@@ -277,10 +277,15 @@ namespace lolita
             auto solver = Eigen::SparseLU<Eigen::SparseMatrix<Real>>();
             auto lhs = Eigen::SparseMatrix<Real>(getSize(), getSize());
             lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
-            // std::cout << lhs << "\n";
+            std::cout << "lhs : " << "\n";
+            std::cout << Matrix<Real>(lhs).format(print_format) << "\n";
+            std::cout << "rhs : " << "\n";
+            std::cout << rhs_values_ << "\n";
             solver.analyzePattern(lhs);
             solver.factorize(lhs);
             correction_values_ = solver.solve(- rhs_values_);
+            std::cout << "correction : " << "\n";
+            std::cout << correction_values_ << "\n";
             lhs_values_ = std::vector<MatrixEntry>();
             rhs_values_ = Vector<Real>::Zero(getSize());
             // rhs_values_.setZero();

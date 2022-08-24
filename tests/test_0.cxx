@@ -3,9 +3,10 @@
 
 TEST(t0, t0)
 {
+    std::cout << std::fixed << std::setprecision(3);
     // declaring behavior
-    auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_micromorphic_displacement/src/libBehaviour.so";
-    auto lib_name = "MicromorphicDamageI_SpectralSplit";
+    auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/bhv_elasticity/src/libBehaviour.so";
+    auto lib_name = "Elasticity";
     auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
         mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
         mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
@@ -30,52 +31,58 @@ TEST(t0, t0)
     // finite elements
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     // mesh    
-    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
+    // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle.msh";
+    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle004.msh";
+    // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // dofs
     auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
     auto cell_displacement = elements->setDegreeOfFreedom<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
-    auto top_force_y = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForceY");
-    auto bottom_force_x = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceX");
-    auto bottom_force_y = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceY");
+    //
+    auto top_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
+    auto left_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
+    auto bottom_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
     // auto cell_rhs = lolita::Vector<lolita::Real>(cell_displacement->getCoefficients().size());
     // systems
     auto displacement_system = lolita::System::make();
     displacement_system->setUnknown("Displacement", face_displacement->size());
-    displacement_system->setBinding("TopForceY", top_force_y->size());
-    displacement_system->setBinding("BottomForceX", bottom_force_x->size());
-    displacement_system->setBinding("BottomForceY", bottom_force_y->size());
+    displacement_system->setBinding("TopForce", top_force->size());
+    displacement_system->setBinding("LeftForce", left_force->size());
+    displacement_system->setBinding("BottomForce", bottom_force->size());
     displacement_system->initialize();
     std::cout << "displacement_system u size : " << displacement_system->getUnknownsSize() << std::endl;
     std::cout << "displacement_system b size : " << displacement_system->getBindingsSize() << std::endl;
     // load
     auto load0 = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return 1.0; }, 1, 0);
-    auto load1 = elements->setConstraint<faces>("BOTTOM", "ClampedX", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 0);
-    auto load2 = elements->setConstraint<faces>("BOTTOM", "ClampedY", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 1, 0);
+    auto load1 = elements->setConstraint<faces>("LEFT", "Fixed", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 0);
+    auto load2 = elements->setConstraint<faces>("BOTTOM", "Fixed", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 1, 0);
     // adding behavior
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
     //making operators
-    elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Displacement");
+    elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");
     //
-    elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit", "YoungModulus", [](lolita::Point const & p) { return 1.0; });
-    elements->setMaterialProperty<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit", "PoissonRatio", [](lolita::Point const & p) { return 0.0; });
-    elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Temperature", [](lolita::Point const & p) { return 293.15; });
-    elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Damage", [](lolita::Point const & p) { return 0.0; });
+    // elements->setMaterialProperty<cells>("SQUARE", "Elasticity", "YoungModulus", [](lolita::Point const & p) { return 1.0; });
+    // elements->setMaterialProperty<cells>("SQUARE", "Elasticity", "PoissonRatio", [](lolita::Point const & p) { return 0.0; });
+    elements->setExternalVariable<cells>("SQUARE", "Elasticity", "Temperature", [](lolita::Point const & p) { return 293.15; });
+    // elements->setExternalVariable<cells>("SQUARE", "Elasticity", "Damage", [](lolita::Point const & p) { return 0.0; });
     elements->setParameter<faces>("TOP", "Lagrange", [](lolita::Point const & p) { return 1.0; });
+    elements->setParameter<faces>("LEFT", "Lagrange", [](lolita::Point const & p) { return 1.0; });
     elements->setParameter<faces>("BOTTOM", "Lagrange", [](lolita::Point const & p) { return 1.0; });
+    // stab
     elements->setParameter<cells>("SQUARE", "Stabilization", [](lolita::Point const & p) { return 1.0; });
     //
     elements->setElementOperators<cells, displacement_element, hdg>("SQUARE", "Stabilization");
     //
-    elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Displacement");
+    elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");
     //
-    elements->integrate<cells>("SQUARE", "MicromorphicDamageI_SpectralSplit");
+    elements->integrate<cells>("SQUARE", "Elasticity");
     //
-    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "MicromorphicDamageI_SpectralSplit", "Displacement", displacement_system);
-    elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForceY", "Displacement", "Pull", displacement_system);
-    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForceX", "Displacement", "ClampedX", displacement_system);
-    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForceY", "Displacement", "ClampedY", displacement_system);
+    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
+    //
+    elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system);
+    elements->assembleBindingBlock<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "Fixed", displacement_system);
+    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "Fixed", displacement_system);
     // std::cout << displacement_system->rhs_values_ << "\n";
     displacement_system->setCorrection();
     // std::cout << "corr \n";
@@ -85,17 +92,19 @@ TEST(t0, t0)
     std::cout << "normalization : " << displacement_system->getNormalization() << "\n";
     elements->updateUnknown<cells, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
     elements->updateUnknown<faces, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
-    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForceY", displacement_system);
-    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceX", displacement_system);
-    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForceY", displacement_system);
+    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce", displacement_system);
+    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce", displacement_system);
+    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce", displacement_system);
     //
-    // elements->setOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", "MicromorphicDamageI_SpectralSplit");
-    // elements->addOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", 0, 0.0, "MicromorphicDamageI_SpectralSplit");
+    // elements->setOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", "Elasticity");
+    // elements->addOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", 0, 0.0, "Elasticity");
     auto out_file = "/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh";
-    lolita::GmshFileParser::setOutput<domain>(out_file, elements, "MicromorphicDamageI_SpectralSplit");
-    lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, 0, 0.0, "MicromorphicDamageI_SpectralSplit", 0);
+    lolita::GmshFileParser::setOutput<domain>(out_file, elements, "Elasticity");
+    lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, 0, 0.0, "Elasticity", 0);
     lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 0, 0);
-    lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", "MicromorphicDamageI_SpectralSplit", 0, 0);
+    lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 1, 0);
+    lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", "Elasticity", 0, 0);
+    lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", "Elasticity", 1, 0);
 
     // std::cout << * elements << "\n";
 
