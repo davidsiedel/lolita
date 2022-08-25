@@ -274,20 +274,31 @@ namespace lolita
         void
         setCorrection()
         {
-            auto solver = Eigen::SparseLU<Eigen::SparseMatrix<Real>>();
+            // auto solver = Eigen::SparseLU<Eigen::SparseMatrix<Real>>();
+            auto solver = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>();
             auto lhs = Eigen::SparseMatrix<Real>(getSize(), getSize());
             lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
-            std::cout << "lhs : " << "\n";
-            std::cout << Matrix<Real>(lhs).format(print_format) << "\n";
-            std::cout << "rhs : " << "\n";
-            std::cout << rhs_values_ << "\n";
+            // std::cout << "lhs : " << "\n";
+            // std::cout << Matrix<Real>(lhs).format(print_format) << "\n";
+            // std::cout << "rhs : " << "\n";
+            // std::cout << rhs_values_ << "\n";
             solver.analyzePattern(lhs);
             solver.factorize(lhs);
-            correction_values_ = solver.solve(- rhs_values_);
-            std::cout << "correction : " << "\n";
-            std::cout << correction_values_ << "\n";
-            lhs_values_ = std::vector<MatrixEntry>();
-            rhs_values_ = Vector<Real>::Zero(getSize());
+            if (solver.info() != Eigen::Success)
+            {
+                std::cerr << "ERROR: Could not factorize the matrix" << std::endl;
+            }
+            // x = solver.solve(b);
+            auto RHS = Vector<Real>(- rhs_values_);
+            correction_values_ = solver.solve(RHS);
+            if (solver.info() != Eigen::Success)
+            {
+                std::cerr << "ERROR: Could not solve the linear system" << std::endl;
+            }
+            // std::cout << "correction : " << "\n";
+            // std::cout << correction_values_ << "\n";
+            // lhs_values_ = std::vector<MatrixEntry>();
+            // rhs_values_ = Vector<Real>::Zero(getSize());
             // rhs_values_.setZero();
             // for(auto i = 0; i < getSize(); i++)
             // {
@@ -338,7 +349,10 @@ namespace lolita
             Real value
         )
         {
-            normalization_ = value;
+            if (value > normalization_)
+            {
+                normalization_ = value;
+            }            
         }
 
         Real normalization_;

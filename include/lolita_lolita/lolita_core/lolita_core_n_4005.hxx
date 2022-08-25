@@ -83,22 +83,21 @@ namespace lolita
         std::basic_string<Character>
         getHash()
         const
-        requires(t_element.isNode())
         {
-            return std::to_string(this->tag_);
+            auto hash = std::basic_stringstream<Character>();
+            for (auto const & node : getInnerNeighbors<t_element.getDim() - 1, 0>())
+            {
+                hash << node->getHash();
+            }
+            return hash.str();
         }
         
         std::basic_string<Character>
         getHash()
         const
+        requires(t_element.isNode())
         {
-            std::basic_stringstream<Character> hash;
-            auto const & nodes = getInnerNeighbors<t_element.dim_ - 1, 0>();
-            for (auto const & node : nodes)
-            {
-                hash << node->getHash();
-            }
-            return hash.str();
+            return std::to_string(this->tag_);
         }
         
         template<Integer t_i, Integer t_j>
@@ -171,13 +170,14 @@ namespace lolita
         const
         requires(!t_element.isNode())
         {
-            auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
             auto const & inner_neighbors = getInnerNeighbors<t_i, t_j>();
-            auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_inner_neighbor, t_domain>> const & neighbor)
-            {
-                return * neighbor == * ptr_neighbor;
-            };
-            auto neighbor_index = std::distance(inner_neighbors.begin(), std::find_if(inner_neighbors.begin(), inner_neighbors.end(), is_equal));
+            // auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
+            // auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_inner_neighbor, t_domain>> const & neighbor)
+            // {
+            //     return * neighbor == * ptr_neighbor;
+            // };
+            // auto neighbor_index = std::distance(inner_neighbors.begin(), std::find_if(inner_neighbors.begin(), inner_neighbors.end(), is_equal));
+            auto neighbor_index = std::distance(inner_neighbors.begin(), std::find(inner_neighbors.begin(), inner_neighbors.end(), ptr_neighbor));
             return getInnerNeighborIndex<t_i, t_j>(neighbor_index);
         }
         
@@ -269,8 +269,8 @@ namespace lolita
         requires(!t_element.isNode())
         {
             auto current_nodes_coordinates = Matrix<Real, 3, t_element.getNumNodes()>();
-            auto count = Integer(0);
-            for (auto const & node : this->template getInnerNeighbors<t_element.dim_ - 1, 0>())
+            auto count = 0;
+            for (auto const & node : this->template getInnerNeighbors<t_element.getDim() - 1, 0>())
             {
                 current_nodes_coordinates.col(count) = node->getCurrentCoordinates();
                 count ++;
@@ -452,37 +452,75 @@ namespace lolita
         Point
         getLocalFrameDiameters()
         const
+        requires(t_element.isSub(t_domain, 0))
         {
-            if constexpr (t_element.isSub(t_domain, 0))
+            return getCurrentDiameters();
+        }
+        
+        Point
+        getLocalFrameDiameters()
+        const
+        requires(t_element.isSub(t_domain, 1))
+        {
+            auto rotation_matrix = getRotationMatrix(getReferenceCentroid());
+            auto coordinates = getCurrentCoordinates();
+            auto projected_coordinates = rotation_matrix * coordinates;
+            auto current_diameters = Point();
+            current_diameters.setZero();
+            for (auto i = 0; i < t_element.getNumNodes(); ++i)
             {
-                return getCurrentDiameters();
-            }
-            else if constexpr (t_element.isSub(t_domain, 1))
-            {
-                auto rot = getRotationMatrix(getReferenceCentroid());
-                auto proj_v = rot * this->getCurrentCoordinates();
-                auto current_diameters = Point();
-                current_diameters.setZero();
-                for (auto i = 0; i < t_element.getNumNodes(); ++i)
+                for (auto j = i + 1; j < t_element.getNumNodes(); ++j)
                 {
-                    for (auto j = i + 1; j < t_element.getNumNodes(); ++j)
+                    // auto pt0 = projected_coordinates.col(i);
+                    // auto pt1 = projected_coordinates.col(j);
+                    for (auto k = 0; k < t_element.getDim(); ++k)
                     {
-                        auto pt0 = proj_v.col(i);
-                        auto pt1 = proj_v.col(j);
-                        for (auto k = 0; k < 3; ++k)
+                        // auto new_value = (pt1 - pt0)(k);
+                        auto new_value = projected_coordinates(k, j) - projected_coordinates(k, i);
+                        auto & current_value = current_diameters(k);
+                        if (new_value > current_value)
                         {
-                            auto new_value = (pt1 - pt0)(k);
-                            auto & current_value = current_diameters(k);
-                            if (new_value > current_value)
-                            {
-                                current_value = new_value;
-                            }
+                            current_value = new_value;
                         }
                     }
                 }
-                return current_diameters;
             }
+            return current_diameters;
         }
+        
+        // Point
+        // getLocalFrameDiameters()
+        // const
+        // {
+        //     if constexpr (t_element.isSub(t_domain, 0))
+        //     {
+        //         return getCurrentDiameters();
+        //     }
+        //     else if constexpr (t_element.isSub(t_domain, 1))
+        //     {
+        //         auto proj_v = getRotationMatrix(getReferenceCentroid()) * getCurrentCoordinates();
+        //         auto current_diameters = Point();
+        //         current_diameters.setZero();
+        //         for (auto i = 0; i < t_element.getNumNodes(); ++i)
+        //         {
+        //             for (auto j = i + 1; j < t_element.getNumNodes(); ++j)
+        //             {
+        //                 auto pt0 = proj_v.col(i);
+        //                 auto pt1 = proj_v.col(j);
+        //                 for (auto k = 0; k < t_element.getDim(); ++k)
+        //                 {
+        //                     auto new_value = (pt1 - pt0)(k);
+        //                     auto & current_value = current_diameters(k);
+        //                     if (new_value > current_value)
+        //                     {
+        //                         current_value = new_value;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         return current_diameters;
+        //     }
+        // }
         
         Point
         getCurrentDiameters()
@@ -599,41 +637,60 @@ namespace lolita
             Point const & point
         )
         const
-        requires(t_element.isSub(t_domain, 1))
+        requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(3))
         {
-            if constexpr (t_domain.hasDim(3))
-            {
-                auto e_0 = getNormalVector(point);
-                auto e_1 = (getCurrentCoordinates(0) - getCurrentCentroid()) / (getCurrentCoordinates(0) - getCurrentCentroid()).norm();
-                auto e_2 = e_0.cross(e_1);
-                auto rotation_matrix = Matrix<Real, 3, 3>();
-                rotation_matrix.setZero();
-                rotation_matrix(0, 0) = + e_0(0);
-                rotation_matrix(0, 1) = + e_0(1);
-                rotation_matrix(0, 2) = + e_0(2);
-                rotation_matrix(1, 0) = + e_1(0);
-                rotation_matrix(1, 1) = + e_1(1);
-                rotation_matrix(1, 2) = + e_1(2);
-                rotation_matrix(2, 0) = + e_2(0);
-                rotation_matrix(2, 1) = + e_2(1);
-                rotation_matrix(2, 2) = + e_2(2);
-                return rotation_matrix;
-            }
-            else if constexpr (t_domain.hasDim(2))
-            {
-                auto e_0 = getNormalVector(point);
-                auto rotation_matrix = Matrix<Real, 3, 3>();
-                rotation_matrix.setZero();
-                rotation_matrix(0, 0) = - e_0(1);
-                rotation_matrix(0, 1) = + e_0(0);
-                rotation_matrix(1, 0) = + e_0(0);
-                rotation_matrix(1, 1) = + e_0(1);
-                return rotation_matrix;
-            }
-            else
-            {
-                return Matrix<Real, 3, 3>::Identity();
-            }
+            // getting the element centroid and the first node coordinates
+            auto centroid = getCurrentCentroid();
+            auto node_coordinates = getCurrentCoordinates(0);
+            // setting basis vectors
+            auto basis_vector_0 = getNormalVector(point);
+            auto basis_vector_1 = (node_coordinates - centroid) / (node_coordinates - centroid).norm();
+            auto basis_vector_2 = basis_vector_0.cross(basis_vector_1);
+            // setting rotation matrix
+            auto rotation_matrix = Matrix<Real, 3, 3>();
+            rotation_matrix.setZero();
+            rotation_matrix(0, 0) = + basis_vector_0(0);
+            rotation_matrix(0, 1) = + basis_vector_0(1);
+            rotation_matrix(0, 2) = + basis_vector_0(2);
+            rotation_matrix(1, 0) = + basis_vector_1(0);
+            rotation_matrix(1, 1) = + basis_vector_1(1);
+            rotation_matrix(1, 2) = + basis_vector_1(2);
+            rotation_matrix(2, 0) = + basis_vector_2(0);
+            rotation_matrix(2, 1) = + basis_vector_2(1);
+            rotation_matrix(2, 2) = + basis_vector_2(2);
+            return rotation_matrix;
+        }
+
+        Matrix<Real, 3, 3>
+        getRotationMatrix(
+            Point const & point
+        )
+        const
+        requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(2))
+        {
+            // setting the only basis vector needed
+            auto basis_vector_0 = getNormalVector(point);
+            // setting rotation matrix
+            auto rotation_matrix = Matrix<Real, 3, 3>();
+            rotation_matrix.setZero();
+            rotation_matrix(0, 0) = - basis_vector_0(1);
+            rotation_matrix(0, 1) = + basis_vector_0(0);
+            rotation_matrix(1, 0) = + basis_vector_0(0);
+            rotation_matrix(1, 1) = + basis_vector_0(1);
+            return rotation_matrix;
+        }
+
+        Matrix<Real, 3, 3>
+        getRotationMatrix(
+            Point const & point
+        )
+        const
+        requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(1))
+        {
+            // setting rotation matrix
+            auto rotation_matrix = Matrix<Real, 3, 3>();
+            rotation_matrix.setIdentity();
+            return rotation_matrix;
         }
         
         Point

@@ -695,7 +695,7 @@ namespace lolita
             for (auto const & node : element_set->template getElements<0, 0>())
             {
                 auto const & coordinates = node->getCurrentCoordinates();
-                outfile << node->getTag() << " " << coordinates(0) << " " << coordinates(1) << " " << coordinates(2) << "\n";
+                outfile << c_node << " " << coordinates(0) << " " << coordinates(1) << " " << coordinates(2) << "\n";
                 c_node ++;
             }
             auto set_integration_nodes = [&] <Integer t_i = 0, Integer t_j = 0> (
