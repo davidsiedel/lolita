@@ -3,7 +3,7 @@
 
 TEST(t0, t0)
 {
-    std::cout << std::fixed << std::setprecision(3);
+    // std::cout << std::fixed << std::setprecision(3);
 
     //
     auto tick = std::chrono::high_resolution_clock::now();
@@ -114,7 +114,12 @@ TEST(t0, t0)
     // std::cout << displacement_system->getUnknownCorrection("Displacement") << "\n";
     // * face_displacement += displacement_system->getUnknownCorrection("Displacement");
     // std::cout << displacement_system->getUnknownCorrection("Displacement").segment<2>(3);
-    std::cout << "normalization : " << displacement_system->getNormalization() << "\n";
+    //
+    // ---> NOT WORKING
+    //
+    // std::cout << "normalization : " << displacement_system->getNormalization() << "\n";
+    //
+    //
     elements->updateUnknown<cells, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
     elements->updateUnknown<faces, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
     elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce", displacement_system);

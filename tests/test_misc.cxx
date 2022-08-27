@@ -1,7 +1,77 @@
+#include <iostream>
+#include <fstream>
+#include <execution>
+#include <unordered_set>
+#include <unordered_map>
+#include <set>
+#include <map>
+#include <ostream>
+#include <iomanip>
+#include <filesystem>
+
 #include "gtest/gtest.h"
+#include "lolita_lolita/lolita_core/lolita_core_n_6000.hxx"
+
+struct Struct
+{
+
+    Struct(
+        int m
+    )
+    :
+    m_(std::make_unique<int>(m))
+    {}
+
+    inline
+    int &
+    get()
+    {
+        std::cout << "regular  call" << std::endl;
+        return * m_;
+    }
+
+    inline
+    int const &
+    get()
+    const
+    {
+        std::cout << "const  call" << std::endl;
+        return * m_;
+    }
+
+    std::unique_ptr<int> m_;
+};
+
+static inline
+void
+funConst(
+    Struct const & s
+)
+{
+    std::cout << "funConst call" << std::endl;
+    std::cout << "m : " << s.get() << std::endl;
+    // s.get() = 2; ---> error: assignment of read-only location '(& s)->Struct::get()'
+}
+
+static inline
+void
+fun(
+    Struct & s
+)
+{
+    s.get() = 2;
+    std::cout << "fun call" << std::endl;
+    std::cout << "m : "  << s.get() << std::endl;
+}
 
 TEST(tm, tm)
 {
+
+    auto regular_s = Struct(1);
+    auto const const_s = Struct(1);
+    fun(regular_s);
+    funConst(regular_s);
+
     // constants
     // auto constexpr domain = lolita::Domain::cartesian(2);
     // auto constexpr cell_basis = lolita::Basis::monomial(1);
@@ -40,61 +110,69 @@ TEST(tm, tm)
     // // std::cout << elements.getElements<2, 0>().at("304")->getElement<0>()->getOuterNeighbors<0, 0>().size() << std::endl;
     // // elements.getElements<2, 0>()["304"]->domains_;
 
-    // auto constexpr size = 20;
+    auto constexpr size = 5;
 
-    // auto mat = lolita::matrix::Matrix<Real>(size, size);
-    // auto vec = lolita::matrix::Vector<Real>(size);
-    // auto mat_view = lolita::matrix::Span<lolita::matrix::Matrix<Real, size, size> const>(mat.data());
-    // auto vec_view = lolita::matrix::Span<lolita::matrix::Vector<Real, size> const>(vec.data());
-    // auto tick = std::chrono::high_resolution_clock::now();
-    // auto res = mat_view * vec_view;
-    // auto tock = std::chrono::high_resolution_clock::now();
-    // auto time = std::chrono::duration<double>(tock - tick);
-    // std::cout << "time : " << time.count() << std::endl;
+    auto mat = lolita::algebra::Matrix<lolita::Real>(size, size);
+    auto vec = lolita::algebra::Vector<lolita::Real>(size);
+    auto mat_view = lolita::algebra::Span<lolita::algebra::Matrix<lolita::Real, size, size> const>(mat.data());
+    auto vec_view = lolita::algebra::Span<lolita::algebra::Vector<lolita::Real, size> const>(vec.data());
+    auto tick = std::chrono::high_resolution_clock::now();
+    auto res = mat_view * vec_view;
+    auto tock = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration<double>(tock - tick);
+    std::cout << "time : " << time.count() << std::endl;
 
-    // // auto mat2 = std::make_unique<lolita::matrix::Matrix<Real, size, size>>(lolita::matrix::Matrix<Real, size, size>());
-    // // auto vec2 = std::make_unique<lolita::matrix::Vector<Real, size>>(lolita::matrix::Vector<Real, size>());
-    // // auto tick2 = std::chrono::high_resolution_clock::now();
-    // // auto res2 = (* mat2) * (* vec2);
-    // // auto tock2 = std::chrono::high_resolution_clock::now();
-    // // auto time2 = std::chrono::duration<double>(tock2 - tick2);
-    // // std::cout << "time : " << time2.count() << std::endl;
+    auto mat2 = std::make_unique<lolita::algebra::Matrix<lolita::Real, size, size>>(lolita::algebra::Matrix<lolita::Real, size, size>());
+    auto vec2 = std::make_unique<lolita::algebra::Vector<lolita::Real, size>>(lolita::algebra::Vector<lolita::Real, size>());
+    auto tick2 = std::chrono::high_resolution_clock::now();
+    auto res2 = (* mat2) * (* vec2);
+    auto tock2 = std::chrono::high_resolution_clock::now();
+    auto time2 = std::chrono::duration<double>(tock2 - tick2);
+    std::cout << "time : " << time2.count() << std::endl;
 
-    // auto mat3 = lolita::matrix::Matrix<Real>(size, size);
-    // auto vec3 = lolita::matrix::Vector<Real>(size);
-    // auto tick3 = std::chrono::high_resolution_clock::now();
-    // auto res3 = mat3 * vec3;
-    // auto tock3 = std::chrono::high_resolution_clock::now();
-    // auto time3 = std::chrono::duration<double>(tock3 - tick3);
-    // std::cout << "time : " << time3.count() << std::endl;
+    auto mat3 = lolita::algebra::Matrix<lolita::Real>(size, size);
+    auto vec3 = lolita::algebra::Vector<lolita::Real>(size);
+    auto tick3 = std::chrono::high_resolution_clock::now();
+    auto res3 = mat3 * vec3;
+    auto tock3 = std::chrono::high_resolution_clock::now();
+    auto time3 = std::chrono::duration<double>(tock3 - tick3);
+    std::cout << "time : " << time3.count() << std::endl;
+
+    auto mat4 = lolita::algebra::Matrix<lolita::Real>(size, size);
+    auto vec4 = lolita::algebra::Vector<lolita::Real>(size);
+    auto tick4 = std::chrono::high_resolution_clock::now();
+    auto res4 = mat4 * vec4;
+    auto tock4 = std::chrono::high_resolution_clock::now();
+    auto time4 = std::chrono::duration<double>(tock4 - tick4);
+    std::cout << "time : " << time4.count() << std::endl;
 
     // std::cout << "size of : " << std::endl;
     // std::cout << "std::vector<std::shared_ptr<Loading>> " << std::endl;
     // std::cout << sizeof(std::vector<std::shared_ptr<lolita::Loading>>) << std::endl;
     // std::cout << "size of : " << std::endl;
-    // std::cout << "std::vector<Real> " << std::endl;
-    // std::cout << sizeof(std::vector<Real>) << std::endl;
+    // std::cout << "std::vector<lolita::Real> " << std::endl;
+    // std::cout << sizeof(std::vector<lolita::Real>) << std::endl;
     // std::cout << "std::map<std::string, std::shared_ptr<lolita::Loading>> " << std::endl;
-    // std::cout << sizeof(std::map<lolita::matrix::Coordinates, std::shared_ptr<lolita::Loading>>) << std::endl;
+    // std::cout << sizeof(std::map<lolita::algebra::Coordinates, std::shared_ptr<lolita::Loading>>) << std::endl;
     // std::cout << "std::array<std::shared_ptr<lolita::Loading>, 3, 1> " << std::endl;
     // std::cout << sizeof(std::array<std::array<std::shared_ptr<lolita::Loading>, 3>, 1>) << std::endl;
 
-    // auto mapp = std::map<std::pair<Integer, Integer>, std::string>();
-    // mapp[std::make_pair(0, 0)] = "HJK";
+    auto mapp = std::map<std::pair<int, int>, std::string>();
+    mapp[std::make_pair(0, 0)] = "HJK";
 
-    // auto stdvec = std::vector<Integer>{1, 2, 3};
-    // auto stdmap = std::map<std::string, Integer>{{"1", 1}, {"2", 2}, {"3", 3}};
-    // // auto vec3 = lolita::matrix::Vector<Real>(size);
-    // auto tickv = std::chrono::high_resolution_clock::now();
-    // auto resv = stdvec[2];
-    // auto tockv = std::chrono::high_resolution_clock::now();
-    // auto timev = std::chrono::duration<double>(tockv - tickv);
-    // std::cout << "time vector : " << timev.count() << std::endl;
-    // auto tickm = std::chrono::high_resolution_clock::now();
-    // auto resm = stdmap["3"];
-    // auto tockm = std::chrono::high_resolution_clock::now();
-    // auto timem = std::chrono::duration<double>(tockm - tickm);
-    // std::cout << "time map : " << timem.count() << std::endl;
-    // // std::cout << * stdvec.end() << std::endl;
+    auto stdvec = std::vector<int>{1, 2, 3};
+    auto stdmap = std::map<std::string, int>{{"1", 1}, {"2", 2}, {"3", 3}};
+    // auto vec3 = lolita::algebra::Vector<lolita::Real>(size);
+    auto tickv = std::chrono::high_resolution_clock::now();
+    auto resv = stdvec[2];
+    auto tockv = std::chrono::high_resolution_clock::now();
+    auto timev = std::chrono::duration<double>(tockv - tickv);
+    std::cout << "time vector : " << timev.count() << std::endl;
+    auto tickm = std::chrono::high_resolution_clock::now();
+    auto resm = stdmap["3"];
+    auto tockm = std::chrono::high_resolution_clock::now();
+    auto timem = std::chrono::duration<double>(tockm - tickm);
+    std::cout << "time map : " << timem.count() << std::endl;
+    // std::cout << * stdvec.end() << std::endl;
     
 }

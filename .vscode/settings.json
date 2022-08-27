@@ -82,7 +82,8 @@
         "lu": "cpp",
         "sparsecore": "cpp",
         "cinttypes": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "codecvt": "cpp"
     },
     "cSpell.words": [
         "discretization",

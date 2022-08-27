@@ -32,14 +32,6 @@ namespace lolita
         {
             return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
         }
-
-        template<Element t_element, Field t_field>
-        static constexpr
-        Integer
-        getSize()
-        {
-            return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_) * FieldTraits<t_field>::getSize();
-        }
         
         template<Element t_element, Domain t_domain>
         struct Implementation : FiniteElementHolder<t_element, t_domain>
@@ -52,13 +44,13 @@ namespace lolita
                 return FiniteElementBasisTraits::template getSize<t_element>();
             }
             
-            template<Field t_field>
-            static constexpr
-            Integer
-            getSize()
-            {
-                return FiniteElementBasisTraits::template getSize<t_element, t_field>();
-            }
+            // template<Field t_field>
+            // static constexpr
+            // Integer
+            // getSize()
+            // {
+            //     return FiniteElementBasisTraits::template getSize<t_element, t_field>();
+            // }
 
         private:
         

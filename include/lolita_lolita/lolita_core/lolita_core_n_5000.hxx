@@ -22,9 +22,78 @@
 namespace lolita
 {
 
+    // static inline
+    // void parallel_for(unsigned nb_elements,
+    //                   std::function<void (int start, int end)> functor,
+    //                   bool use_threads = true)
+    // {
+    //     // -------
+    //     unsigned nb_threads_hint = std::thread::hardware_concurrency();
+    //     unsigned nb_threads = nb_threads_hint == 0 ? 8 : (nb_threads_hint);
+
+    //     unsigned batch_size = nb_elements / nb_threads;
+    //     unsigned batch_remainder = nb_elements % nb_threads;
+
+    //     std::vector< std::thread > my_threads(nb_threads);
+
+    //     if( use_threads )
+    //     {
+    //         // Multithread execution
+    //         for(unsigned i = 0; i < nb_threads; ++i)
+    //         {
+    //             int start = i * batch_size;
+    //             my_threads[i] = std::thread(functor, start, start+batch_size);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         // Single thread execution (for easy debugging)
+    //         for(unsigned i = 0; i < nb_threads; ++i){
+    //             int start = i * batch_size;
+    //             functor( start, start+batch_size );
+    //         }
+    //     }
+
+    //     // Deform the elements left
+    //     int start = nb_threads * batch_size;
+    //     functor( start, start+batch_remainder);
+
+    //     // Wait for the other thread to finish their task
+    //     if( use_threads )
+    //         std::for_each(my_threads.begin(), my_threads.end(), std::mem_fn(&std::thread::join));
+    // }
+
     template<Domain t_domain>
     struct FiniteElementSet : ElementSet<FiniteElementHolder, t_domain>
     {
+
+        template<ElementType t_ii>
+        void
+        caller(
+            std::basic_string_view<Character> domain,
+            auto & fun
+        )
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        fun(element);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
         
         std::unique_ptr<FiniteElementSet>
         makeFiniteElementSubSet(
@@ -67,28 +136,14 @@ namespace lolita
         )
         {
             auto lab = std::basic_string<Character>(parameter_label);
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template setParameter(lab, std::forward<std::function<Real(Point const &)>>(function));
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template setParameter(lab, std::forward<std::function<Real(Point const &)>>(function));
+            };
+            caller<t_ii>(domain, fun);
         }
 
-        template<ElementType t_ii, Field t_field, Basis t_basis>
+        template<ElementType t_ii, auto... t_args>
         std::shared_ptr<Vector<Real>>
         setDegreeOfFreedom(
             std::basic_string_view<Character> domain,
@@ -97,90 +152,13 @@ namespace lolita
         {
             auto dof = std::make_shared<Vector<Real>>();
             auto lab = std::basic_string<Character>(label);
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template setDegreeOfFreedom<t_field, t_basis>(lab, dof);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template setDegreeOfFreedom<t_args...>(lab, dof);
+            };
+            caller<t_ii>(domain, fun);
             dof->setZero();
             return dof;
-        }
-
-        template<ElementType t_ii, Field t_field, Basis t_basis>
-        void
-        addDegreeOfFreedomCoefficients(
-            std::basic_string_view<Character> domain,
-            std::basic_string_view<Character> label,
-            lolita::algebra::View<Vector<Real> const> const & vector
-        )
-        {
-            auto lab = std::basic_string<Character>(label);
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
-            {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template addDegreeOfFreedomCoefficients<t_field, t_basis>(lab, vector);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
-        }
-
-        template<ElementType t_ii, Field t_field, Basis t_basis>
-        void
-        setDegreeOfFreedomCoefficients(
-            std::basic_string_view<Character> domain,
-            std::basic_string_view<Character> label,
-            lolita::algebra::View<Vector<Real> const> const & vector
-        )
-        {
-            auto lab = std::basic_string<Character>(label);
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
-            {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template setDegreeOfFreedomCoefficients<t_field, t_basis>(lab, vector);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
         }
 
         template<ElementType t_ii, auto... t_args>
@@ -191,25 +169,11 @@ namespace lolita
             std::unique_ptr<System> const & system
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template updateUnknown<t_args...>(label, system);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template updateUnknown<t_args...>(label, system);
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto... t_args>
@@ -220,25 +184,11 @@ namespace lolita
             std::unique_ptr<System> const & system
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template updateBinding<t_args...>(label, system);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template updateBinding<t_args...>(label, system);
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>
@@ -255,26 +205,11 @@ namespace lolita
             // auto load = std::make_shared<Loading>(loading);
             auto load = std::make_shared<Function>(loading, row, col);
             auto lab = std::basic_string<Character>(label);
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        // element->setLoad(lab, load, row, col);
-                        element->setLoad(lab, load);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->setLoad(lab, load);
+            };
+            caller<t_ii>(domain, fun);
             return load;
         }
 
@@ -292,26 +227,11 @@ namespace lolita
             // auto load = std::make_shared<Loading>(std::forward<Loading>(loading));
             auto load = std::make_shared<Function>(std::forward<Loading>(loading), row, col);
             auto lab = std::basic_string<Character>(label);
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        // element->setLoad(lab, load, row, col);
-                        element->setLoad(lab, load);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->setLoad(lab, load);
+            };
+            caller<t_ii>(domain, fun);
             return load;
         }
 
@@ -329,26 +249,11 @@ namespace lolita
             // auto load = std::make_shared<Loading>(loading);
             auto load = std::make_shared<Function>(loading, row, col);
             auto lab = std::basic_string<Character>(label);
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        // element->setConstraint(lab, load, row, col);
-                        element->setConstraint(lab, load);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->setConstraint(lab, load);
+            };
+            caller<t_ii>(domain, fun);
             return load;
         }
 
@@ -366,27 +271,11 @@ namespace lolita
             // auto load = std::make_shared<Loading>(std::forward<Loading>(loading));
             auto load = std::make_shared<Function>(std::forward<Loading>(loading), row, col);
             auto lab = std::basic_string<Character>(label);
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        // element->setConstraint(lab, load, row, col);
-                        element->setConstraint(lab, load);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->setConstraint(lab, load);
+            };
+            caller<t_ii>(domain, fun);
             return load;
         }
 
@@ -398,26 +287,11 @@ namespace lolita
         )
         {
             auto behavior = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(args...));
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template setBehavior<t_quadrature>(behavior);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template setBehavior<t_quadrature>(behavior);
+            };
+            caller<t_ii>(domain, fun);
             return behavior;
         }
 
@@ -428,26 +302,11 @@ namespace lolita
             std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template setBehavior<t_quadrature>(behavior);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template setBehavior<t_quadrature>(behavior);
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto t_arg, auto t_discretization>
@@ -458,26 +317,11 @@ namespace lolita
             std::basic_string_view<Character> finite_element_label2
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template setStrainOperators<t_arg, t_discretization>(finite_element_label, finite_element_label2);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template setStrainOperators<t_arg, t_discretization>(finite_element_label, finite_element_label2);
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto t_arg, auto t_discretization>
@@ -488,26 +332,11 @@ namespace lolita
             std::basic_string_view<Character> strain_label
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template setStrainValues<t_arg, t_discretization>(behavior_label, strain_label);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template setStrainValues<t_arg, t_discretization>(behavior_label, strain_label);
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>
@@ -517,26 +346,11 @@ namespace lolita
             std::basic_string_view<Character> behavior_label
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->integrate(behavior_label);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->integrate(behavior_label);
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto t_arg, auto t_discretization>
@@ -546,26 +360,11 @@ namespace lolita
             std::basic_string_view<Character> label
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template setElementOperator<t_arg, t_discretization>(label);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template setElementOperator<t_arg, t_discretization>(label);
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>
@@ -577,26 +376,11 @@ namespace lolita
             std::function<Real(Point const &)> && function
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->setMaterialProperty(behavior_label, material_property_label, std::forward<std::function<Real(Point const &)>>(function));
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->setMaterialProperty(behavior_label, material_property_label, std::forward<std::function<Real(Point const &)>>(function));
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>
@@ -608,26 +392,11 @@ namespace lolita
             std::function<Real(Point const &)> && function
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->setExternalVariable(behavior_label, material_property_label, std::forward<std::function<Real(Point const &)>>(function));
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->setExternalVariable(behavior_label, material_property_label, std::forward<std::function<Real(Point const &)>>(function));
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
@@ -639,26 +408,11 @@ namespace lolita
             std::unique_ptr<System> const & system
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template assembleUnknownBlock<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, system);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template assembleUnknownBlock<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, system);
+            };
+            caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
@@ -671,26 +425,11 @@ namespace lolita
             std::unique_ptr<System> const & system
         )
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            auto fun = [&] (auto const & element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        element->template assembleBindingBlock<t_finite_element_method, t_discretization>(binding_label, unknown_label, constraint_label, system);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
+                element->template assembleBindingBlock<t_finite_element_method, t_discretization>(binding_label, unknown_label, constraint_label, system);
+            };
+            caller<t_ii>(domain, fun);
         }
         
         friend
