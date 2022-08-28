@@ -42,8 +42,13 @@ TEST(t0, t0)
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle.msh";
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle004.msh";
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle050.msh";
-    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle_unstructured_00050.msh";
+    // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle_unstructured_00050.msh";
+    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/triangle_unstructured_00050.msh";
+    // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/square_mixed_unstructured_out.msh";
+    // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/triangle_structured_00002.msh";
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
+    //
+    auto out_file = "/home/dsiedel/projetcs/lolita/lolita/tests/out_square_mixed_unstructured_out.msh";
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // dofs
@@ -65,8 +70,8 @@ TEST(t0, t0)
     std::cout << "displacement_system b size : " << displacement_system->getBindingsSize() << std::endl;
     // load
     auto load0 = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return 1.0; }, 1, 0);
-    auto load1 = elements->setConstraint<faces>("LEFT", "Fixed", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 0);
-    auto load2 = elements->setConstraint<faces>("BOTTOM", "Fixed", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 1, 0);
+    auto load1 = elements->setConstraint<faces>("LEFT", "FixedL", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 0);
+    auto load2 = elements->setConstraint<faces>("BOTTOM", "FixedB", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 1, 0);
     // adding behavior
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
     //making operators
@@ -97,8 +102,8 @@ TEST(t0, t0)
     elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
     //
     elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system);
-    elements->assembleBindingBlock<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "Fixed", displacement_system);
-    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "Fixed", displacement_system);
+    elements->assembleBindingBlock<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system);
+    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system);
 
     tock = std::chrono::high_resolution_clock::now();
     time = std::chrono::duration<double>(tock - tick);
@@ -133,11 +138,10 @@ TEST(t0, t0)
     //
     // elements->setOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", "Elasticity");
     // elements->addOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", 0, 0.0, "Elasticity");
-    auto out_file = "/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh";
     lolita::GmshFileParser::setOutput<domain>(out_file, elements, "Elasticity");
     lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, 0, 0.0, "Elasticity", 0);
-    lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 0, 0);
-    lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 1, 0);
+    // lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 0, 0);
+    // lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 1, 0);
     lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", "Elasticity", 0, 0);
     lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", "Elasticity", 1, 0);
 

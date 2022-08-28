@@ -249,6 +249,27 @@ namespace lolita
             rhs_values_ = Vector<Real>::Zero(getSize());
         }
 
+        // inline
+        // void
+        // addLhsValue(
+        //     Integer i,
+        //     Integer j,
+        //     Real value
+        // )
+        // {
+        //     lhs_values_.push_back(MatrixEntry(i, j, value));
+        // }
+
+        // inline
+        // void
+        // addRhsValue(
+        //     Integer i,
+        //     Real value
+        // )
+        // {
+        //     rhs_values_(i) += value;
+        // }
+
         inline
         void
         addLhsValue(
@@ -257,6 +278,7 @@ namespace lolita
             Real value
         )
         {
+            std::lock_guard<std::mutex> l(mutex);
             lhs_values_.push_back(MatrixEntry(i, j, value));
         }
 
@@ -267,8 +289,11 @@ namespace lolita
             Real value
         )
         {
+            std::lock_guard<std::mutex> l(mutex);
             rhs_values_(i) += value;
         }
+
+        std::mutex mutex;
 
         inline
         void

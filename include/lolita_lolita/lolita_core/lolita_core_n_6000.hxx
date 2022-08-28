@@ -124,8 +124,9 @@ namespace lolita
                 {
                     component_hash = MeshElement<t_component, t_domain>::getHash(node_tags_[getInnerNeighborNodeConnection<t_i, t_j>(i, 0)]);
                 }
-                ptr_element->template getInnerNeighbors<t_i, t_j>()[i] = components[component_hash];
-                components[component_hash]->template getOuterNeighbors<t_neighbour_coordinates.dim_, t_neighbour_coordinates.tag_>().push_back(ptr_element);
+                auto cpttt = components.at(component_hash);
+                ptr_element->template getInnerNeighbors<t_i, t_j>()[i] = cpttt;
+                cpttt->template getOuterNeighbors<t_neighbour_coordinates.dim_, t_neighbour_coordinates.tag_>().push_back(ptr_element);
             }
             if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<t_i>() - 1)
             {
@@ -138,21 +139,44 @@ namespace lolita
             if constexpr (t_is_initialized)
             {
                 auto const & nodes = ptr_element->template getInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>();
-                auto domains = std::set<std::shared_ptr<MeshDomain>>();
+                // auto domains = std::set<std::shared_ptr<MeshDomain>>();
+                // for (auto const & domain : nodes[0]->domains_)
+                // {
+                //     auto has_domain = true;
+                //     for (Integer j = 1; j < t_element.num_nodes_; ++j)
+                //     {
+                //         has_domain = std::find(nodes[j]->domains_.begin(), nodes[j]->domains_.end(), domain) != nodes[j]->domains_.end();
+                //     }
+                //     if (has_domain)
+                //     {
+                //         domains.insert(domain);
+                //     }
+                // }
+                // auto domains = std::vector<std::shared_ptr<MeshDomain>>();
+                auto & domains = ptr_element->domains_;
                 for (auto const & domain : nodes[0]->domains_)
                 {
                     auto has_domain = true;
                     for (Integer j = 1; j < t_element.num_nodes_; ++j)
                     {
-                        has_domain = std::find(nodes[j]->domains_.begin(), nodes[j]->domains_.end(), domain) != nodes[j]->domains_.end();
+                        auto const & ndee = nodes[j];
+                        if (std::find(ndee->domains_.begin(), ndee->domains_.end(), domain) == ndee->domains_.end())
+                        {
+                            has_domain = false;
+                        }
+                        // has_domain = std::find(nodes[j]->domains_.begin(), nodes[j]->domains_.end(), domain) != nodes[j]->domains_.end();
                     }
                     if (has_domain)
                     {
-                        domains.insert(domain);
+                        if (std::find(domains.begin(), domains.end(), domain) == domains.end())
+                        {
+                            domains.push_back(domain);
+                        }
                     }
                 }
                 ptr_element->tag_ = element_map.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>().size();
-                ptr_element->domains_.assign(domains.begin(), domains.end());
+                // ptr_element->domains_.assign(domains.begin(), domains.end());
+                // ptr_element->domains_ = domains;
                 ptr_element->coordinates_ = std::make_shared<Point>(ptr_element->getCurrentCentroid());
                 element_map.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>()[getHash(node_tags_)] = ptr_element;
             }
@@ -730,7 +754,7 @@ namespace lolita
             set_integration_nodes(set_integration_nodes);
             outfile << "$EndNodes\n";
             outfile << "$Elements\n";
-            outfile << element_set->template getNumElements<>() + numerics::sum(element_set->template getNumIntegrationPoints<>(behavior_label)...) << "\n";
+            outfile << element_set->template getNumElements<0>() + numerics::sum(element_set->template getNumIntegrationPoints<>(behavior_label)...) << "\n";
             auto c_element = Natural(1);
             for (auto const & node : element_set->template getElements<0, 0>())
             {
@@ -790,7 +814,7 @@ namespace lolita
                     self.template operator()<t_i + 1, 0>(self);
                 }
             };
-            set_elements(set_elements);
+            // set_elements(set_elements);
             outfile << "$EndElements\n";
         }
 

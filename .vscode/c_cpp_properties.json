@@ -4,16 +4,16 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/mgis-master-vdgcnh7wvfthpcmgsghwsxilhgh5bkn3/include",
-                "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/include/eigen3",
-                "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.11.0-fym76qqgkka37m27u25kkn2h2sosbwad/include",
-                "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f/mkl/include"
+                "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/mgis-master-vdgcnh7wvfthpcmgsghwsxilhgh5bkn3/include",
+                "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/include/eigen3",
+                "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.11.0-fym76qqgkka37m27u25kkn2h2sosbwad/include",
+                "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f/mkl/include"
             ],
             "defines": [],
             "cStandard": "c17",
             "cppStandard": "c++20",
             "intelliSenseMode": "linux-clang-x64",
-            "compilerPath": "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/gcc-11.3.0-sskike2csz3x73f7pjrklv7xdwmjl5bu/bin/g++",
+            // "compilerPath": "/home/dsiedel/spack/opt/spack_old1/linux-ubuntu20.04-skylake/gcc-9.3.0/gcc-11.3.0-sskike2csz3x73f7pjrklv7xdwmjl5bu/bin/g++",
             "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],

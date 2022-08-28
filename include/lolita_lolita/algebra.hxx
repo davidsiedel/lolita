@@ -147,6 +147,12 @@ namespace lolita
     template<typename t_T, auto... t_args>
     using Matrix = algebra::Matrix<t_T, t_args...>;
 
+    template<typename t_T>
+    concept RealMatrixConcept = std::convertible_to<t_T, Matrix<Real>>;
+
+    template<typename t_T>
+    concept RealVectorConcept = std::convertible_to<t_T, Vector<Real>>;
+
     auto static const print_format = Eigen::IOFormat(3, 0, ", ", "\n", "[", "]");
 
     static inline

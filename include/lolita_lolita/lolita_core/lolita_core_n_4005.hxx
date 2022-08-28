@@ -250,12 +250,12 @@ namespace lolita
         static constexpr
         Integer
         getInnerNeighborNodeConnection(
-            Integer i,
-            Integer j
+            Integer component_index,
+            Integer node_index
         )
         requires(!t_element.isNode())
         {
-            return std::get<t_j>(std::get<t_i>(ElementTraits<t_element, t_domain>::node_connectivity_))[i][j];
+            return std::get<t_j>(std::get<t_i>(ElementTraits<t_element, t_domain>::node_connectivity_))[component_index][node_index];
         }
         
         Boolean
@@ -348,31 +348,32 @@ namespace lolita
             auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
             auto constexpr t_coordinates = ElementTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
             auto const & items = getInnerNeighbors<t_i, t_j>()[i]->template getOuterNeighbors<t_coordinates.dim_, t_coordinates.tag_>();
-            auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
+            // auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
+            auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_element, t_domain>> const & ptr_element)
             {
                 return * ptr_element == * this;
             };
             return std::distance(items.begin(), std::find_if(items.begin(), items.end(), is_equal));
         }
         
-        template<Integer t_i, Integer t_j>
-        Integer
-        getInnerNeighborIndex(
-            std::shared_ptr<FiniteElementHolder<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
-        )
-        const
-        requires(!t_element.isNode())
-        {
-            auto const & inner_neighbors = getInnerNeighbors<t_i, t_j>();
-            // auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
-            // auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_inner_neighbor, t_domain>> const & neighbor)
-            // {
-            //     return * neighbor == * ptr_neighbor;
-            // };
-            // auto neighbor_index = std::distance(inner_neighbors.begin(), std::find_if(inner_neighbors.begin(), inner_neighbors.end(), is_equal));
-            auto neighbor_index = std::distance(inner_neighbors.begin(), std::find(inner_neighbors.begin(), inner_neighbors.end(), ptr_neighbor));
-            return getInnerNeighborIndex<t_i, t_j>(neighbor_index);
-        }
+        // template<Integer t_i, Integer t_j>
+        // Integer
+        // getInnerNeighborIndex(
+        //     std::shared_ptr<FiniteElementHolder<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
+        // )
+        // const
+        // requires(!t_element.isNode())
+        // {
+        //     auto const & inner_neighbors = getInnerNeighbors<t_i, t_j>();
+        //     // auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
+        //     // auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_inner_neighbor, t_domain>> const & neighbor)
+        //     // {
+        //     //     return * neighbor == * ptr_neighbor;
+        //     // };
+        //     // auto neighbor_index = std::distance(inner_neighbors.begin(), std::find_if(inner_neighbors.begin(), inner_neighbors.end(), is_equal));
+        //     auto neighbor_index = std::distance(inner_neighbors.begin(), std::find(inner_neighbors.begin(), inner_neighbors.end(), ptr_neighbor));
+        //     return getInnerNeighborIndex<t_i, t_j>(neighbor_index);
+        // }
         
         template<Integer t_i, Integer t_j>
         Integer
@@ -383,18 +384,19 @@ namespace lolita
         requires(!t_element.isNode())
         {
             return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
+            // getInnerNeighbors<t_i, t_j>()[i]->getOuterNeighbors<>
         }
         
-        template<Integer t_i, Integer t_j>
-        Integer
-        getInnerNeighborOrientation(
-            std::shared_ptr<FiniteElementHolder<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
-        )
-        const
-        requires(!t_element.isNode())
-        {
-            return getInnerNeighborIndex<t_i, t_j>(ptr_neighbor) == 0 ? 1 : -1;
-        }
+        // template<Integer t_i, Integer t_j>
+        // Integer
+        // getInnerNeighborOrientation(
+        //     std::shared_ptr<FiniteElementHolder<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
+        // )
+        // const
+        // requires(!t_element.isNode())
+        // {
+        //     return getInnerNeighborIndex<t_i, t_j>(ptr_neighbor) == 0 ? 1 : -1;
+        // }
     
         Point &
         getCurrentCoordinates()
@@ -958,8 +960,8 @@ namespace lolita
         )
         requires(!t_element.isNode())
         {
-            auto const constexpr _component = t_ElementTraits::template getInnerNeighbor<_i, _j>();
-            using ComponentGeometry = FiniteElementHolder<_component, t_domain>;
+            auto const constexpr t_component = t_ElementTraits::template getInnerNeighbor<_i, _j>();
+            using ComponentGeometry = FiniteElementHolder<t_component, t_domain>;
             return ComponentGeometry::template getReferenceQuadratureWeight<t_quadrature>(index);
         }
         
@@ -972,14 +974,14 @@ namespace lolita
         )
         requires(!t_element.isNode())
         {
-            auto const constexpr _component = t_ElementTraits ::template getInnerNeighbor<_i, _j>();
+            auto constexpr t_component = t_ElementTraits ::template getInnerNeighbor<_i, _j>();
             auto p = Point();
-            using ComponentGeometry = FiniteElementHolder<_component, t_domain>;
+            using ComponentGeometry = FiniteElementHolder<t_component, t_domain>;
             auto const & elt_reference_nodes = ElementTraits<t_element, t_domain>::reference_nodes_;
             for (auto i = 0; i < 3; ++i)
             {
-                auto cpt_coordinates = Vector<Real, _component.getNumNodes()>();
-                for (auto j = 0; j < _component.getNumNodes(); ++j)
+                auto cpt_coordinates = Vector<Real, t_component.getNumNodes()>();
+                for (auto j = 0; j < t_component.getNumNodes(); ++j)
                 {
                     auto const node_tag = getInnerNeighborNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);
                     cpt_coordinates(j) = elt_reference_nodes[node_tag][i];
@@ -1029,61 +1031,60 @@ namespace lolita
         template<Basis t_basis>
         Vector<Real, t_Basis<t_basis>::getSize()>
         getBasisEvaluation(
-            Point const & point
+            auto const &... args
         )
         const
         {
-            return static_cast<t_Basis<t_basis> const *>(this)->getBasisEvaluation(point);
+            return static_cast<t_Basis<t_basis> const *>(this)->getBasisEvaluation(args...);
         }
         
         template<Basis t_basis>
         Vector<Real, t_Basis<t_basis>::getSize()>
         getBasisDerivative(
-            Point const & point,
-            Integer derivative_direction
+            auto const &... args
         )
         const
         {
-            return static_cast<t_Basis<t_basis> const *>(this)->getBasisDerivative(point, derivative_direction);
+            return static_cast<t_Basis<t_basis> const *>(this)->getBasisDerivative(args...);
         }
 
-        template<Basis t_row_basis, Basis t_col_basis, Quadrature t_quadrature>
-        Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>
-        getMassMatrix()
-        const
-        {
-            auto mass_matrix = Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>();
-            mass_matrix.setZero();
-            for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
-            {
-                auto point = getCurrentQuadraturePoint<t_quadrature>(i);
-                auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
-                auto row_vector = getBasisEvaluation<t_row_basis>(point);
-                auto col_vector = getBasisEvaluation<t_col_basis>(point);
-                mass_matrix += weight * row_vector * col_vector.transpose();
-            }
-            return mass_matrix;
-        }
+        // template<Basis t_row_basis, Basis t_col_basis, Quadrature t_quadrature>
+        // Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>
+        // getMassMatrix()
+        // const
+        // {
+        //     auto mass_matrix = Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>();
+        //     mass_matrix.setZero();
+        //     for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
+        //     {
+        //         auto point = getCurrentQuadraturePoint<t_quadrature>(i);
+        //         auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
+        //         auto row_vector = getBasisEvaluation<t_row_basis>(point);
+        //         auto col_vector = getBasisEvaluation<t_col_basis>(point);
+        //         mass_matrix += weight * row_vector * col_vector.transpose();
+        //     }
+        //     return mass_matrix;
+        // }
 
-        template<Basis t_row_basis, Basis t_col_basis>
-        Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>
-        getMassMatrix(
-            std::basic_string<Character> const & label
-        )
-        const
-        {
-            auto mass_matrix = Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>();
-            mass_matrix.setZero();
-            for (auto const & ip : quadrature_.at(label).ips_)
-            {
-                auto point = ip.coordinates_;
-                auto weight = ip.weight_;
-                auto row_vector = getBasisEvaluation<t_row_basis>(point);
-                auto col_vector = getBasisEvaluation<t_col_basis>(point);
-                mass_matrix += weight * row_vector * col_vector.transpose();
-            }
-            return mass_matrix;
-        }
+        // template<Basis t_row_basis, Basis t_col_basis>
+        // Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>
+        // getMassMatrix(
+        //     std::basic_string<Character> const & label
+        // )
+        // const
+        // {
+        //     auto mass_matrix = Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>();
+        //     mass_matrix.setZero();
+        //     for (auto const & ip : quadrature_.at(label).ips_)
+        //     {
+        //         auto point = ip.coordinates_;
+        //         auto weight = ip.weight_;
+        //         auto row_vector = getBasisEvaluation<t_row_basis>(point);
+        //         auto col_vector = getBasisEvaluation<t_col_basis>(point);
+        //         mass_matrix += weight * row_vector * col_vector.transpose();
+        //     }
+        //     return mass_matrix;
+        // }
 
         template<Field t_field, Mapping t_mapping, auto t_discretization>
         Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain, t_field>(), t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
@@ -1531,20 +1532,20 @@ namespace lolita
             degrees_of_freedom_.at(std::string(binding_label)).template addCoefficients<t_field, t_basis>(system->getBindingCorrection(binding_label));
         }
 
-        template<Field t_field, Basis t_basis>
-        Real
-        getUnknownValue(
-            std::basic_string_view<Character> binding_label,
-            Point const & point,
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            auto coefficients = degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<t_field, t_basis>(row, col);
-            auto basis_vector = this->getBasisEvaluation<t_basis>(point);
-            return coefficients.dot(basis_vector);
-        }
+        // template<Field t_field, Basis t_basis>
+        // Real
+        // getUnknownValue(
+        //     std::basic_string_view<Character> binding_label,
+        //     Point const & point,
+        //     Integer row,
+        //     Integer col
+        // )
+        // const
+        // {
+        //     auto coefficients = degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<t_field, t_basis>(row, col);
+        //     auto basis_vector = this->getBasisEvaluation<t_basis>(point);
+        //     return coefficients.dot(basis_vector);
+        // }
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         Real
@@ -1559,20 +1560,20 @@ namespace lolita
             return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknownValue<t_finite_element_method>(binding_label, point, row, col);
         }
 
-        template<Field t_field, Basis t_basis>
-        Real
-        getBindingValue(
-            std::basic_string_view<Character> binding_label,
-            Point const & point,
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            auto coefficients = degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<t_field, t_basis>(row, col);
-            auto basis_vector = this->getBasisEvaluation<t_basis>(point);
-            return coefficients.dot(basis_vector);
-        }
+        // template<Field t_field, Basis t_basis>
+        // Real
+        // getBindingValue(
+        //     std::basic_string_view<Character> binding_label,
+        //     Point const & point,
+        //     Integer row,
+        //     Integer col
+        // )
+        // const
+        // {
+        //     auto coefficients = degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<t_field, t_basis>(row, col);
+        //     auto basis_vector = this->getBasisEvaluation<t_basis>(point);
+        //     return coefficients.dot(basis_vector);
+        // }
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         Real
@@ -1842,6 +1843,43 @@ namespace lolita
             
         }
 
+        // template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        // void
+        // setStrainOperators(
+        //     std::basic_string_view<Character> label,
+        //     std::basic_string_view<Character> label2
+        // )
+        // {
+        //     auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+        //     auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
+        //     auto quadrature_point_count = 0;
+        //     for (auto & ip : quadrature_.at(std::string(label)).ips_)
+        //     {
+        //         auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
+        //         strain_operator.setZero();
+        //         auto set_mapping_block = [&] <Integer t_i = 0> (
+        //             auto & self
+        //         )
+        //         constexpr mutable
+        //         {
+        //             auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
+        //             auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
+        //             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
+        //             auto point = ip.reference_coordinates_;
+        //             auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
+        //             auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
+        //             mapping_block = mapping_operator;
+        //             if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+        //             {
+        //                 self.template operator ()<t_i + 1>(self);
+        //             }
+        //         };
+        //         set_mapping_block(set_mapping_block);
+        //         ip.ops_[std::string(label2)] = strain_operator;
+        //         quadrature_point_count ++;
+        //     }
+        // }
+
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
         setStrainOperators(
@@ -1864,7 +1902,7 @@ namespace lolita
                     auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
                     auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
                     auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-                    auto point = ip.reference_coordinates_;
+                    auto const & point = ip.coordinates_;
                     auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
                     auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
                     mapping_block = mapping_operator;

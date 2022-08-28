@@ -31,10 +31,12 @@ Physical Surface("SQUARE", 9) = {1};
 //+
 Physical Point("NODE", 10) = {1};
 //+
-Transfinite Curve {3, 4, 1, 2} = 51 Using Progression 1;
+Transfinite Curve {3, 4, 1, 2} = 3 Using Progression 1;
 //+
 // Recombine Surface {1};
 //+
 // Transfinite Surface {1};
 //+
-Recombine Surface {1};
+// Recombine Surface {1};
+//+
+Transfinite Surface {1};

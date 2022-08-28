@@ -22,47 +22,6 @@
 namespace lolita
 {
 
-    // static inline
-    // void parallel_for(unsigned nb_elements,
-    //                   std::function<void (int start, int end)> functor,
-    //                   bool use_threads = true)
-    // {
-    //     // -------
-    //     unsigned nb_threads_hint = std::thread::hardware_concurrency();
-    //     unsigned nb_threads = nb_threads_hint == 0 ? 8 : (nb_threads_hint);
-
-    //     unsigned batch_size = nb_elements / nb_threads;
-    //     unsigned batch_remainder = nb_elements % nb_threads;
-
-    //     std::vector< std::thread > my_threads(nb_threads);
-
-    //     if( use_threads )
-    //     {
-    //         // Multithread execution
-    //         for(unsigned i = 0; i < nb_threads; ++i)
-    //         {
-    //             int start = i * batch_size;
-    //             my_threads[i] = std::thread(functor, start, start+batch_size);
-    //         }
-    //     }
-    //     else
-    //     {
-    //         // Single thread execution (for easy debugging)
-    //         for(unsigned i = 0; i < nb_threads; ++i){
-    //             int start = i * batch_size;
-    //             functor( start, start+batch_size );
-    //         }
-    //     }
-
-    //     // Deform the elements left
-    //     int start = nb_threads * batch_size;
-    //     functor( start, start+batch_remainder);
-
-    //     // Wait for the other thread to finish their task
-    //     if( use_threads )
-    //         std::for_each(my_threads.begin(), my_threads.end(), std::mem_fn(&std::thread::join));
-    // }
-
     template<Domain t_domain>
     struct FiniteElementSet : ElementSet<FiniteElementHolder, t_domain>
     {
@@ -93,6 +52,54 @@ namespace lolita
                 }
             }; 
             activate_elements(activate_elements);
+        }
+
+        template<ElementType t_ii>
+        void
+        caller2(
+            std::basic_string_view<Character> domain,
+            auto & fun
+        )
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                auto constexpr t_i = t_ii.getDim();
+                auto nb_threads = std::thread::hardware_concurrency() == 0 ? 8 : (std::thread::hardware_concurrency());
+                auto batch_size = this->template getElements<t_i, t_j>().size() / nb_threads;
+                auto batch_remainder = this->template getElements<t_i, t_j>().size() % nb_threads;
+                auto my_threads = std::vector<std::jthread>(nb_threads);
+                //
+                auto doit = [&] (
+                    Integer start,
+                    Integer stop
+                )
+                {
+                    for (auto i = start; i < stop; ++i)
+                    {
+                        auto const & finite_element = this->template getElements<t_i, t_j>()[i];
+                        if (finite_element->isIn(domain))
+                        {
+                            fun(finite_element);
+                        }
+                    }
+                };
+                //
+                for(auto i = 0; i < nb_threads; ++i)
+                {
+                    my_threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
+                }
+                doit(nb_threads * batch_size, nb_threads * batch_size + batch_remainder);
+                //
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            // activate_elements(activate_elements);
+            caller<t_ii>(domain, fun);
         }
         
         std::unique_ptr<FiniteElementSet>
@@ -140,7 +147,7 @@ namespace lolita
             {
                 element->template setParameter(lab, std::forward<std::function<Real(Point const &)>>(function));
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto... t_args>
@@ -209,7 +216,7 @@ namespace lolita
             {
                 element->setLoad(lab, load);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
             return load;
         }
 
@@ -231,7 +238,7 @@ namespace lolita
             {
                 element->setLoad(lab, load);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
             return load;
         }
 
@@ -253,7 +260,7 @@ namespace lolita
             {
                 element->setConstraint(lab, load);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
             return load;
         }
 
@@ -275,7 +282,7 @@ namespace lolita
             {
                 element->setConstraint(lab, load);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
             return load;
         }
 
@@ -291,7 +298,7 @@ namespace lolita
             {
                 element->template setBehavior<t_quadrature>(behavior);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
             return behavior;
         }
 
@@ -306,7 +313,7 @@ namespace lolita
             {
                 element->template setBehavior<t_quadrature>(behavior);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto t_arg, auto t_discretization>
@@ -321,7 +328,7 @@ namespace lolita
             {
                 element->template setStrainOperators<t_arg, t_discretization>(finite_element_label, finite_element_label2);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto t_arg, auto t_discretization>
@@ -336,7 +343,7 @@ namespace lolita
             {
                 element->template setStrainValues<t_arg, t_discretization>(behavior_label, strain_label);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>
@@ -350,7 +357,7 @@ namespace lolita
             {
                 element->integrate(behavior_label);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto t_arg, auto t_discretization>
@@ -364,7 +371,7 @@ namespace lolita
             {
                 element->template setElementOperator<t_arg, t_discretization>(label);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>
@@ -380,7 +387,7 @@ namespace lolita
             {
                 element->setMaterialProperty(behavior_label, material_property_label, std::forward<std::function<Real(Point const &)>>(function));
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>
@@ -396,7 +403,7 @@ namespace lolita
             {
                 element->setExternalVariable(behavior_label, material_property_label, std::forward<std::function<Real(Point const &)>>(function));
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
@@ -412,7 +419,7 @@ namespace lolita
             {
                 element->template assembleUnknownBlock<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, system);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
@@ -429,7 +436,7 @@ namespace lolita
             {
                 element->template assembleBindingBlock<t_finite_element_method, t_discretization>(binding_label, unknown_label, constraint_label, system);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
         
         friend
