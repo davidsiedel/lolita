@@ -383,8 +383,22 @@ namespace lolita
         const
         requires(!t_element.isNode())
         {
-            return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
-            // getInnerNeighbors<t_i, t_j>()[i]->getOuterNeighbors<>
+            // return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
+            auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
+            auto constexpr ggg = t_inner_neighbor.getDim() - 1;
+            // auto constexpr t_inner_neighbor_num_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
+            auto ori = 1;
+            for (auto node_tag = 0; node_tag < ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>(); node_tag++)
+            {
+                // auto mmm = FiniteElementHolder<t_inner_neighbor, t_domain>::template getInnerNeighborNodeConnection<ggg, 0>(node_tag, 0);
+                auto lll = getInnerNeighbors<t_i, t_j>()[i]->getCurrentCoordinates(node_tag);
+                auto kkk = getCurrentCoordinates(getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag));
+                if (!lll.isApprox(kkk))
+                {
+                    ori = -1;
+                }
+            }
+            return ori;
         }
         
         // template<Integer t_i, Integer t_j>
@@ -1137,6 +1151,17 @@ namespace lolita
         }
 
         template<Field t_field, auto t_discretization>
+        auto
+        getSymmetricGradientRhsDEBUG(
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getSymmetricGradientRhsDEBUG<t_field>(row, col);
+        }
+
+        template<Field t_field, auto t_discretization>
         Vector<Real, t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
         getUnknowns(
             std::basic_string_view<Character> label
@@ -1843,43 +1868,6 @@ namespace lolita
             
         }
 
-        // template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
-        // void
-        // setStrainOperators(
-        //     std::basic_string_view<Character> label,
-        //     std::basic_string_view<Character> label2
-        // )
-        // {
-        //     auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-        //     auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
-        //     auto quadrature_point_count = 0;
-        //     for (auto & ip : quadrature_.at(std::string(label)).ips_)
-        //     {
-        //         auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
-        //         strain_operator.setZero();
-        //         auto set_mapping_block = [&] <Integer t_i = 0> (
-        //             auto & self
-        //         )
-        //         constexpr mutable
-        //         {
-        //             auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
-        //             auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
-        //             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-        //             auto point = ip.reference_coordinates_;
-        //             auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
-        //             auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
-        //             mapping_block = mapping_operator;
-        //             if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
-        //             {
-        //                 self.template operator ()<t_i + 1>(self);
-        //             }
-        //         };
-        //         set_mapping_block(set_mapping_block);
-        //         ip.ops_[std::string(label2)] = strain_operator;
-        //         quadrature_point_count ++;
-        //     }
-        // }
-
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
         setStrainOperators(
@@ -1902,7 +1890,7 @@ namespace lolita
                     auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
                     auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
                     auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-                    auto const & point = ip.coordinates_;
+                    auto point = ip.reference_coordinates_;
                     auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
                     auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
                     mapping_block = mapping_operator;
@@ -1916,6 +1904,43 @@ namespace lolita
                 quadrature_point_count ++;
             }
         }
+
+        // template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        // void
+        // setStrainOperators(
+        //     std::basic_string_view<Character> label,
+        //     std::basic_string_view<Character> label2
+        // )
+        // {
+        //     auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+        //     auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
+        //     auto quadrature_point_count = 0;
+        //     for (auto & ip : quadrature_.at(std::string(label)).ips_)
+        //     {
+        //         auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
+        //         strain_operator.setZero();
+        //         auto set_mapping_block = [&] <Integer t_i = 0> (
+        //             auto & self
+        //         )
+        //         constexpr mutable
+        //         {
+        //             auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
+        //             auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
+        //             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
+        //             auto const & point = ip.coordinates_;
+        //             auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
+        //             auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
+        //             mapping_block = mapping_operator;
+        //             if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+        //             {
+        //                 self.template operator ()<t_i + 1>(self);
+        //             }
+        //         };
+        //         set_mapping_block(set_mapping_block);
+        //         ip.ops_[std::string(label2)] = strain_operator;
+        //         quadrature_point_count ++;
+        //     }
+        // }
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void

@@ -319,6 +319,7 @@ namespace lolita
         {
             auto element_map = std::make_unique<FiniteElementMap<t_domain>>();
             auto make_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+            // auto make_elements = [&] <Integer t_i = DomainTraits<t_domain>::getNumElements() - 1, Integer t_j = 0> (
                 auto & self
             )
             mutable
