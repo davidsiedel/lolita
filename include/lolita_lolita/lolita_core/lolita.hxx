@@ -17,12 +17,6 @@
 
 namespace lolita
 {
-
-    using Integer = lolita::integer;
-
-    using Real = lolita::real;
-
-    using Boolean = lolita::boolean;
     
     using Point = RealVector<3>;
 
@@ -765,63 +759,13 @@ namespace lolita
         )
         const = default;
 
-<<<<<<< HEAD:include/lolita/lolita_defs.hxx
-        template<GeneralizedStrainConcept auto t_generalized_strain>
-        constexpr
-        lolita::integer
-        getGeneralizedStrainIndex()
-        {
-            auto index = lolita::integer(0);
-            auto found = lolita::boolean(false);
-            auto set_index = [&] <lolita::integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                if (lolita::utility::areEqual(t_generalized_strain, lolita::utility::get<t_i>(generalized_strains_)))
-                {
-                    found = true;
-                }
-                if (!found)
-                {
-                    index += 1;
-                }
-                if constexpr (t_i < getNumGeneralizedStrains() - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            set_index(set_index);
-            return index;
-        }
-
-        constexpr
-        GeneralizedStrains const &
-        getGeneralizedStrains()
-        const
-        {
-            return generalized_strains_;
-        }
-
-        template<lolita::integer t_i>
-=======
         template<Integer t_i>
->>>>>>> less_templates:include/lolita_lolita/lolita_core/lolita.hxx
         constexpr
         std::tuple_element_t<t_i, std::tuple<t_GeneralizedStrains...>> const &
         getGeneralizedStrain()
         const
         {
             return utility::get<t_i>(generalized_strains_);
-        }
-
-        template<GeneralizedStrainConcept auto t_generalized_strain>
-        constexpr
-        std::tuple_element_t<getGeneralizedStrainIndex<t_generalized_strain>(), std::tuple<t_GeneralizedStrains...>> const &
-        getGeneralizedStrain()
-        const
-        {
-            return generalized_strains_.template get<getGeneralizedStrainIndex<t_generalized_strain>()>();
         }
 
         GeneralizedStrains generalized_strains_;
@@ -955,102 +899,6 @@ namespace lolita
     template<typename t_T>
     concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
 
-<<<<<<< HEAD:include/lolita/lolita_defs.hxx
-    using ParameterFunction = std::function<lolita::real(Point const &, lolita::real const &)>;
-
-    struct MgisParameter
-    {
-
-        MgisParameter(
-            std::basic_string_view<lolita::character> parameter_tag,
-            ParameterFunction && function
-        )
-        :
-        parameter_tag_(parameter_tag),
-        function_(std::forward<ParameterFunction>(function))
-        {}
-
-        constexpr
-        lolita::boolean
-        operator==(
-            MgisParameter const & other
-        )
-        const
-        {
-            return other.parameter_tag_ == this->parameter_tag_;
-        }
-
-        constexpr
-        lolita::boolean
-        operator!=(
-            MgisParameter const & other
-        )
-        const
-        {
-            return !(* this == other);
-        }
-
-        std::basic_string_view<lolita::character> parameter_tag_;
-
-        ParameterFunction function_;
-
-    };
-
-    struct MgisBehaviourData
-    {
-
-        mgis::behaviour::Behaviour behaviour_;
-
-        std::vector<MgisParameter> parameters_;
-
-    };
-
-    struct MgisBehaviour
-    {
-
-        MgisBehaviour(
-                std::basic_string_view<lolita::character> unknown_tag,
-                std::basic_string_view<lolita::character> domain_tag,
-                std::basic_string<lolita::character> const & path,
-                std::basic_string<lolita::character> const & name,
-                mgis::behaviour::Hypothesis hypothesis,
-                std::vector<MgisParameter> && parameters
-        )
-        :
-        unknown_tag_(unknown_tag),
-        domain_tag_(domain_tag),
-        behaviour_data_(std::make_shared<MgisBehaviourData>(MgisBehaviourData{mgis::behaviour::load(path, name, hypothesis), std::forward<std::vector<MgisParameter>>(parameters)}))
-        {}
-
-        // MgisBehaviour(
-        //         std::basic_string<lolita::character> && unknown_tag,
-        //         std::basic_string<lolita::character> && domain_tag,
-        //         std::string const & path,
-        //         std::string const & name,
-        //         mgis::behaviour::Hypothesis hypothesis,
-        //         mgis::behaviour::FiniteStrainBehaviourOptions finite_strain_behaviour_options,
-        //         std::vector<lolita::behaviour::MgisParameter> && parameters
-        // )
-        // :
-        // unknown_tag_(std::forward<std::basic_string<lolita::character>>(unknown_tag)),
-        // domain_tag_(std::forward<std::basic_string<lolita::character>>(domain_tag)),
-        // behaviour_data_(std::make_shared<lolita::behaviour::MgisBehaviourData>(lolita::behaviour::MgisBehaviourData{
-        //     mgis::behaviour::load(finite_strain_behaviour_options, path, name, hypothesis),
-        //     std::forward<std::vector<lolita::behaviour::MgisParameter>>(parameters)
-        // }))
-        // {}
-
-        std::basic_string<lolita::character> unknown_tag_;
-
-        std::basic_string<lolita::character> domain_tag_;
-
-        std::shared_ptr<MgisBehaviourData> behaviour_data_;
-
-    };
-
-}
-=======
 } // namespace lolita
->>>>>>> less_templates:include/lolita_lolita/lolita_core/lolita.hxx
 
 #endif /* A4BCD9B5_985A_4D19_B3E9_7C559F45A353 */

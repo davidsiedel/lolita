@@ -173,43 +173,6 @@ TEST(tm, tm)
     auto tockm = std::chrono::high_resolution_clock::now();
     auto timem = std::chrono::duration<double>(tockm - tickm);
     std::cout << "time map : " << timem.count() << std::endl;
-
-    // auto constexpr restpl = lolita::utility::hello(std::make_tuple(1, true, 'A', 1, 2.0));
-    // // auto constexpr restpl = lolita::utility::getSlicedTuple<1, 5>(std::make_tuple(1, 2.0, 'A', 1, 2.0));
-
-    // std::apply([&](auto &&... args) {((std::cout << args << " "), ...);}, restpl);
-    // std::cout << std::endl;
-
     // std::cout << * stdvec.end() << std::endl;
-
-    // lolita2::geometry::TEST<displacement_element, damage_element, displacement_element>();
-    // lolita2::geometry::TEST<1, 2, 1>();
-
-    // lolita::utility::TD<decltype(lolita::utility::hello<domain, cell_basis, domain, lolita2::Basis::monomial(2)>())>();
-    // std::apply([&](auto &&... args) {((std::cout << args << " "), ...);}, lolita::utility::hello<4, 1, 3, 1, 2, 5, 3, 2, 3, 4>());
-    // std::cout << std::endl;
-    // using JJJK = lolita::utility::HH<lolita::utility::Holder, domain, cell_basis, domain, lolita2::Basis::monomial(2)>;
-
-
-    // lolita::utility::TD<decltype(lolita::utility::hello2<domain, cell_basis, domain, lolita2::Basis::monomial(2)>())>();
-
-    // auto constexpr inpt = lolita::utility::hello2<domain, cell_basis, domain, lolita2::Basis::monomial(2)>();
-
-    // // using MYT = lolita::utility::MYTYPE<lolita::utility::Holder, inpt>;
-
-    // // auto constexpr myt = MYT();
-
-    // static_assert(std::is_same_v<std::tuple<int, float, char>, lolita::utility2::HJK<std::tuple<int, float>, std::tuple<char>>::type>);
-
-    // // using TESTT = lolita::utility2::tuple_slice_t<2, std::tuple<int, float, char, double, bool>>;
-
-    // // lolita::utility::TD<TESTT>();
-    // // lolita::utility::TD<lolita::utility2::tuple_sort_t<int, float, double, int, char, double>>();
-    // // lolita::utility::TD<lolita::utility2::tuple_sort_t2<std::tuple<int, float, double, int, char, double>>>();
-    // // lolita::utility::TD<lolita::utility2::tuple_slice_t2<2, 4, std::tuple<int, float, double, int, char, double>>>();
-
-
-
-    // static_assert(std::is_same_v<lolita::utility2::tuple_slice_t<2, std::tuple<int, float, char>>, std::tuple<char>>);
     
 }
