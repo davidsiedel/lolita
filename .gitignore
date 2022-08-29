@@ -32,9 +32,11 @@
 *.app
 
 # Perso
-**/old/
 **/.idea/
 # **/.vscode/
 **/cmake-build**/
 **/**build**/
 tmp.*
+**/**bhv_**/include/
+**/**bhv_**/src/
+*.msh

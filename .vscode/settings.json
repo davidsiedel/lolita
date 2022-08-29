@@ -2,10 +2,10 @@
     // "cmake.cmakePath": "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/cmake-3.23.1-thkpc37ug5mfsnzfrfv37ngyklt72cks/bin/cmake",
     "cmake.configureSettings": {
         "G": "Unix Makefiles",
-        "Eigen3_DIR": "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/share/eigen3/cmake",
-        "INTEL_MKL_HOME": "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f",
-        "GTEST_ROOT": "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.11.0-fym76qqgkka37m27u25kkn2h2sosbwad",
-        "MGIS_ROOT": "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/mgis-master-vdgcnh7wvfthpcmgsghwsxilhgh5bkn3",
+        "Eigen3_DIR": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/share/eigen3/cmake",
+        "INTEL_MKL_HOME": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f",
+        "GTEST_ROOT": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.11.0-fym76qqgkka37m27u25kkn2h2sosbwad",
+        "MGIS_ROOT": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/mgis-master-vdgcnh7wvfthpcmgsghwsxilhgh5bkn3",
         "TEST_MODE": "test",
         "CMAKE_FIND_DEBUG_MODE": "ON"
     },
@@ -77,7 +77,13 @@
         "thread": "cpp",
         "typeinfo": "cpp",
         "*.ixx": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "core": "cpp",
+        "lu": "cpp",
+        "sparsecore": "cpp",
+        "cinttypes": "cpp",
+        "list": "cpp",
+        "codecvt": "cpp"
     },
     "cSpell.words": [
         "discretization",
