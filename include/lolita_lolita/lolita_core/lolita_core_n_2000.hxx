@@ -299,14 +299,30 @@ namespace lolita
         void
         setCorrection()
         {
-            // auto solver = Eigen::SparseLU<Eigen::SparseMatrix<Real>>();
-            auto solver = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>();
+            // using SOLVER = Eigen::SparseLU<Eigen::SparseMatrix<Real, Eigen::ColMajor>, Eigen::COLAMDOrdering<Eigen::DenseIndex>>;
+            // using SOLVER = Eigen::SparseLU<Eigen::SparseMatrix<Real, Eigen::RowMajor>, Eigen::COLAMDOrdering<int> >;
+            using SOLVER = Eigen::PardisoLU<Eigen::SparseMatrix<Real>>;
+            // using SOLVER = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>;
+            // auto solver = Eigen::PardisoLU<Eigen::SparseMatrix<Real>>();
+            // auto solver = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>();
+            auto solver = SOLVER();
             auto lhs = Eigen::SparseMatrix<Real>(getSize(), getSize());
             lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
             // std::cout << "lhs : " << "\n";
             // std::cout << Matrix<Real>(lhs).format(print_format) << "\n";
             // std::cout << "rhs : " << "\n";
             // std::cout << rhs_values_ << "\n";
+            //
+            //
+            // auto outfile = std::ofstream();
+            // outfile << std::fixed << std::setprecision(3);
+            // outfile.open("/home/dsiedel/projetcs/lolita/lolita/tests/t0/mat.txt");
+            // outfile << "lhs : " << "\n";
+            // outfile << Matrix<Real>(lhs).format(print_format) << "\n";
+            // outfile << "rhs : " << "\n";
+            // outfile << rhs_values_ << "\n";
+            //
+            //
             solver.analyzePattern(lhs);
             solver.factorize(lhs);
             if (solver.info() != Eigen::Success)

@@ -638,7 +638,18 @@ namespace lolita
         const
         requires(t_element.isSub(t_domain, 0))
         {
-            return (second_point - first_point)(kkk);
+            auto first_point_mapping = Point();
+            auto second_point_mapping = Point();
+            auto const & current_coordinates = this->getCurrentCoordinates();
+            first_point_mapping.setZero();
+            second_point_mapping.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
+            {
+                first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            }
+            return (second_point_mapping - first_point_mapping)(kkk);
+            // return (second_point - first_point)(kkk);
         }
         
         Real
@@ -650,8 +661,19 @@ namespace lolita
         const
         requires(t_element.isSub(t_domain, 1))
         {
-            auto rot = getRotationMatrix(getReferenceCentroid());
-            return (rot * (second_point - first_point))(kkk);
+            auto rotation_matrix = getRotationMatrix(getReferenceCentroid());
+            auto first_point_mapping = Point();
+            auto second_point_mapping = Point();
+            auto const & current_coordinates = this->getCurrentCoordinates();
+            first_point_mapping.setZero();
+            second_point_mapping.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
+            {
+                first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            }
+            return (rotation_matrix * (second_point_mapping - first_point_mapping))(kkk);
+            // return (rot * (second_point - first_point))(kkk);
         }
         
         // Real
@@ -705,11 +727,8 @@ namespace lolita
             {
                 for (auto j = i + 1; j < t_element.getNumNodes(); ++j)
                 {
-                    // auto pt0 = projected_coordinates.col(i);
-                    // auto pt1 = projected_coordinates.col(j);
                     for (auto k = 0; k < t_element.getDim(); ++k)
                     {
-                        // auto new_value = (pt1 - pt0)(k);
                         auto new_value = projected_coordinates(k, j) - projected_coordinates(k, i);
                         auto & current_value = current_diameters(k);
                         if (new_value > current_value)
@@ -1952,7 +1971,7 @@ namespace lolita
                     auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
                     auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
                     auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-                    auto const & point = ip.coordinates_;
+                    auto const & point = ip.getReferenceCoordinates();
                     auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
                     auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
                     mapping_block = mapping_operator;

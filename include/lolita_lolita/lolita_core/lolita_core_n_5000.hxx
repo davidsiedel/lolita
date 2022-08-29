@@ -67,10 +67,10 @@ namespace lolita
             mutable
             {
                 auto constexpr t_i = t_ii.getDim();
-                auto nb_threads = std::thread::hardware_concurrency() == 0 ? 8 : (std::thread::hardware_concurrency());
-                auto batch_size = this->template getElements<t_i, t_j>().size() / nb_threads;
-                auto batch_remainder = this->template getElements<t_i, t_j>().size() % nb_threads;
-                auto my_threads = std::vector<std::jthread>(nb_threads);
+                auto num_threads = std::thread::hardware_concurrency() == 0 ? 8 : (std::thread::hardware_concurrency());
+                auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
+                auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
+                auto my_threads = std::vector<std::jthread>(num_threads);
                 //
                 auto doit = [&] (
                     Integer start,
@@ -87,19 +87,19 @@ namespace lolita
                     }
                 };
                 //
-                for(auto i = 0; i < nb_threads; ++i)
+                for(auto i = 0; i < num_threads; ++i)
                 {
                     my_threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
                 }
-                doit(nb_threads * batch_size, nb_threads * batch_size + batch_remainder);
+                doit(num_threads * batch_size, num_threads * batch_size + batch_remainder);
                 //
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
                 {
                     self.template operator()<t_j + 1>(self);
                 }
             }; 
-            // activate_elements(activate_elements);
-            caller<t_ii>(domain, fun);
+            activate_elements(activate_elements);
+            // caller<t_ii>(domain, fun);
         }
         
         std::unique_ptr<FiniteElementSet>
@@ -973,7 +973,8 @@ namespace lolita
                         {
                             for (auto const & integration_point : element->quadrature_.at(std::string(quadrature_label)).ips_)
                             {
-                                auto const & point = integration_point.getCurrentCoordinates();
+                                // auto const & point = integration_point.getCurrentCoordinates();
+                                auto const & point = integration_point.getReferenceCoordinates();
                                 quadrature_values[tag] += element->template getUnknownValue<t_args...>(unknown_label, point, row, col);
                                 tag ++;
                             }
