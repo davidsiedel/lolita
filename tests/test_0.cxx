@@ -43,12 +43,12 @@ TEST(t0, t0)
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle004.msh";
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle050.msh";
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/quadrangle_unstructured_00050.msh";
-    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/triangle_unstructured_00050.msh";
+    // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/triangle_unstructured_00050.msh";
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/square_mixed_unstructured_out.msh";
-    // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/triangle_structured_00002.msh";
+    auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/t0/mesh.msh";
     // auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/data/meshes/unit_square_3_cpp.msh";
     //
-    auto out_file = "/home/dsiedel/projetcs/lolita/lolita/tests/out_square_mixed_unstructured_out.msh";
+    auto out_file = "/home/dsiedel/projetcs/lolita/lolita/tests/out_t0.msh";
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // dofs

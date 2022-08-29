@@ -63,6 +63,24 @@ TEST(t_deb, t_deb)
     auto constexpr t_grad_basis = lolita::Basis::monomial(1);
     auto constexpr t_face = lolita::Element::segment(1);
     // for (auto const & finite_element : {elements->template getElements<2, 0>()[0]})
+    //
+    //
+    //
+    auto printelem2 = [&] <int t_i = 0> (auto & self)
+    {
+        for (auto const & finite_element : elements->template getElements<2, t_i>())
+        {
+            finite_element->template getSymmetricGradientRhsDEBUG<displacement_field, hdg>(0, 0);
+        }
+        if constexpr (t_i < lolita::DomainTraits<domain>::template getNumElements<2>() - 1)
+        {
+            self.template operator()<t_i + 1>(self);
+        }
+    };
+    printelem2(printelem2);
+    //
+    //
+    //
     auto printelem = [&] <int t_i = 0> (auto & self)
     {
         // std::cout << "t_i ======================================== " << t_i << std::endl;
@@ -182,7 +200,10 @@ TEST(t_deb, t_deb)
             self.template operator()<t_i + 1>(self);
         }
     };
-    printelem(printelem);
+    // printelem(printelem);
+    //
+    //
+    //
     // <--------------------------------------------------------------------------------------------------------------------------------------------------------
     // dofs
     auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");

@@ -959,12 +959,12 @@ namespace lolita
         const
         {
             auto quadrature_values = std::vector<Real>(getNumIntegrationPoints<t_coordinate>(quadrature_label), 0);
+            auto tag = 0;
             auto set_quadrature_values = [&] <Integer t_j = 0> (
                 auto & self
             )
             mutable
             {
-                auto tag = 0;
                 for (auto const & element : this->template getElements<t_coordinate, t_j>())
                 {
                     if (element->degrees_of_freedom_.contains(std::string(unknown_label)))
@@ -973,7 +973,7 @@ namespace lolita
                         {
                             for (auto const & integration_point : element->quadrature_.at(std::string(quadrature_label)).ips_)
                             {
-                                auto const & point = integration_point.getReferenceCoordinates();
+                                auto const & point = integration_point.getCurrentCoordinates();
                                 quadrature_values[tag] += element->template getUnknownValue<t_args...>(unknown_label, point, row, col);
                                 tag ++;
                             }

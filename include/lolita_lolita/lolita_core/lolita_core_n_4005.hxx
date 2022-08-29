@@ -636,27 +636,52 @@ namespace lolita
             Integer kkk
         )
         const
+        requires(t_element.isSub(t_domain, 0))
         {
-            auto mp_0 = Point();
-            auto mp_1 = Point();
-            auto const & current_coordinates = this->getCurrentCoordinates();
-            mp_0.setZero();
-            mp_1.setZero();
-            for (auto i = 0; i < t_domain.getDim(); ++i)
-            {
-                mp_0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-                mp_1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-            }
-            if constexpr (t_element.isSub(t_domain, 0))
-            {
-                return (mp_1 - mp_0)(kkk);
-            }
-            else if constexpr (t_element.isSub(t_domain, 1))
-            {
-                auto rot = getRotationMatrix(getReferenceCentroid());
-                return (rot * (mp_1 - mp_0))(kkk);
-            }
+            return (second_point - first_point)(kkk);
         }
+        
+        Real
+        getLocalFrameDistance(
+            Point const & first_point,
+            Point const & second_point,
+            Integer kkk
+        )
+        const
+        requires(t_element.isSub(t_domain, 1))
+        {
+            auto rot = getRotationMatrix(getReferenceCentroid());
+            return (rot * (second_point - first_point))(kkk);
+        }
+        
+        // Real
+        // getLocalFrameDistance(
+        //     Point const & first_point,
+        //     Point const & second_point,
+        //     Integer kkk
+        // )
+        // const
+        // {
+        //     auto mp_0 = Point();
+        //     auto mp_1 = Point();
+        //     auto const & current_coordinates = this->getCurrentCoordinates();
+        //     mp_0.setZero();
+        //     mp_1.setZero();
+        //     for (auto i = 0; i < t_domain.getDim(); ++i)
+        //     {
+        //         mp_0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+        //         mp_1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+        //     }
+        //     if constexpr (t_element.isSub(t_domain, 0))
+        //     {
+        //         return (mp_1 - mp_0)(kkk);
+        //     }
+        //     else if constexpr (t_element.isSub(t_domain, 1))
+        //     {
+        //         auto rot = getRotationMatrix(getReferenceCentroid());
+        //         return (rot * (mp_1 - mp_0))(kkk);
+        //     }
+        // }
         
         Point
         getLocalFrameDiameters()
@@ -1868,43 +1893,6 @@ namespace lolita
             
         }
 
-        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
-        void
-        setStrainOperators(
-            std::basic_string_view<Character> label,
-            std::basic_string_view<Character> label2
-        )
-        {
-            auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-            auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
-            auto quadrature_point_count = 0;
-            for (auto & ip : quadrature_.at(std::string(label)).ips_)
-            {
-                auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
-                strain_operator.setZero();
-                auto set_mapping_block = [&] <Integer t_i = 0> (
-                    auto & self
-                )
-                constexpr mutable
-                {
-                    auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
-                    auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
-                    auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-                    auto point = ip.reference_coordinates_;
-                    auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
-                    auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
-                    mapping_block = mapping_operator;
-                    if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
-                    {
-                        self.template operator ()<t_i + 1>(self);
-                    }
-                };
-                set_mapping_block(set_mapping_block);
-                ip.ops_[std::string(label2)] = strain_operator;
-                quadrature_point_count ++;
-            }
-        }
-
         // template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         // void
         // setStrainOperators(
@@ -1927,7 +1915,7 @@ namespace lolita
         //             auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
         //             auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
         //             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-        //             auto const & point = ip.coordinates_;
+        //             auto point = ip.reference_coordinates_;
         //             auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
         //             auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
         //             mapping_block = mapping_operator;
@@ -1941,6 +1929,43 @@ namespace lolita
         //         quadrature_point_count ++;
         //     }
         // }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        setStrainOperators(
+            std::basic_string_view<Character> label,
+            std::basic_string_view<Character> label2
+        )
+        {
+            auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
+            auto quadrature_point_count = 0;
+            for (auto & ip : quadrature_.at(std::string(label)).ips_)
+            {
+                auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
+                strain_operator.setZero();
+                auto set_mapping_block = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
+                    auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
+                    auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
+                    auto const & point = ip.coordinates_;
+                    auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
+                    auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
+                    mapping_block = mapping_operator;
+                    if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_mapping_block(set_mapping_block);
+                ip.ops_[std::string(label2)] = strain_operator;
+                quadrature_point_count ++;
+            }
+        }
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void

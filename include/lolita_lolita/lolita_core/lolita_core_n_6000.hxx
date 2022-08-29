@@ -999,9 +999,9 @@ namespace lolita
             outfile << time_step_index << "\n";
             outfile << 1 << "\n"; // size of gradients
             std::cout << "!!!!\n";
-            std::cout << element_set->template getNumIntegrationPoints<>(quadrature_label);
+            std::cout << element_set->template getNumIntegrationPoints<t_coordinate>(quadrature_label);
             std::cout << "\n!!!!\n";
-            outfile << element_set->template getNumIntegrationPoints<>(quadrature_label) << "\n"; // number of nodes
+            outfile << element_set->template getNumIntegrationPoints<t_coordinate>(quadrature_label) << "\n"; // number of nodes
             c_element = element_set->template getNumElements<0>() + 1;
             auto quadrature_values = element_set->template getQuadratureValues<t_coordinate, t_args...>(unknown_label, quadrature_label, row, col);
             for (auto quadrature_value : quadrature_values)
