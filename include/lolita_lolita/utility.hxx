@@ -18,6 +18,26 @@ namespace lolita::utility
 {
 
     template<typename t_T>
+    static
+    std::vector<t_T>
+    linspace(
+        t_T start,
+        t_T end,
+        Integer steps
+    )
+    {
+        auto linspacee = std::vector<t_T>(steps);
+        auto step = (end - start) / (steps - 1);
+        auto count = 0;
+        for (auto & val : linspacee)
+        {
+            val = start + count * step;
+            count ++;
+        }
+        return linspacee;
+    }
+
+    template<typename t_T>
     struct Holderr
     {
 

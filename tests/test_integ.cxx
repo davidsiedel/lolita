@@ -7,7 +7,7 @@
 #include <MGIS/Behaviour/Integrate.hxx>
 #include <MGIS/Behaviour/Integrate.h>
 
-#include "lolita_lolita/lolita_core/lolita_core_n_5000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4004.hxx"
 
 TEST(ti, ti)
 {

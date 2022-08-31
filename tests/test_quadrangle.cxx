@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "lolita_lolita/lolita_core/lolita_core_n_5000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4004.hxx"
 
 TEST(test_quadrangle, test_quadrangle)
 {

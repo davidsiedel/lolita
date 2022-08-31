@@ -1,9 +1,14 @@
 #include "gtest/gtest.h"
-#include "lolita_lolita/lolita_core/lolita_core_n_6000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4004.hxx"
 
 TEST(t0, t0)
 {
     // std::cout << std::fixed << std::setprecision(3);
+    auto rgs = lolita::utility::linspace(1., 3., 5);
+    for (auto val : rgs)
+    {
+        std::cout << val << std::endl;
+    }
 
     //
     auto tick = std::chrono::high_resolution_clock::now();
@@ -102,8 +107,9 @@ TEST(t0, t0)
     time = std::chrono::duration<double>(tock - tick);
     std::cout << "making system time : " << time.count() << "\n";
     tick = std::chrono::high_resolution_clock::now();
-    
+    //
     displacement_system->setCorrection();
+    //
     tock = std::chrono::high_resolution_clock::now();
     time = std::chrono::duration<double>(tock - tick);
     std::cout << "solving system time : " << time.count() << "\n";

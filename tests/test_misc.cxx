@@ -10,7 +10,7 @@
 #include <filesystem>
 
 #include "gtest/gtest.h"
-#include "lolita_lolita/lolita_core/lolita_core_n_6000.hxx"
+#include "lolita_lolita/lolita_core/lolita_core_n_4004.hxx"
 
 struct Struct
 {
