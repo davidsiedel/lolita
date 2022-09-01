@@ -3,20 +3,13 @@
 
 TEST(t0, t0)
 {
-    // std::cout << std::fixed << std::setprecision(3);
-    auto rgs = lolita::utility::linspace(1., 3., 5);
-    for (auto val : rgs)
-    {
-        std::cout << val << std::endl;
-    }
-
-    //
-    auto tick = std::chrono::high_resolution_clock::now();
-    auto tock = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration<double>(tock - tick);
-
-    tick = std::chrono::high_resolution_clock::now();
-
+    std::cout << std::fixed << std::setprecision(3);
+    // auto time_steps = lolita::utility::linspace(0., 1., 10);
+    // for (auto val : time_steps)
+    // {
+    //     std::cout << val << std::endl;
+    // }
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     // declaring behavior
     auto lib_path = "/home/dsiedel/projetcs/lolita/lolita/tests/test_0/data/behavior/bhv_elasticity/src/libBehaviour.so";
     auto lib_name = "Elasticity";
@@ -25,9 +18,6 @@ TEST(t0, t0)
         mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
     };
     auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
-    //
-    //
-    //
     // constants
     auto constexpr domain = lolita::Domain::cartesian(2);
     auto constexpr quadrature = lolita::Quadrature::gauss(2);
@@ -45,7 +35,6 @@ TEST(t0, t0)
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     // mesh
     auto file_path = "/home/dsiedel/projetcs/lolita/lolita/tests/test_0/mesh.msh";
-    //
     auto out_file = "/home/dsiedel/projetcs/lolita/lolita/tests/test_0/out.msh";
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
@@ -64,10 +53,8 @@ TEST(t0, t0)
     displacement_system->setBinding("LeftForce", left_force->size());
     displacement_system->setBinding("BottomForce", bottom_force->size());
     displacement_system->initialize();
-    std::cout << "displacement_system u size : " << displacement_system->getUnknownsSize() << std::endl;
-    std::cout << "displacement_system b size : " << displacement_system->getBindingsSize() << std::endl;
     // load
-    auto load0 = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return 1.0; }, 1, 0);
+    auto load0 = elements->setConstraint<faces>("TOP", "Pull", [](lolita::Point const & p, lolita::Real const & t) { return t; }, 1, 0);
     auto load1 = elements->setConstraint<faces>("LEFT", "FixedL", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 0, 0);
     auto load2 = elements->setConstraint<faces>("BOTTOM", "FixedB", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 1, 0);
     // adding behavior
@@ -86,59 +73,133 @@ TEST(t0, t0)
     elements->setParameter<faces>("BOTTOM", "Lagrange", [](lolita::Point const & p) { return 1.0; });
     // stab
     elements->setParameter<cells>("SQUARE", "Stabilization", [](lolita::Point const & p) { return 1.0; });
-
-    tock = std::chrono::high_resolution_clock::now();
-    time = std::chrono::duration<double>(tock - tick);
-    std::cout << "building problem time : " << time.count() << "\n";
-    tick = std::chrono::high_resolution_clock::now();
-    //
-    //
-    elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");
-    //
-    elements->integrate<cells>("SQUARE", "Elasticity");
-    //
-    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
-    //
-    elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system);
-    elements->assembleBindingBlock<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system);
-    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system);
-
-    tock = std::chrono::high_resolution_clock::now();
-    time = std::chrono::duration<double>(tock - tick);
-    std::cout << "making system time : " << time.count() << "\n";
-    tick = std::chrono::high_resolution_clock::now();
-    //
-    displacement_system->setCorrection();
-    //
-    tock = std::chrono::high_resolution_clock::now();
-    time = std::chrono::duration<double>(tock - tick);
-    std::cout << "solving system time : " << time.count() << "\n";
-    tick = std::chrono::high_resolution_clock::now();
-    //
-    std::cout << "normalization : " << displacement_system->getNormalization() << "\n";
-    //
-    elements->updateUnknown<cells, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
-    elements->updateUnknown<faces, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
-    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce", displacement_system);
-    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce", displacement_system);
-    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce", displacement_system);
-
-    tock = std::chrono::high_resolution_clock::now();
-    time = std::chrono::duration<double>(tock - tick);
-    std::cout << "update time : " << time.count() << "\n";
-    tick = std::chrono::high_resolution_clock::now();
-    //
-    // elements->setOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", "Elasticity");
-    // elements->addOutput("/home/dsiedel/projetcs/lolita/lolita/tests/out1.msh", 0, 0.0, "Elasticity");
     lolita::GmshFileParser::setOutput<domain>(out_file, elements, "Elasticity");
-    lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, 0, 0.0, "Elasticity", 0);
-    // lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 0, 0);
-    // lolita::GmshFileParser::addNodalDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", 1, 0);
-    lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", "Elasticity", 0, 0);
-    lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, 0, 0.0, "Displacement", "Elasticity", 1, 0);
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    tock = std::chrono::high_resolution_clock::now();
-    time = std::chrono::duration<double>(tock - tick);
-    std::cout << "output time : " << time.count() << "\n";
+    auto times = std::vector<lolita::Real>();
+    for (auto i = 0; i < 11; i++)
+    {
+        times.push_back(i * 1.0 / 10);
+    }
+    
+    auto step = 0;
+    auto time = times[step];
+    auto newton_step = [&] ()
+    {
+        auto iteration = 0;
+        while(iteration < 10)
+        {
+            displacement_system->initialize();
+            elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");
+            std::cout << "iteration : " << iteration << std::endl;
+            if (elements->integrate<cells>("SQUARE", "Elasticity").isFailure())
+            {
+                std::cout << "integration failure" << std::endl;
+                return false;
+            }
+            else
+            {
+                elements->assembleUnknownVector<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
+                elements->assembleBindingVector<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system, time);
+                elements->assembleBindingVector<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system, time);
+                elements->assembleBindingVector<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system, time);
+                std::cout << "res eval : " << displacement_system->getResidualEvaluation() << std::endl;
+                std::cout << "res : " << lolita::Matrix<lolita::Real, 1, -1>(displacement_system->rhs_values_) << std::endl;
+                if (displacement_system->getResidualEvaluation() < 1.e-6)
+                {
+                    std::cout << "convergence" << std::endl;
+                    return true;
+                }
+                else
+                {
+                    std::cout << "solve" << std::endl;
+                    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
+                    //
+                    elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system);
+                    elements->assembleBindingBlock<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system);
+                    elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system);
+                    displacement_system->setCorrection();
+                    elements->updateUnknown<cells, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
+                    elements->updateUnknown<faces, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
+                    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce", displacement_system);
+                    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce", displacement_system);
+                    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce", displacement_system);
+                }
+            }
+            iteration ++;
+        }
+        std::cout << "max iters" << std::endl;
+        return false;
+    };
+    while (step < times.size())
+    {
+        std::cout << "step : " << step << " time : " << time << std::endl;
+        if (newton_step())
+        {
+            std::cout << "time step convergence" << std::endl;
+            elements->reserveBehaviorData<cells>("SQUARE", "Elasticity");
+            elements->reserveUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
+            elements->reserveUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
+            elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
+            elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
+            elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
+            lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, step, time, "Elasticity", 0);
+            lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, step, time, "Displacement", "Elasticity", 0, 0);
+            lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, step, time, "Displacement", "Elasticity", 1, 0);
+            step ++;
+            time = times[step];
+            /* code */
+        }
+        else
+        {
+            std::cout << "time step split" << std::endl;
+            time = times[step - 1] + (1.0 / 2.0) * (time - times[step - 1]);
+        }
+    }
+
+    // auto iteration = [&] ()
+    // {
+    //     displacement_system->initialize();
+    //     elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");
+    //     auto output = elements->integrate<cells>("SQUARE", "Elasticity");
+    //     if (output.isFailure())
+    //     {
+    //         return output;
+    //     }
+    //     elements->assembleUnknownVector<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
+    //     elements->assembleBindingVector<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system, time_steps.getTime());
+    //     elements->assembleBindingVector<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system, time_steps.getTime());
+    //     elements->assembleBindingVector<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system, time_steps.getTime());
+    //     std::cout << "res eval : " << displacement_system->getResidualEvaluation() << std::endl;
+    //     if (displacement_system->getResidualEvaluation() < 1.e-6)
+    //     {
+    //         elements->reserveBehaviorData<cells>("SQUARE", "Elasticity");
+    //         elements->reserveUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
+    //         elements->reserveUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
+    //         elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
+    //         elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
+    //         elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
+    //         lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, time_steps.getStep(), time_steps.getTime(), "Elasticity", 0);
+    //         lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, time_steps.getStep(), time_steps.getTime(), "Displacement", "Elasticity", 0, 0);
+    //         lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, time_steps.getStep(), time_steps.getTime(), "Displacement", "Elasticity", 1, 0);
+    //         time_steps.update();
+    //     }
+    //     else
+    //     {
+    //         elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
+    //         //
+    //         elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system);
+    //         elements->assembleBindingBlock<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system);
+    //         elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system);
+    //         displacement_system->setCorrection();
+    //         elements->updateUnknown<cells, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
+    //         elements->updateUnknown<faces, displacement_element, hdg>("SQUARE", "Displacement", displacement_system);
+    //         elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce", displacement_system);
+    //         elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce", displacement_system);
+    //         elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce", displacement_system);
+    //         time_steps.updateIteration();
+    //     }
+    //     return output;
+    // };
     
 }

@@ -37,6 +37,137 @@ namespace lolita::utility
         return linspacee;
     }
 
+    struct TimeSteps
+    {
+
+        TimeSteps()
+        :
+        step_(0),
+        iteration_(0),
+        values_(1, 0)
+        {}
+
+        inline
+        void
+        addRange(
+            Real end,
+            Integer steps
+        )
+        {
+            auto start = values_.back();
+            if (end > start)
+            {
+                auto step = (end - start) / (steps);
+                for (auto i = 1; i < steps + 1; i++)
+                {
+                    values_.push_back(start + i * step);
+                }
+            }
+            else
+            {
+                throw std::runtime_error("NO !");
+            }
+        }
+        
+        inline
+        Real const &
+        getTime()
+        const
+        {
+            return values_[step_];
+        }
+        
+        inline
+        Integer
+        getStep()
+        const
+        {
+            return step_;
+        }
+        
+        inline
+        Integer
+        getIteration()
+        const
+        {
+            return iteration_;
+        }
+        
+        inline
+        Boolean
+        isDone()
+        const
+        {
+            return step_ == values_.size() - 1;
+        }
+        
+        inline
+        Boolean
+        hasIteration(
+            Integer iteration
+        )
+        const
+        {
+            return iteration_ == iteration;
+        }
+
+        inline
+        void
+        split()
+        {
+            if (step_ > 0)
+            {
+                auto value = values_[step_ - 1] + (1.0 / 2.0) * (values_[step_] - values_[step_ - 1]);
+                values_.insert(values_.begin() + step_, value);
+                iteration_ = 0;
+            }
+            else
+            {
+                throw std::runtime_error("NO !");
+            }
+        }
+
+        inline
+        void
+        update()
+        {
+            step_ ++;
+            iteration_ = 0;
+        }
+        
+        inline
+        void
+        updateIteration()
+        {
+            iteration_ ++;
+        }
+        
+        inline
+        friend
+        std::ostream &
+        operator<<(
+            std::ostream & os,
+            TimeSteps const & time_steps
+        )
+        {
+            os << "time_steps : ";
+            for (auto time_step : time_steps.values_)
+            {
+                os << time_step << " / ";
+            }
+            return os;
+        }
+
+    private:
+
+        Integer step_;
+
+        Integer iteration_;
+
+        std::vector<Real> values_;
+
+    };
+
     template<typename t_T>
     struct Holderr
     {

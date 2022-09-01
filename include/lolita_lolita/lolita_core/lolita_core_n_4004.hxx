@@ -993,9 +993,9 @@ namespace lolita
             outfile << "3\n";
             outfile << time_step_index << "\n";
             outfile << 1 << "\n"; // size of gradients
-            std::cout << "!!!!\n";
-            std::cout << element_set->template getNumIntegrationPoints<t_coordinate>(quadrature_label);
-            std::cout << "\n!!!!\n";
+            // std::cout << "!!!!\n";
+            // std::cout << element_set->template getNumIntegrationPoints<t_coordinate>(quadrature_label);
+            // std::cout << "\n!!!!\n";
             outfile << element_set->template getNumIntegrationPoints<t_coordinate>(quadrature_label) << "\n"; // number of nodes
             c_element = element_set->template getNumElements<0>() + 1;
             auto quadrature_values = element_set->template getQuadratureValues<t_coordinate, t_args...>(unknown_label, quadrature_label, row, col);
@@ -1048,6 +1048,7 @@ namespace lolita
                     self.template operator()<t_i + 1, 0>(self);
                 }
             };
+            // gmsh_file_parser.template setMeshElement<t_domain, Element::node()>(mesh_element_set);
             make_elements(make_elements);
             return mesh_element_set.makeFiniteElementSet();
         }

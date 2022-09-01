@@ -1096,6 +1096,7 @@ namespace lolita
                 {
                     auto strain_operator_view = StrainOperatorView(integration_point.ops_.at(std::string(degree_of_freedom_label)).data());
                     auto stress_view = StrainView(integration_point.behavior_data_->s1.thermodynamic_forces.data());
+                    // std::cout << "stress_view : " << Matrix<Real, 1, -1>(stress_view) << std::endl;
                     internal_forces += integration_point.weight_ * strain_operator_view.transpose() * stress_view;
                 }
                 internal_forces += this->parameters_.at("Stabilization") * this->operators_.at("Stabilization") * unknown;
@@ -1151,6 +1152,8 @@ namespace lolita
                 {
                     auto strain_operator_view = StrainOperatorView(integration_point.ops_.at(std::string(degree_of_freedom_label)).data());
                     auto jacob = integration_point.template getJacobian<t_finite_element_method>();
+                    // std::cout << "jacob :\n" << jacob << std::endl;
+                    // std::cout << "strain_operator_view :\n" << strain_operator_view << std::endl;
                     jacobian += integration_point.weight_ * strain_operator_view.transpose() * jacob * strain_operator_view;
                 }
                 jacobian += this->parameters_.at("Stabilization") * this->operators_.at("Stabilization");
@@ -1167,7 +1170,7 @@ namespace lolita
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
             void
-            assembleUnknownBlock(
+            assembleUnknownVector(
                 std::basic_string_view<Character> behavior_label,
                 std::basic_string_view<Character> degree_of_freedom_label,
                 std::unique_ptr<System> const & system
@@ -1180,7 +1183,9 @@ namespace lolita
                 auto external_forces = getExternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
                 system->setNormalization(external_forces.cwiseAbs().maxCoeff());
                 auto jac = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
-                auto residual = internal_forces - external_forces;
+                // auto residual = internal_forces - external_forces;
+                auto residual = external_forces - internal_forces;
+                // std::cout << "element_residual : " << Matrix<Real, 1, -1>(residual) << std::endl;
                 auto k_tt = jac.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
                 auto k_tf = jac.template block<num_cell_unknowns, num_face_unknowns>(0, num_cell_unknowns);
                 auto k_ft = jac.template block<num_face_unknowns, num_cell_unknowns>(num_cell_unknowns, 0);
@@ -1191,7 +1196,7 @@ namespace lolita
                 this->operators_["KTT"] = k_tt_inv;
                 this->operators_["KTF"] = k_tf;
                 this->operators_["RT"] = r_t;
-                auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
+                // auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
                 auto r_c = r_f - k_ft * k_tt_inv * r_t;
                 //
                 //
@@ -1206,11 +1211,64 @@ namespace lolita
                     for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
                     {
                         auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
-                        // auto size_i = face_i_dof.template getSize<t_field, getFaceBasis()>();
-                        // auto index_i = face_i_dof.getTag() + global_offset;
                         for (auto i = 0; i < face_i_dof.template getSize<t_field, getFaceBasis()>(); i++)
                         {
                             system->addRhsValue(i + face_i_dof.getTag() + global_offset, r_c(offset_i));
+                            offset_i ++;
+                        }
+                    }
+                    if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_unknowns(set_faces_unknowns);
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            void
+            assembleUnknownBlock(
+                std::basic_string_view<Character> behavior_label,
+                std::basic_string_view<Character> degree_of_freedom_label,
+                std::unique_ptr<System> const & system
+            )
+            {
+                auto constexpr num_cell_unknowns = getNumCellUnknowns<t_finite_element_method.getField()>();
+                auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
+                auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
+                // auto internal_forces = getInternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                // auto external_forces = getExternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                // system->setNormalization(external_forces.cwiseAbs().maxCoeff());
+                auto jac = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                // auto residual = internal_forces - external_forces;
+                auto k_tt = jac.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
+                auto k_tf = jac.template block<num_cell_unknowns, num_face_unknowns>(0, num_cell_unknowns);
+                auto k_ft = jac.template block<num_face_unknowns, num_cell_unknowns>(num_cell_unknowns, 0);
+                auto k_ff = jac.template block<num_face_unknowns, num_face_unknowns>(num_cell_unknowns, num_cell_unknowns);
+                // auto r_t = residual.template segment<num_cell_unknowns>(0);
+                // auto r_f = residual.template segment<num_face_unknowns>(num_cell_unknowns);
+                auto k_tt_inv = k_tt.llt().solve(decltype(k_tt)::Identity());
+                // this->operators_["KTT"] = k_tt_inv;
+                // this->operators_["KTF"] = k_tf;
+                // this->operators_["RT"] = r_t;
+                auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
+                // auto r_c = r_f - k_ft * k_tt_inv * r_t;
+                //
+                //
+                auto constexpr t_field = t_finite_element_method.getField();
+                auto offset_i = 0;
+                auto global_offset = system->getUnknownOffset(degree_of_freedom_label);
+                auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+                        for (auto i = 0; i < face_i_dof.template getSize<t_field, getFaceBasis()>(); i++)
+                        {
+                            // system->addRhsValue(i + face_i_dof.getTag() + global_offset, - r_c(offset_i));
                             auto offset_j = 0;
                             auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
                                 auto & self2
@@ -1220,8 +1278,6 @@ namespace lolita
                                 for (auto const & face_j : this->template getInnerNeighbors<0, t_j>())
                                 {
                                     auto const & face_j_dof = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
-                                    // auto size_j = face_j_dof.template getSize<t_field, getFaceBasis()>();
-                                    // auto index_j = face_j_dof.getTag() + global_offset;
                                     for (auto j = 0; j < face_j_dof.template getSize<t_field, getFaceBasis()>(); j++)
                                     {
                                         system->addLhsValue(i + face_i_dof.getTag() + global_offset, j + face_j_dof.getTag() + global_offset, k_c(offset_i, offset_j));
@@ -1247,6 +1303,66 @@ namespace lolita
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
             void
+            assembleBindingVector(
+                std::basic_string_view<Character> binding_label,
+                std::basic_string_view<Character> unknown_label,
+                std::basic_string_view<Character> constraint_label,
+                std::unique_ptr<System> const & system,
+                Real const & time
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
+                auto constexpr field = t_finite_element_method.getField();
+                auto const & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
+                auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
+                auto const & constraint = this->constraints_.at(std::string(constraint_label)).getFunction();
+                // auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
+                auto binding_external_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
+                auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
+                auto lagrange_parameter = this->parameters_.at("Lagrange");
+                // matrix.setZero();
+                binding_external_forces_vector.setZero();
+                binding_internal_forces_vector.setZero();
+                unknown_internal_forces_vector.setZero();
+                for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, quadrature>::getSize(); i++)
+                {
+                    auto point = this->template getCurrentQuadraturePoint<quadrature>(i);
+                    // auto point = this->template getReferenceQuadraturePoint<quadrature>(i);
+                    auto point_ref = this->template getReferenceQuadraturePoint<quadrature>(i);
+                    auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
+                    auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point_ref);
+                    binding_external_forces_vector += weight * lagrange_parameter * constraint.getImposedValue(point, time) * basis_vector;
+                    // binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector.dot(basis_vector) * basis_vector;
+                    binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector;
+                    unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
+                    // matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
+                }
+                // auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
+                // auto V_E_C_T_O_R = M_A_T_R_I_X * (binding_internal_forces_vector - binding_external_forces_vector);
+                // auto binding_residual_vector = binding_internal_forces_vector - binding_external_forces_vector;
+                auto binding_residual_vector = binding_external_forces_vector - binding_internal_forces_vector;
+                system->setNormalization(binding_external_forces_vector.cwiseAbs().maxCoeff());
+                auto binding_offset = system->getBindingOffset(binding_label) + face_binding.getTag();
+                auto unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
+                for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
+                {
+                    system->addRhsValue(iii + binding_offset, binding_residual_vector(iii));
+                    system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
+                    // for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
+                    // {
+                    //     system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));
+                    //     system->addLhsValue(jjj + unknown_offset, iii + binding_offset, matrix(iii, jjj));
+                    // }
+                }
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            void
             assembleBindingBlock(
                 std::basic_string_view<Character> binding_label,
                 std::basic_string_view<Character> unknown_label,
@@ -1262,16 +1378,16 @@ namespace lolita
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
                 auto const & constraint = this->constraints_.at(std::string(constraint_label)).getFunction();
                 auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
-                auto binding_external_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
-                auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
-                auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
-                auto unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
-                auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
+                // auto binding_external_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                // auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                // auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                // auto unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
+                // auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
                 auto lagrange_parameter = this->parameters_.at("Lagrange");
                 matrix.setZero();
-                binding_external_forces_vector.setZero();
-                binding_internal_forces_vector.setZero();
-                unknown_internal_forces_vector.setZero();
+                // binding_external_forces_vector.setZero();
+                // binding_internal_forces_vector.setZero();
+                // unknown_internal_forces_vector.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, quadrature>::getSize(); i++)
                 {
                     auto point = this->template getCurrentQuadraturePoint<quadrature>(i);
@@ -1279,22 +1395,21 @@ namespace lolita
                     auto point_ref = this->template getReferenceQuadraturePoint<quadrature>(i);
                     auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
                     auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point_ref);
-                    binding_external_forces_vector += weight * lagrange_parameter * constraint.getImposedValue(point, 0.0) * basis_vector;
-                    binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector.dot(basis_vector) * basis_vector;
-                    unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
+                    // binding_external_forces_vector += weight * lagrange_parameter * constraint.getImposedValue(point, 0.0) * basis_vector;
+                    // binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector.dot(basis_vector) * basis_vector;
+                    // unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
                     matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
                 }
                 // auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
                 // auto V_E_C_T_O_R = M_A_T_R_I_X * (binding_internal_forces_vector - binding_external_forces_vector);
-                auto binding_residual_vector = binding_internal_forces_vector - binding_external_forces_vector;
-                system->setNormalization(binding_external_forces_vector.cwiseAbs().maxCoeff());
+                // auto binding_residual_vector = binding_internal_forces_vector - binding_external_forces_vector;
+                // system->setNormalization(binding_external_forces_vector.cwiseAbs().maxCoeff());
                 auto binding_offset = system->getBindingOffset(binding_label) + face_binding.getTag();
                 auto unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
-                auto i_binding_row_l = 0;
                 for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
                 {
-                    system->addRhsValue(iii + binding_offset, binding_residual_vector(iii));
-                    system->addRhsValue(iii + unknown_offset, unknown_internal_forces_vector(iii));
+                    // system->addRhsValue(iii + binding_offset, - binding_residual_vector(iii));
+                    // system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
                     for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
                     {
                         system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));

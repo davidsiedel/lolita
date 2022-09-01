@@ -11,7 +11,7 @@
 namespace lolita
 {
 
-    struct BehaviorIntegrationOutput
+    struct Output
     {
 
         enum Type
@@ -22,28 +22,28 @@ namespace lolita
         };
 
         static constexpr
-        BehaviorIntegrationOutput
+        Output
         success()
         {
-            return BehaviorIntegrationOutput(BehaviorIntegrationOutput::Success);
+            return Output(Output::Success);
         }
 
         static constexpr
-        BehaviorIntegrationOutput
+        Output
         failure()
         {
-            return BehaviorIntegrationOutput(BehaviorIntegrationOutput::Failure);
+            return Output(Output::Failure);
         }
 
         static constexpr
-        BehaviorIntegrationOutput
+        Output
         warning()
         {
-            return BehaviorIntegrationOutput(BehaviorIntegrationOutput::Warning);
+            return Output(Output::Warning);
         }
 
-        constexpr
-        BehaviorIntegrationOutput(
+        constexpr explicit
+        Output(
             Type type
         )
         :
@@ -55,7 +55,7 @@ namespace lolita
         isSuccess()
         const
         {
-            return type_ == BehaviorIntegrationOutput::Success;
+            return type_ == Output::Success;
         }
 
         constexpr
@@ -63,7 +63,7 @@ namespace lolita
         isFailure()
         const
         {
-            return type_ == BehaviorIntegrationOutput::Failure;
+            return type_ == Output::Failure;
         }
 
         constexpr
@@ -71,10 +71,57 @@ namespace lolita
         isWarning()
         const
         {
-            return type_ == BehaviorIntegrationOutput::Warning;
+            return type_ == Output::Warning;
         }
 
         Type type_;
+
+    };
+
+    struct OutputHandler
+    {
+
+        OutputHandler()
+        :
+        output_(Output::success())
+        {}
+
+        inline
+        void
+        setSuccess()
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex_);
+            output_ = Output::success();
+        }
+
+        inline
+        void
+        setFailure()
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex_);
+            output_ = Output::failure();
+        }
+
+        inline
+        void
+        setWarning()
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex_);
+            output_ = Output::warning();
+        }
+
+        inline
+        Output
+        getOutput()
+        {
+            return output_;
+        }
+
+    private:
+
+        Output output_;
+
+        std::mutex mutex_;
 
     };
 
@@ -1462,6 +1509,7 @@ namespace lolita
             )
             {
                 auto element_degree_of_freedom = DegreeOfFreedom(dof->size(), dof);
+                element_degree_of_freedom.old_ = Vector<Real>::Zero(getSize<t_field, t_basis>());
                 dof->resize(dof->size() + getSize<t_field, t_basis>());
                 return element_degree_of_freedom;
             }
@@ -1578,9 +1626,25 @@ namespace lolita
                 getCoefficients<t_field, t_basis>() = vector.template segment<getSize<t_field, t_basis>()>(tag_);
             }
 
+            template<Field t_field, Basis t_basis>
+            void
+            recoverCoefficients()
+            {
+                getCoefficients<t_field, t_basis>() = old_;
+            }
+
+            template<Field t_field, Basis t_basis>
+            void
+            reserveCoefficients()
+            {
+                old_ = getCoefficients<t_field, t_basis>();
+            }
+
             Natural tag_;
 
             std::shared_ptr<Vector<Real>> dof_;
+
+            Vector<Real> old_;
 
         };
 
@@ -1642,17 +1706,6 @@ namespace lolita
         )
         {
             static_cast<t_Disc<t_discretization> *>(this)->template updateBinding<t_finite_element_method>(binding_label, system);
-            // constexpr bool has_method = requires(t_Disc<t_discretization> & t) {
-            //     t.hello();
-            // };
-            // if constexpr (has_method)
-            // {
-            //     std::cout << "HAS !\n";
-            // }
-            // else
-            // {
-            //     std::cout << "HAS NOT !\n";
-            // }
         }
 
         template<Field t_field, Basis t_basis>
@@ -1663,6 +1716,24 @@ namespace lolita
         )
         {
             degrees_of_freedom_.at(std::string(binding_label)).template addCoefficients<t_field, t_basis>(system->getBindingCorrection(binding_label));
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        recoverUnknownCoefficients(
+            std::basic_string_view<Character> binding_label
+        )
+        {
+            degrees_of_freedom_.at(std::string(binding_label)).template recoverCoefficients<t_field, t_basis>();
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        reserveUnknownCoefficients(
+            std::basic_string_view<Character> binding_label
+        )
+        {
+            degrees_of_freedom_.at(std::string(binding_label)).template reserveCoefficients<t_field, t_basis>();
         }
 
         // template<Field t_field, Basis t_basis>
@@ -1766,9 +1837,7 @@ namespace lolita
                 behavior_(behavior),
                 behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behavior))),
                 behavior_data_view_(std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)))
-                {
-                    behavior_data_->K[0] = 4;
-                }
+                {}
             
                 inline
                 Boolean
@@ -1784,30 +1853,41 @@ namespace lolita
                 )
                 const = default;
 
-                BehaviorIntegrationOutput
-                integrate()
+                void
+                integrate(
+                    OutputHandler & output_handler
+                )
                 {
+                    behavior_data_->K[0] = 4;
                     auto behaviour_data_view = mgis::behaviour::make_view(* behavior_data_);
                     auto res = mgis::behaviour::integrate(behaviour_data_view, * behavior_);
-                    if (res == 1)
+                    if (res < 0)
                     {
-                        return BehaviorIntegrationOutput::success();
+                        output_handler.setFailure();
                     }
-                    else if (res == 0)
-                    {
-                        return BehaviorIntegrationOutput::warning();
-                    }
-                    else
-                    {
-                        return BehaviorIntegrationOutput::failure();   
-                    }
+                    // else
+                    // {
+                    //     return BehaviorIntegrationOutput::failure();   
+                    // }
                     // auto strain_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.gradients.data(), behavior_data_->s1.gradients.size());
                     // auto stress_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.thermodynamic_forces.data(), behavior_data_->s1.thermodynamic_forces.size());
-                    // auto K = lolita::algebra::View<Vector<Real> const>(behavior_data_->K.data(), behavior_data_->K.size());
-                    // std::cout << "strain : " << strain_view << std::endl;
-                    // std::cout << "stress : " << stress_view << std::endl;
-                    // std::cout << "K : " << K << std::endl;
+                    // auto K = lolita::algebra::View<Matrix<Real> const>(behavior_data_->K.data(), 4, 4);
+                    // std::cout << "strain :\n" << strain_view << std::endl;
+                    // std::cout << "stress :\n" << stress_view << std::endl;
+                    // std::cout << "K :\n" << K << std::endl;
                     // std::cout << "res : " << res << std::endl;
+                }
+
+                void
+                reserve()
+                {
+                    mgis::behaviour::update(* behavior_data_);
+                }
+
+                void
+                recover()
+                {
+                    mgis::behaviour::revert(* behavior_data_);
                 }
 
                 void
@@ -1988,43 +2068,6 @@ namespace lolita
             
         }
 
-        // template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
-        // void
-        // setStrainOperators(
-        //     std::basic_string_view<Character> label,
-        //     std::basic_string_view<Character> label2
-        // )
-        // {
-        //     auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-        //     auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
-        //     auto quadrature_point_count = 0;
-        //     for (auto & ip : quadrature_.at(std::string(label)).ips_)
-        //     {
-        //         auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
-        //         strain_operator.setZero();
-        //         auto set_mapping_block = [&] <Integer t_i = 0> (
-        //             auto & self
-        //         )
-        //         constexpr mutable
-        //         {
-        //             auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
-        //             auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
-        //             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-        //             auto point = ip.reference_coordinates_;
-        //             auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
-        //             auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
-        //             mapping_block = mapping_operator;
-        //             if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
-        //             {
-        //                 self.template operator ()<t_i + 1>(self);
-        //             }
-        //         };
-        //         set_mapping_block(set_mapping_block);
-        //         ip.ops_[std::string(label2)] = strain_operator;
-        //         quadrature_point_count ++;
-        //     }
-        // }
-
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
         setStrainOperators(
@@ -2074,15 +2117,18 @@ namespace lolita
             // using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
             // using StrainView = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>;
             // using StrainValue = Vector<Real, strain_operator_num_rows>;
-            auto unknown = this->template getUnknowns<t_finite_element_method.getField(), t_discretization>(degree_of_freedom_label);
+            auto const unknown = this->template getUnknowns<t_finite_element_method.getField(), t_discretization>(degree_of_freedom_label);
+            // std::cout << "unknown :\n" << unknown << std::endl;
             for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
             {
-                auto strain_operator = ip.ops_.at(std::string(degree_of_freedom_label));
+                auto const strain_operator = ip.ops_.at(std::string(degree_of_freedom_label));
                 auto strain_value = strain_operator * unknown;
                 // auto strain_operator = StrainOperatorView(ip.ops_.at(std::string(degree_of_freedom_label)).data());
                 // auto strain_value = StrainValue(strain_operator * unknown);
-                auto strain_view = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>(ip.behavior_data_->s1.gradients.data());
+                // auto strain_view = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>(ip.behavior_data_->s1.gradients.data());
+                auto strain_view = lolita::algebra::View<Vector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
                 strain_view = strain_value;
+                // std::cout << "strain_view :\n" << strain_view << std::endl;
                 // strain_view.setZero();
             }
         }
@@ -2100,10 +2146,18 @@ namespace lolita
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
+        assembleUnknownVector(
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> degree_of_freedom_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template assembleUnknownVector<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
         assembleBindingBlock(
-            // std::basic_string_view<Character> behavior_label,
-            // std::basic_string_view<Character> degree_of_freedom_label,
-            // std::unique_ptr<System> const & system
             std::basic_string_view<Character> binding_label,
             std::basic_string_view<Character> unknown_label,
             std::basic_string_view<Character> constraint_label,
@@ -2114,21 +2168,52 @@ namespace lolita
             static_cast<t_Disc<t_discretization> const *>(this)->template assembleBindingBlock<t_finite_element_method>(binding_label, unknown_label, constraint_label, system);
         }
 
-        BehaviorIntegrationOutput
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        assembleBindingVector(
+            std::basic_string_view<Character> binding_label,
+            std::basic_string_view<Character> unknown_label,
+            std::basic_string_view<Character> constraint_label,
+            std::unique_ptr<System> const & system,
+            Real const & time
+        )
+        const
+        {
+            static_cast<t_Disc<t_discretization> const *>(this)->template assembleBindingVector<t_finite_element_method>(binding_label, unknown_label, constraint_label, system, time);
+        }
+
+        void
         integrate(
+            std::basic_string_view<Character> behavior_label,
+            OutputHandler & output_handler
+        )
+        {
+            for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
+            {
+                ip.integrate(output_handler);
+            }
+        }
+
+        void
+        reserveBehaviorData(
             std::basic_string_view<Character> behavior_label
         )
         {
-            auto behavior_integration_output = BehaviorIntegrationOutput::success();
             for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
             {
-                auto point_integration_output = ip.integrate();
-                if (point_integration_output.isFailure())
-                {
-                    behavior_integration_output = BehaviorIntegrationOutput::failure();
-                }
+                ip.reserve();
             }
-            return behavior_integration_output;
+        }
+
+        void
+        recoverBehaviorData(
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
+            {
+                ip.recover();
+            }
         }
 
         void
