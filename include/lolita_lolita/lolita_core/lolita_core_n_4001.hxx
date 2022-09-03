@@ -118,52 +118,52 @@ namespace lolita
                 return exponents;
             }
         
-        Real
-        getLocalFrameDistance1(
-            Point const & first_point,
-            Point const & second_point,
-            Integer kkk
-        )
-        const
-        requires(t_element.isSub(t_domain, 0))
-        {
-            // auto first_point_mapping = Point();
-            // auto second_point_mapping = Point();
-            // auto const & current_coordinates = this->getCurrentCoordinates();
-            // first_point_mapping.setZero();
-            // second_point_mapping.setZero();
-            // for (auto i = 0; i < t_domain.getDim(); ++i)
-            // {
-            //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-            //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-            // }
-            // return (second_point_mapping - first_point_mapping)(kkk);
-            return (second_point - first_point)(kkk);
-        }
-        
-        Real
-        getLocalFrameDistance1(
-            Point const & first_point,
-            Point const & second_point,
-            Integer kkk
-        )
-        const
-        requires(t_element.isSub(t_domain, 1))
-        {
-            auto rotation_matrix = this->getRotationMatrix(this->getReferenceCentroid());
-            // auto first_point_mapping = Point();
-            // auto second_point_mapping = Point();
-            // auto const & current_coordinates = this->getCurrentCoordinates();
-            // first_point_mapping.setZero();
-            // second_point_mapping.setZero();
-            // for (auto i = 0; i < t_domain.getDim(); ++i)
-            // {
-            //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-            //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-            // }
-            // // return (rotation_matrix * (second_point_mapping - first_point_mapping))(kkk);
-            return (rotation_matrix * (second_point - first_point))(kkk);
-        }
+            Real
+            getLocalFrameDistance1(
+                Point const & first_point,
+                Point const & second_point,
+                Integer kkk
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                // auto first_point_mapping = Point();
+                // auto second_point_mapping = Point();
+                // auto const & current_coordinates = this->getCurrentCoordinates();
+                // first_point_mapping.setZero();
+                // second_point_mapping.setZero();
+                // for (auto i = 0; i < t_domain.getDim(); ++i)
+                // {
+                //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+                // }
+                // return (second_point_mapping - first_point_mapping)(kkk);
+                return (second_point - first_point)(kkk);
+            }
+            
+            Real
+            getLocalFrameDistance1(
+                Point const & first_point,
+                Point const & second_point,
+                Integer kkk
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto rotation_matrix = this->getRotationMatrix(this->getReferenceCentroid());
+                // auto first_point_mapping = Point();
+                // auto second_point_mapping = Point();
+                // auto const & current_coordinates = this->getCurrentCoordinates();
+                // first_point_mapping.setZero();
+                // second_point_mapping.setZero();
+                // for (auto i = 0; i < t_domain.getDim(); ++i)
+                // {
+                //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+                // }
+                // // return (rotation_matrix * (second_point_mapping - first_point_mapping))(kkk);
+                return (rotation_matrix * (second_point - first_point))(kkk);
+            }
 
         public:
         
