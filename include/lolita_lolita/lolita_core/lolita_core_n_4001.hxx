@@ -117,8 +117,53 @@ namespace lolita
                 }
                 return exponents;
             }
-            
-            std::array<std::array<Integer, 3>, getSize()> static constexpr exponents_ = getExponents();
+        
+        Real
+        getLocalFrameDistance1(
+            Point const & first_point,
+            Point const & second_point,
+            Integer kkk
+        )
+        const
+        requires(t_element.isSub(t_domain, 0))
+        {
+            // auto first_point_mapping = Point();
+            // auto second_point_mapping = Point();
+            // auto const & current_coordinates = this->getCurrentCoordinates();
+            // first_point_mapping.setZero();
+            // second_point_mapping.setZero();
+            // for (auto i = 0; i < t_domain.getDim(); ++i)
+            // {
+            //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+            //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            // }
+            // return (second_point_mapping - first_point_mapping)(kkk);
+            return (second_point - first_point)(kkk);
+        }
+        
+        Real
+        getLocalFrameDistance1(
+            Point const & first_point,
+            Point const & second_point,
+            Integer kkk
+        )
+        const
+        requires(t_element.isSub(t_domain, 1))
+        {
+            auto rotation_matrix = this->getRotationMatrix(this->getReferenceCentroid());
+            // auto first_point_mapping = Point();
+            // auto second_point_mapping = Point();
+            // auto const & current_coordinates = this->getCurrentCoordinates();
+            // first_point_mapping.setZero();
+            // second_point_mapping.setZero();
+            // for (auto i = 0; i < t_domain.getDim(); ++i)
+            // {
+            //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+            //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            // }
+            // // return (rotation_matrix * (second_point_mapping - first_point_mapping))(kkk);
+            return (rotation_matrix * (second_point - first_point))(kkk);
+        }
 
         public:
         
@@ -189,6 +234,10 @@ namespace lolita
                 }
                 return basis_vector_values;
             }
+
+        private:
+            
+            std::array<std::array<Integer, 3>, getSize()> static constexpr exponents_ = getExponents();
 
         };
 
@@ -471,11 +520,12 @@ namespace lolita
                         for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                         {
                             auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
+                            auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
                             for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize(); i++)
                             {
-                                auto argh = face_orientation == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
+                                auto argh = face_sign == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
                                 auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
-                                auto argf = argh;
+                                auto argf = i;
                                 //
                                 auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
                                 // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
@@ -567,15 +617,16 @@ namespace lolita
                         {
                             auto constexpr quadrature_size = ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize();
                             auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
+                            auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
                             auto face_projection_lhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getFaceBasisSize<t_inner_neighbor>()>();
                             auto face_projection_rhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getNumElementUnknowns<t_field>()>();
                             face_projection_lhs.setZero();
                             face_projection_rhs.setZero();
                             for (auto i_quadrature = 0; i_quadrature < quadrature_size; i_quadrature++)
                             {
-                                auto argh = face_orientation == 1 ? i_quadrature : quadrature_size - (i_quadrature + 1);
+                                auto argh = face_sign == 1 ? i_quadrature : quadrature_size - (i_quadrature + 1);
                                 auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
-                                auto argf = argh;
+                                auto argf = i_quadrature;
                                 //
                                 auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
                                 // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
@@ -670,10 +721,11 @@ namespace lolita
                     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                     {
                         auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
+                        auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
                         for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize(); i++)
                         {
-                            auto argh = face_orientation == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
-                            auto argf = argh;
+                            auto argh = face_sign == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
+                            auto argf = i;
                             auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
                             //
                             auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
@@ -772,10 +824,11 @@ namespace lolita
                     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                     {
                         auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
+                        auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
                         for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize(); i++)
                         {
-                            auto argh = face_orientation == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
-                            auto argf = argh;
+                            auto argh = face_sign == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
+                            auto argf = i;
                             auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
                             //
                             auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
@@ -870,6 +923,7 @@ namespace lolita
                     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                     {
                         auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
+                        auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
                         std::cout << "----------------------> face " << i_face << " : " << std::endl;
                         std::cout << mat2str(face->getCurrentCoordinates()) << std::endl;
                         std::cout << "------> face_centroid " << std::endl;
@@ -880,8 +934,8 @@ namespace lolita
                         std::cout << mat2str(face->getRotationMatrix(face->getReferenceCentroid())) << std::endl;
                         for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize(); i++)
                         {
-                            auto argh = face_orientation == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
-                            auto argf = argh;
+                            auto argh = face_sign == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
+                            auto argf = i;
                             // argh = i;
                             auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
                             //

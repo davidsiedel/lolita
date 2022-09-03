@@ -89,39 +89,39 @@ main(int argc, char** argv)
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
     // -> DEBUG
-    auto elem_count = 0;
-    for (auto const & finite_element : elements->getElements<2, 0>())
-    {
-        std::cout << "****** element :" << std::endl;
-        std::cout << lolita::mat2str(finite_element->getCurrentCentroid()) << std::endl;
-        std::cout << "-- stabilization :" << std::endl;
-        std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
-        auto ip_count = 0;
-        for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
-        {
-            auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
-            std::cout << "-- grad " << ip_count << std::endl;
-            std::cout << lolita::mat2str(ip.ops_.at("Displacement")) << std::endl;
-            ip_count ++;
-        }
-        elem_count ++;
-    }
-    for (auto const & finite_element : elements->getElements<2, 1>())
-    {
-        std::cout << "****** element :" << std::endl;
-        std::cout << lolita::mat2str(finite_element->getCurrentCentroid()) << std::endl;
-        std::cout << "-- stabilization :" << std::endl;
-        std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
-        auto ip_count = 0;
-        for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
-        {
-            auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
-            std::cout << "-- grad " << ip_count << std::endl;
-            std::cout << lolita::mat2str(ip.ops_.at("Displacement")) << std::endl;
-            ip_count ++;
-        }
-        elem_count ++;
-    }
+    // auto elem_count = 0;
+    // for (auto const & finite_element : elements->getElements<2, 0>())
+    // {
+    //     std::cout << "****** element :" << std::endl;
+    //     std::cout << lolita::mat2str(finite_element->getCurrentCentroid()) << std::endl;
+    //     std::cout << "-- stabilization :" << std::endl;
+    //     std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
+    //     auto ip_count = 0;
+    //     for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
+    //     {
+    //         auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
+    //         std::cout << "-- grad " << ip_count << std::endl;
+    //         std::cout << lolita::mat2str(ip.ops_.at("Displacement")) << std::endl;
+    //         ip_count ++;
+    //     }
+    //     elem_count ++;
+    // }
+    // for (auto const & finite_element : elements->getElements<2, 1>())
+    // {
+    //     std::cout << "****** element :" << std::endl;
+    //     std::cout << lolita::mat2str(finite_element->getCurrentCentroid()) << std::endl;
+    //     std::cout << "-- stabilization :" << std::endl;
+    //     std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
+    //     auto ip_count = 0;
+    //     for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
+    //     {
+    //         auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
+    //         std::cout << "-- grad " << ip_count << std::endl;
+    //         std::cout << lolita::mat2str(ip.ops_.at("Displacement")) << std::endl;
+    //         ip_count ++;
+    //     }
+    //     elem_count ++;
+    // }
     // <- DEBUG
 
     auto num_steps = 5;
@@ -190,7 +190,7 @@ main(int argc, char** argv)
     while (step < times.size())
     {
         // -> DEBUG
-        break;
+        // break;
         // <- DEBUG
         std::cout << "step : " << step << " time : " << time << std::endl;
         if (newton_step())

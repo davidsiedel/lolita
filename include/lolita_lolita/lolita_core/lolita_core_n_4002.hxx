@@ -488,6 +488,38 @@ namespace lolita
         
         template<Integer t_i, Integer t_j>
         Integer
+        getInnerNeighborSign(
+            Integer i
+        )
+        const
+        requires(!t_element.isNode())
+        {
+            // return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
+            auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
+            auto constexpr ggg = t_inner_neighbor.getDim() - 1;
+            // auto constexpr t_inner_neighbor_num_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
+            auto ori = 1;
+            for (auto node_tag = 0; node_tag < ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>(); node_tag++)
+            {
+                // auto mmm = FiniteElementHolder<t_inner_neighbor, t_domain>::template getInnerNeighborNodeConnection<ggg, 0>(node_tag, 0);
+                auto lll = getInnerNeighbors<t_i, t_j>()[i]->getCurrentCoordinates(node_tag);
+                auto kkk = getCurrentCoordinates(getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag));
+                if (!lll.isApprox(kkk))
+                {
+                    ori = -1;
+                }
+            }
+            return ori;
+            // auto inner_neighbor = getInnerNeighbors<t_i, t_j>()[i];
+            // // auto inner_neighbor_reference_centroid = inner_neighbor->getReferenceCentroid();
+            // // auto inner_neighbor_current_centroid = inner_neighbor->getCurrentCentroid();
+            // // auto current_centroid = this->getCurrentCentroid();
+            // auto inner_neighbor_rotation_matrix = inner_neighbor->getRotationMatrix(inner_neighbor->getReferenceCentroid());
+            // return (inner_neighbor_rotation_matrix * (inner_neighbor->getCurrentCentroid() - this->getCurrentCentroid()))(t_element.getDim() - 1) > 0 ? 1 : -1;
+        }
+        
+        template<Integer t_i, Integer t_j>
+        Integer
         getInnerNeighborOrientation(
             Integer i
         )
