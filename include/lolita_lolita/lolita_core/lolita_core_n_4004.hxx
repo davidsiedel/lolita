@@ -706,6 +706,7 @@ namespace lolita
             auto labels = std::array<std::basic_string<Character>, sizeof...(behavior_label)>{behavior_label...};
             auto outfile = std::ofstream();
             outfile.open(file_path);
+            outfile << std::fixed << std::setprecision(15);
             outfile << "$MeshFormat\n";
             outfile << "2.2 0 8\n";
             outfile << "$EndMeshFormat\n";
@@ -833,6 +834,7 @@ namespace lolita
             auto outfile = std::ofstream();
             auto c_element = Natural();
             outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(15);
             outfile << "$NodeData\n";
             outfile << "1\n";
             outfile << "\"" << behavior_label << " " << row << " Strain\"\n";
@@ -887,6 +889,7 @@ namespace lolita
             auto outfile = std::ofstream();
             auto c_element = Natural();
             outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(15);
             outfile << "$NodeData\n";
             outfile << "1\n";
             outfile << "\"" << behavior_label << " " << row << " Stress\"\n";
@@ -942,6 +945,7 @@ namespace lolita
             auto outfile = std::ofstream();
             auto c_element = Natural();
             outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(15);
             // writing strain
             outfile << "$NodeData\n";
             outfile << "1\n";
@@ -984,6 +988,7 @@ namespace lolita
             auto outfile = std::ofstream();
             auto c_element = Natural();
             outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(15);
             // writing strain
             outfile << "$NodeData\n";
             outfile << "1\n";

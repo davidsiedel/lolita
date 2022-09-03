@@ -47,7 +47,7 @@ main(int argc, char** argv)
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // -> DEBUG
-    // elements->getElements<2, 1>()[1]->template getSymmetricGradientRhsDEBUG<lolita::Field::vector(), hdg>(0, 0);
+    // elements->getElements<2, 0>()[1]->template getSymmetricGradientRhsDEBUG<lolita::Field::vector(), hdg>(0, 0);
     // <- DEBUG
     // dofs
     auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
@@ -92,33 +92,40 @@ main(int argc, char** argv)
     // auto elem_count = 0;
     // for (auto const & finite_element : elements->getElements<2, 0>())
     // {
-    //     std::cout << "****** element :" << std::endl;
-    //     std::cout << lolita::mat2str(finite_element->getCurrentCentroid()) << std::endl;
-    //     std::cout << "-- stabilization :" << std::endl;
-    //     std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
-    //     auto ip_count = 0;
-    //     for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
+    //     if (elem_count == 1)
     //     {
-    //         auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
-    //         std::cout << "-- grad " << ip_count << std::endl;
-    //         std::cout << lolita::mat2str(ip.ops_.at("Displacement")) << std::endl;
-    //         ip_count ++;
+    //         std::cout << "****** element :" << std::endl;
+    //         std::cout << lolita::mat2str(finite_element->getCurrentCentroid()) << std::endl;
+    //         std::cout << "-- stabilization :" << std::endl;
+    //         std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
+    //         auto ip_count = 0;
+    //         for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
+    //         {
+    //             auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
+    //             std::cout << "-- grad " << ip_count << std::endl;
+    //             std::cout << lolita::mat2str(ip.ops_.at("Displacement")) << std::endl;
+    //             ip_count ++;
+    //         }
     //     }
+        
     //     elem_count ++;
     // }
     // for (auto const & finite_element : elements->getElements<2, 1>())
     // {
-    //     std::cout << "****** element :" << std::endl;
-    //     std::cout << lolita::mat2str(finite_element->getCurrentCentroid()) << std::endl;
-    //     std::cout << "-- stabilization :" << std::endl;
-    //     std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
-    //     auto ip_count = 0;
-    //     for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
+    //     if (elem_count == 1)
     //     {
-    //         auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
-    //         std::cout << "-- grad " << ip_count << std::endl;
-    //         std::cout << lolita::mat2str(ip.ops_.at("Displacement")) << std::endl;
-    //         ip_count ++;
+    //         std::cout << "****** element :" << std::endl;
+    //         std::cout << lolita::mat2str(finite_element->getCurrentCentroid()) << std::endl;
+    //         std::cout << "-- stabilization :" << std::endl;
+    //         std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
+    //         auto ip_count = 0;
+    //         for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
+    //         {
+    //             auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
+    //             std::cout << "-- grad " << ip_count << std::endl;
+    //             std::cout << lolita::mat2str(ip.ops_.at("Displacement")) << std::endl;
+    //             ip_count ++;
+    //         }
     //     }
     //     elem_count ++;
     // }
