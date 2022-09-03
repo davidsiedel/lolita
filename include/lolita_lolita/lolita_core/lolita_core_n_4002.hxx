@@ -669,6 +669,7 @@ namespace lolita
             Point const & point
         )
         const
+        requires(t_element.isSolid())
         {
             auto const current_coordinates = this->getCurrentCoordinates();
             auto ru = Matrix<Real, 3, 3>();
@@ -681,21 +682,32 @@ namespace lolita
                     ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
                 }
             }
-            if constexpr (t_element.dim_ == 3)
+            du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).template dot(ru.col(2)));
+            return du;
+        }
+        
+        Real
+        getShapeMappingDifferential(
+            Point const & point
+        )
+        const
+        requires(t_element.isFacet())
+        {
+            auto const current_coordinates = this->getCurrentCoordinates();
+            auto ru = Matrix<Real, 3, 3>();
+            auto du = Real(0);
+            ru.setZero();
+            for (auto i = 0; i < t_domain.dim_; ++i)
             {
-                du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).template dot(ru.col(2)));
+                for (auto j = 0; j < t_element.dim_; ++j)
+                {
+                    ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
+                }
             }
-            else if constexpr (t_element.dim_ == 2)
-            {
-                du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).norm());
-            }
-            else
-            {
-                du = lolita::numerics::abs(ru.col(0).norm());
-            }
+            du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).norm());
             if constexpr (t_domain.frame_ == Domain::Frame::AxiSymmetric)
             {
-                Real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+                auto r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
                 if (r0 < 1.e-10)
                 {
                     r0 = 1.e-10;
@@ -706,76 +718,426 @@ namespace lolita
         }
         
         Real
+        getShapeMappingDifferential(
+            Point const & point
+        )
+        const
+        requires(t_element.isCurve())
+        {
+            auto const current_coordinates = this->getCurrentCoordinates();
+            auto ru = Matrix<Real, 3, 3>();
+            auto du = Real(0);
+            ru.setZero();
+            for (auto i = 0; i < t_domain.dim_; ++i)
+            {
+                for (auto j = 0; j < t_element.dim_; ++j)
+                {
+                    ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
+                }
+            }
+            du = lolita::numerics::abs(ru.col(0).norm());
+            if constexpr (t_domain.frame_ == Domain::Frame::AxiSymmetric)
+            {
+                auto r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+                if (r0 < 1.e-10)
+                {
+                    r0 = 1.e-10;
+                }
+                du *= 2.0 * lolita::numerics::pi() * r0;
+            }
+            return du;
+        }
+        
+        Real
+        getShapeMappingDifferential(
+            Point const & point
+        )
+        const
+        requires(t_element.isNode())
+        {
+            return 1.0;
+        }
+        
+        // Real
+        // getShapeMappingDifferential(
+        //     Point const & point
+        // )
+        // const
+        // {
+        //     auto const current_coordinates = this->getCurrentCoordinates();
+        //     auto ru = Matrix<Real, 3, 3>();
+        //     auto du = Real(0);
+        //     ru.setZero();
+        //     for (auto i = 0; i < t_domain.dim_; ++i)
+        //     {
+        //         for (auto j = 0; j < t_element.dim_; ++j)
+        //         {
+        //             ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
+        //         }
+        //     }
+        //     if constexpr (t_element.dim_ == 3)
+        //     {
+        //         du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).template dot(ru.col(2)));
+        //     }
+        //     else if constexpr (t_element.dim_ == 2)
+        //     {
+        //         du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).norm());
+        //     }
+        //     else
+        //     {
+        //         du = lolita::numerics::abs(ru.col(0).norm());
+        //     }
+        //     if constexpr (t_domain.frame_ == Domain::Frame::AxiSymmetric)
+        //     {
+        //         Real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+        //         if (r0 < 1.e-10)
+        //         {
+        //             r0 = 1.e-10;
+        //         }
+        //         du *= 2.0 * lolita::numerics::pi() * r0;
+        //     }
+        //     return du;
+        // }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point
+        )
+        const
+        requires(t_element.isSub(t_domain, 0))
+        {
+            auto const & current_coordinates = this->getCurrentCoordinates();
+            auto mp0 = Point();
+            auto mp1 = Point();
+            mp0.setZero();
+            mp1.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
+            {
+                mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            }
+            return (mp1 - mp0).norm();
+        }
+        
+        Real
         getRiemannianDistance(
             Point const & first_point,
             Point const & second_point,
-            Integer direction = -1
+            Integer direction
         )
         const
+        requires(t_element.isSub(t_domain, 0))
         {
-            if constexpr (t_element.isSub(t_domain, 0))
+            auto const & current_coordinates = this->getCurrentCoordinates();
+            auto mp0 = Point();
+            auto mp1 = Point();
+            mp0.setZero();
+            mp1.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                auto const & current_coordinates = this->getCurrentCoordinates();
-                auto distance = Real();
-                auto mp0 = Point();
-                auto mp1 = Point();
-                mp0.setZero();
-                mp1.setZero();
-                for (auto i = 0; i < t_domain.getDim(); ++i)
-                {
-                    mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-                    mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-                }
-                direction == -1 ? distance = (mp1 - mp0).norm() : distance = (mp1 - mp0)(direction);
-                return distance;
+                mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
             }
-            else
-            {
-                using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
-                auto distance = Real(0);
-                auto dt = Real();
-                auto const current_nodes_coordinates = this->getCurrentCoordinates();
-                for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
-                {
-                    auto pq = SegmentQuadrature::reference_points_[q][0];
-                    auto wq = SegmentQuadrature::reference_weights_[q];
-                    auto ru = Matrix<Real, 3, 3>();
-                    auto difference = second_point - first_point;
-                    auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
-                    ru.setZero();
-                    for (auto i = 0; i < t_domain.dim_; ++i)
-                    {
-                        for (auto j = 0; j < t_element.dim_; ++j)
-                        {
-                            if (direction == -1 || i == direction)
-                            {
-                                auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
-                                auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
-                                ru(i, j) = dx * du;
-                            }
-                        }
-                    }
-                    if constexpr (t_element.isFacet())
-                    {
-                        auto Eff = ru.col(0).template dot(ru.col(0));
-                        auto Fff = ru.col(0).template dot(ru.col(1));
-                        auto Gff = ru.col(1).template dot(ru.col(1));
-                        dt = std::sqrt(Eff + 2.0 * Fff + Gff);
-                    }
-                    else if constexpr (t_element.isCurve())
-                    {
-                        auto Eff = ru.col(0).template dot(ru.col(0));
-                        dt = std::sqrt(Eff);
-                    }
-                    else
-                    {
-                        dt = 0;
-                    }
-                    distance += wq * dt;
-                }
-                return distance;
-            }
+            return (mp1 - mp0)(direction);
         }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isFacet())
+        {
+            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            auto distance = Real(0);
+            auto dt = Real();
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+            {
+                auto pq = SegmentQuadrature::reference_points_[q][0];
+                auto wq = SegmentQuadrature::reference_weights_[q];
+                auto ru = Matrix<Real, 3, 3>();
+                auto difference = second_point - first_point;
+                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                ru.setZero();
+                for (auto i = 0; i < t_domain.dim_; ++i)
+                {
+                    for (auto j = 0; j < t_element.dim_; ++j)
+                    {
+                        auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+                        auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
+                        ru(i, j) = dx * du;
+                    }
+                }
+                auto Eff = ru.col(0).dot(ru.col(0));
+                auto Fff = ru.col(0).dot(ru.col(1));
+                auto Gff = ru.col(1).dot(ru.col(1));
+                dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+                distance += wq * dt;
+            }
+            return distance;
+        }
+        
+        // Matrix<Real, 2, 2>
+        // getMetricTensor(
+        //     Point const & first_point,
+        //     Point const & second_point,
+        //     Integer direction
+        // )
+        // const
+        // requires(!t_element.isSub(t_domain, 0))
+        // {
+        //     using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+        //     auto const current_nodes_coordinates = this->getCurrentCoordinates();
+        //     for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+        //     {
+        //         auto pq = SegmentQuadrature::reference_points_[q][0];
+        //         auto wq = SegmentQuadrature::reference_weights_[q];
+        //         auto ru = Matrix<Real, 3, 3>();
+        //         auto difference = second_point - first_point;
+        //         auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+        //         ru.setZero();
+        //         // for (auto i = 0; i < t_domain.dim_; ++i)
+        //         // {
+        //         for (auto j = 0; j < t_element.dim_; ++j)
+        //         {
+        //             // if (i == direction)
+        //             // {
+        //             auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+        //             auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(direction), uq, j);
+        //             ru(direction, j) = dx * du;
+        //             // }
+        //         }
+        //         // }
+        //         auto Eff = ru.col(0).dot(ru.col(0));
+        //         auto Fff = ru.col(0).dot(ru.col(1));
+        //         auto Gff = ru.col(1).dot(ru.col(1));
+        //         dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+        //         distance += wq * dt;
+        //     }
+        //     return sign * distance;
+        // }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point,
+            Integer direction
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isFacet())
+        {
+            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            auto distance = Real(0);
+            auto dt = Real();
+            // -> TEST
+            auto sign = (second_point - first_point)(direction) > 0 ? 1 : -1;
+            // <_ TEST
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+            {
+                auto pq = SegmentQuadrature::reference_points_[q][0];
+                auto wq = SegmentQuadrature::reference_weights_[q];
+                auto ru = Matrix<Real, 3, 3>();
+                auto difference = second_point - first_point;
+                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                ru.setZero();
+                // for (auto i = 0; i < t_domain.dim_; ++i)
+                // {
+                for (auto j = 0; j < t_element.dim_; ++j)
+                {
+                    // if (i == direction)
+                    // {
+                    auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+                    auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(direction), uq, j);
+                    ru(direction, j) = dx * du;
+                    // }
+                }
+                // }
+                auto Eff = ru.col(0).dot(ru.col(0));
+                auto Fff = ru.col(0).dot(ru.col(1));
+                auto Gff = ru.col(1).dot(ru.col(1));
+                dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+                distance += wq * dt;
+            }
+            return sign * distance;
+        }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isCurve())
+        {
+            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            auto distance = Real(0);
+            auto dt = Real();
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+            {
+                auto pq = SegmentQuadrature::reference_points_[q][0];
+                auto wq = SegmentQuadrature::reference_weights_[q];
+                auto ru = Matrix<Real, 3, 3>();
+                auto difference = second_point - first_point;
+                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                ru.setZero();
+                for (auto i = 0; i < t_domain.dim_; ++i)
+                {
+                    for (auto j = 0; j < t_element.dim_; ++j)
+                    {
+                        auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+                        auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
+                        ru(i, j) = dx * du;
+                    }
+                }
+                auto Eff = ru.col(0).dot(ru.col(0));
+                dt = std::sqrt(Eff);
+                distance += wq * dt;
+            }
+            return distance;
+        }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point,
+            Integer direction
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isCurve())
+        {
+            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            auto distance = Real(0);
+            auto dt = Real();
+            // -> TEST
+            auto sign = (second_point - first_point)(direction) > 0 ? 1 : -1;
+            // <_ TEST
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+            {
+                auto pq = SegmentQuadrature::reference_points_[q][0];
+                auto wq = SegmentQuadrature::reference_weights_[q];
+                auto ru = Matrix<Real, 3, 3>();
+                auto difference = second_point - first_point;
+                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                ru.setZero();
+                // for (auto i = 0; i < t_domain.dim_; ++i)
+                // {
+                for (auto j = 0; j < t_element.dim_; ++j)
+                {
+                    // if (i == direction)
+                    // {
+                    auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+                    auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(direction), uq, j);
+                    ru(direction, j) = dx * du;
+                    // }
+                }
+                // }
+                auto Eff = ru.col(0).dot(ru.col(0));
+                dt = std::sqrt(Eff);
+                distance += wq * dt;
+            }
+            return sign * distance;
+        }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isNode())
+        {
+            return 0.0;
+        }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point,
+            Integer direction
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isNode())
+        {
+            return 0.0;
+        }
+        
+        // Real
+        // getRiemannianDistance(
+        //     Point const & first_point,
+        //     Point const & second_point,
+        //     Integer direction = -1
+        // )
+        // const
+        // {
+        //     if constexpr (t_element.isSub(t_domain, 0))
+        //     {
+        //         auto const & current_coordinates = this->getCurrentCoordinates();
+        //         auto distance = Real();
+        //         auto mp0 = Point();
+        //         auto mp1 = Point();
+        //         mp0.setZero();
+        //         mp1.setZero();
+        //         for (auto i = 0; i < t_domain.getDim(); ++i)
+        //         {
+        //             mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+        //             mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+        //         }
+        //         direction == -1 ? distance = (mp1 - mp0).norm() : distance = (mp1 - mp0)(direction);
+        //         return distance;
+        //     }
+        //     else
+        //     {
+        //         using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+        //         auto distance = Real(0);
+        //         auto dt = Real();
+        //         auto const current_nodes_coordinates = this->getCurrentCoordinates();
+        //         for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+        //         {
+        //             auto pq = SegmentQuadrature::reference_points_[q][0];
+        //             auto wq = SegmentQuadrature::reference_weights_[q];
+        //             auto ru = Matrix<Real, 3, 3>();
+        //             auto difference = second_point - first_point;
+        //             auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+        //             ru.setZero();
+        //             for (auto i = 0; i < t_domain.dim_; ++i)
+        //             {
+        //                 for (auto j = 0; j < t_element.dim_; ++j)
+        //                 {
+        //                     if (direction == -1 || i == direction)
+        //                     {
+        //                         auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+        //                         auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
+        //                         ru(i, j) = dx * du;
+        //                     }
+        //                 }
+        //             }
+        //             if constexpr (t_element.isFacet())
+        //             {
+        //                 auto Eff = ru.col(0).template dot(ru.col(0));
+        //                 auto Fff = ru.col(0).template dot(ru.col(1));
+        //                 auto Gff = ru.col(1).template dot(ru.col(1));
+        //                 dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+        //             }
+        //             else if constexpr (t_element.isCurve())
+        //             {
+        //                 auto Eff = ru.col(0).template dot(ru.col(0));
+        //                 dt = std::sqrt(Eff);
+        //             }
+        //             else
+        //             {
+        //                 dt = 0;
+        //             }
+        //             distance += wq * dt;
+        //         }
+        //         return distance;
+        //     }
+        // }
         
         Real
         getLocalFrameDistance(
@@ -887,6 +1249,27 @@ namespace lolita
                 }
             }
             return current_diameters;
+            // auto reference_coordinates = FiniteElementHolder::getReferenceCoordinates();
+            // auto current_diameters = Point();
+            // current_diameters.setZero();
+            // for (auto i = 0; i < t_element.getNumNodes(); ++i)
+            // {
+            //     for (auto j = i + 1; j < t_element.getNumNodes(); ++j)
+            //     {
+            //         auto const & pt0 = reference_coordinates.col(i);
+            //         auto const & pt1 = reference_coordinates.col(j);
+            //         for (auto k = 0; k < t_element.getDim(); ++k)
+            //         {
+            //             auto new_value = lolita::numerics::abs(getRiemannianDistance(pt0, pt1, k));
+            //             auto & current_value = current_diameters(k);
+            //             if (new_value > current_value)
+            //             {
+            //                 current_value = new_value;
+            //             }
+            //         }
+            //     }
+            // }
+            // return current_diameters;
         }
         
         // Point

@@ -40,7 +40,7 @@ main(int argc, char** argv)
     // finite elements
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     // mesh
-    auto file_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/mesh.msh";
+    auto file_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/mesh2.msh";
     auto out_file = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/out.msh";
     // auto file_path = "mesh.msh";
     // auto out_file = "out.msh";
