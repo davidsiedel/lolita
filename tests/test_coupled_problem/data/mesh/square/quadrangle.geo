@@ -19,20 +19,24 @@ Curve Loop(1) = {3, 4, 1, 2};
 //+
 Plane Surface(1) = {1};
 //+
+Physical Curve("TOP", 5) = {3};
+//+
+Physical Curve("BOTTOM", 6) = {1};
+//+
+Physical Curve("LEFT", 7) = {4};
+//+
+Physical Curve("RIGHT", 8) = {2};
+//+
+Physical Surface("SQUARE", 9) = {1};
+//+
 Physical Point("NODE", 10) = {1};
 //+
-Physical Curve("TOP", 11) = {3};
-//+
-Physical Curve("BOTTOM", 12) = {1};
-//+
-Physical Curve("RIGHT", 13) = {2};
-//+
-Physical Curve("LEFT", 14) = {4};
-//+
-Transfinite Curve {3, 2, 1, 4} = 10 Using Progression 1;
+Transfinite Curve {3, 4, 1, 2} = 50 Using Progression 1;
 //+
 // Recombine Surface {1};
 //+
 // Transfinite Surface {1};
 //+
-Physical Surface("SQUARE", 15) = {1};
+Recombine Surface {1};
+//+
+// Transfinite Surface {1};

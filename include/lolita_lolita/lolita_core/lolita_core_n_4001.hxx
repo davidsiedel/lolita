@@ -475,10 +475,11 @@ namespace lolita
                             {
                                 auto argh = face_orientation == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
                                 auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
+                                auto argf = argh;
                                 //
-                                auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i);
+                                auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
                                 // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                                auto point = face->template getReferenceQuadraturePoint<t_quadrature>(i);
+                                auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
                                 // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                                 auto normal_vector = face->getNormalVector(point);
                                 //
@@ -574,10 +575,11 @@ namespace lolita
                             {
                                 auto argh = face_orientation == 1 ? i_quadrature : quadrature_size - (i_quadrature + 1);
                                 auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
+                                auto argf = argh;
                                 //
-                                auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i_quadrature);
+                                auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
                                 // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                                auto point = face->template getReferenceQuadraturePoint<t_quadrature>(i_quadrature);
+                                auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
                                 // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                                 auto normal_vector = face->getNormalVector(point);
                                 //
@@ -671,11 +673,12 @@ namespace lolita
                         for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize(); i++)
                         {
                             auto argh = face_orientation == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
+                            auto argf = argh;
                             auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
                             //
-                            auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i);
+                            auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
                             // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                            auto point = face->template getReferenceQuadraturePoint<t_quadrature>(i);
+                            auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
                             // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                             auto normal_vector = face->getNormalVector(point);
                             //
@@ -758,8 +761,6 @@ namespace lolita
                     auto block_j = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, col_offset_j);
                     block_j += (1.0 / 2.0) * weight * row_cell_vector * col_cell_vector_j.transpose();
                 }
-                // std::cout << "----- rhs" << std::endl;
-                // std::cout << rhs << std::endl;
                 auto set_faces_blocks = [&] <Integer t_i = 0> (
                     auto & self
                 )
@@ -774,11 +775,12 @@ namespace lolita
                         for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize(); i++)
                         {
                             auto argh = face_orientation == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
+                            auto argf = argh;
                             auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
                             //
-                            auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i);
+                            auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
                             // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                            auto point = face->template getReferenceQuadraturePoint<t_quadrature>(i);
+                            auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
                             // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                             auto normal_vector = face->getNormalVector(point);
                             //
@@ -851,10 +853,12 @@ namespace lolita
                     auto block_j = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, col_offset_j);
                     block_j += (1.0 / 2.0) * weight * row_cell_vector * col_cell_vector_j.transpose();
                 }
-                // std::cout << "----- rhs" << std::endl;
-                // std::cout << rhs << std::endl;
+                std::cout << "----- rhs" << row << " " << col << std::endl;
+                std::cout << mat2str(rhs) << std::endl;
                 std::cout << "---------------------------------------------------------------> element " << std::endl;
-                std::cout << this->getCurrentCoordinates() << std::endl;
+                std::cout << mat2str(this->getCurrentCoordinates()) << std::endl;
+                std::cout << "------> centroid " << std::endl;
+                std::cout << mat2str(this->getCurrentCentroid()) << std::endl;
                 auto set_faces_blocks = [&] <Integer t_i = 0> (
                     auto & self
                 )
@@ -867,19 +871,23 @@ namespace lolita
                     {
                         auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
                         std::cout << "----------------------> face " << i_face << " : " << std::endl;
-                        std::cout << face->getCurrentCoordinates() << std::endl;
+                        std::cout << mat2str(face->getCurrentCoordinates()) << std::endl;
+                        std::cout << "------> face_centroid " << std::endl;
+                        std::cout << mat2str(face->getCurrentCentroid()) << std::endl;
                         std::cout << "------> face_orientation " << std::endl;
                         std::cout << face_orientation << std::endl;
                         std::cout << "------> face_rotation " << std::endl;
-                        std::cout << face->getRotationMatrix(face->getReferenceCentroid()) << std::endl;
+                        std::cout << mat2str(face->getRotationMatrix(face->getReferenceCentroid())) << std::endl;
                         for (auto i = 0; i < ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize(); i++)
                         {
                             auto argh = face_orientation == 1 ? i : ElementQuadratureRuleTraits<t_inner_neighbor, t_quadrature>::getSize() - (i + 1);
+                            auto argf = argh;
+                            // argh = i;
                             auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
                             //
-                            auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i);
+                            auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
                             // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                            auto point = face->template getReferenceQuadraturePoint<t_quadrature>(i);
+                            auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
                             // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                             auto normal_vector = face->getNormalVector(point);
                             //
@@ -899,21 +907,21 @@ namespace lolita
                             std::cout << "------> weight " << i << " : " << std::endl;
                             std::cout << weight << std::endl;
                             std::cout << "------> point " << i << " : " << std::endl;
-                            std::cout << point << std::endl;
+                            std::cout << mat2str(face->template getCurrentQuadraturePoint<t_quadrature>(i)) << std::endl;
                             //
                             //
                             auto row_cell_vector = this->template getBasisEvaluation<getGradBasis()>(i_p);
                             auto col_face_vector = face->template getBasisEvaluation<getFaceBasis()>(point);
                             auto col_cell_vector = this->template getBasisEvaluation<getCellBasis()>(i_p);
                             // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
-                            // std::cout << "------> row_cell_vector " << i << " : " << std::endl;
-                            // std::cout << row_cell_vector << std::endl;
-                            // std::cout << "------> col_face_vector " << i << " : " << std::endl;
-                            // std::cout << col_face_vector << std::endl;
-                            // std::cout << "------> col_cell_vector " << i << " : " << std::endl;
-                            // std::cout << col_cell_vector << std::endl;
-                            // std::cout << "------> normal_vector " << i << " : " << std::endl;
-                            // std::cout << normal_vector << std::endl;
+                            std::cout << "------> row_cell_vector " << i << " : " << std::endl;
+                            std::cout << mat2str(row_cell_vector) << std::endl;
+                            std::cout << "------> col_face_vector " << i << " : " << std::endl;
+                            std::cout << mat2str(col_face_vector) << std::endl;
+                            std::cout << "------> col_cell_vector " << i << " : " << std::endl;
+                            std::cout << mat2str(col_cell_vector) << std::endl;
+                            std::cout << "------> normal_vector " << i << " : " << std::endl;
+                            std::cout << mat2str(normal_vector) << std::endl;
                             auto normal_vector_component_i = face_orientation * normal_vector(col);
                             auto normal_vector_component_j = face_orientation * normal_vector(row);
                             //
@@ -938,9 +946,9 @@ namespace lolita
                         auto face_block_i = rhs.template block<getGradBasisSize<t_element>(), getFaceBasisSize<t_inner_neighbor>()>(0, face_col_offset_i);
                         auto face_block_j = rhs.template block<getGradBasisSize<t_element>(), getFaceBasisSize<t_inner_neighbor>()>(0, face_col_offset_j);
                         std::cout << "------> face block " << row << " : " << std::endl;
-                        std::cout << face_block_i << std::endl;
+                        std::cout << mat2str(face_block_i) << std::endl;
                         std::cout << "------> face block " << col << " : " << std::endl;
-                        std::cout << face_block_j << std::endl;
+                        std::cout << mat2str(face_block_j) << std::endl;
                         face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>();
                         i_face ++;
                     }
@@ -1099,7 +1107,8 @@ namespace lolita
                     // std::cout << "stress_view : " << Matrix<Real, 1, -1>(stress_view) << std::endl;
                     internal_forces += integration_point.weight_ * strain_operator_view.transpose() * stress_view;
                 }
-                internal_forces += this->parameters_.at("Stabilization") * this->operators_.at("Stabilization") * unknown;
+                auto stabilization_label = std::string(degree_of_freedom_label) + "Stabilization";
+                internal_forces += this->parameters_.at(stabilization_label) * this->operators_.at(stabilization_label) * unknown;
                 return internal_forces;
             }
 
@@ -1156,7 +1165,8 @@ namespace lolita
                     // std::cout << "strain_operator_view :\n" << strain_operator_view << std::endl;
                     jacobian += integration_point.weight_ * strain_operator_view.transpose() * jacob * strain_operator_view;
                 }
-                jacobian += this->parameters_.at("Stabilization") * this->operators_.at("Stabilization");
+                auto stabilization_label = std::string(degree_of_freedom_label) + "Stabilization";
+                jacobian += this->parameters_.at(stabilization_label) * this->operators_.at(stabilization_label);
                 return jacobian;
             }
 
@@ -1200,6 +1210,10 @@ namespace lolita
                 auto r_c = r_f - k_ft * k_tt_inv * r_t;
                 //
                 //
+                // -> DEBUG
+                // std::cout << "********* cell : " << lolita::mat2str(this->getCurrentCentroid()) << std::endl;
+                // std::cout << "element_residual : " << lolita::mat2str(residual) << std::endl;
+                // <- DEBUG
                 auto constexpr t_field = t_finite_element_method.getField();
                 auto offset_i = 0;
                 auto global_offset = system->getUnknownOffset(degree_of_freedom_label);
@@ -1210,6 +1224,29 @@ namespace lolita
                 {
                     for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
                     {
+                        // -> DEBUG
+                        // std::cout << "*** face : " << lolita::mat2str(face_i->getCurrentCentroid()) << std::endl;
+                        // auto const unknown = face_i->degrees_of_freedom_.at("Displacement").template getCoefficients<lolita::Field::vector(), getFaceBasis()>();
+                        // std::cout << "unknown : " << lolita::mat2str(unknown) << std::endl;
+                        // if (face_i->isIn("TOP"))
+                        // {
+                        //     std::cout << "*** TOP" << std::endl;
+                        //     auto const force = face_i->degrees_of_freedom_.at("TopForce").template getCoefficients<lolita::Field::scalar(), getFaceBasis()>();
+                        //     std::cout << "force : " << lolita::mat2str(force) << std::endl;
+                        // }
+                        // if (face_i->isIn("BOTTOM"))
+                        // {
+                        //     std::cout << "*** BOTTOM" << std::endl;
+                        //     auto const force = face_i->degrees_of_freedom_.at("BottomForce").template getCoefficients<lolita::Field::scalar(), getFaceBasis()>();
+                        //     std::cout << "force : "  << lolita::mat2str(force) << std::endl;
+                        // }
+                        // if (face_i->isIn("LEFT"))
+                        // {
+                        //     std::cout << "*** LEFT" << std::endl;
+                        //     auto const force = face_i->degrees_of_freedom_.at("LeftForce").template getCoefficients<lolita::Field::scalar(), getFaceBasis()>();
+                        //     std::cout << "force : "  << lolita::mat2str(force) << std::endl;
+                        // }
+                        // <- DEBUG
                         auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
                         for (auto i = 0; i < face_i_dof.template getSize<t_field, getFaceBasis()>(); i++)
                         {
@@ -1252,6 +1289,10 @@ namespace lolita
                 // this->operators_["KTF"] = k_tf;
                 // this->operators_["RT"] = r_t;
                 auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
+                // -> DEBUG
+                // std::cout << "********* cell : " << lolita::mat2str(this->getCurrentCentroid()) << std::endl;
+                // std::cout << lolita::mat2str(k_c) << std::endl;
+                // <- DEBUG
                 // auto r_c = r_f - k_ft * k_tt_inv * r_t;
                 //
                 //
@@ -1318,14 +1359,18 @@ namespace lolita
                 auto const & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
                 auto const & constraint = this->constraints_.at(std::string(constraint_label)).getFunction();
+                // -> DEBUG
                 // auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
+                // <- DEBUG
                 auto binding_external_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
                 auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
                 auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
                 auto unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
                 auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
                 auto lagrange_parameter = this->parameters_.at("Lagrange");
+                // -> DEBUG
                 // matrix.setZero();
+                // <- DEBUG
                 binding_external_forces_vector.setZero();
                 binding_internal_forces_vector.setZero();
                 unknown_internal_forces_vector.setZero();
@@ -1340,10 +1385,14 @@ namespace lolita
                     // binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector.dot(basis_vector) * basis_vector;
                     binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector;
                     unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
+                    // -> DEBUG
                     // matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
+                    // <- DEBUG
                 }
+                // -> DEBUG
                 // auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
-                // auto V_E_C_T_O_R = M_A_T_R_I_X * (binding_internal_forces_vector - binding_external_forces_vector);
+                // auto V_E_C_T_O_R = M_A_T_R_I_X * (binding_external_forces_vector - binding_internal_forces_vector);
+                // <- DEBUG
                 // auto binding_residual_vector = binding_internal_forces_vector - binding_external_forces_vector;
                 auto binding_residual_vector = binding_external_forces_vector - binding_internal_forces_vector;
                 system->setNormalization(binding_external_forces_vector.cwiseAbs().maxCoeff());
@@ -1351,7 +1400,7 @@ namespace lolita
                 auto unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
                 for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
                 {
-                    system->addRhsValue(iii + binding_offset, binding_residual_vector(iii));
+                    system->addRhsValue(iii + binding_offset, (binding_external_forces_vector - binding_internal_forces_vector)(iii));
                     system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
                     // for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
                     // {
@@ -1400,6 +1449,10 @@ namespace lolita
                     // unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
                     matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
                 }
+                // -> DEBUG
+                // auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
+                // auto M_A_T_R_I_X = decltype(matrix)::Identity();
+                // <- DEBUG
                 // auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
                 // auto V_E_C_T_O_R = M_A_T_R_I_X * (binding_internal_forces_vector - binding_external_forces_vector);
                 // auto binding_residual_vector = binding_internal_forces_vector - binding_external_forces_vector;
@@ -1463,7 +1516,8 @@ namespace lolita
                 auto k_tt_inv = this->operators_.at("KTT").template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
                 auto k_tf = this->operators_.at("KTF").template block<num_cell_unknowns, num_face_unknowns>(0, 0);
                 auto r_t = this->operators_.at("RT").template block<num_cell_unknowns, 1>(0, 0);
-                auto cell_corr = - (k_tt_inv * r_t + k_tt_inv * k_tf * faces_correction);
+                // auto cell_corr = - (k_tt_inv * r_t + k_tt_inv * k_tf * faces_correction);
+                auto cell_corr = k_tt_inv * (r_t -  k_tf * faces_correction);
                 this->degrees_of_freedom_.at(std::string(unknown_label)).template getCoefficients<field, getCellBasis()>() += cell_corr;
                 //
                 // auto & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));

@@ -1,5 +1,5 @@
 @DSL DefaultDSL;
-@Behaviour MicromorphicDamageI_SpectralSplit;
+@Behaviour MicromorphicDisplacement;
 @Author Thomas Helfer, Jérémy Bleyer;
 @Date 21 / 09 / 2021;
 

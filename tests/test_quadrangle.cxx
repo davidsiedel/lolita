@@ -3,6 +3,8 @@
 
 TEST(test_quadrangle, test_quadrangle)
 {
+    std::cout << std::fixed << std::setprecision(3);
+    //
     auto constexpr domain = lolita::Domain::cartesian(2);
     auto constexpr node = lolita::Element::node();
     auto constexpr segment = lolita::Element::segment(1);
@@ -115,15 +117,17 @@ TEST(test_quadrangle, test_quadrangle)
         auto basis_vector = quadrangle_0->template getBasisEvaluation<lolita::Basis::monomial(1)>(point);
         // std::cout << "basis_vector" << "\n";
         // std::cout << basis_vector << "\n";
-        auto grad = quadrangle_0->template getMapping<lolita::Field::vector(), lolita::Mapping::largeStrain(), hdg>(r_point);
+        auto grad = quadrangle_0->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(r_point);
         std::cout << "grad ------------------ " << q << "\n";
-        std::cout << grad << "\n";
+        std::cout << lolita::mat2str(grad, 3) << "\n";
         std::cout << "------------------ " << q << "\n";
     }
     auto stab = quadrangle_0->template getStabilization<lolita::Field::vector(), hdg>();
     std::cout << "stab ------------------ " << "\n";
-    std::cout << stab << "\n";
+    std::cout << lolita::mat2str(stab, 3) << "\n";
     std::cout << "------------------ " << "\n";
+
+    std::cout << lolita::mat2str(stab.col(1), 3) << "\n";
 
     // auto count_seg = 0;
     // for (auto const & seg : {segment_0, segment_1, segment_2})

@@ -1,5 +1,5 @@
 @DSL DefaultGenericBehaviour;
-@Behaviour MicromorphicDamageII;
+@Behaviour MicromorphicDamage;
 @Author Thomas Helfer, Jérémy Bleyer;
 @Date 21 / 09 / 2021;
 

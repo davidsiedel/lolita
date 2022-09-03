@@ -250,9 +250,46 @@ namespace lolita
         void
         initialize()
         {
-            lhs_values_ = std::vector<MatrixEntry>();
-            rhs_values_ = Vector<Real>::Zero(getSize());
+            lhs_values_.clear();
+            if (rhs_values_.size() == 0)
+            {
+                rhs_values_ = Vector<Real>::Zero(getSize());
+            }
+            else
+            {
+                rhs_values_.setZero();
+            }
             normalization_ = 1.e-14;
+        }
+
+        inline
+        void
+        initializeRhs()
+        {
+            if (rhs_values_.size() == 0)
+            {
+                rhs_values_ = Vector<Real>::Zero(getSize());
+            }
+            else
+            {
+                rhs_values_.setZero();
+            }
+        }
+
+        inline
+        void
+        initializeLhs()
+        {
+            lhs_values_.clear();
+        }
+
+        inline
+        void
+        initializeNormalization(
+            Real value = 1.e-14
+        )
+        {
+            normalization_ = value;
         }
 
         // inline
@@ -307,17 +344,17 @@ namespace lolita
         {
             // using SOLVER = Eigen::SparseLU<Eigen::SparseMatrix<Real, Eigen::ColMajor>, Eigen::COLAMDOrdering<Eigen::DenseIndex>>;
             // using SOLVER = Eigen::SparseLU<Eigen::SparseMatrix<Real, Eigen::RowMajor>, Eigen::COLAMDOrdering<int> >;
-            using SOLVER = Eigen::PardisoLU<Eigen::SparseMatrix<Real>>;
-            // using SOLVER = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>;
+            // using SOLVER = Eigen::PardisoLU<Eigen::SparseMatrix<Real>>;
+            using SOLVER = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>;
             // auto solver = Eigen::PardisoLU<Eigen::SparseMatrix<Real>>();
             // auto solver = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>();
             auto solver = SOLVER();
             auto lhs = Eigen::SparseMatrix<Real>(getSize(), getSize());
             lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
             // std::cout << "lhs : " << "\n";
-            // std::cout << Matrix<Real>(lhs).format(print_format) << "\n";
+            // std::cout << mat2str(Matrix<Real>(lhs)) << "\n";
             // std::cout << "rhs : " << "\n";
-            // std::cout << rhs_values_ << "\n";
+            // std::cout << mat2str(rhs_values_) << "\n";
             //
             //
             // auto outfile = std::ofstream();
@@ -412,9 +449,9 @@ namespace lolita
             Real value
         )
         {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
             if (value > normalization_)
             {
-                auto lock = std::scoped_lock<std::mutex>(mutex);
                 normalization_ = value;
             }
         }

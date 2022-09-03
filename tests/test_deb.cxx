@@ -55,7 +55,7 @@ TEST(t_deb, t_deb)
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
     //making operators
     elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");
-    elements->setElementOperators<cells, displacement_element, hdg>("SQUARE", "Stabilization");
+    elements->setElementOperators<cells, displacement_element, hdg>("SQUARE", "DisplacementStabilization");
     // -------------------------------------------------------------------------------------------------------------------------------------------------------->
     auto constexpr t_quadrature = lolita::Quadrature::gauss(4);
     auto constexpr t_cell_basis = lolita::Basis::monomial(1);
@@ -236,7 +236,7 @@ TEST(t_deb, t_deb)
     elements->setParameter<faces>("LEFT", "Lagrange", [](lolita::Point const & p) { return 1.0; });
     elements->setParameter<faces>("BOTTOM", "Lagrange", [](lolita::Point const & p) { return 1.0; });
     // stab
-    elements->setParameter<cells>("SQUARE", "Stabilization", [](lolita::Point const & p) { return 1.0; });
+    elements->setParameter<cells>("SQUARE", "DisplacementStabilization", [](lolita::Point const & p) { return 1.0; });
     //
     //
     elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");

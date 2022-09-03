@@ -57,39 +57,47 @@ namespace lolita
             mutable
             {
                 auto constexpr t_i = t_ii.getDim();
-                auto num_threads = std::thread::hardware_concurrency() == 0 ? 8 : (std::thread::hardware_concurrency());
-                auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
-                auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
-                auto my_threads = std::vector<std::jthread>(num_threads);
-                //
-                auto doit = [&] (
-                    Integer start,
-                    Integer stop
-                )
+                // auto num_threads = std::thread::hardware_concurrency() == 0 ? 1 : (std::thread::hardware_concurrency());
+                auto num_threads = std::thread::hardware_concurrency();
+                if (num_threads == 0)
                 {
-                    for (auto i = start; i < stop; ++i)
-                    {
-                        auto const & finite_element = this->template getElements<t_i, t_j>()[i];
-                        if (finite_element->isIn(domain))
-                        {
-                            fun(finite_element);
-                        }
-                    }
-                };
-                //
-                for(auto i = 0; i < num_threads; ++i)
-                {
-                    my_threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
+                    caller<t_ii>(domain, fun);
                 }
-                doit(num_threads * batch_size, num_threads * batch_size + batch_remainder);
-                //
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                else
                 {
-                    self.template operator()<t_j + 1>(self);
+                    auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
+                    auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
+                    auto threads = std::vector<std::jthread>(num_threads);
+                    //
+                    auto doit = [&] (
+                        Integer start,
+                        Integer stop
+                    )
+                    {
+                        for (auto i = start; i < stop; ++i)
+                        {
+                            auto const & finite_element = this->template getElements<t_i, t_j>()[i];
+                            if (finite_element->isIn(domain))
+                            {
+                                fun(finite_element);
+                            }
+                        }
+                    };
+                    //
+                    for(auto i = 0; i < num_threads; ++i)
+                    {
+                        threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
+                    }
+                    doit(num_threads * batch_size, num_threads * batch_size + batch_remainder);
+                    //
+                    if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                    {
+                        self.template operator()<t_j + 1>(self);
+                    }
                 }
             }; 
-            activate_elements(activate_elements);
-            // caller<t_ii>(domain, fun);
+            // activate_elements(activate_elements);
+            caller<t_ii>(domain, fun);
         }
         
         std::unique_ptr<FiniteElementSet>

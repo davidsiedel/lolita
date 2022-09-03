@@ -40,3 +40,4 @@ tmp.*
 **/**bhv_**/include/
 **/**bhv_**/src/
 *.msh
+.*.*
