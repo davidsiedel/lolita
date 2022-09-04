@@ -1178,7 +1178,7 @@ namespace lolita
     private:
 
         template<Element t_element, Domain t__domain, auto... t__args>
-        using t_ElementMap = std::map<std::basic_string<Character>, std::shared_ptr<t_T<t_element, t__domain, t__args...>>>;
+        using t_ElementMap = std::unordered_map<std::basic_string<Character>, std::shared_ptr<t_T<t_element, t__domain, t__args...>>>;
 
         using t_Elements = Elements<t_ElementMap, t_domain, t_args...>;
 

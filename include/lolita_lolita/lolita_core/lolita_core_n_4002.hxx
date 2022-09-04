@@ -448,24 +448,24 @@ namespace lolita
             return std::get<t_j>(std::get<t_i>(inner_neighbors_));
         }
         
-        template<Integer t_i, Integer t_j>
-        Integer
-        getInnerNeighborIndex(
-            Integer i
-        )
-        const
-        requires(!t_element.isNode())
-        {
-            auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
-            auto constexpr t_coordinates = ElementTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
-            auto const & items = getInnerNeighbors<t_i, t_j>()[i]->template getOuterNeighbors<t_coordinates.dim_, t_coordinates.tag_>();
-            // auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
-            auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_element, t_domain>> const & ptr_element)
-            {
-                return * ptr_element == * this;
-            };
-            return std::distance(items.begin(), std::find_if(items.begin(), items.end(), is_equal));
-        }
+        // template<Integer t_i, Integer t_j>
+        // Integer
+        // getInnerNeighborIndex(
+        //     Integer i
+        // )
+        // const
+        // requires(!t_element.isNode())
+        // {
+        //     auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
+        //     auto constexpr t_coordinates = ElementTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
+        //     auto const & items = getInnerNeighbors<t_i, t_j>()[i]->template getOuterNeighbors<t_coordinates.dim_, t_coordinates.tag_>();
+        //     // auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
+        //     auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_element, t_domain>> const & ptr_element)
+        //     {
+        //         return * ptr_element == * this;
+        //     };
+        //     return std::distance(items.begin(), std::find_if(items.begin(), items.end(), is_equal));
+        // }
         
         // template<Integer t_i, Integer t_j>
         // Integer
@@ -497,16 +497,25 @@ namespace lolita
             // return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
             auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
             auto constexpr ggg = t_inner_neighbor.getDim() - 1;
+            auto constexpr t_num_inner_neighbor_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<t_inner_neighbor.getDim() - 1, 0>();
             // auto constexpr t_inner_neighbor_num_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
             auto ori = 1;
-            for (auto node_tag = 0; node_tag < ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>(); node_tag++)
+            for (auto node_tag = 0; node_tag < t_num_inner_neighbor_nodes; node_tag++)
             {
                 // auto mmm = FiniteElementHolder<t_inner_neighbor, t_domain>::template getInnerNeighborNodeConnection<ggg, 0>(node_tag, 0);
-                auto lll = getInnerNeighbors<t_i, t_j>()[i]->getCurrentCoordinates(node_tag);
-                auto kkk = getCurrentCoordinates(getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag));
-                if (!lll.isApprox(kkk))
+                // auto lll = getInnerNeighbors<t_i, t_j>()[i]->getCurrentCoordinates(node_tag);
+                // auto kkk = getCurrentCoordinates(getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag));
+                // if (!lll.isApprox(kkk))
+                // {
+                //     ori = -1;
+                // }
+                // //
+                auto lll = getInnerNeighbors<t_i, t_j>()[i]->template getInnerNeighbors<t_inner_neighbor.getDim() - 1, 0>()[node_tag]->getTag();
+                auto kkk = getInnerNeighbors<t_element.getDim() - 1, 0>()[getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag)]->getTag();
+                if (lll != kkk)
                 {
                     ori = -1;
+                    break;
                 }
             }
             return ori;
@@ -675,14 +684,14 @@ namespace lolita
             auto ru = Matrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
-            for (auto i = 0; i < t_domain.dim_; ++i)
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                for (auto j = 0; j < t_element.dim_; ++j)
+                for (auto j = 0; j < t_element.getDim(); ++j)
                 {
                     ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
                 }
             }
-            du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).template dot(ru.col(2)));
+            du = lolita::numerics::abs((ru.col(0).cross(ru.col(1))).dot(ru.col(2)));
             return du;
         }
         
@@ -697,15 +706,15 @@ namespace lolita
             auto ru = Matrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
-            for (auto i = 0; i < t_domain.dim_; ++i)
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                for (auto j = 0; j < t_element.dim_; ++j)
+                for (auto j = 0; j < t_element.getDim(); ++j)
                 {
                     ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
                 }
             }
-            du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).norm());
-            if constexpr (t_domain.frame_ == Domain::Frame::AxiSymmetric)
+            du = lolita::numerics::abs((ru.col(0).cross(ru.col(1))).norm());
+            if constexpr (t_domain.isAxiSymmetric())
             {
                 auto r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
                 if (r0 < 1.e-10)
@@ -728,15 +737,15 @@ namespace lolita
             auto ru = Matrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
-            for (auto i = 0; i < t_domain.dim_; ++i)
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                for (auto j = 0; j < t_element.dim_; ++j)
+                for (auto j = 0; j < t_element.getDim(); ++j)
                 {
                     ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
                 }
             }
             du = lolita::numerics::abs(ru.col(0).norm());
-            if constexpr (t_domain.frame_ == Domain::Frame::AxiSymmetric)
+            if constexpr (t_domain.isAxiSymmetric())
             {
                 auto r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
                 if (r0 < 1.e-10)
@@ -1366,7 +1375,7 @@ namespace lolita
             barycenter.setZero();
             for (auto i = 0; i < t_domain.getDim(); i++)
             {
-                barycenter(i) = this->getShapeMappingEvaluation(current_nodes_coordinates.row(i), reference_centroid);
+                barycenter(i) = FiniteElementHolder::getShapeMappingEvaluation(current_nodes_coordinates.row(i), reference_centroid);
             }
             return barycenter;
         }
@@ -1396,34 +1405,83 @@ namespace lolita
             return dts;
         }
         
+        // Point
+        // getNormalVector(
+        //     Point const & point
+        // )
+        // const
+        // requires(t_element.isSub(t_domain, 1))
+        // {
+        //     auto const current_nodes_coordinates = this->getCurrentCoordinates();
+        //     auto ru = Matrix<Real, 3, t_element.getDim()>();
+        //     ru.setZero();
+        //     for (auto i = 0; i < t_domain.getDim(); ++i)
+        //     {
+        //         for (auto j = 0; j < t_element.getDim(); ++j)
+        //         {
+        //             ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
+        //         }
+        //     }
+        //     if constexpr (t_element.isNode()) {
+        //         return Point{0, 0, 0};
+        //     }
+        //     else if constexpr (t_element.isCurve())
+        //     {
+        //         return Point{ru(1)/ru.norm(), -ru(0)/ru.norm(), 0};
+        //     }
+        //     else
+        //     {
+        //         return (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
+        //     }
+        // }
+        
         Point
         getNormalVector(
             Point const & point
         )
         const
-        requires(t_element.isSub(t_domain, 1))
+        requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(2))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto ru = Matrix<Real, 3, t_element.dim_>();
+            auto ru = Matrix<Real, 3, t_element.getDim()>();
+            auto normal_vector = Point();
             ru.setZero();
-            for (auto i = 0; i < 3; ++i)
+            normal_vector.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                for (auto j = 0; j < t_element.dim_; ++j)
+                for (auto j = 0; j < t_element.getDim(); ++j)
                 {
                     ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
                 }
             }
-            if constexpr (t_element.isNode()) {
-                return Point{0, 0, 0};
-            }
-            else if constexpr (t_element.isCurve())
+            normal_vector(0) = + ru(1)/ru.norm();
+            normal_vector(1) = - ru(0)/ru.norm();
+            return normal_vector;
+        }
+        
+        Point
+        getNormalVector(
+            Point const & point
+        )
+        const
+        requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(3))
+        {
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            auto ru = Matrix<Real, 3, t_element.getDim()>();
+            auto normal_vector = Point();
+            ru.setZero();
+            normal_vector.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                return Point{ru(1)/ru.norm(), -ru(0)/ru.norm(), 0};
+                for (auto j = 0; j < t_element.getDim(); ++j)
+                {
+                    ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
+                }
             }
-            else
-            {
-                return (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
-            }
+            // normal_vector = (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
+            normal_vector = ru.col(0).cross(ru.col(1));
+            normal_vector.normalize();
+            return normal_vector;
         }
 
         Matrix<Real, 3, 3>
@@ -1483,7 +1541,8 @@ namespace lolita
         {
             // setting rotation matrix
             auto rotation_matrix = Matrix<Real, 3, 3>();
-            rotation_matrix.setIdentity();
+            rotation_matrix.setZero();
+            rotation_matrix(0, 0) = 1.0;
             return rotation_matrix;
         }
         
@@ -1497,7 +1556,8 @@ namespace lolita
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
             auto tangent_vector = Point();
-            for (auto i = 0; i < 3; ++i)
+            tangent_vector.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
                 tangent_vector(i) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, direction);
             }
@@ -1544,7 +1604,8 @@ namespace lolita
         {
             auto p = Point();
             auto const nds = this->getCurrentCoordinates();
-            for (auto j = 0; j < 3; ++j)
+            p.setZero();
+            for (auto j = 0; j < t_domain.getDim(); ++j)
             {
                 p(j) = FiniteElementHolder::getShapeMappingEvaluation(nds.row(j), getReferenceQuadraturePoint<t_quadrature>(index));
             }
@@ -1560,8 +1621,7 @@ namespace lolita
         requires(!t_element.isNode())
         {
             auto const constexpr t_component = t_ElementTraits::template getInnerNeighbor<_i, _j>();
-            using ComponentGeometry = FiniteElementHolder<t_component, t_domain>;
-            return ComponentGeometry::template getReferenceQuadratureWeight<t_quadrature>(index);
+            return FiniteElementHolder<t_component, t_domain>::template getReferenceQuadratureWeight<t_quadrature>(index);
         }
         
         template<Quadrature t_quadrature, Integer _i, Integer _j>
@@ -1575,9 +1635,9 @@ namespace lolita
         {
             auto constexpr t_component = t_ElementTraits ::template getInnerNeighbor<_i, _j>();
             auto p = Point();
-            using ComponentGeometry = FiniteElementHolder<t_component, t_domain>;
+            p.setZero();
             auto const & elt_reference_nodes = ElementTraits<t_element, t_domain>::reference_nodes_;
-            for (auto i = 0; i < 3; ++i)
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
                 auto cpt_coordinates = Vector<Real, t_component.getNumNodes()>();
                 for (auto j = 0; j < t_component.getNumNodes(); ++j)
@@ -1585,8 +1645,8 @@ namespace lolita
                     auto const node_tag = getInnerNeighborNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);
                     cpt_coordinates(j) = elt_reference_nodes[node_tag][i];
                 }
-                auto cpt_reference_point = ComponentGeometry::template getReferenceQuadraturePoint<t_quadrature>(index);
-                p(i) = ComponentGeometry::getShapeMappingEvaluation(cpt_coordinates, cpt_reference_point);
+                auto cpt_reference_point = FiniteElementHolder<t_component, t_domain>::template getReferenceQuadraturePoint<t_quadrature>(index);
+                p(i) = FiniteElementHolder<t_component, t_domain>::getShapeMappingEvaluation(cpt_coordinates, cpt_reference_point);
             }
             return p;
         }
@@ -1616,7 +1676,8 @@ namespace lolita
             auto p = Point();
             auto const cpt_ref_pnt = getInnerNeighborReferenceQuadraturePoint<t_quadrature, t_i, t_j>(component_index, index);
             auto const nds = this->getCurrentCoordinates();
-            for (auto j = 0; j < 3; ++j)
+            p.setZero();
+            for (auto j = 0; j < t_domain.getDim(); ++j)
             {
                 p(j) = FiniteElementHolder::getShapeMappingEvaluation(nds.row(j), cpt_ref_pnt);
             }

@@ -160,7 +160,7 @@ namespace lolita
     std::basic_string<Character>
     mat2str(
         auto const & mat_in,
-        Integer precision = 3
+        Integer precision = 10
     )
     {
         auto mat = Matrix<Real>(mat_in);
@@ -173,11 +173,11 @@ namespace lolita
                 out << "[";
                 for (auto j = 0; j < mat.cols(); j++)
                 {
-                    if (mat(i, j) < -1.e-14)
+                    if (mat(i, j) < -1.e-10)
                     {
                         out << std::setprecision(precision) << Real(mat(i, j));
                     }
-                    else if (mat(i, j) > 1.e-14)
+                    else if (mat(i, j) > 1.e-10)
                     {
                         out << " " << std::setprecision(precision) << Real(mat(i, j));
                     }
@@ -203,11 +203,11 @@ namespace lolita
             out << "[";
             for (auto j = 0; j < mat.size(); j++)
             {
-                if (mat(j) < -1.e-14)
+                if (mat(j) < -1.e-10)
                 {
                     out << std::setprecision(precision) << Real(mat(j));
                 }
-                else if (mat(j) > 1.e-14)
+                else if (mat(j) > 1.e-10)
                 {
                     out << " " << std::setprecision(precision) << Real(mat(j));
                 }

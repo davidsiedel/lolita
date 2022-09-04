@@ -344,8 +344,8 @@ namespace lolita
         {
             // using SOLVER = Eigen::SparseLU<Eigen::SparseMatrix<Real, Eigen::ColMajor>, Eigen::COLAMDOrdering<Eigen::DenseIndex>>;
             // using SOLVER = Eigen::SparseLU<Eigen::SparseMatrix<Real, Eigen::RowMajor>, Eigen::COLAMDOrdering<int> >;
-            // using SOLVER = Eigen::PardisoLU<Eigen::SparseMatrix<Real>>;
-            using SOLVER = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>;
+            using SOLVER = Eigen::PardisoLU<Eigen::SparseMatrix<Real>>;
+            // using SOLVER = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>;
             // auto solver = Eigen::PardisoLU<Eigen::SparseMatrix<Real>>();
             // auto solver = Eigen::PardisoLDLT<Eigen::SparseMatrix<Real>>();
             auto solver = SOLVER();

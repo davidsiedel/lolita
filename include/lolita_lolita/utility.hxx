@@ -413,7 +413,7 @@ namespace lolita::utility
     };
 
     template<typename t_T, typename t_U>
-    using tuple_cat_t = tuple_concatenation_traits<t_T, t_U>::type;
+    using tuple_cat_t = typename tuple_concatenation_traits<t_T, t_U>::type;
 
     // ------------------------------------------------------------------------------------------------------
 
@@ -447,7 +447,7 @@ namespace lolita::utility
     };
 
     template<typename t_T, Integer t_a, Integer t_b>
-    using tuple_slice_t = TupleSliceTraits<t_T, t_a, t_b>::type;
+    using tuple_slice_t = typename TupleSliceTraits<t_T, t_a, t_b>::type;
 
     // ------------------------------------------------------------------------------------------------------
 
@@ -508,7 +508,7 @@ namespace lolita::utility
     };
 
     template<typename t_T>
-    using tuple_unique_t = TupleUniqueTraits<t_T, 0>::type;
+    using tuple_unique_t = typename TupleUniqueTraits<t_T, 0>::type;
 
     // ------------------------------------------------------------------------------------------------------
 
@@ -704,7 +704,7 @@ namespace lolita::utility
     };
 
     template<template<auto> typename t_T, auto t_aggregate>
-    using aggregate_expansion_t = aggregate_expansion_traits<t_T, t_aggregate, 0>::type;
+    using aggregate_expansion_t = typename aggregate_expansion_traits<t_T, t_aggregate, 0>::type;
 
     // ------------------------------------------------------------------------------------------------------
 

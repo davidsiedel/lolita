@@ -118,52 +118,52 @@ namespace lolita
                 return exponents;
             }
         
-            Real
-            getLocalFrameDistance1(
-                Point const & first_point,
-                Point const & second_point,
-                Integer kkk
-            )
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                // auto first_point_mapping = Point();
-                // auto second_point_mapping = Point();
-                // auto const & current_coordinates = this->getCurrentCoordinates();
-                // first_point_mapping.setZero();
-                // second_point_mapping.setZero();
-                // for (auto i = 0; i < t_domain.getDim(); ++i)
-                // {
-                //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-                //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-                // }
-                // return (second_point_mapping - first_point_mapping)(kkk);
-                return (second_point - first_point)(kkk);
-            }
+            // Real
+            // getLocalFrameDistance1(
+            //     Point const & first_point,
+            //     Point const & second_point,
+            //     Integer kkk
+            // )
+            // const
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     // auto first_point_mapping = Point();
+            //     // auto second_point_mapping = Point();
+            //     // auto const & current_coordinates = this->getCurrentCoordinates();
+            //     // first_point_mapping.setZero();
+            //     // second_point_mapping.setZero();
+            //     // for (auto i = 0; i < t_domain.getDim(); ++i)
+            //     // {
+            //     //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+            //     //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            //     // }
+            //     // return (second_point_mapping - first_point_mapping)(kkk);
+            //     return (second_point - first_point)(kkk);
+            // }
             
-            Real
-            getLocalFrameDistance1(
-                Point const & first_point,
-                Point const & second_point,
-                Integer kkk
-            )
-            const
-            requires(t_element.isSub(t_domain, 1))
-            {
-                auto rotation_matrix = this->getRotationMatrix(this->getReferenceCentroid());
-                // auto first_point_mapping = Point();
-                // auto second_point_mapping = Point();
-                // auto const & current_coordinates = this->getCurrentCoordinates();
-                // first_point_mapping.setZero();
-                // second_point_mapping.setZero();
-                // for (auto i = 0; i < t_domain.getDim(); ++i)
-                // {
-                //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-                //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-                // }
-                // // return (rotation_matrix * (second_point_mapping - first_point_mapping))(kkk);
-                return (rotation_matrix * (second_point - first_point))(kkk);
-            }
+            // Real
+            // getLocalFrameDistance1(
+            //     Point const & first_point,
+            //     Point const & second_point,
+            //     Integer kkk
+            // )
+            // const
+            // requires(t_element.isSub(t_domain, 1))
+            // {
+            //     auto rotation_matrix = this->getRotationMatrix(this->getReferenceCentroid());
+            //     // auto first_point_mapping = Point();
+            //     // auto second_point_mapping = Point();
+            //     // auto const & current_coordinates = this->getCurrentCoordinates();
+            //     // first_point_mapping.setZero();
+            //     // second_point_mapping.setZero();
+            //     // for (auto i = 0; i < t_domain.getDim(); ++i)
+            //     // {
+            //     //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+            //     //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            //     // }
+            //     // // return (rotation_matrix * (second_point_mapping - first_point_mapping))(kkk);
+            //     return (rotation_matrix * (second_point - first_point))(kkk);
+            // }
 
         public:
         
@@ -1414,7 +1414,7 @@ namespace lolita
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
                 auto const & constraint = this->constraints_.at(std::string(constraint_label)).getFunction();
                 // -> DEBUG
-                // auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
+                auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
                 // <- DEBUG
                 auto binding_external_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
                 auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
@@ -1423,7 +1423,7 @@ namespace lolita
                 auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
                 auto lagrange_parameter = this->parameters_.at("Lagrange");
                 // -> DEBUG
-                // matrix.setZero();
+                matrix.setZero();
                 // <- DEBUG
                 binding_external_forces_vector.setZero();
                 binding_internal_forces_vector.setZero();
@@ -1440,21 +1440,31 @@ namespace lolita
                     binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector;
                     unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
                     // -> DEBUG
-                    // matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
+                    matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
                     // <- DEBUG
                 }
                 // -> DEBUG
-                // auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
+                // std::cout << binding_label << " " << this->getTag() << std::endl;
+                // std::cout << "--  unknown :" << std::endl;
+                // std::cout << unknown_vector.transpose() << std::endl;
+                // std::cout << "--  binding with coef " << lagrange_parameter << " :" << std::endl;
+                // std::cout << binding_vector.transpose() << std::endl;
+                // std::cout << "-- residual :" << std::endl;
+                // std::cout << mat2str(binding_external_forces_vector - binding_internal_forces_vector) << std::endl;
+                // std::cout << "-- internal force :" << std::endl;
+                // std::cout << unknown_internal_forces_vector.transpose() << std::endl;
+                unknown_internal_forces_vector = lagrange_parameter * binding_vector;
+                auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
                 // auto V_E_C_T_O_R = M_A_T_R_I_X * (binding_external_forces_vector - binding_internal_forces_vector);
+                // auto V_E_C_T_O_R = lagrange_parameter * (M_A_T_R_I_X * binding_external_forces_vector - unknown_vector);
+                auto V_E_C_T_O_R = lagrange_parameter * (M_A_T_R_I_X * (binding_external_forces_vector - binding_internal_forces_vector));
                 // <- DEBUG
-                // auto binding_residual_vector = binding_internal_forces_vector - binding_external_forces_vector;
-                auto binding_residual_vector = binding_external_forces_vector - binding_internal_forces_vector;
                 system->setNormalization(binding_external_forces_vector.cwiseAbs().maxCoeff());
                 auto binding_offset = system->getBindingOffset(binding_label) + face_binding.getTag();
                 auto unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
                 for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
                 {
-                    system->addRhsValue(iii + binding_offset, (binding_external_forces_vector - binding_internal_forces_vector)(iii));
+                    system->addRhsValue(iii + binding_offset, V_E_C_T_O_R(iii));
                     system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
                     // for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
                     // {
@@ -1505,7 +1515,9 @@ namespace lolita
                 }
                 // -> DEBUG
                 // auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
-                // auto M_A_T_R_I_X = decltype(matrix)::Identity();
+                auto M_A_T_R_I_X = decltype(matrix)();
+                M_A_T_R_I_X.setIdentity();
+                M_A_T_R_I_X *= lagrange_parameter;
                 // <- DEBUG
                 // auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
                 // auto V_E_C_T_O_R = M_A_T_R_I_X * (binding_internal_forces_vector - binding_external_forces_vector);
@@ -1519,8 +1531,8 @@ namespace lolita
                     // system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
                     for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
                     {
-                        system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));
-                        system->addLhsValue(jjj + unknown_offset, iii + binding_offset, matrix(iii, jjj));
+                        system->addLhsValue(iii + binding_offset, jjj + unknown_offset, M_A_T_R_I_X(iii, jjj));
+                        system->addLhsValue(jjj + unknown_offset, iii + binding_offset, M_A_T_R_I_X(iii, jjj));
                     }
                 }
             }
@@ -1571,7 +1583,8 @@ namespace lolita
                 auto k_tf = this->operators_.at("KTF").template block<num_cell_unknowns, num_face_unknowns>(0, 0);
                 auto r_t = this->operators_.at("RT").template block<num_cell_unknowns, 1>(0, 0);
                 // auto cell_corr = - (k_tt_inv * r_t + k_tt_inv * k_tf * faces_correction);
-                auto cell_corr = k_tt_inv * (r_t -  k_tf * faces_correction);
+                // auto cell_corr = k_tt_inv * (r_t - k_tf * faces_correction);
+                auto cell_corr = k_tt_inv * (r_t - k_tf * faces_correction);
                 this->degrees_of_freedom_.at(std::string(unknown_label)).template getCoefficients<field, getCellBasis()>() += cell_corr;
                 //
                 // auto & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));

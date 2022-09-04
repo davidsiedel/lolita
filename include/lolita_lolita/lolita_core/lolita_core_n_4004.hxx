@@ -29,7 +29,8 @@ namespace lolita
             {
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    finite_element_set->template getElements<t_i, t_j>().push_back(element.second);
+                    // finite_element_set->template getElements<t_i, t_j>().push_back(element.second);
+                    finite_element_set->template getElements<t_i, t_j>().insert(finite_element_set->template getElements<t_i, t_j>().begin(), element.second);
                 }
                 if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
                 {
@@ -68,14 +69,18 @@ namespace lolita
         static
         std::basic_string<Character>
         getHash(
-            std::array<Natural, t_element.num_nodes_> node_tags
+            std::array<Natural, t_element.getNumNodes()> node_tags
         )
         {
             auto hash = std::basic_stringstream<Character>();
             std::sort(std::execution::par_unseq, node_tags.begin(), node_tags.end());
+            // for (auto node_tag : node_tags)
+            // {
+            //     hash << node_tag;
+            // }
             for (auto node_tag : node_tags)
             {
-                hash << node_tag;
+                hash << std::setfill('0') << std::setw(20) << node_tag;
             }
             return hash.str();
         }
@@ -173,6 +178,10 @@ namespace lolita
                 // ptr_element->domains_.assign(domains.begin(), domains.end());
                 // ptr_element->domains_ = domains;
                 ptr_element->coordinates_ = std::make_shared<Point>(ptr_element->getCurrentCentroid());
+                // -> DEBUG
+                // std::cout << "adding element : " << getHash(node_tags_) << std::endl;
+                // std::cout << mat2str(* ptr_element->coordinates_) << std::endl;
+                // <- DEBUG
                 element_map.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>()[getHash(node_tags_)] = ptr_element;
             }
         }
@@ -252,7 +261,20 @@ namespace lolita
             Natural tag
         )
         {
-            return std::to_string(tag);
+            auto hash = std::basic_stringstream<Character>();
+            hash << std::setfill('0') << std::setw(20) << tag;
+            // std::sort(std::execution::par_unseq, node_tags.begin(), node_tags.end());
+            // // for (auto node_tag : node_tags)
+            // // {
+            // //     hash << node_tag;
+            // // }
+            // for (auto node_tag : node_tags)
+            // {
+            //     hash << std::setfill('0') << std::setw(20) << node_tag;
+            // }
+            return hash.str();
+            // hash << std::setfill('0') << std::setw(20) << node_tag;
+            // return std::to_string(tag);
         }
 
         MeshElement()
@@ -412,7 +434,10 @@ namespace lolita
                 Integer tag
             )
             {
-                return std::to_string(tag);
+                // return std::to_string(tag);
+                auto hash = std::basic_stringstream<Character>();
+                hash << std::setfill('0') << std::setw(20) << tag;
+                return hash.str();
             }
 
             PhysicalEntity(
@@ -438,8 +463,10 @@ namespace lolita
             )
             {
                 auto hash = std::basic_stringstream<Character>();
-                hash << dim;
-                hash << tag;
+                hash << std::setfill('0') << std::setw(20) << dim;
+                hash << std::setfill('0') << std::setw(20) << tag;
+                // hash << dim;
+                // hash << tag;
                 return hash.str();
             }
 
@@ -706,6 +733,7 @@ namespace lolita
             auto labels = std::array<std::basic_string<Character>, sizeof...(behavior_label)>{behavior_label...};
             auto outfile = std::ofstream();
             outfile.open(file_path);
+            outfile << std::fixed << std::setprecision(17);
             outfile << "$MeshFormat\n";
             outfile << "2.2 0 8\n";
             outfile << "$EndMeshFormat\n";
@@ -833,6 +861,7 @@ namespace lolita
             auto outfile = std::ofstream();
             auto c_element = Natural();
             outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(17);
             outfile << "$NodeData\n";
             outfile << "1\n";
             outfile << "\"" << behavior_label << " " << row << " Strain\"\n";
@@ -887,6 +916,7 @@ namespace lolita
             auto outfile = std::ofstream();
             auto c_element = Natural();
             outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(17);
             outfile << "$NodeData\n";
             outfile << "1\n";
             outfile << "\"" << behavior_label << " " << row << " Stress\"\n";
@@ -942,6 +972,7 @@ namespace lolita
             auto outfile = std::ofstream();
             auto c_element = Natural();
             outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(17);
             // writing strain
             outfile << "$NodeData\n";
             outfile << "1\n";
@@ -984,6 +1015,7 @@ namespace lolita
             auto outfile = std::ofstream();
             auto c_element = Natural();
             outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(17);
             // writing strain
             outfile << "$NodeData\n";
             outfile << "1\n";
@@ -1043,12 +1075,15 @@ namespace lolita
                 {
                     self.template operator()<t_i, t_j + 1>(self);
                 }
-                else if constexpr (t_i < DomainTraits<t_domain>::getNumElements() - 1)
+                // else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+                // {
+                //     self.template operator()<t_i + 1, 0>(self);
+                // }
+                else if constexpr (t_i == 0)
                 {
-                    self.template operator()<t_i + 1, 0>(self);
+                    self.template operator()<t_domain.getDim(), 0>(self);
                 }
             };
-            // gmsh_file_parser.template setMeshElement<t_domain, Element::node()>(mesh_element_set);
             make_elements(make_elements);
             return mesh_element_set.makeFiniteElementSet();
         }
