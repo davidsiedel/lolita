@@ -1,6 +1,6 @@
 #include "lolita_lolita/lolita_core/lolita_core_n_4004.hxx"
 
-#define DEBUG true
+// #define DEBUG true
 
 int
 main(int argc, char** argv)
@@ -152,7 +152,7 @@ main(int argc, char** argv)
     // }
     // <- DEBUG
 
-    auto num_steps = 50;
+    auto num_steps = 40;
     std::cout << "times :" << std::endl;
     auto times = std::vector<lolita::Real>();
     for (auto i = 0; i < num_steps + 1; i++)
@@ -190,6 +190,7 @@ main(int argc, char** argv)
                 elements->assembleBindingVector<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system, time);
                 elements->assembleBindingVector<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system, time);
                 std::cout << "res eval : " << std::setprecision(17) << displacement_system->getResidualEvaluation() << std::endl;
+                std::cout << "res norm : " << std::setprecision(17) << displacement_system->getNormalization() << std::endl;
                 auto res = displacement_system->getResidualEvaluation();
                 // std::cout << "rhs\n" << lolita::mat2str(displacement_system->rhs_values_) << std::endl;
                 if (res < 1.e-6)
@@ -260,12 +261,12 @@ main(int argc, char** argv)
         else
         {
             std::cout << "time step split" << std::endl;
-            elements->recoverBehaviorData<cells>("SQUARE", "Elasticity");
-            elements->recoverUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
+            // elements->recoverBehaviorData<cells>("SQUARE", "Elasticity");
+            // elements->recoverUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
+            // elements->recoverUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
+            // elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
+            // elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
+            // elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
             time = times[step - 1] + (1.0 / 2.0) * (time - times[step - 1]);
             // -> DEBUG
             step ++;

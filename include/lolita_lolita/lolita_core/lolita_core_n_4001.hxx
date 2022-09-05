@@ -1435,12 +1435,15 @@ namespace lolita
                     auto point_ref = this->template getReferenceQuadraturePoint<quadrature>(i);
                     auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
                     auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point_ref);
-                    binding_external_forces_vector += weight * lagrange_parameter * constraint.getImposedValue(point, time) * basis_vector;
+                    // auto diam = 1.0 / this->getCurrentDiameters().norm();
+                    auto diam = 1.0;
+                    binding_external_forces_vector += weight * constraint.getImposedValue(point, time) * basis_vector;
                     // binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector.dot(basis_vector) * basis_vector;
-                    binding_internal_forces_vector += weight * lagrange_parameter * unknown_vector;
-                    unknown_internal_forces_vector += weight * lagrange_parameter * binding_vector;
+                    binding_internal_forces_vector += diam * weight * lagrange_parameter * unknown_vector;
+                    // binding_internal_forces_vector += weight * unknown_vector;
+                    unknown_internal_forces_vector += diam * weight * lagrange_parameter * binding_vector;
                     // -> DEBUG
-                    matrix += weight * lagrange_parameter * basis_vector * basis_vector.transpose();
+                    matrix += weight * basis_vector * basis_vector.transpose();
                     // <- DEBUG
                 }
                 // -> DEBUG
@@ -1453,19 +1456,21 @@ namespace lolita
                 // std::cout << mat2str(binding_external_forces_vector - binding_internal_forces_vector) << std::endl;
                 // std::cout << "-- internal force :" << std::endl;
                 // std::cout << unknown_internal_forces_vector.transpose() << std::endl;
-                unknown_internal_forces_vector = lagrange_parameter * binding_vector;
+                // unknown_internal_forces_vector = binding_vector;
                 auto M_A_T_R_I_X = matrix.llt().solve(decltype(matrix)::Identity());
-                // auto V_E_C_T_O_R = M_A_T_R_I_X * (binding_external_forces_vector - binding_internal_forces_vector);
+                auto V_E_C_T_O_R_0 = M_A_T_R_I_X * binding_external_forces_vector;
+                auto face_displacement_difference = unknown_vector - V_E_C_T_O_R_0;
                 // auto V_E_C_T_O_R = lagrange_parameter * (M_A_T_R_I_X * binding_external_forces_vector - unknown_vector);
-                auto V_E_C_T_O_R = lagrange_parameter * (M_A_T_R_I_X * (binding_external_forces_vector - binding_internal_forces_vector));
+                // auto V_E_C_T_O_R = lagrange_parameter * (M_A_T_R_I_X * (binding_external_forces_vector - binding_internal_forces_vector));
+                auto lagrange_external_forces = lagrange_parameter * V_E_C_T_O_R_0;
                 // <- DEBUG
-                system->setNormalization(binding_external_forces_vector.cwiseAbs().maxCoeff());
+                system->setNormalization(lagrange_external_forces.cwiseAbs().maxCoeff());
                 auto binding_offset = system->getBindingOffset(binding_label) + face_binding.getTag();
                 auto unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
                 for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
                 {
-                    system->addRhsValue(iii + binding_offset, V_E_C_T_O_R(iii));
-                    system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
+                    system->addRhsValue(iii + binding_offset, - lagrange_parameter * face_displacement_difference(iii));
+                    system->addRhsValue(iii + unknown_offset, - lagrange_parameter * binding_vector(iii));
                     // for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
                     // {
                     //     system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));
