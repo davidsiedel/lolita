@@ -152,7 +152,7 @@ main(int argc, char** argv)
     // }
     // <- DEBUG
 
-    auto num_steps = 40;
+    auto num_steps = 100;
     std::cout << "times :" << std::endl;
     auto times = std::vector<lolita::Real>();
     for (auto i = 0; i < num_steps + 1; i++)

@@ -57,9 +57,9 @@ Physical Surface("SQUARE", 14) = {1, 2};
 // //+
 // Transfinite Curve {6, 7, 8, 5} = 3 Using Progression 1;
 //+
-Transfinite Curve {3, 4, 1, 2} = 120 Using Progression 1;
+Transfinite Curve {3, 4, 1, 2} = 200 Using Progression 1;
 //+
-Transfinite Curve {6, 7, 8, 5} = 60 Using Progression 1;
+Transfinite Curve {6, 7, 8, 5} = 100 Using Progression 1;
 //+
 // Recombine Surface {2};
 //+
