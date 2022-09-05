@@ -157,36 +157,76 @@ namespace lolita
     auto static const print_format = Eigen::IOFormat(3, 0, ", ", "\n", "[", "]");
 
     static inline
-    void
-    prettyPrint(
-        auto const & mat
+    std::basic_string<Character>
+    mat2str(
+        auto const & mat_in,
+        Integer precision = 10
     )
     {
-        for (auto i = 0; i < mat.rows(); i++)
+        auto mat = Matrix<Real>(mat_in);
+        auto out = std::basic_stringstream<Character>();
+        out << std::fixed << std::setprecision(precision);
+        if (mat.rows() > 1 && mat.cols() > 1)
         {
-            std::cout << "[ ";
-            for (auto j = 0; j < mat.cols(); j++)
+            for (auto i = 0; i < mat.rows(); i++)
             {
-                if (mat(i, j) < 0.0)
+                out << "[";
+                for (auto j = 0; j < mat.cols(); j++)
                 {
-                    std::cout << std::fixed << std::setprecision(3) << mat(i, j) << ", ";
+                    if (mat(i, j) < -1.e-10)
+                    {
+                        out << std::setprecision(precision) << Real(mat(i, j));
+                    }
+                    else if (mat(i, j) > 1.e-10)
+                    {
+                        out << " " << std::setprecision(precision) << Real(mat(i, j));
+                    }
+                    else
+                    {
+                        out << " 0.";
+                        for (auto k = 0; k < precision; k++)
+                        {
+                            out << " ";
+                        }
+                    }
+                    if (j < mat.cols() - 1)
+                    {
+                        out << " ";
+                    }
+                }
+                out << "]\n";
+            }
+            out << "\n";
+        }
+        else
+        {
+            out << "[";
+            for (auto j = 0; j < mat.size(); j++)
+            {
+                if (mat(j) < -1.e-10)
+                {
+                    out << std::setprecision(precision) << Real(mat(j));
+                }
+                else if (mat(j) > 1.e-10)
+                {
+                    out << " " << std::setprecision(precision) << Real(mat(j));
                 }
                 else
                 {
-                    std::cout << "+" << std::fixed << std::setprecision(3) << mat(i, j) << ", ";
+                    out << " 0.";
+                    for (auto k = 0; k < precision; k++)
+                    {
+                        out << " ";
+                    }
                 }
-                
-                // if (-1.e-10 <= mat(i, j) <= 1.e-10)
-                // {
-                //     std::cout << 0 << ", ";
-                // }
-                // else
-                // {
-                //     std::cout << std::fixed << std::setprecision(3) << mat(i, j) << ", ";
-                // }
+                if (j < mat.size() - 1)
+                {
+                    out << " ";
+                }
             }
-            std::cout << "]\n";
+            out << "]\n";
         }
+        return out.str();
     }
 
 } // namespace lolita

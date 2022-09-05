@@ -1,1 +1,3 @@
-add_subdirectory(app)
+add_subdirectory(linear_elastic_tensile_square)
+add_subdirectory(micromorphic_damage_tensile_rod)
+add_subdirectory(small_strain_voce_tensile_square)

@@ -55,6 +55,10 @@ namespace lolita
         )
         const
         {
+            // auto val = loading_(point, time);
+            // std::cout << "val : " << val << std::endl;
+            // auto a = 1;
+            // return val;
             return loading_(point, time);
         }
         
@@ -100,7 +104,7 @@ namespace lolita
         System()
         :
         rhs_values_(Vector<Real>(0)),
-        normalization_(0)
+        normalization_(1.e-14)
         {}
 
         inline
@@ -246,7 +250,46 @@ namespace lolita
         void
         initialize()
         {
-            rhs_values_ = Vector<Real>::Zero(getSize());
+            lhs_values_.clear();
+            if (rhs_values_.size() == 0)
+            {
+                rhs_values_ = Vector<Real>::Zero(getSize());
+            }
+            else
+            {
+                rhs_values_.setZero();
+            }
+            normalization_ = 1.e-14;
+        }
+
+        inline
+        void
+        initializeRhs()
+        {
+            if (rhs_values_.size() == 0)
+            {
+                rhs_values_ = Vector<Real>::Zero(getSize());
+            }
+            else
+            {
+                rhs_values_.setZero();
+            }
+        }
+
+        inline
+        void
+        initializeLhs()
+        {
+            lhs_values_.clear();
+        }
+
+        inline
+        void
+        initializeNormalization(
+            Real value = 1.e-14
+        )
+        {
+            normalization_ = value;
         }
 
         // inline
@@ -278,7 +321,7 @@ namespace lolita
             Real value
         )
         {
-            std::lock_guard<std::mutex> l(mutex);
+            auto lock = std::scoped_lock<std::mutex>(mutex);
             lhs_values_.push_back(MatrixEntry(i, j, value));
         }
 
@@ -289,8 +332,72 @@ namespace lolita
             Real value
         )
         {
-            std::lock_guard<std::mutex> l(mutex);
+            auto lock = std::scoped_lock<std::mutex>(mutex);
             rhs_values_(i) += value;
+        }
+
+        template<typename t_T>
+        void
+        addLhsValues(
+            Integer i,
+            Integer j,
+            t_T const & values
+        )
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
+            for (auto iii = 0; iii < values.rows(); iii++)
+            {
+                for (auto jjj = 0; jjj < values.cols(); jjj++)
+                {
+                    lhs_values_.push_back(MatrixEntry(iii + i, jjj + j, values(iii, jjj)));
+                }
+            }
+        }
+
+        template<typename t_T>
+        void
+        addRhsValues(
+            Integer i,
+            t_T const & values
+        )
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
+            for (auto iii = 0; iii < values.size(); iii++)
+            {
+                rhs_values_(iii + i) += values(iii);
+            }
+        }
+
+        template<Integer t_rows, Integer t_cols>
+        void
+        addLhsValues(
+            Integer i,
+            Integer j,
+            Matrix<Real, t_rows, t_cols> const & values
+        )
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
+            for (auto iii = 0; iii < t_rows; iii++)
+            {
+                for (auto jjj = 0; jjj < t_cols; jjj++)
+                {
+                    lhs_values_.push_back(MatrixEntry(iii + i, jjj + j, values(iii, jjj)));
+                }
+            }
+        }
+
+        template<Integer t_rows>
+        void
+        addRhsValues(
+            Integer i,
+            Vector<Real, t_rows> const & values
+        )
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
+            for (auto iii = 0; iii < t_rows; iii++)
+            {
+                rhs_values_(iii + i) += values(iii);
+            }
         }
 
         std::mutex mutex;
@@ -309,9 +416,9 @@ namespace lolita
             auto lhs = Eigen::SparseMatrix<Real>(getSize(), getSize());
             lhs.setFromTriplets(lhs_values_.begin(), lhs_values_.end());
             // std::cout << "lhs : " << "\n";
-            // std::cout << Matrix<Real>(lhs).format(print_format) << "\n";
+            // std::cout << mat2str(Matrix<Real>(lhs)) << "\n";
             // std::cout << "rhs : " << "\n";
-            // std::cout << rhs_values_ << "\n";
+            // std::cout << mat2str(rhs_values_) << "\n";
             //
             //
             // auto outfile = std::ofstream();
@@ -330,8 +437,8 @@ namespace lolita
                 std::cerr << "ERROR: Could not factorize the matrix" << std::endl;
             }
             // x = solver.solve(b);
-            auto RHS = Vector<Real>(- rhs_values_);
-            correction_values_ = solver.solve(RHS);
+            // auto RHS = Vector<Real>(- rhs_values_);
+            correction_values_ = solver.solve(rhs_values_);
             if (solver.info() != Eigen::Success)
             {
                 std::cerr << "ERROR: Could not solve the linear system" << std::endl;
@@ -385,15 +492,32 @@ namespace lolita
         }
 
         inline
+        Real
+        getResidualInfiniteNorm()
+        const
+        {
+            return rhs_values_.cwiseAbs().maxCoeff();
+        }
+
+        inline
+        Real
+        getResidualEvaluation()
+        const
+        {
+            return getResidualInfiniteNorm() / getNormalization();
+        }
+
+        inline
         void
         setNormalization(
             Real value
         )
         {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
             if (value > normalization_)
             {
                 normalization_ = value;
-            }            
+            }
         }
 
         Real normalization_;

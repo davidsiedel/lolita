@@ -11,7 +11,7 @@
 namespace lolita
 {
 
-    struct BehaviorIntegrationOutput
+    struct Output
     {
 
         enum Type
@@ -22,28 +22,28 @@ namespace lolita
         };
 
         static constexpr
-        BehaviorIntegrationOutput
+        Output
         success()
         {
-            return BehaviorIntegrationOutput(BehaviorIntegrationOutput::Success);
+            return Output(Output::Success);
         }
 
         static constexpr
-        BehaviorIntegrationOutput
+        Output
         failure()
         {
-            return BehaviorIntegrationOutput(BehaviorIntegrationOutput::Failure);
+            return Output(Output::Failure);
         }
 
         static constexpr
-        BehaviorIntegrationOutput
+        Output
         warning()
         {
-            return BehaviorIntegrationOutput(BehaviorIntegrationOutput::Warning);
+            return Output(Output::Warning);
         }
 
-        constexpr
-        BehaviorIntegrationOutput(
+        constexpr explicit
+        Output(
             Type type
         )
         :
@@ -55,7 +55,7 @@ namespace lolita
         isSuccess()
         const
         {
-            return type_ == BehaviorIntegrationOutput::Success;
+            return type_ == Output::Success;
         }
 
         constexpr
@@ -63,7 +63,7 @@ namespace lolita
         isFailure()
         const
         {
-            return type_ == BehaviorIntegrationOutput::Failure;
+            return type_ == Output::Failure;
         }
 
         constexpr
@@ -71,10 +71,57 @@ namespace lolita
         isWarning()
         const
         {
-            return type_ == BehaviorIntegrationOutput::Warning;
+            return type_ == Output::Warning;
         }
 
         Type type_;
+
+    };
+
+    struct OutputHandler
+    {
+
+        OutputHandler()
+        :
+        output_(Output::success())
+        {}
+
+        inline
+        void
+        setSuccess()
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex_);
+            output_ = Output::success();
+        }
+
+        inline
+        void
+        setFailure()
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex_);
+            output_ = Output::failure();
+        }
+
+        inline
+        void
+        setWarning()
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex_);
+            output_ = Output::warning();
+        }
+
+        inline
+        Output
+        getOutput()
+        {
+            return output_;
+        }
+
+    private:
+
+        Output output_;
+
+        std::mutex mutex_;
 
     };
 
@@ -401,24 +448,24 @@ namespace lolita
             return std::get<t_j>(std::get<t_i>(inner_neighbors_));
         }
         
-        template<Integer t_i, Integer t_j>
-        Integer
-        getInnerNeighborIndex(
-            Integer i
-        )
-        const
-        requires(!t_element.isNode())
-        {
-            auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
-            auto constexpr t_coordinates = ElementTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
-            auto const & items = getInnerNeighbors<t_i, t_j>()[i]->template getOuterNeighbors<t_coordinates.dim_, t_coordinates.tag_>();
-            // auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
-            auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_element, t_domain>> const & ptr_element)
-            {
-                return * ptr_element == * this;
-            };
-            return std::distance(items.begin(), std::find_if(items.begin(), items.end(), is_equal));
-        }
+        // template<Integer t_i, Integer t_j>
+        // Integer
+        // getInnerNeighborIndex(
+        //     Integer i
+        // )
+        // const
+        // requires(!t_element.isNode())
+        // {
+        //     auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
+        //     auto constexpr t_coordinates = ElementTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
+        //     auto const & items = getInnerNeighbors<t_i, t_j>()[i]->template getOuterNeighbors<t_coordinates.dim_, t_coordinates.tag_>();
+        //     // auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
+        //     auto is_equal = [&] (std::shared_ptr<FiniteElementHolder<t_element, t_domain>> const & ptr_element)
+        //     {
+        //         return * ptr_element == * this;
+        //     };
+        //     return std::distance(items.begin(), std::find_if(items.begin(), items.end(), is_equal));
+        // }
         
         // template<Integer t_i, Integer t_j>
         // Integer
@@ -441,7 +488,7 @@ namespace lolita
         
         template<Integer t_i, Integer t_j>
         Integer
-        getInnerNeighborOrientation(
+        getInnerNeighborSign(
             Integer i
         )
         const
@@ -450,19 +497,65 @@ namespace lolita
             // return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
             auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
             auto constexpr ggg = t_inner_neighbor.getDim() - 1;
+            auto constexpr t_num_inner_neighbor_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<t_inner_neighbor.getDim() - 1, 0>();
             // auto constexpr t_inner_neighbor_num_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
             auto ori = 1;
-            for (auto node_tag = 0; node_tag < ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>(); node_tag++)
+            for (auto node_tag = 0; node_tag < t_num_inner_neighbor_nodes; node_tag++)
             {
                 // auto mmm = FiniteElementHolder<t_inner_neighbor, t_domain>::template getInnerNeighborNodeConnection<ggg, 0>(node_tag, 0);
-                auto lll = getInnerNeighbors<t_i, t_j>()[i]->getCurrentCoordinates(node_tag);
-                auto kkk = getCurrentCoordinates(getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag));
-                if (!lll.isApprox(kkk))
+                // auto lll = getInnerNeighbors<t_i, t_j>()[i]->getCurrentCoordinates(node_tag);
+                // auto kkk = getCurrentCoordinates(getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag));
+                // if (!lll.isApprox(kkk))
+                // {
+                //     ori = -1;
+                // }
+                // //
+                auto lll = getInnerNeighbors<t_i, t_j>()[i]->template getInnerNeighbors<t_inner_neighbor.getDim() - 1, 0>()[node_tag]->getTag();
+                auto kkk = getInnerNeighbors<t_element.getDim() - 1, 0>()[getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag)]->getTag();
+                if (lll != kkk)
                 {
                     ori = -1;
+                    break;
                 }
             }
             return ori;
+            // auto inner_neighbor = getInnerNeighbors<t_i, t_j>()[i];
+            // // auto inner_neighbor_reference_centroid = inner_neighbor->getReferenceCentroid();
+            // // auto inner_neighbor_current_centroid = inner_neighbor->getCurrentCentroid();
+            // // auto current_centroid = this->getCurrentCentroid();
+            // auto inner_neighbor_rotation_matrix = inner_neighbor->getRotationMatrix(inner_neighbor->getReferenceCentroid());
+            // return (inner_neighbor_rotation_matrix * (inner_neighbor->getCurrentCentroid() - this->getCurrentCentroid()))(t_element.getDim() - 1) > 0 ? 1 : -1;
+        }
+        
+        template<Integer t_i, Integer t_j>
+        Integer
+        getInnerNeighborOrientation(
+            Integer i
+        )
+        const
+        requires(!t_element.isNode())
+        {
+            // // return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
+            // auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
+            // auto constexpr ggg = t_inner_neighbor.getDim() - 1;
+            // // auto constexpr t_inner_neighbor_num_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
+            // auto ori = 1;
+            // for (auto node_tag = 0; node_tag < ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>(); node_tag++)
+            // {
+            //     // auto mmm = FiniteElementHolder<t_inner_neighbor, t_domain>::template getInnerNeighborNodeConnection<ggg, 0>(node_tag, 0);
+            //     auto lll = getInnerNeighbors<t_i, t_j>()[i]->getCurrentCoordinates(node_tag);
+            //     auto kkk = getCurrentCoordinates(getInnerNeighborNodeConnection<t_i, t_j>(i, node_tag));
+            //     if (!lll.isApprox(kkk))
+            //     {
+            //         ori = -1;
+            //     }
+            // }
+            auto inner_neighbor = getInnerNeighbors<t_i, t_j>()[i];
+            // auto inner_neighbor_reference_centroid = inner_neighbor->getReferenceCentroid();
+            // auto inner_neighbor_current_centroid = inner_neighbor->getCurrentCentroid();
+            // auto current_centroid = this->getCurrentCentroid();
+            auto inner_neighbor_rotation_matrix = inner_neighbor->getRotationMatrix(inner_neighbor->getReferenceCentroid());
+            return (inner_neighbor_rotation_matrix * (inner_neighbor->getCurrentCentroid() - this->getCurrentCentroid()))(t_element.getDim() - 1) > 0 ? 1 : -1;
         }
         
         // template<Integer t_i, Integer t_j>
@@ -585,33 +678,45 @@ namespace lolita
             Point const & point
         )
         const
+        requires(t_element.isSolid())
         {
             auto const current_coordinates = this->getCurrentCoordinates();
             auto ru = Matrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
-            for (auto i = 0; i < t_domain.dim_; ++i)
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                for (auto j = 0; j < t_element.dim_; ++j)
+                for (auto j = 0; j < t_element.getDim(); ++j)
                 {
                     ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
                 }
             }
-            if constexpr (t_element.dim_ == 3)
+            du = lolita::numerics::abs((ru.col(0).cross(ru.col(1))).dot(ru.col(2)));
+            return du;
+        }
+        
+        Real
+        getShapeMappingDifferential(
+            Point const & point
+        )
+        const
+        requires(t_element.isFacet())
+        {
+            auto const current_coordinates = this->getCurrentCoordinates();
+            auto ru = Matrix<Real, 3, 3>();
+            auto du = Real(0);
+            ru.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).template dot(ru.col(2)));
+                for (auto j = 0; j < t_element.getDim(); ++j)
+                {
+                    ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
+                }
             }
-            else if constexpr (t_element.dim_ == 2)
+            du = lolita::numerics::abs((ru.col(0).cross(ru.col(1))).norm());
+            if constexpr (t_domain.isAxiSymmetric())
             {
-                du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).norm());
-            }
-            else
-            {
-                du = lolita::numerics::abs(ru.col(0).norm());
-            }
-            if constexpr (t_domain.frame_ == Domain::Frame::AxiSymmetric)
-            {
-                Real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+                auto r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
                 if (r0 < 1.e-10)
                 {
                     r0 = 1.e-10;
@@ -622,76 +727,426 @@ namespace lolita
         }
         
         Real
+        getShapeMappingDifferential(
+            Point const & point
+        )
+        const
+        requires(t_element.isCurve())
+        {
+            auto const current_coordinates = this->getCurrentCoordinates();
+            auto ru = Matrix<Real, 3, 3>();
+            auto du = Real(0);
+            ru.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
+            {
+                for (auto j = 0; j < t_element.getDim(); ++j)
+                {
+                    ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
+                }
+            }
+            du = lolita::numerics::abs(ru.col(0).norm());
+            if constexpr (t_domain.isAxiSymmetric())
+            {
+                auto r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+                if (r0 < 1.e-10)
+                {
+                    r0 = 1.e-10;
+                }
+                du *= 2.0 * lolita::numerics::pi() * r0;
+            }
+            return du;
+        }
+        
+        Real
+        getShapeMappingDifferential(
+            Point const & point
+        )
+        const
+        requires(t_element.isNode())
+        {
+            return 1.0;
+        }
+        
+        // Real
+        // getShapeMappingDifferential(
+        //     Point const & point
+        // )
+        // const
+        // {
+        //     auto const current_coordinates = this->getCurrentCoordinates();
+        //     auto ru = Matrix<Real, 3, 3>();
+        //     auto du = Real(0);
+        //     ru.setZero();
+        //     for (auto i = 0; i < t_domain.dim_; ++i)
+        //     {
+        //         for (auto j = 0; j < t_element.dim_; ++j)
+        //         {
+        //             ru(i, j) = FiniteElementHolder::getShapeMappingDerivative(current_coordinates.row(i), point, j);
+        //         }
+        //     }
+        //     if constexpr (t_element.dim_ == 3)
+        //     {
+        //         du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).template dot(ru.col(2)));
+        //     }
+        //     else if constexpr (t_element.dim_ == 2)
+        //     {
+        //         du = lolita::numerics::abs((ru.col(0).template cross(ru.col(1))).norm());
+        //     }
+        //     else
+        //     {
+        //         du = lolita::numerics::abs(ru.col(0).norm());
+        //     }
+        //     if constexpr (t_domain.frame_ == Domain::Frame::AxiSymmetric)
+        //     {
+        //         Real r0 = getShapeMappingEvaluation(current_coordinates.row(0), point);
+        //         if (r0 < 1.e-10)
+        //         {
+        //             r0 = 1.e-10;
+        //         }
+        //         du *= 2.0 * lolita::numerics::pi() * r0;
+        //     }
+        //     return du;
+        // }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point
+        )
+        const
+        requires(t_element.isSub(t_domain, 0))
+        {
+            auto const & current_coordinates = this->getCurrentCoordinates();
+            auto mp0 = Point();
+            auto mp1 = Point();
+            mp0.setZero();
+            mp1.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
+            {
+                mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+            }
+            return (mp1 - mp0).norm();
+        }
+        
+        Real
         getRiemannianDistance(
             Point const & first_point,
             Point const & second_point,
-            Integer direction = -1
+            Integer direction
         )
         const
+        requires(t_element.isSub(t_domain, 0))
         {
-            if constexpr (t_element.isSub(t_domain, 0))
+            auto const & current_coordinates = this->getCurrentCoordinates();
+            auto mp0 = Point();
+            auto mp1 = Point();
+            mp0.setZero();
+            mp1.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                auto const & current_coordinates = this->getCurrentCoordinates();
-                auto distance = Real();
-                auto mp0 = Point();
-                auto mp1 = Point();
-                mp0.setZero();
-                mp1.setZero();
-                for (auto i = 0; i < t_domain.getDim(); ++i)
-                {
-                    mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-                    mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-                }
-                direction == -1 ? distance = (mp1 - mp0).norm() : distance = (mp1 - mp0)(direction);
-                return distance;
+                mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+                mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
             }
-            else
-            {
-                using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
-                auto distance = Real(0);
-                auto dt = Real();
-                auto const current_nodes_coordinates = this->getCurrentCoordinates();
-                for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
-                {
-                    auto pq = SegmentQuadrature::reference_points_[q][0];
-                    auto wq = SegmentQuadrature::reference_weights_[q];
-                    auto ru = Matrix<Real, 3, 3>();
-                    auto difference = second_point - first_point;
-                    auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
-                    ru.setZero();
-                    for (auto i = 0; i < t_domain.dim_; ++i)
-                    {
-                        for (auto j = 0; j < t_element.dim_; ++j)
-                        {
-                            if (direction == -1 || i == direction)
-                            {
-                                auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
-                                auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
-                                ru(i, j) = dx * du;
-                            }
-                        }
-                    }
-                    if constexpr (t_element.isFacet())
-                    {
-                        auto Eff = ru.col(0).template dot(ru.col(0));
-                        auto Fff = ru.col(0).template dot(ru.col(1));
-                        auto Gff = ru.col(1).template dot(ru.col(1));
-                        dt = std::sqrt(Eff + 2.0 * Fff + Gff);
-                    }
-                    else if constexpr (t_element.isCurve())
-                    {
-                        auto Eff = ru.col(0).template dot(ru.col(0));
-                        dt = std::sqrt(Eff);
-                    }
-                    else
-                    {
-                        dt = 0;
-                    }
-                    distance += wq * dt;
-                }
-                return distance;
-            }
+            return (mp1 - mp0)(direction);
         }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isFacet())
+        {
+            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            auto distance = Real(0);
+            auto dt = Real();
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+            {
+                auto pq = SegmentQuadrature::reference_points_[q][0];
+                auto wq = SegmentQuadrature::reference_weights_[q];
+                auto ru = Matrix<Real, 3, 3>();
+                auto difference = second_point - first_point;
+                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                ru.setZero();
+                for (auto i = 0; i < t_domain.dim_; ++i)
+                {
+                    for (auto j = 0; j < t_element.dim_; ++j)
+                    {
+                        auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+                        auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
+                        ru(i, j) = dx * du;
+                    }
+                }
+                auto Eff = ru.col(0).dot(ru.col(0));
+                auto Fff = ru.col(0).dot(ru.col(1));
+                auto Gff = ru.col(1).dot(ru.col(1));
+                dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+                distance += wq * dt;
+            }
+            return distance;
+        }
+        
+        // Matrix<Real, 2, 2>
+        // getMetricTensor(
+        //     Point const & first_point,
+        //     Point const & second_point,
+        //     Integer direction
+        // )
+        // const
+        // requires(!t_element.isSub(t_domain, 0))
+        // {
+        //     using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+        //     auto const current_nodes_coordinates = this->getCurrentCoordinates();
+        //     for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+        //     {
+        //         auto pq = SegmentQuadrature::reference_points_[q][0];
+        //         auto wq = SegmentQuadrature::reference_weights_[q];
+        //         auto ru = Matrix<Real, 3, 3>();
+        //         auto difference = second_point - first_point;
+        //         auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+        //         ru.setZero();
+        //         // for (auto i = 0; i < t_domain.dim_; ++i)
+        //         // {
+        //         for (auto j = 0; j < t_element.dim_; ++j)
+        //         {
+        //             // if (i == direction)
+        //             // {
+        //             auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+        //             auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(direction), uq, j);
+        //             ru(direction, j) = dx * du;
+        //             // }
+        //         }
+        //         // }
+        //         auto Eff = ru.col(0).dot(ru.col(0));
+        //         auto Fff = ru.col(0).dot(ru.col(1));
+        //         auto Gff = ru.col(1).dot(ru.col(1));
+        //         dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+        //         distance += wq * dt;
+        //     }
+        //     return sign * distance;
+        // }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point,
+            Integer direction
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isFacet())
+        {
+            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            auto distance = Real(0);
+            auto dt = Real();
+            // -> TEST
+            auto sign = (second_point - first_point)(direction) > 0 ? 1 : -1;
+            // <_ TEST
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+            {
+                auto pq = SegmentQuadrature::reference_points_[q][0];
+                auto wq = SegmentQuadrature::reference_weights_[q];
+                auto ru = Matrix<Real, 3, 3>();
+                auto difference = second_point - first_point;
+                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                ru.setZero();
+                // for (auto i = 0; i < t_domain.dim_; ++i)
+                // {
+                for (auto j = 0; j < t_element.dim_; ++j)
+                {
+                    // if (i == direction)
+                    // {
+                    auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+                    auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(direction), uq, j);
+                    ru(direction, j) = dx * du;
+                    // }
+                }
+                // }
+                auto Eff = ru.col(0).dot(ru.col(0));
+                auto Fff = ru.col(0).dot(ru.col(1));
+                auto Gff = ru.col(1).dot(ru.col(1));
+                dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+                distance += wq * dt;
+            }
+            return sign * distance;
+        }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isCurve())
+        {
+            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            auto distance = Real(0);
+            auto dt = Real();
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+            {
+                auto pq = SegmentQuadrature::reference_points_[q][0];
+                auto wq = SegmentQuadrature::reference_weights_[q];
+                auto ru = Matrix<Real, 3, 3>();
+                auto difference = second_point - first_point;
+                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                ru.setZero();
+                for (auto i = 0; i < t_domain.dim_; ++i)
+                {
+                    for (auto j = 0; j < t_element.dim_; ++j)
+                    {
+                        auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+                        auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
+                        ru(i, j) = dx * du;
+                    }
+                }
+                auto Eff = ru.col(0).dot(ru.col(0));
+                dt = std::sqrt(Eff);
+                distance += wq * dt;
+            }
+            return distance;
+        }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point,
+            Integer direction
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isCurve())
+        {
+            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            auto distance = Real(0);
+            auto dt = Real();
+            // -> TEST
+            auto sign = (second_point - first_point)(direction) > 0 ? 1 : -1;
+            // <_ TEST
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+            {
+                auto pq = SegmentQuadrature::reference_points_[q][0];
+                auto wq = SegmentQuadrature::reference_weights_[q];
+                auto ru = Matrix<Real, 3, 3>();
+                auto difference = second_point - first_point;
+                auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+                ru.setZero();
+                // for (auto i = 0; i < t_domain.dim_; ++i)
+                // {
+                for (auto j = 0; j < t_element.dim_; ++j)
+                {
+                    // if (i == direction)
+                    // {
+                    auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+                    auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(direction), uq, j);
+                    ru(direction, j) = dx * du;
+                    // }
+                }
+                // }
+                auto Eff = ru.col(0).dot(ru.col(0));
+                dt = std::sqrt(Eff);
+                distance += wq * dt;
+            }
+            return sign * distance;
+        }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isNode())
+        {
+            return 0.0;
+        }
+        
+        Real
+        getRiemannianDistance(
+            Point const & first_point,
+            Point const & second_point,
+            Integer direction
+        )
+        const
+        requires(!t_element.isSub(t_domain, 0) && t_element.isNode())
+        {
+            return 0.0;
+        }
+        
+        // Real
+        // getRiemannianDistance(
+        //     Point const & first_point,
+        //     Point const & second_point,
+        //     Integer direction = -1
+        // )
+        // const
+        // {
+        //     if constexpr (t_element.isSub(t_domain, 0))
+        //     {
+        //         auto const & current_coordinates = this->getCurrentCoordinates();
+        //         auto distance = Real();
+        //         auto mp0 = Point();
+        //         auto mp1 = Point();
+        //         mp0.setZero();
+        //         mp1.setZero();
+        //         for (auto i = 0; i < t_domain.getDim(); ++i)
+        //         {
+        //             mp0(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
+        //             mp1(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
+        //         }
+        //         direction == -1 ? distance = (mp1 - mp0).norm() : distance = (mp1 - mp0)(direction);
+        //         return distance;
+        //     }
+        //     else
+        //     {
+        //         using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+        //         auto distance = Real(0);
+        //         auto dt = Real();
+        //         auto const current_nodes_coordinates = this->getCurrentCoordinates();
+        //         for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
+        //         {
+        //             auto pq = SegmentQuadrature::reference_points_[q][0];
+        //             auto wq = SegmentQuadrature::reference_weights_[q];
+        //             auto ru = Matrix<Real, 3, 3>();
+        //             auto difference = second_point - first_point;
+        //             auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
+        //             ru.setZero();
+        //             for (auto i = 0; i < t_domain.dim_; ++i)
+        //             {
+        //                 for (auto j = 0; j < t_element.dim_; ++j)
+        //                 {
+        //                     if (direction == -1 || i == direction)
+        //                     {
+        //                         auto du = (1.0 / 2.0) * (second_point(j) - first_point(j));
+        //                         auto dx = FiniteElementHolder::getShapeMappingDerivative(current_nodes_coordinates.row(i), uq, j);
+        //                         ru(i, j) = dx * du;
+        //                     }
+        //                 }
+        //             }
+        //             if constexpr (t_element.isFacet())
+        //             {
+        //                 auto Eff = ru.col(0).template dot(ru.col(0));
+        //                 auto Fff = ru.col(0).template dot(ru.col(1));
+        //                 auto Gff = ru.col(1).template dot(ru.col(1));
+        //                 dt = std::sqrt(Eff + 2.0 * Fff + Gff);
+        //             }
+        //             else if constexpr (t_element.isCurve())
+        //             {
+        //                 auto Eff = ru.col(0).template dot(ru.col(0));
+        //                 dt = std::sqrt(Eff);
+        //             }
+        //             else
+        //             {
+        //                 dt = 0;
+        //             }
+        //             distance += wq * dt;
+        //         }
+        //         return distance;
+        //     }
+        // }
         
         Real
         getLocalFrameDistance(
@@ -803,6 +1258,27 @@ namespace lolita
                 }
             }
             return current_diameters;
+            // auto reference_coordinates = FiniteElementHolder::getReferenceCoordinates();
+            // auto current_diameters = Point();
+            // current_diameters.setZero();
+            // for (auto i = 0; i < t_element.getNumNodes(); ++i)
+            // {
+            //     for (auto j = i + 1; j < t_element.getNumNodes(); ++j)
+            //     {
+            //         auto const & pt0 = reference_coordinates.col(i);
+            //         auto const & pt1 = reference_coordinates.col(j);
+            //         for (auto k = 0; k < t_element.getDim(); ++k)
+            //         {
+            //             auto new_value = lolita::numerics::abs(getRiemannianDistance(pt0, pt1, k));
+            //             auto & current_value = current_diameters(k);
+            //             if (new_value > current_value)
+            //             {
+            //                 current_value = new_value;
+            //             }
+            //         }
+            //     }
+            // }
+            // return current_diameters;
         }
         
         // Point
@@ -866,20 +1342,6 @@ namespace lolita
             return current_diameters;
         }
         
-        Point
-        getCurrentCentroid()
-        const
-        {
-            auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto barycenter = Point();
-            barycenter.setZero();
-            for (auto i = 0; i < t_element.getNumNodes(); ++i) {
-                barycenter += current_nodes_coordinates.col(i);
-            }
-            barycenter /= Real(t_element.getNumNodes());
-            return barycenter;
-        }
-        
         static
         Point
         getReferenceCentroid()
@@ -887,10 +1349,34 @@ namespace lolita
             auto reference_nodes_coordinates = FiniteElementHolder::getReferenceCoordinates();
             auto barycenter = Point();
             barycenter.setZero();
-            for (auto i = 0; i < t_element.getNumNodes(); ++i) {
+            for (auto i = 0; i < t_element.getNumNodes(); ++i)
+            {
                 barycenter += reference_nodes_coordinates.col(i);
             }
             barycenter /= Real(t_element.getNumNodes());
+            return barycenter;
+        }
+        
+        Point
+        getCurrentCentroid()
+        const
+        {
+            // auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            // auto barycenter = Point();
+            // barycenter.setZero();
+            // for (auto i = 0; i < t_element.getNumNodes(); ++i) {
+            //     barycenter += current_nodes_coordinates.col(i);
+            // }
+            // barycenter /= Real(t_element.getNumNodes());
+            // return barycenter;
+            auto const reference_centroid = FiniteElementHolder::getReferenceCentroid();
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            auto barycenter = Point();
+            barycenter.setZero();
+            for (auto i = 0; i < t_domain.getDim(); i++)
+            {
+                barycenter(i) = FiniteElementHolder::getShapeMappingEvaluation(current_nodes_coordinates.row(i), reference_centroid);
+            }
             return barycenter;
         }
         
@@ -919,34 +1405,83 @@ namespace lolita
             return dts;
         }
         
+        // Point
+        // getNormalVector(
+        //     Point const & point
+        // )
+        // const
+        // requires(t_element.isSub(t_domain, 1))
+        // {
+        //     auto const current_nodes_coordinates = this->getCurrentCoordinates();
+        //     auto ru = Matrix<Real, 3, t_element.getDim()>();
+        //     ru.setZero();
+        //     for (auto i = 0; i < t_domain.getDim(); ++i)
+        //     {
+        //         for (auto j = 0; j < t_element.getDim(); ++j)
+        //         {
+        //             ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
+        //         }
+        //     }
+        //     if constexpr (t_element.isNode()) {
+        //         return Point{0, 0, 0};
+        //     }
+        //     else if constexpr (t_element.isCurve())
+        //     {
+        //         return Point{ru(1)/ru.norm(), -ru(0)/ru.norm(), 0};
+        //     }
+        //     else
+        //     {
+        //         return (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
+        //     }
+        // }
+        
         Point
         getNormalVector(
             Point const & point
         )
         const
-        requires(t_element.isSub(t_domain, 1))
+        requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(2))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto ru = Matrix<Real, 3, t_element.dim_>();
+            auto ru = Matrix<Real, 3, t_element.getDim()>();
+            auto normal_vector = Point();
             ru.setZero();
-            for (auto i = 0; i < 3; ++i)
+            normal_vector.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                for (auto j = 0; j < t_element.dim_; ++j)
+                for (auto j = 0; j < t_element.getDim(); ++j)
                 {
                     ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
                 }
             }
-            if constexpr (t_element.isNode()) {
-                return Point{0, 0, 0};
-            }
-            else if constexpr (t_element.isCurve())
+            normal_vector(0) = + ru(1)/ru.norm();
+            normal_vector(1) = - ru(0)/ru.norm();
+            return normal_vector;
+        }
+        
+        Point
+        getNormalVector(
+            Point const & point
+        )
+        const
+        requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(3))
+        {
+            auto const current_nodes_coordinates = this->getCurrentCoordinates();
+            auto ru = Matrix<Real, 3, t_element.getDim()>();
+            auto normal_vector = Point();
+            ru.setZero();
+            normal_vector.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                return Point{ru(1)/ru.norm(), -ru(0)/ru.norm(), 0};
+                for (auto j = 0; j < t_element.getDim(); ++j)
+                {
+                    ru(i, j) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, j);
+                }
             }
-            else
-            {
-                return (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
-            }
+            // normal_vector = (ru.col(0) / ru.col(0).norm()).cross((ru.col(1) / ru.col(1).norm()));
+            normal_vector = ru.col(0).cross(ru.col(1));
+            normal_vector.normalize();
+            return normal_vector;
         }
 
         Matrix<Real, 3, 3>
@@ -1006,7 +1541,8 @@ namespace lolita
         {
             // setting rotation matrix
             auto rotation_matrix = Matrix<Real, 3, 3>();
-            rotation_matrix.setIdentity();
+            rotation_matrix.setZero();
+            rotation_matrix(0, 0) = 1.0;
             return rotation_matrix;
         }
         
@@ -1020,7 +1556,8 @@ namespace lolita
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
             auto tangent_vector = Point();
-            for (auto i = 0; i < 3; ++i)
+            tangent_vector.setZero();
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
                 tangent_vector(i) = this->getShapeMappingDerivative(current_nodes_coordinates.row(i), point, direction);
             }
@@ -1067,7 +1604,8 @@ namespace lolita
         {
             auto p = Point();
             auto const nds = this->getCurrentCoordinates();
-            for (auto j = 0; j < 3; ++j)
+            p.setZero();
+            for (auto j = 0; j < t_domain.getDim(); ++j)
             {
                 p(j) = FiniteElementHolder::getShapeMappingEvaluation(nds.row(j), getReferenceQuadraturePoint<t_quadrature>(index));
             }
@@ -1083,8 +1621,7 @@ namespace lolita
         requires(!t_element.isNode())
         {
             auto const constexpr t_component = t_ElementTraits::template getInnerNeighbor<_i, _j>();
-            using ComponentGeometry = FiniteElementHolder<t_component, t_domain>;
-            return ComponentGeometry::template getReferenceQuadratureWeight<t_quadrature>(index);
+            return FiniteElementHolder<t_component, t_domain>::template getReferenceQuadratureWeight<t_quadrature>(index);
         }
         
         template<Quadrature t_quadrature, Integer _i, Integer _j>
@@ -1098,9 +1635,9 @@ namespace lolita
         {
             auto constexpr t_component = t_ElementTraits ::template getInnerNeighbor<_i, _j>();
             auto p = Point();
-            using ComponentGeometry = FiniteElementHolder<t_component, t_domain>;
+            p.setZero();
             auto const & elt_reference_nodes = ElementTraits<t_element, t_domain>::reference_nodes_;
-            for (auto i = 0; i < 3; ++i)
+            for (auto i = 0; i < t_domain.getDim(); ++i)
             {
                 auto cpt_coordinates = Vector<Real, t_component.getNumNodes()>();
                 for (auto j = 0; j < t_component.getNumNodes(); ++j)
@@ -1108,8 +1645,8 @@ namespace lolita
                     auto const node_tag = getInnerNeighborNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);
                     cpt_coordinates(j) = elt_reference_nodes[node_tag][i];
                 }
-                auto cpt_reference_point = ComponentGeometry::template getReferenceQuadraturePoint<t_quadrature>(index);
-                p(i) = ComponentGeometry::getShapeMappingEvaluation(cpt_coordinates, cpt_reference_point);
+                auto cpt_reference_point = FiniteElementHolder<t_component, t_domain>::template getReferenceQuadraturePoint<t_quadrature>(index);
+                p(i) = FiniteElementHolder<t_component, t_domain>::getShapeMappingEvaluation(cpt_coordinates, cpt_reference_point);
             }
             return p;
         }
@@ -1139,7 +1676,8 @@ namespace lolita
             auto p = Point();
             auto const cpt_ref_pnt = getInnerNeighborReferenceQuadraturePoint<t_quadrature, t_i, t_j>(component_index, index);
             auto const nds = this->getCurrentCoordinates();
-            for (auto j = 0; j < 3; ++j)
+            p.setZero();
+            for (auto j = 0; j < t_domain.getDim(); ++j)
             {
                 p(j) = FiniteElementHolder::getShapeMappingEvaluation(nds.row(j), cpt_ref_pnt);
             }
@@ -1462,6 +2000,7 @@ namespace lolita
             )
             {
                 auto element_degree_of_freedom = DegreeOfFreedom(dof->size(), dof);
+                element_degree_of_freedom.old_ = Vector<Real>::Zero(getSize<t_field, t_basis>());
                 dof->resize(dof->size() + getSize<t_field, t_basis>());
                 return element_degree_of_freedom;
             }
@@ -1578,9 +2117,25 @@ namespace lolita
                 getCoefficients<t_field, t_basis>() = vector.template segment<getSize<t_field, t_basis>()>(tag_);
             }
 
+            template<Field t_field, Basis t_basis>
+            void
+            recoverCoefficients()
+            {
+                getCoefficients<t_field, t_basis>() = old_;
+            }
+
+            template<Field t_field, Basis t_basis>
+            void
+            reserveCoefficients()
+            {
+                old_ = getCoefficients<t_field, t_basis>();
+            }
+
             Natural tag_;
 
             std::shared_ptr<Vector<Real>> dof_;
+
+            Vector<Real> old_;
 
         };
 
@@ -1642,17 +2197,6 @@ namespace lolita
         )
         {
             static_cast<t_Disc<t_discretization> *>(this)->template updateBinding<t_finite_element_method>(binding_label, system);
-            // constexpr bool has_method = requires(t_Disc<t_discretization> & t) {
-            //     t.hello();
-            // };
-            // if constexpr (has_method)
-            // {
-            //     std::cout << "HAS !\n";
-            // }
-            // else
-            // {
-            //     std::cout << "HAS NOT !\n";
-            // }
         }
 
         template<Field t_field, Basis t_basis>
@@ -1663,6 +2207,24 @@ namespace lolita
         )
         {
             degrees_of_freedom_.at(std::string(binding_label)).template addCoefficients<t_field, t_basis>(system->getBindingCorrection(binding_label));
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        recoverUnknownCoefficients(
+            std::basic_string_view<Character> binding_label
+        )
+        {
+            degrees_of_freedom_.at(std::string(binding_label)).template recoverCoefficients<t_field, t_basis>();
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        reserveUnknownCoefficients(
+            std::basic_string_view<Character> binding_label
+        )
+        {
+            degrees_of_freedom_.at(std::string(binding_label)).template reserveCoefficients<t_field, t_basis>();
         }
 
         // template<Field t_field, Basis t_basis>
@@ -1766,9 +2328,7 @@ namespace lolita
                 behavior_(behavior),
                 behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behavior))),
                 behavior_data_view_(std::make_unique<mgis::behaviour::BehaviourDataView>(mgis::behaviour::make_view(* behavior_data_)))
-                {
-                    behavior_data_->K[0] = 4;
-                }
+                {}
             
                 inline
                 Boolean
@@ -1784,30 +2344,41 @@ namespace lolita
                 )
                 const = default;
 
-                BehaviorIntegrationOutput
-                integrate()
+                void
+                integrate(
+                    OutputHandler & output_handler
+                )
                 {
+                    behavior_data_->K[0] = 4;
                     auto behaviour_data_view = mgis::behaviour::make_view(* behavior_data_);
                     auto res = mgis::behaviour::integrate(behaviour_data_view, * behavior_);
-                    if (res == 1)
+                    if (res < 1)
                     {
-                        return BehaviorIntegrationOutput::success();
+                        output_handler.setFailure();
                     }
-                    else if (res == 0)
-                    {
-                        return BehaviorIntegrationOutput::warning();
-                    }
-                    else
-                    {
-                        return BehaviorIntegrationOutput::failure();   
-                    }
+                    // else
+                    // {
+                    //     return BehaviorIntegrationOutput::failure();   
+                    // }
                     // auto strain_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.gradients.data(), behavior_data_->s1.gradients.size());
                     // auto stress_view = lolita::algebra::View<Vector<Real> const>(behavior_data_->s1.thermodynamic_forces.data(), behavior_data_->s1.thermodynamic_forces.size());
-                    // auto K = lolita::algebra::View<Vector<Real> const>(behavior_data_->K.data(), behavior_data_->K.size());
-                    // std::cout << "strain : " << strain_view << std::endl;
-                    // std::cout << "stress : " << stress_view << std::endl;
-                    // std::cout << "K : " << K << std::endl;
+                    // auto K = lolita::algebra::View<Matrix<Real> const>(behavior_data_->K.data(), 4, 4);
+                    // std::cout << "strain :\n" << strain_view << std::endl;
+                    // std::cout << "stress :\n" << stress_view << std::endl;
+                    // std::cout << "K :\n" << K << std::endl;
                     // std::cout << "res : " << res << std::endl;
+                }
+
+                void
+                reserve()
+                {
+                    mgis::behaviour::update(* behavior_data_);
+                }
+
+                void
+                recover()
+                {
+                    mgis::behaviour::revert(* behavior_data_);
                 }
 
                 void
@@ -1988,43 +2559,6 @@ namespace lolita
             
         }
 
-        // template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
-        // void
-        // setStrainOperators(
-        //     std::basic_string_view<Character> label,
-        //     std::basic_string_view<Character> label2
-        // )
-        // {
-        //     auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-        //     auto constexpr strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_finite_element_method.getField()>();
-        //     auto quadrature_point_count = 0;
-        //     for (auto & ip : quadrature_.at(std::string(label)).ips_)
-        //     {
-        //         auto strain_operator = Matrix<Real, strain_operator_num_rows, strain_operator_num_cols>();
-        //         strain_operator.setZero();
-        //         auto set_mapping_block = [&] <Integer t_i = 0> (
-        //             auto & self
-        //         )
-        //         constexpr mutable
-        //         {
-        //             auto constexpr mapping = t_finite_element_method.template getMapping<t_i>();
-        //             auto constexpr mapping_size = FiniteElementMethodTraits<t_finite_element_method>::template getMappingSize<t_domain, mapping>();
-        //             auto constexpr offset = FiniteElementMethodTraits<t_finite_element_method>::template getMappingOffset<t_domain, mapping>();
-        //             auto point = ip.reference_coordinates_;
-        //             auto mapping_operator = this->template getMapping<t_finite_element_method.getField(), mapping, t_discretization>(point);
-        //             auto mapping_block = strain_operator.template block<mapping_size, strain_operator_num_cols>(offset, 0);
-        //             mapping_block = mapping_operator;
-        //             if constexpr (t_i < t_finite_element_method.getGeneralizedStrain().getNumMappings() - 1)
-        //             {
-        //                 self.template operator ()<t_i + 1>(self);
-        //             }
-        //         };
-        //         set_mapping_block(set_mapping_block);
-        //         ip.ops_[std::string(label2)] = strain_operator;
-        //         quadrature_point_count ++;
-        //     }
-        // }
-
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
         setStrainOperators(
@@ -2074,15 +2608,18 @@ namespace lolita
             // using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
             // using StrainView = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>;
             // using StrainValue = Vector<Real, strain_operator_num_rows>;
-            auto unknown = this->template getUnknowns<t_finite_element_method.getField(), t_discretization>(degree_of_freedom_label);
+            auto const unknown = this->template getUnknowns<t_finite_element_method.getField(), t_discretization>(degree_of_freedom_label);
+            // std::cout << "unknown :\n" << unknown << std::endl;
             for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
             {
-                auto strain_operator = ip.ops_.at(std::string(degree_of_freedom_label));
+                auto const strain_operator = ip.ops_.at(std::string(degree_of_freedom_label));
                 auto strain_value = strain_operator * unknown;
                 // auto strain_operator = StrainOperatorView(ip.ops_.at(std::string(degree_of_freedom_label)).data());
                 // auto strain_value = StrainValue(strain_operator * unknown);
-                auto strain_view = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>(ip.behavior_data_->s1.gradients.data());
+                // auto strain_view = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>(ip.behavior_data_->s1.gradients.data());
+                auto strain_view = lolita::algebra::View<Vector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
                 strain_view = strain_value;
+                // std::cout << "strain_view :\n" << strain_view << std::endl;
                 // strain_view.setZero();
             }
         }
@@ -2100,10 +2637,18 @@ namespace lolita
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
+        assembleUnknownVector(
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> degree_of_freedom_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template assembleUnknownVector<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
         assembleBindingBlock(
-            // std::basic_string_view<Character> behavior_label,
-            // std::basic_string_view<Character> degree_of_freedom_label,
-            // std::unique_ptr<System> const & system
             std::basic_string_view<Character> binding_label,
             std::basic_string_view<Character> unknown_label,
             std::basic_string_view<Character> constraint_label,
@@ -2114,21 +2659,52 @@ namespace lolita
             static_cast<t_Disc<t_discretization> const *>(this)->template assembleBindingBlock<t_finite_element_method>(binding_label, unknown_label, constraint_label, system);
         }
 
-        BehaviorIntegrationOutput
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        assembleBindingVector(
+            std::basic_string_view<Character> binding_label,
+            std::basic_string_view<Character> unknown_label,
+            std::basic_string_view<Character> constraint_label,
+            std::unique_ptr<System> const & system,
+            Real const & time
+        )
+        const
+        {
+            static_cast<t_Disc<t_discretization> const *>(this)->template assembleBindingVector<t_finite_element_method>(binding_label, unknown_label, constraint_label, system, time);
+        }
+
+        void
         integrate(
+            std::basic_string_view<Character> behavior_label,
+            OutputHandler & output_handler
+        )
+        {
+            for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
+            {
+                ip.integrate(output_handler);
+            }
+        }
+
+        void
+        reserveBehaviorData(
             std::basic_string_view<Character> behavior_label
         )
         {
-            auto behavior_integration_output = BehaviorIntegrationOutput::success();
             for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
             {
-                auto point_integration_output = ip.integrate();
-                if (point_integration_output.isFailure())
-                {
-                    behavior_integration_output = BehaviorIntegrationOutput::failure();
-                }
+                ip.reserve();
             }
-            return behavior_integration_output;
+        }
+
+        void
+        recoverBehaviorData(
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            for (auto & ip : quadrature_.at(std::string(behavior_label)).ips_)
+            {
+                ip.recover();
+            }
         }
 
         void

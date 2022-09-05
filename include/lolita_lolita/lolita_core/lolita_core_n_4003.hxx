@@ -57,35 +57,44 @@ namespace lolita
             mutable
             {
                 auto constexpr t_i = t_ii.getDim();
-                auto num_threads = std::thread::hardware_concurrency() == 0 ? 8 : (std::thread::hardware_concurrency());
-                auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
-                auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
-                auto my_threads = std::vector<std::jthread>(num_threads);
-                //
-                auto doit = [&] (
-                    Integer start,
-                    Integer stop
-                )
+                // auto num_threads = std::thread::hardware_concurrency() == 0 ? 1 : (std::thread::hardware_concurrency());
+                auto num_threads = std::thread::hardware_concurrency();
+                // auto num_threads = 2;
+                if (num_threads == 0)
                 {
-                    for (auto i = start; i < stop; ++i)
-                    {
-                        auto const & finite_element = this->template getElements<t_i, t_j>()[i];
-                        if (finite_element->isIn(domain))
-                        {
-                            fun(finite_element);
-                        }
-                    }
-                };
-                //
-                for(auto i = 0; i < num_threads; ++i)
-                {
-                    my_threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
+                    caller<t_ii>(domain, fun);
                 }
-                doit(num_threads * batch_size, num_threads * batch_size + batch_remainder);
-                //
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                else
                 {
-                    self.template operator()<t_j + 1>(self);
+                    auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
+                    auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
+                    auto threads = std::vector<std::jthread>(num_threads);
+                    //
+                    auto doit = [&] (
+                        Integer start,
+                        Integer stop
+                    )
+                    {
+                        for (auto i = start; i < stop; ++i)
+                        {
+                            auto const & finite_element = this->template getElements<t_i, t_j>()[i];
+                            if (finite_element->isIn(domain))
+                            {
+                                fun(finite_element);
+                            }
+                        }
+                    };
+                    //
+                    for(auto i = 0; i < num_threads; ++i)
+                    {
+                        threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
+                    }
+                    doit(num_threads * batch_size, num_threads * batch_size + batch_remainder);
+                    //
+                    if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                    {
+                        self.template operator()<t_j + 1>(self);
+                    }
                 }
             }; 
             activate_elements(activate_elements);
@@ -337,15 +346,73 @@ namespace lolita
         }
 
         template<ElementType t_ii>
-        void
+        Output
         integrate(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            auto output_handler = OutputHandler();
+            auto fun = [&] (auto const & element)
+            {
+                element->integrate(behavior_label, output_handler);
+            };
+            caller2<t_ii>(domain, fun);
+            return output_handler.getOutput();
+        }
+
+        template<ElementType t_ii>
+        void
+        reserveBehaviorData(
             std::basic_string_view<Character> domain,
             std::basic_string_view<Character> behavior_label
         )
         {
             auto fun = [&] (auto const & element)
             {
-                element->integrate(behavior_label);
+                element->reserveBehaviorData(behavior_label);
+            };
+            caller2<t_ii>(domain, fun);
+        }
+
+        template<ElementType t_ii>
+        void
+        recoverBehaviorData(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                element->recoverBehaviorData(behavior_label);
+            };
+            caller2<t_ii>(domain, fun);
+        }
+
+        template<ElementType t_ii, auto... t_args>
+        void
+        reserveUnknownCoefficients(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                element->template reserveUnknownCoefficients<t_args...>(behavior_label);
+            };
+            caller2<t_ii>(domain, fun);
+        }
+
+        template<ElementType t_ii, auto... t_args>
+        void
+        recoverUnknownCoefficients(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                element->template recoverUnknownCoefficients<t_args...>(behavior_label);
             };
             caller2<t_ii>(domain, fun);
         }
@@ -414,6 +481,22 @@ namespace lolita
 
         template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
+        assembleUnknownVector(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> degree_of_freedom_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                element->template assembleUnknownVector<t_finite_element_method, t_discretization>(behavior_label, degree_of_freedom_label, system);
+            };
+            caller2<t_ii>(domain, fun);
+        }
+
+        template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
         assembleBindingBlock(
             std::basic_string_view<Character> domain,
             std::basic_string_view<Character> binding_label,
@@ -425,6 +508,24 @@ namespace lolita
             auto fun = [&] (auto const & element)
             {
                 element->template assembleBindingBlock<t_finite_element_method, t_discretization>(binding_label, unknown_label, constraint_label, system);
+            };
+            caller2<t_ii>(domain, fun);
+        }
+
+        template<ElementType t_ii, FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        assembleBindingVector(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> binding_label,
+            std::basic_string_view<Character> unknown_label,
+            std::basic_string_view<Character> constraint_label,
+            std::unique_ptr<System> const & system,
+            Real const & time
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                element->template assembleBindingVector<t_finite_element_method, t_discretization>(binding_label, unknown_label, constraint_label, system, time);
             };
             caller2<t_ii>(domain, fun);
         }
