@@ -23,10 +23,10 @@ main(int argc, char** argv)
     // }
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     // declaring behavior
-    auto lib_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/data/behavior/bhv_isotropic_linear_hardening/src/libBehaviour.so";
+    auto lib_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/data/behavior/bhv_small_strain_voce_plasticity/src/libBehaviour.so";
     // auto lib_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/data/behavior/bhv_small_strain_voce_plasticity/src/libBehaviour.so";
     // auto lib_path = "data/behavior/bhv_elasticity/src/libBehaviour.so";
-    auto lib_name = "IsotropicLinearHardeningPlasticity";
+    auto lib_name = "Elasticity";
     auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
         mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
         mgis::behaviour::FiniteStrainBehaviourOptions::DPK1_DF
@@ -34,7 +34,7 @@ main(int argc, char** argv)
     auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
     // constants
     auto constexpr domain = lolita::Domain::cartesian(2);
-    auto constexpr quadrature = lolita::Quadrature::gauss(2);
+    auto constexpr quadrature = lolita::Quadrature::gauss(4);
     auto constexpr cells = lolita::ElementType::cells(domain);
     auto constexpr faces = lolita::ElementType::faces(domain);
     // fields
@@ -44,7 +44,7 @@ main(int argc, char** argv)
     // behaviors
     auto constexpr displacement_behavior = lolita::Behavior(displacement_generalized_strain);
     // discretization
-    auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
+    auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(2, 2);
     // finite elements
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     // mesh
@@ -83,13 +83,13 @@ main(int argc, char** argv)
     // adding behavior
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("SQUARE", lib_path, lib_name, hyp);
     //making operators
-    elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "IsotropicLinearHardeningPlasticity", "Displacement");
+    elements->setStrainOperators<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");
     elements->setElementOperators<cells, displacement_element, hdg>("SQUARE", "DisplacementStabilization");
     // setting variable
-    // elements->setMaterialProperty<cells>("SQUARE", "IsotropicLinearHardeningPlasticity", "YoungModulus", [](lolita::Point const & p) { return 1.0; });
-    // elements->setMaterialProperty<cells>("SQUARE", "IsotropicLinearHardeningPlasticity", "PoissonRatio", [](lolita::Point const & p) { return 0.0; });
-    elements->setExternalVariable<cells>("SQUARE", "IsotropicLinearHardeningPlasticity", "Temperature", [](lolita::Point const & p) { return 293.15; });
-    // elements->setExternalVariable<cells>("SQUARE", "IsotropicLinearHardeningPlasticity", "Damage", [](lolita::Point const & p) { return 0.0; });
+    // elements->setMaterialProperty<cells>("SQUARE", "Elasticity", "YoungModulus", [](lolita::Point const & p) { return 1.0; });
+    // elements->setMaterialProperty<cells>("SQUARE", "Elasticity", "PoissonRatio", [](lolita::Point const & p) { return 0.0; });
+    elements->setExternalVariable<cells>("SQUARE", "Elasticity", "Temperature", [](lolita::Point const & p) { return 293.15; });
+    // elements->setExternalVariable<cells>("SQUARE", "Elasticity", "Damage", [](lolita::Point const & p) { return 0.0; });
     // setting parameter
     // elements->setParameter<faces>("TOP", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
     // elements->setParameter<faces>("LEFT", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
@@ -99,7 +99,7 @@ main(int argc, char** argv)
     elements->setParameter<faces>("BOTTOM", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
     // stab
     elements->setParameter<cells>("SQUARE", "DisplacementStabilization", [](lolita::Point const & p) { return 206.9e9 / (1. + 0.2); });
-    lolita::GmshFileParser::setOutput<domain>(out_file, elements, "IsotropicLinearHardeningPlasticity");
+    lolita::GmshFileParser::setOutput<domain>(out_file, elements, "Elasticity");
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
     // -> DEBUG
@@ -112,7 +112,7 @@ main(int argc, char** argv)
     //     std::cout << "-- stabilization :" << std::endl;
     //     std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
     //     auto ip_count = 0;
-    //     for (auto const & ip : finite_element->quadrature_.at("IsotropicLinearHardeningPlasticity").ips_)
+    //     for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
     //     {
     //         auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
     //         std::cout << "-- grad " << ip_count << std::endl;
@@ -141,7 +141,7 @@ main(int argc, char** argv)
     //     std::cout << "-- stabilization :" << std::endl;
     //     std::cout << lolita::mat2str(finite_element->operators_.at("DisplacementStabilization")) << std::endl;
     //     auto ip_count = 0;
-    //     for (auto const & ip : finite_element->quadrature_.at("IsotropicLinearHardeningPlasticity").ips_)
+    //     for (auto const & ip : finite_element->quadrature_.at("Elasticity").ips_)
     //     {
     //         auto grad = finite_element->template getMapping<lolita::Field::vector(), lolita::Mapping::smallStrain(), hdg>(ip.reference_coordinates_);
     //         std::cout << "-- grad " << ip_count << std::endl;
@@ -176,9 +176,9 @@ main(int argc, char** argv)
             displacement_system->initializeRhs();
             displacement_system->initializeLhs();
             displacement_system->initializeNormalization();
-            elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "IsotropicLinearHardeningPlasticity", "Displacement");
+            elements->setStrainValues<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement");
             std::cout << "iteration : " << iteration << std::endl;
-            auto res_eval = elements->integrate<cells>("SQUARE", "IsotropicLinearHardeningPlasticity");
+            auto res_eval = elements->integrate<cells>("SQUARE", "Elasticity");
             if (res_eval.isFailure())
             {
                 std::cout << "integration failure" << std::endl;
@@ -186,7 +186,7 @@ main(int argc, char** argv)
             }
             else
             {
-                elements->assembleUnknownVector<cells, displacement_element, hdg>("SQUARE", "IsotropicLinearHardeningPlasticity", "Displacement", displacement_system);
+                elements->assembleUnknownVector<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
                 elements->assembleBindingVector<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system, time);
                 elements->assembleBindingVector<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system, time);
                 elements->assembleBindingVector<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system, time);
@@ -201,7 +201,7 @@ main(int argc, char** argv)
                 }
                 else
                 {
-                    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "IsotropicLinearHardeningPlasticity", "Displacement", displacement_system);
+                    elements->assembleUnknownBlock<cells, displacement_element, hdg>("SQUARE", "Elasticity", "Displacement", displacement_system);
                     //
                     elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system);
                     elements->assembleBindingBlock<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system);
@@ -216,12 +216,12 @@ main(int argc, char** argv)
                     elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce", displacement_system);
                     #ifdef DEBUG
                         std::cout << "writing debug output" << std::endl;
-                        lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, total_iteration, total_iteration, "IsotropicLinearHardeningPlasticity", 0);
-                        lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, total_iteration, total_iteration, "IsotropicLinearHardeningPlasticity", 1);
-                        lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_file, elements, total_iteration, total_iteration, "IsotropicLinearHardeningPlasticity", 0);
-                        lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_file, elements, total_iteration, total_iteration, "IsotropicLinearHardeningPlasticity", 1);
-                        lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, total_iteration, total_iteration, "Displacement", "IsotropicLinearHardeningPlasticity", 0, 0);
-                        lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, total_iteration, total_iteration, "Displacement", "IsotropicLinearHardeningPlasticity", 1, 0);
+                        lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, total_iteration, total_iteration, "Elasticity", 0);
+                        lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, total_iteration, total_iteration, "Elasticity", 1);
+                        lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_file, elements, total_iteration, total_iteration, "Elasticity", 0);
+                        lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_file, elements, total_iteration, total_iteration, "Elasticity", 1);
+                        lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, total_iteration, total_iteration, "Displacement", "Elasticity", 0, 0);
+                        lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, total_iteration, total_iteration, "Displacement", "Elasticity", 1, 0);
                     #endif
                 }
             }
@@ -243,7 +243,7 @@ main(int argc, char** argv)
         if (newton_step())
         {
             std::cout << "time step convergence" << std::endl;
-            elements->reserveBehaviorData<cells>("SQUARE", "IsotropicLinearHardeningPlasticity");
+            elements->reserveBehaviorData<cells>("SQUARE", "Elasticity");
             elements->reserveUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
             elements->reserveUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
             elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
@@ -251,12 +251,12 @@ main(int argc, char** argv)
             elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
             #ifndef DEBUG
                 std::cout << "writing regular output" << std::endl;
-                lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, step, time, "IsotropicLinearHardeningPlasticity", 0);
-                lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, step, time, "IsotropicLinearHardeningPlasticity", 1);
-                lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_file, elements, step, time, "IsotropicLinearHardeningPlasticity", 0);
-                lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_file, elements, step, time, "IsotropicLinearHardeningPlasticity", 1);
-                lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, step, time, "Displacement", "IsotropicLinearHardeningPlasticity", 0, 0);
-                lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, step, time, "Displacement", "IsotropicLinearHardeningPlasticity", 1, 0);
+                lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, step, time, "Elasticity", 0);
+                lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_file, elements, step, time, "Elasticity", 1);
+                lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_file, elements, step, time, "Elasticity", 0);
+                lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_file, elements, step, time, "Elasticity", 1);
+                lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, step, time, "Displacement", "Elasticity", 0, 0);
+                lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_file, elements, step, time, "Displacement", "Elasticity", 1, 0);
             #endif
             step ++;
             time = times[step];
@@ -265,7 +265,7 @@ main(int argc, char** argv)
         else
         {
             std::cout << "time step split" << std::endl;
-            // elements->recoverBehaviorData<cells>("SQUARE", "IsotropicLinearHardeningPlasticity");
+            // elements->recoverBehaviorData<cells>("SQUARE", "Elasticity");
             // elements->recoverUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
             // elements->recoverUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("SQUARE", "Displacement");
             // elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");

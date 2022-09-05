@@ -59,6 +59,7 @@ namespace lolita
                 auto constexpr t_i = t_ii.getDim();
                 // auto num_threads = std::thread::hardware_concurrency() == 0 ? 1 : (std::thread::hardware_concurrency());
                 auto num_threads = std::thread::hardware_concurrency();
+                // auto num_threads = 2;
                 if (num_threads == 0)
                 {
                     caller<t_ii>(domain, fun);
@@ -96,8 +97,8 @@ namespace lolita
                     }
                 }
             }; 
-            // activate_elements(activate_elements);
-            caller<t_ii>(domain, fun);
+            activate_elements(activate_elements);
+            // caller<t_ii>(domain, fun);
         }
         
         std::unique_ptr<FiniteElementSet>
