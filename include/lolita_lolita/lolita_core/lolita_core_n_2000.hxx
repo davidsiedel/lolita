@@ -336,6 +336,70 @@ namespace lolita
             rhs_values_(i) += value;
         }
 
+        template<typename t_T>
+        void
+        addLhsValues(
+            Integer i,
+            Integer j,
+            t_T const & values
+        )
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
+            for (auto iii = 0; iii < values.rows(); iii++)
+            {
+                for (auto jjj = 0; jjj < values.cols(); jjj++)
+                {
+                    lhs_values_.push_back(MatrixEntry(iii + i, jjj + j, values(iii, jjj)));
+                }
+            }
+        }
+
+        template<typename t_T>
+        void
+        addRhsValues(
+            Integer i,
+            t_T const & values
+        )
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
+            for (auto iii = 0; iii < values.size(); iii++)
+            {
+                rhs_values_(iii + i) += values(iii);
+            }
+        }
+
+        template<Integer t_rows, Integer t_cols>
+        void
+        addLhsValues(
+            Integer i,
+            Integer j,
+            Matrix<Real, t_rows, t_cols> const & values
+        )
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
+            for (auto iii = 0; iii < t_rows; iii++)
+            {
+                for (auto jjj = 0; jjj < t_cols; jjj++)
+                {
+                    lhs_values_.push_back(MatrixEntry(iii + i, jjj + j, values(iii, jjj)));
+                }
+            }
+        }
+
+        template<Integer t_rows>
+        void
+        addRhsValues(
+            Integer i,
+            Vector<Real, t_rows> const & values
+        )
+        {
+            auto lock = std::scoped_lock<std::mutex>(mutex);
+            for (auto iii = 0; iii < t_rows; iii++)
+            {
+                rhs_values_(iii + i) += values(iii);
+            }
+        }
+
         std::mutex mutex;
 
         inline

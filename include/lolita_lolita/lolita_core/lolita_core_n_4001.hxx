@@ -1298,6 +1298,7 @@ namespace lolita
                 // <- DEBUG
                 auto constexpr t_field = t_finite_element_method.getField();
                 auto offset_i = 0;
+                auto offset_count = 0;
                 auto global_offset = system->getUnknownOffset(degree_of_freedom_label);
                 auto set_faces_unknowns = [&] <Integer t_i = 0> (
                     auto & self
@@ -1330,11 +1331,18 @@ namespace lolita
                         // }
                         // <- DEBUG
                         auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
-                        for (auto i = 0; i < face_i_dof.template getSize<t_field, getFaceBasis()>(); i++)
-                        {
-                            system->addRhsValue(i + face_i_dof.getTag() + global_offset, r_c(offset_i));
-                            offset_i ++;
-                        }
+                        auto constexpr size_iii = face_i_dof.template getSize<t_field, getFaceBasis()>();
+                        auto iii = global_offset + face_i_dof.getTag();
+                        system->addRhsValues(iii, r_c.template segment<size_iii>(offset_i));
+                        offset_i += size_iii;
+                        // -> TEST
+                        // for (auto i = 0; i < face_i_dof.template getSize<t_field, getFaceBasis()>(); i++)
+                        // {
+                        //     system->addRhsValue(i + face_i_dof.getTag() + global_offset, r_c(offset_i));
+                        //     offset_i ++;
+                        // }
+                        // <- TEST
+                        // face_count ++;
                     }
                     if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
                     {
@@ -1384,9 +1392,54 @@ namespace lolita
                 // auto r_c = r_f - k_ft * k_tt_inv * r_t;
                 //
                 //
+                // auto constexpr t_field = t_finite_element_method.getField();
+                // auto offset_i = 0;
+                // auto global_offset = system->getUnknownOffset(degree_of_freedom_label);
+                // auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                //     auto & self
+                // )
+                // constexpr mutable
+                // {
+                //     for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
+                //     {
+                //         auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+                //         for (auto i = 0; i < face_i_dof.template getSize<t_field, getFaceBasis()>(); i++)
+                //         {
+                //             // system->addRhsValue(i + face_i_dof.getTag() + global_offset, - r_c(offset_i));
+                //             auto offset_j = 0;
+                //             auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
+                //                 auto & self2
+                //             )
+                //             constexpr mutable
+                //             {
+                //                 for (auto const & face_j : this->template getInnerNeighbors<0, t_j>())
+                //                 {
+                //                     auto const & face_j_dof = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+                //                     for (auto j = 0; j < face_j_dof.template getSize<t_field, getFaceBasis()>(); j++)
+                //                     {
+                //                         system->addLhsValue(i + face_i_dof.getTag() + global_offset, j + face_j_dof.getTag() + global_offset, k_c(offset_i, offset_j));
+                //                         offset_j ++;
+                //                     }
+                //                 }
+                //                 if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                //                 {
+                //                     self2.template operator ()<t_j + 1>(self2);
+                //                 }
+                //             };
+                //             set_faces_unknowns2(set_faces_unknowns2);
+                //             offset_i ++;
+                //         }
+                //     }
+                //     if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                //     {
+                //         self.template operator ()<t_i + 1>(self);
+                //     }
+                // };
+                // set_faces_unknowns(set_faces_unknowns);
+                // -> TEST
                 auto constexpr t_field = t_finite_element_method.getField();
-                auto offset_i = 0;
                 auto global_offset = system->getUnknownOffset(degree_of_freedom_label);
+                auto offset_i = 0;
                 auto set_faces_unknowns = [&] <Integer t_i = 0> (
                     auto & self
                 )
@@ -1395,32 +1448,29 @@ namespace lolita
                     for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
                     {
                         auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
-                        for (auto i = 0; i < face_i_dof.template getSize<t_field, getFaceBasis()>(); i++)
+                        auto constexpr size_iii = face_i_dof.template getSize<t_field, getFaceBasis()>();
+                        auto iii = global_offset + face_i_dof.getTag();
+                        auto offset_j = 0;
+                        auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
+                            auto & self2
+                        )
+                        constexpr mutable
                         {
-                            // system->addRhsValue(i + face_i_dof.getTag() + global_offset, - r_c(offset_i));
-                            auto offset_j = 0;
-                            auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
-                                auto & self2
-                            )
-                            constexpr mutable
+                            for (auto const & face_j : this->template getInnerNeighbors<0, t_j>())
                             {
-                                for (auto const & face_j : this->template getInnerNeighbors<0, t_j>())
-                                {
-                                    auto const & face_j_dof = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
-                                    for (auto j = 0; j < face_j_dof.template getSize<t_field, getFaceBasis()>(); j++)
-                                    {
-                                        system->addLhsValue(i + face_i_dof.getTag() + global_offset, j + face_j_dof.getTag() + global_offset, k_c(offset_i, offset_j));
-                                        offset_j ++;
-                                    }
-                                }
-                                if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
-                                {
-                                    self2.template operator ()<t_j + 1>(self2);
-                                }
-                            };
-                            set_faces_unknowns2(set_faces_unknowns2);
-                            offset_i ++;
-                        }
+                                auto const & face_j_dof = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+                                auto constexpr size_jjj = face_j_dof.template getSize<t_field, getFaceBasis()>();
+                                auto jjj = global_offset + face_j_dof.getTag();
+                                system->addLhsValues(iii, jjj, k_c.template block<size_iii, size_jjj>(offset_i, offset_j));
+                                offset_j += size_jjj;
+                            }
+                            if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                            {
+                                self2.template operator ()<t_j + 1>(self2);
+                            }
+                        };
+                        set_faces_unknowns2(set_faces_unknowns2);
+                        offset_i += size_iii;
                     }
                     if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
                     {
@@ -1428,6 +1478,7 @@ namespace lolita
                     }
                 };
                 set_faces_unknowns(set_faces_unknowns);
+                // <- TEST
             }
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
@@ -1505,18 +1556,22 @@ namespace lolita
                 system->setNormalization(binding_external_forces_vector.cwiseAbs().maxCoeff());
                 auto const binding_offset = system->getBindingOffset(binding_label) + face_binding.getTag();
                 auto const unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
-                for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
-                {
-                    // system->addRhsValue(iii + binding_offset, - lagrange_parameter * face_displacement_difference(iii));
-                    // system->addRhsValue(iii + unknown_offset, - lagrange_parameter * binding_vector(iii));
-                    system->addRhsValue(iii + binding_offset, (binding_external_forces_vector - binding_internal_forces_vector)(iii));
-                    system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
-                    // for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
-                    // {
-                    //     system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));
-                    //     system->addLhsValue(jjj + unknown_offset, iii + binding_offset, matrix(iii, jjj));
-                    // }
-                }
+                // -> TEST
+                // for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
+                // {
+                //     // system->addRhsValue(iii + binding_offset, - lagrange_parameter * face_displacement_difference(iii));
+                //     // system->addRhsValue(iii + unknown_offset, - lagrange_parameter * binding_vector(iii));
+                //     system->addRhsValue(iii + binding_offset, (binding_external_forces_vector - binding_internal_forces_vector)(iii));
+                //     system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
+                //     // for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
+                //     // {
+                //     //     system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));
+                //     //     system->addLhsValue(jjj + unknown_offset, iii + binding_offset, matrix(iii, jjj));
+                //     // }
+                // }
+                // <- TEST
+                system->addRhsValues(binding_offset, binding_external_forces_vector - binding_internal_forces_vector);
+                system->addRhsValues(unknown_offset, - unknown_internal_forces_vector);
             }
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
@@ -1570,16 +1625,20 @@ namespace lolita
                 // system->setNormalization(binding_external_forces_vector.cwiseAbs().maxCoeff());
                 auto const binding_offset = system->getBindingOffset(binding_label) + face_binding.getTag();
                 auto const unknown_offset = system->getUnknownOffset(unknown_label) + face_unknown.getTag() + getFaceBasisSize<t_element>() * constraint.getRow();
-                for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
-                {
-                    // system->addRhsValue(iii + binding_offset, - binding_residual_vector(iii));
-                    // system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
-                    for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
-                    {
-                        system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));
-                        system->addLhsValue(jjj + unknown_offset, iii + binding_offset, matrix(iii, jjj));
-                    }
-                }
+                // -> TEST
+                // for (auto iii = 0; iii < getFaceBasisSize<t_element>(); iii++)
+                // {
+                //     // system->addRhsValue(iii + binding_offset, - binding_residual_vector(iii));
+                //     // system->addRhsValue(iii + unknown_offset, - unknown_internal_forces_vector(iii));
+                //     for (auto jjj = 0; jjj < getFaceBasisSize<t_element>(); jjj++)
+                //     {
+                //         system->addLhsValue(iii + binding_offset, jjj + unknown_offset, matrix(iii, jjj));
+                //         system->addLhsValue(jjj + unknown_offset, iii + binding_offset, matrix(iii, jjj));
+                //     }
+                // }
+                // <- TEST
+                system->addLhsValues(binding_offset, unknown_offset, matrix);
+                system->addLhsValues(unknown_offset, binding_offset, matrix);
             }
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
