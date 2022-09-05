@@ -96,8 +96,8 @@ namespace lolita
                     }
                 }
             }; 
-            // activate_elements(activate_elements);
-            caller<t_ii>(domain, fun);
+            activate_elements(activate_elements);
+            // caller<t_ii>(domain, fun);
         }
         
         std::unique_ptr<FiniteElementSet>
