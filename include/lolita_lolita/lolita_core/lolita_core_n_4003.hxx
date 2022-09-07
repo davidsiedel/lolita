@@ -179,7 +179,7 @@ namespace lolita
             {
                 element->template updateUnknown<t_args...>(label, system);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii, auto... t_args>
@@ -194,7 +194,22 @@ namespace lolita
             {
                 element->template updateBinding<t_args...>(label, system);
             };
-            caller<t_ii>(domain, fun);
+            caller2<t_ii>(domain, fun);
+        }
+
+        template<ElementType t_ii, auto... t_args>
+        void
+        setBandWidth(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                system->setBandWidth(element->template getBandWidth<t_args...>(label));
+            };
+            caller2<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>

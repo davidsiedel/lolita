@@ -161,9 +161,7 @@ namespace lolita
         weight_(weight),
         behavior_(behavior),
         behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behavior)))
-        {
-            behavior_data_->K[0] = 4;
-        }
+        {}
     
         inline
         Boolean
@@ -2281,6 +2279,15 @@ namespace lolita
         const
         {
             return static_cast<t_Disc<t_discretization> const *>(this)->template getBindingValue<t_finite_element_method>(binding_label, point, row, col);
+        }
+        
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        Integer
+        getBandWidth(
+            std::basic_string_view<Character> unknown_label
+        )
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getBandWidth<t_finite_element_method>(unknown_label);
         }
         
         std::map<std::basic_string<Character>, DegreeOfFreedom> degrees_of_freedom_;

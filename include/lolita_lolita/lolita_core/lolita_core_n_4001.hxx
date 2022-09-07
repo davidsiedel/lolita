@@ -1498,7 +1498,8 @@ namespace lolita
                 auto const & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
                 auto const & constraint = this->constraints_.at(std::string(constraint_label)).getFunction();
-                auto const & lagrange_parameter = this->parameters_.at("Lagrange");
+                auto lag_label = std::string(unknown_label) + "Lagrange";
+                auto const & lagrange_parameter = this->parameters_.at(lag_label);
                 // -> DEBUG
                 // auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
                 // <- DEBUG
@@ -1596,7 +1597,8 @@ namespace lolita
                 // auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
                 // auto unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
                 // auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
-                auto const & lagrange_parameter = this->parameters_.at("Lagrange");
+                auto lag_label = std::string(unknown_label) + "Lagrange";
+                auto const & lagrange_parameter = this->parameters_.at(lag_label);
                 matrix.setZero();
                 // binding_external_forces_vector.setZero();
                 // binding_internal_forces_vector.setZero();
@@ -1810,6 +1812,50 @@ namespace lolita
                 auto coefficients = this->degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<field, getFaceBasis()>(row, col);
                 auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point);
                 return coefficients.dot(basis_vector);
+            }
+        
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Integer
+            getBandWidth(
+                std::basic_string_view<Character> unknown_label
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto constexpr field = t_finite_element_method.getField();
+                auto band_width = 0;
+                auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    for (auto const & cell : this->template getOuterNeighbors<1, t_i>())
+                    {
+                        auto constexpr t_outer_neighbor = ElementTraits<t_element, t_domain>::template getOuterNeighbor<1, t_i>();
+                        auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
+                            auto & self2
+                        )
+                        constexpr mutable
+                        {
+                            for (auto const & face : cell->template getInnerNeighbors<0, t_j>())
+                            {
+                                auto face_unknown_size = face->degrees_of_freedom_.at(std::string(unknown_label)).template getSize<field, getFaceBasis()>();
+                                band_width += face_unknown_size;
+                            }
+                            if constexpr (t_j < ElementTraits<t_outer_neighbor, t_domain>::template getNumInnerNeighbors<0>() - 1)
+                            {
+                                self2.template operator ()<t_j + 1>(self2);
+                            }
+                        };
+                        set_faces_unknowns2(set_faces_unknowns2);
+                    }
+                    if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumOuterNeighbors<1>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_unknowns(set_faces_unknowns);
+                return band_width;
             }
 
             void

@@ -14,6 +14,7 @@ include(CheckLanguage)
 set(CMAKE_CXX_STANDARD 23)
 set(CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=reference_point++2a -fsanitize=address")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -mpic++")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 
@@ -34,17 +35,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
 
 ######################################################################
 ## Helpers for compiler identification
-#if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+# if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 #    set(COMPILER_IS_CLANG TRUE)
-#elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+# elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 #    set(COMPILER_IS_GNU TRUE)
-#elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+# elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 #    set(COMPILER_IS_INTEL)
-#elseif (CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
+# elseif (CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
 #    set(COMPILER_IS_PGI)
-#endif ()
-#
-#if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+# endif ()
+
+# if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 #    cmake_host_system_information(RESULT OSVER QUERY OS_RELEASE)
 #    if(OSVER VERSION_LESS "10.14")
 #        message(FATAL_ERROR "DiSk++ depends on libraries that use C++17 \
@@ -52,15 +53,30 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
 #                 either upgrade your system or use a compiler different than \
 #                 AppleClang.")
 #    endif()
-#endif()
+# endif()
 
 ######################################################################
 ## Package: Threading support
-#set(THREADS_PREFER_PTHREAD_FLAG ON)
-#find_package(Threads REQUIRED)
-#if (COMPILER_IS_CLANG OR COMPILER_IS_INTEL OR COMPILER_IS_GNU)
+# set(THREADS_PREFER_PTHREAD_FLAG ON)
+# find_package(Threads REQUIRED)
+# if (COMPILER_IS_CLANG OR COMPILER_IS_INTEL OR COMPILER_IS_GNU)
 #    set(LINK_LIBS ${LINK_LIBS} Threads::Threads)
-#endif()
+# endif()
+
+######################################################################
+## Package: MPI support
+# find_package(MPI REQUIRED)
+# if (MPI_FOUND)
+#     message(STATUS "MPI found")
+#     include_directories(${MPI_INCLUDE_DIRS})
+#     set(INCL_DIRS ${INCL_DIRS} ${MPI_INCLUDE_DIRS})
+#     set(LINK_LIBS ${LINK_LIBS} ${MPI_LIBRARIES})
+#     set(HAVE_MPI TRUE)
+#     add_definitions(-DHAVE_MPI)
+# else()
+#     message(STATUS "MPI not found")
+#     set(HAVE_MPI FALSE)
+# endif()
 
 ######################################################################
 ## Package: Intel MKL support
@@ -71,6 +87,9 @@ if (MKL_FOUND)
     set(LINK_LIBS ${LINK_LIBS} ${MKL_LIBRARIES})
     set(HAVE_INTEL_MKL TRUE)
     add_definitions(-DHAVE_INTEL_MKL)
+else()
+    message(STATUS "INTEL_MKL not found")
+    set(HAVE_INTEL_MKL FALSE)
 endif()
 
 ######################################################################
@@ -78,15 +97,29 @@ endif()
 find_package(Eigen3 REQUIRED)
 if (Eigen3_FOUND)
     message(STATUS "Eigen3 found")
+    include_directories(${EIGEN3_INCLUDE_DIR})
     set(LINK_LIBS ${LINK_LIBS} Eigen3::Eigen)
     set(INCL_DIRS ${INCL_DIRS} ${EIGEN3_INCLUDE_DIR})
-    include_directories(${EIGEN3_INCLUDE_DIR})
     set(HAVE_EIGEN3 TRUE)
     add_definitions(-DHAVE_EIGEN3)
 else()
     message(STATUS "Eigen3 not found")
     set(HAVE_EIGEN3 FALSE)
 endif()
+
+######################################################################
+## Package: PETSc
+# find_package(PETSc REQUIRED)
+# if (PETSc_FOUND)
+#     message(STATUS "PETSc found")
+#     set(INCL_DIRS ${INCL_DIRS} ${PETSC_INC})
+#     set(LINK_LIBS ${LINK_LIBS} ${PETSC_LIBRARIES})
+#     set(HAVE_PETSc TRUE)
+#     add_definitions(-DHAVE_PETSc)
+# else()
+#     message(STATUS "PETSc not found")
+#     set(HAVE_PETSc FALSE)
+# endif()
 
 ######################################################################
 ## Package: Boost
@@ -140,6 +173,7 @@ if (MGIS_FOUND)
     add_definitions(-DHAVE_MGIS)
 else()
     message(STATUS "MGIS not found")
+    set(HAVE_MGIS FALSE)
 endif()
 
 ######################################################################
@@ -166,42 +200,42 @@ endif()
 
 ######################################################################
 ## Optimization: Disallow denormals and activate -ffast-math (violates IEEE754)
-#option(OPT_AGGRESSIVE_FP "Enable DAZ, FTZ and -ffast-math" ON)
-#if (OPT_AGGRESSIVE_FP)
+# option(OPT_AGGRESSIVE_FP "Enable DAZ, FTZ and -ffast-math" ON)
+# if (OPT_AGGRESSIVE_FP)
 #    add_definitions(-DDISALLOW_DENORMALS)
 #    if (COMPILER_IS_CLANG OR COMPILER_IS_GNU)
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 #    endif()
-#endif()
+# endif()
 
 ######################################################################
 ## Optimization: Enable vectorizer output
-#option(OPT_VECTORIZER_REMARKS "Enable vectorizer remarks" OFF)
-#if (OPT_VECTORIZER_REMARKS)
+# option(OPT_VECTORIZER_REMARKS "Enable vectorizer remarks" OFF)
+# if (OPT_VECTORIZER_REMARKS)
 #    if (COMPILER_IS_CLANG)
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Rpass=loop-vectorize")
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Rpass-missed=loop-vectorize")
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Rpass-analysis=loop-vectorize")
 #    endif()
-#
+
 #    if (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qopt-report-phase=vec -qopt-report=2")
 #    endif()
-#
+
 #    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopt-info-vec-optimized")
 #    endif()
-#
+
 #    if (CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Minfo")
 #    endif()
-#endif()
+# endif()
 
 ######################################################################
 ## Compiler settings: Settings for different build types
-#set(CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=address -fpermissive")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -g -fpermissive -DNDEBUG")
-#set(CMAKE_CXX_FLAGS_RELEASEASSERT "-O3 -march=native -g -fpermissive")
+# set(CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=address -fpermissive")
+# set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -g -fpermissive -DNDEBUG")
+# set(CMAKE_CXX_FLAGS_RELEASEASSERT "-O3 -march=native -g -fpermissive")
 #
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 

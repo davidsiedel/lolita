@@ -7,7 +7,9 @@
                 "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/mgis-master-t4wcfvs2egl4l2hx5lp4dngzzghtyhhq/include",
                 "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/include/eigen3",
                 "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.11.0-fym76qqgkka37m27u25kkn2h2sosbwad/include",
-                "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f/mkl/include"
+                "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f/mkl/include",
+                "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/petsc-3.17.4-4aqc3hvfmpk7zbqldmjerouabd5y2kqs/include",
+                "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/mpich-4.0.2-qdztofsqll2azrwxhw3i4mjckyr6k5kw/include"
             ],
             "defines": [],
             "cStandard": "c17",
