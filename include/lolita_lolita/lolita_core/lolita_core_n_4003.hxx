@@ -22,6 +22,7 @@ namespace lolita
             std::basic_string_view<Character> domain,
             auto & fun
         )
+        const
         {
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
@@ -50,6 +51,7 @@ namespace lolita
             std::basic_string_view<Character> domain,
             auto & fun
         )
+        const
         {
             auto activate_elements = [&] <Integer t_j = 0> (
                 auto & self
@@ -374,6 +376,87 @@ namespace lolita
             };
             caller2<t_ii>(domain, fun);
             return output_handler.getOutput();
+        }
+
+        template<ElementType t_ii>
+        Real
+        getStoredEnergy(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        {
+            auto value = Real(0);
+            auto mutex = std::mutex();
+            auto set_value = [&] (auto input_value)
+            {
+                auto lock = std::scoped_lock<std::mutex>(mutex);
+                value += input_value;
+            };
+            auto fun = [&] (auto const & element)
+            {
+                auto val = Real(0);
+                for (auto const & ip : element->quadrature_.at(std::string(behavior_label)).ips_)
+                {
+                    val += ip.weight_ * ip.behavior_data_->s1.stored_energy;
+                }
+                set_value(val);
+            };
+            caller2<t_ii>(domain, fun);
+            return value;
+        }
+
+        template<ElementType t_ii>
+        Real
+        getDissipatedEnergy(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> behavior_label
+        )
+        const
+        {
+            auto value = Real(0);
+            auto mutex = std::mutex();
+            auto set_value = [&] (auto input_value)
+            {
+                auto lock = std::scoped_lock<std::mutex>(mutex);
+                value += input_value;
+            };
+            auto fun = [&] (auto const & element)
+            {
+                auto val = Real(0);
+                for (auto const & ip : element->quadrature_.at(std::string(behavior_label)).ips_)
+                {
+                    val += ip.weight_ * ip.behavior_data_->s1.dissipated_energy;
+                }
+                set_value(val);
+            };
+            caller2<t_ii>(domain, fun);
+            return value;
+        }
+
+        template<ElementType t_ii, auto... t_args>
+        Real
+        getBindingIntegral(
+            std::basic_string_view<Character> domain,
+            std::basic_string_view<Character> binding_label,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto value = Real(0);
+            auto mutex = std::mutex();
+            auto set_value = [&] (auto input_value)
+            {
+                auto lock = std::scoped_lock<std::mutex>(mutex);
+                value += input_value;
+            };
+            auto fun = [&] (auto const & element)
+            {
+                set_value(element->template getBindingIntegral<t_args...>(binding_label, row, col));
+            };
+            caller2<t_ii>(domain, fun);
+            return value;
         }
 
         template<ElementType t_ii>

@@ -690,7 +690,7 @@ namespace lolita
         )
         {
             auto labels = std::array<std::basic_string<Character>, sizeof...(behavior_label)>{behavior_label...};
-            auto outfile = std::ofstream();
+            auto outfile = std::basic_ofstream<Character>();
             outfile.open(file_path);
             outfile << std::fixed << std::setprecision(17);
             outfile << "$MeshFormat\n";
@@ -898,6 +898,224 @@ namespace lolita
                         for (auto const & integration_point : element->quadrature_.at(behavior_label).ips_)
                         {
                             outfile << c_element << " " << integration_point.behavior_data_->s1.thermodynamic_forces[row] << "\n";
+                            c_element ++;
+                        }
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_coordinate>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            };
+            set_strain(set_strain);
+            outfile << "$EndNodeData\n";
+        }
+
+        template<Integer t_coordinate, Domain t_domain>
+        static
+        void
+        addQuadratureInternalVariableOutput(
+            std::basic_string<Character> const & file_path,
+            std::unique_ptr<FiniteElementSet<t_domain>> const & element_set,
+            Integer time_step_index,
+            Real time_step_value,
+            std::basic_string<Character> behavior_label,
+            Integer row
+        )
+        {
+            if (!std::filesystem::exists(file_path))
+            {
+                throw std::runtime_error("File does not exist");
+            }
+            auto outfile = std::ofstream();
+            auto c_element = Natural();
+            outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(17);
+            outfile << "$NodeData\n";
+            outfile << "1\n";
+            outfile << "\"" << behavior_label << " " << row << " InternalVariable\"\n";
+            outfile << "1\n";
+            outfile << time_step_value << "\n";
+            outfile << "3\n";
+            outfile << time_step_index << "\n";
+            outfile << 1 << "\n"; // size of gradients
+            outfile << element_set->template getNumIntegrationPoints<>(behavior_label) << "\n"; // number of quad pts
+            c_element = element_set->template getNumElements<0>() + 1;
+            auto set_strain = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : element_set->template getElements<t_coordinate, t_j>())
+                {
+                    if (element->quadrature_.contains(behavior_label))
+                    {
+                        for (auto const & integration_point : element->quadrature_.at(behavior_label).ips_)
+                        {
+                            outfile << c_element << " " << integration_point.behavior_data_->s1.internal_state_variables[row] << "\n";
+                            c_element ++;
+                        }
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_coordinate>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            };
+            set_strain(set_strain);
+            outfile << "$EndNodeData\n";
+        }
+
+        template<Integer t_coordinate, Domain t_domain>
+        static
+        void
+        addQuadratureExternalVariableOutput(
+            std::basic_string<Character> const & file_path,
+            std::unique_ptr<FiniteElementSet<t_domain>> const & element_set,
+            Integer time_step_index,
+            Real time_step_value,
+            std::basic_string<Character> behavior_label,
+            Integer row
+        )
+        {
+            if (!std::filesystem::exists(file_path))
+            {
+                throw std::runtime_error("File does not exist");
+            }
+            auto outfile = std::ofstream();
+            auto c_element = Natural();
+            outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(17);
+            outfile << "$NodeData\n";
+            outfile << "1\n";
+            outfile << "\"" << behavior_label << " " << row << " InternalVariable\"\n";
+            outfile << "1\n";
+            outfile << time_step_value << "\n";
+            outfile << "3\n";
+            outfile << time_step_index << "\n";
+            outfile << 1 << "\n"; // size of gradients
+            outfile << element_set->template getNumIntegrationPoints<>(behavior_label) << "\n"; // number of quad pts
+            c_element = element_set->template getNumElements<0>() + 1;
+            auto set_strain = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : element_set->template getElements<t_coordinate, t_j>())
+                {
+                    if (element->quadrature_.contains(behavior_label))
+                    {
+                        for (auto const & integration_point : element->quadrature_.at(behavior_label).ips_)
+                        {
+                            outfile << c_element << " " << integration_point.behavior_data_->s1.external_state_variables[row] << "\n";
+                            c_element ++;
+                        }
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_coordinate>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            };
+            set_strain(set_strain);
+            outfile << "$EndNodeData\n";
+        }
+
+        template<Integer t_coordinate, Domain t_domain>
+        static
+        void
+        addQuadratureDissipatedEnergyOutput(
+            std::basic_string<Character> const & file_path,
+            std::unique_ptr<FiniteElementSet<t_domain>> const & element_set,
+            Integer time_step_index,
+            Real time_step_value,
+            std::basic_string<Character> behavior_label
+        )
+        {
+            if (!std::filesystem::exists(file_path))
+            {
+                throw std::runtime_error("File does not exist");
+            }
+            auto outfile = std::ofstream();
+            auto c_element = Natural();
+            outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(17);
+            outfile << "$NodeData\n";
+            outfile << "1\n";
+            outfile << "\"" << behavior_label << " DissipatedEnergy\"\n";
+            outfile << "1\n";
+            outfile << time_step_value << "\n";
+            outfile << "3\n";
+            outfile << time_step_index << "\n";
+            outfile << 1 << "\n"; // size of gradients
+            outfile << element_set->template getNumIntegrationPoints<>(behavior_label) << "\n"; // number of quad pts
+            c_element = element_set->template getNumElements<0>() + 1;
+            auto set_strain = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : element_set->template getElements<t_coordinate, t_j>())
+                {
+                    if (element->quadrature_.contains(behavior_label))
+                    {
+                        for (auto const & integration_point : element->quadrature_.at(behavior_label).ips_)
+                        {
+                            outfile << c_element << " " << integration_point.behavior_data_->s1.dissipated_energy << "\n";
+                            c_element ++;
+                        }
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_coordinate>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            };
+            set_strain(set_strain);
+            outfile << "$EndNodeData\n";
+        }
+
+        template<Integer t_coordinate, Domain t_domain>
+        static
+        void
+        addQuadratureStoredEnergyOutput(
+            std::basic_string<Character> const & file_path,
+            std::unique_ptr<FiniteElementSet<t_domain>> const & element_set,
+            Integer time_step_index,
+            Real time_step_value,
+            std::basic_string<Character> behavior_label
+        )
+        {
+            if (!std::filesystem::exists(file_path))
+            {
+                throw std::runtime_error("File does not exist");
+            }
+            auto outfile = std::ofstream();
+            auto c_element = Natural();
+            outfile.open(file_path, std::ios_base::app);
+            outfile << std::fixed << std::setprecision(17);
+            outfile << "$NodeData\n";
+            outfile << "1\n";
+            outfile << "\"" << behavior_label << " StoredEnergy\"\n";
+            outfile << "1\n";
+            outfile << time_step_value << "\n";
+            outfile << "3\n";
+            outfile << time_step_index << "\n";
+            outfile << 1 << "\n"; // size of gradients
+            outfile << element_set->template getNumIntegrationPoints<>(behavior_label) << "\n"; // number of quad pts
+            c_element = element_set->template getNumElements<0>() + 1;
+            auto set_strain = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : element_set->template getElements<t_coordinate, t_j>())
+                {
+                    if (element->quadrature_.contains(behavior_label))
+                    {
+                        for (auto const & integration_point : element->quadrature_.at(behavior_label).ips_)
+                        {
+                            outfile << c_element << " " << integration_point.behavior_data_->s1.stored_energy << "\n";
                             c_element ++;
                         }
                     }

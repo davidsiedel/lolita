@@ -1498,7 +1498,7 @@ namespace lolita
                 auto const & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
                 auto const & constraint = this->constraints_.at(std::string(constraint_label)).getFunction();
-                auto lag_label = std::string(unknown_label) + "Lagrange";
+                auto lag_label = std::string(binding_label) + "Lagrange";
                 auto const & lagrange_parameter = this->parameters_.at(lag_label);
                 // -> DEBUG
                 // auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
@@ -1597,7 +1597,7 @@ namespace lolita
                 // auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
                 // auto unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
                 // auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
-                auto lag_label = std::string(unknown_label) + "Lagrange";
+                auto lag_label = std::string(binding_label) + "Lagrange";
                 auto const & lagrange_parameter = this->parameters_.at(lag_label);
                 matrix.setZero();
                 // binding_external_forces_vector.setZero();
@@ -1812,6 +1812,35 @@ namespace lolita
                 auto coefficients = this->degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<field, getFaceBasis()>(row, col);
                 auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point);
                 return coefficients.dot(basis_vector);
+            }
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            Real
+            getBindingIntegral(
+                std::basic_string_view<Character> binding_label,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
+                auto constexpr field = Field::scalar();
+                auto coefficients = this->degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<field, getFaceBasis()>(row, col);
+                auto value = Real(0);
+                for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, quadrature>::getSize(); i++)
+                {
+                    auto point_ref = this->template getReferenceQuadraturePoint<quadrature>(i);
+                    auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
+                    auto basis_vector = this->template getBasisEvaluation<getFaceBasis()>(point_ref);
+                    value += weight * coefficients.dot(basis_vector);
+                }
+                auto lag_label = std::string(binding_label) + "Lagrange";
+                auto const & lagrange_parameter = this->parameters_.at(lag_label);
+                // auto const & dofff = this->degrees_of_freedom_.at(std::string(binding_label));
+                // auto constexpr ones_size = dofff.template getSize<field, getFaceBasis()>();
+                // return coefficients.dot(Vector<Real, ones_size>::Ones()) * lagrange_parameter;
+                return lagrange_parameter * value;
             }
         
             template<FiniteElementMethodConcept auto t_finite_element_method>

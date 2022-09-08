@@ -2280,6 +2280,18 @@ namespace lolita
         {
             return static_cast<t_Disc<t_discretization> const *>(this)->template getBindingValue<t_finite_element_method>(binding_label, point, row, col);
         }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        Real
+        getBindingIntegral(
+            std::basic_string_view<Character> binding_label,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getBindingIntegral<t_finite_element_method>(binding_label, row, col);
+        }
         
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         Integer

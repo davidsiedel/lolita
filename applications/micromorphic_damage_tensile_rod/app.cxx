@@ -60,6 +60,16 @@ main(int argc, char** argv)
     auto file_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/mesh.msh";
     auto out_displacement_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_u.msh";
     auto out_damage_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_d.msh";
+    auto force_out_stream = std::basic_ofstream<lolita::Character>();
+    auto damage_dissipated_energy_out_stream = std::basic_ofstream<lolita::Character>();
+    auto damage_stored_energy_out_stream = std::basic_ofstream<lolita::Character>();
+    auto displacement_dissipated_energy_out_stream = std::basic_ofstream<lolita::Character>();
+    auto displacement_stored_energy_out_stream = std::basic_ofstream<lolita::Character>();
+    force_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_force.txt");
+    damage_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_damage_dissipated_energy.txt");
+    damage_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_damage_stored_energy.txt");
+    displacement_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_displacement_dissipated_energy.txt");
+    displacement_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_displacement_stored_energy.txt");
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // dofs
@@ -115,12 +125,12 @@ main(int argc, char** argv)
     elements->setExternalVariable<cells>("ROD", "MicromorphicDamage", "Temperature", [](lolita::Point const & p) { return 293.15; });
     elements->setExternalVariable<cells>("ROD", "MicromorphicDamage", "EnergyReleaseRate", [](lolita::Point const & p) { return 0.0; });
     // setting parameter
-    elements->setParameter<faces>("TOP", "Lagrange", [](lolita::Point const & p) { return 200.0; });
-    elements->setParameter<faces>("LEFT", "Lagrange", [](lolita::Point const & p) { return 200.0; });
+    elements->setParameter<faces>("TOP", "TopForceLagrange", [](lolita::Point const & p) { return 200.0; });
+    elements->setParameter<faces>("LEFT", "LeftForceLagrange", [](lolita::Point const & p) { return 200.0; });
     // <- RIGHT
-    elements->setParameter<faces>("RIGHT", "Lagrange", [](lolita::Point const & p) { return 200.0; });
+    elements->setParameter<faces>("RIGHT", "RightForceLagrange", [](lolita::Point const & p) { return 200.0; });
     // <- RIGHT
-    elements->setParameter<faces>("BOTTOM", "Lagrange", [](lolita::Point const & p) { return 200.0; });
+    elements->setParameter<faces>("BOTTOM", "BottomForceLagrange", [](lolita::Point const & p) { return 200.0; });
     // stab
     elements->setParameter<cells>("ROD", "DisplacementStabilization", [](lolita::Point const & p) { return 200.0 / (1.0 + 0.0); });
     elements->setParameter<cells>("ROD", "DamageStabilization", [](lolita::Point const & p) { return 1.0 / 0.05; });
@@ -407,6 +417,16 @@ main(int argc, char** argv)
         if (coupled_newton_step())
         {
             std::cout << "-- time step convergence" << std::endl;
+            auto top_force_value = elements->getBindingIntegral<faces, displacement_element, hdg>("TOP", "TopForce", 0, 0);
+            auto damage_stored_energy_value = elements->getStoredEnergy<cells>("ROD", "MicromorphicDamage");
+            auto damage_dissipated_energy_value = elements->getDissipatedEnergy<cells>("ROD", "MicromorphicDamage");
+            auto displacement_stored_energy_value = elements->getStoredEnergy<cells>("ROD", "MicromorphicDisplacement");
+            auto displacement_dissipated_energy_value = elements->getDissipatedEnergy<cells>("ROD", "MicromorphicDisplacement");
+force_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << top_force_value << "\n";
+damage_stored_energy_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << damage_stored_energy_value << "\n";
+damage_dissipated_energy_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << damage_dissipated_energy_value << "\n";
+displacement_stored_energy_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << displacement_stored_energy_value << "\n";
+displacement_dissipated_energy_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << displacement_dissipated_energy_value << "\n";
             elements->reserveBehaviorData<cells>("ROD", "MicromorphicDisplacement");
             elements->reserveUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("ROD", "Displacement");
             elements->reserveUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("ROD", "Displacement");
@@ -435,6 +455,10 @@ main(int argc, char** argv)
                 lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_damage_file, elements, step, time, "MicromorphicDamage", 0);
                 lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_damage_file, elements, step, time, "MicromorphicDamage", 1);
                 lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_damage_file, elements, step, time, "MicromorphicDamage", 2);
+                lolita::GmshFileParser::addQuadratureInternalVariableOutput<2, domain>(out_damage_file, elements, step, time, "MicromorphicDamage", 0);
+                // lolita::GmshFileParser::addQuadratureInternalVariableOutput<2, domain>(out_damage_file, elements, step, time, "MicromorphicDamage", 1);
+                // lolita::GmshFileParser::addQuadratureInternalVariableOutput<2, domain>(out_damage_file, elements, step, time, "MicromorphicDamage", 2);
+                // lolita::GmshFileParser::addQuadratureInternalVariableOutput<2, domain>(out_damage_file, elements, step, time, "MicromorphicDamage", 3);
                 lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_damage_file, elements, step, time, "Damage", "MicromorphicDamage", 0, 0);
             #endif
             step ++;

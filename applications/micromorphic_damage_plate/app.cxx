@@ -112,9 +112,10 @@ main(int argc, char** argv)
     elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamage", "Temperature", [](lolita::Point const & p) { return 293.15; });
     elements->setExternalVariable<cells>("SQUARE", "MicromorphicDamage", "EnergyReleaseRate", [](lolita::Point const & p) { return 0.0; });
     // setting parameter
-    elements->setParameter<faces>("TOP", "DisplacementLagrange", [](lolita::Point const & p) { return 200.0; });
-    elements->setParameter<faces>("CIRCLE", "DisplacementLagrange", [](lolita::Point const & p) { return 200.0; });
-    elements->setParameter<faces>("CIRCLE", "DamageLagrange", [](lolita::Point const & p) { return 1.0; });
+    elements->setParameter<faces>("TOP", "TopForceLagrange", [](lolita::Point const & p) { return 200.0; });
+    elements->setParameter<faces>("CIRCLE", "CircleForceXLagrange", [](lolita::Point const & p) { return 200.0; });
+    elements->setParameter<faces>("CIRCLE", "CircleForceYLagrange", [](lolita::Point const & p) { return 200.0; });
+    elements->setParameter<faces>("CIRCLE", "CircleForceDLagrange", [](lolita::Point const & p) { return 1.0; });
     // stab
     elements->setParameter<cells>("SQUARE", "DisplacementStabilization", [](lolita::Point const & p) { return 200.0 / (1.0 + 0.2); });
     elements->setParameter<cells>("SQUARE", "DamageStabilization", [](lolita::Point const & p) { return 1.0 / 0.05; });
@@ -170,10 +171,10 @@ main(int argc, char** argv)
             auto res_eval = elements->integrate<cells>("SQUARE", "MicromorphicDisplacement");
             tock = std::chrono::high_resolution_clock::now();
             auto integration_time = std::chrono::duration<double>(tock - tick);
-            std::cout << "---------------------------------------------> INTEGRATION" << std::endl;
-            std::cout << "--- strain    u : " << std::setprecision(10) << std::scientific << strain_time.count() << std::endl;
-            std::cout << "--- integrate u : " << std::setprecision(10) << std::scientific << integration_time.count() << std::endl;
-            std::cout << "---------------------------------------------< INTEGRATION" << std::endl;
+            // std::cout << "---------------------------------------------> INTEGRATION" << std::endl;
+            // std::cout << "--- strain    u : " << std::setprecision(10) << std::scientific << strain_time.count() << std::endl;
+            // std::cout << "--- integrate u : " << std::setprecision(10) << std::scientific << integration_time.count() << std::endl;
+            // std::cout << "---------------------------------------------< INTEGRATION" << std::endl;
             if (res_eval.isFailure())
             {
                 std::cout << "!!! displacement integration failure" << std::endl;
@@ -191,10 +192,10 @@ main(int argc, char** argv)
                 elements->assembleBindingVector<faces, displacement_element, hdg>("CIRCLE", "CircleForceY", "Displacement", "FixedY", displacement_system, time);
                 tock = std::chrono::high_resolution_clock::now();
                 auto b_v_assembly_time = std::chrono::duration<double>(tock - tick);
-                std::cout << "---------------------------------------------> RHS" << std::endl;
-                std::cout << "--- RHS u : " << std::setprecision(10) << std::scientific << u_v_assembly_time.count() << std::endl;
-                std::cout << "--- RHS b : " << std::setprecision(10) << std::scientific << b_v_assembly_time.count() << std::endl;
-                std::cout << "---------------------------------------------< RHS" << std::endl;
+                // std::cout << "---------------------------------------------> RHS" << std::endl;
+                // std::cout << "--- RHS u : " << std::setprecision(10) << std::scientific << u_v_assembly_time.count() << std::endl;
+                // std::cout << "--- RHS b : " << std::setprecision(10) << std::scientific << b_v_assembly_time.count() << std::endl;
+                // std::cout << "---------------------------------------------< RHS" << std::endl;
                 auto res = displacement_system->getResidualEvaluation();
                 if (res < 1.e-6)
                 {
@@ -233,13 +234,13 @@ main(int argc, char** argv)
                     elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("CIRCLE", "CircleForceY", displacement_system);
                     tock = std::chrono::high_resolution_clock::now();
                     auto b_update_time = std::chrono::duration<double>(tock - tick);
-                    std::cout << "---------------------------------------------> SOLVER" << std::endl;
-                    std::cout << "--- LHS u : " << std::setprecision(10) << std::scientific << u_assembly_time.count() << std::endl;
-                    std::cout << "--- LHS b : " << std::setprecision(10) << std::scientific << b_assembly_time.count() << std::endl;
-                    std::cout << "--- solver   u : " << std::setprecision(10) << std::scientific << u_solver_time.count() << std::endl;
-                    std::cout << "--- update   u : " << std::setprecision(10) << std::scientific << u_update_time.count() << std::endl;
-                    std::cout << "--- update   b : " << std::setprecision(10) << std::scientific << b_update_time.count() << std::endl;
-                    std::cout << "---------------------------------------------< SOLVER" << std::endl;
+                    // std::cout << "---------------------------------------------> SOLVER" << std::endl;
+                    // std::cout << "--- LHS u : " << std::setprecision(10) << std::scientific << u_assembly_time.count() << std::endl;
+                    // std::cout << "--- LHS b : " << std::setprecision(10) << std::scientific << b_assembly_time.count() << std::endl;
+                    // std::cout << "--- solver   u : " << std::setprecision(10) << std::scientific << u_solver_time.count() << std::endl;
+                    // std::cout << "--- update   u : " << std::setprecision(10) << std::scientific << u_update_time.count() << std::endl;
+                    // std::cout << "--- update   b : " << std::setprecision(10) << std::scientific << b_update_time.count() << std::endl;
+                    // std::cout << "---------------------------------------------< SOLVER" << std::endl;
                 }
             }
             iteration ++;
@@ -274,6 +275,10 @@ main(int argc, char** argv)
                 auto res = damage_system->getResidualEvaluation();
                 if (res < 1.e-6)
                 {
+                    auto val = elements->getDissipatedEnergy<cells>("SQUARE", "MicromorphicDamage");
+                    std::cout << "---------------------------------------------> DISSIPATED ENERGY" << std::endl;
+                    std::cout << "--- : " << std::setprecision(10) << std::scientific << val << std::endl;
+                    std::cout << "---------------------------------------------< DISSIPATED ENERGY" << std::endl;
                     std::cout << "damage iteration " << iteration << " | res " << std::setprecision(10) << std::scientific << res << " | convergence" << std::endl;
                     // std::cout << "damage convergence" << std::endl;
                     return true;

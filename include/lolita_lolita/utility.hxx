@@ -799,8 +799,62 @@ namespace lolita::utility
 
     // ------------------------------------------------------------------------------------------------------
 
+    // struct File2
+    // {
+
+    //     static inline
+    //     File2
+    //     make(
+    //         std::basic_string<Character> const & file_path
+    //     )
+    //     {
+    //         auto file_stream = std::basic_ofstream<Character>();
+    //         file_stream.open(file_path);
+    //     }
+
+    //     static inline
+    //     File2
+    //     open(
+    //         std::basic_string<Character> const & file_path
+    //     )
+    //     {
+    //         auto file_stream = std::basic_ofstream<Character>();
+    //         file_stream.open(file_path, std::ios_base::app);
+    //     }
+
+    //     std::basic_ofstream<Character>;
+
+    // };
+
     struct File
     {
+
+        // static inline
+        // File
+        // make(
+        //     std::basic_string_view<Character> file_path
+        // )
+        // {
+            
+        // }
+
+        // static inline
+        // File
+        // open(
+        //     std::basic_string<Character> const & file_path
+        // )
+        // {
+        //     auto outfile = std::basic_ifstream<Character>();
+        //     outfile.open(file_path);
+        //     auto lines = 
+        // }
+        
+        // inline
+        // void
+        // addLine()
+        // {
+
+        // }
 
         File() = default;
 

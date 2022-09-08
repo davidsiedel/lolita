@@ -23,7 +23,8 @@ main(int argc, char** argv)
     // }
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     // declaring behavior
-    auto lib_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/data/behavior/bhv_small_strain_voce_plasticity/src/libBehaviour.so";
+    auto lib_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/data/behavior/bhv_elasticity/src/libBehaviour.so";
+    // auto lib_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/data/behavior/bhv_isotropic_linear_hardening/src/libBehaviour.so";
     // auto lib_path = "/home/dsiedel/projetcs/lolita/applications/linear_elastic_tensile_square/data/behavior/bhv_small_strain_voce_plasticity/src/libBehaviour.so";
     // auto lib_path = "data/behavior/bhv_elasticity/src/libBehaviour.so";
     auto lib_name = "Elasticity";
@@ -94,9 +95,9 @@ main(int argc, char** argv)
     // elements->setParameter<faces>("TOP", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
     // elements->setParameter<faces>("LEFT", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
     // elements->setParameter<faces>("BOTTOM", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
-    elements->setParameter<faces>("TOP", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
-    elements->setParameter<faces>("LEFT", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
-    elements->setParameter<faces>("BOTTOM", "Lagrange", [](lolita::Point const & p) { return 206.9e9; });
+    elements->setParameter<faces>("TOP", "TopForceLagrange", [](lolita::Point const & p) { return 206.9e9; });
+    elements->setParameter<faces>("LEFT", "LeftForceLagrange", [](lolita::Point const & p) { return 206.9e9; });
+    elements->setParameter<faces>("BOTTOM", "BottomForceLagrange", [](lolita::Point const & p) { return 206.9e9; });
     // stab
     elements->setParameter<cells>("SQUARE", "DisplacementStabilization", [](lolita::Point const & p) { return 206.9e9 / (1. + 0.2); });
     lolita::GmshFileParser::setOutput<domain>(out_file, elements, "Elasticity");
@@ -157,7 +158,7 @@ main(int argc, char** argv)
     auto times = std::vector<lolita::Real>();
     for (auto i = 0; i < num_steps + 1; i++)
     {
-        auto val = i * 1.0e-2 / num_steps;
+        auto val = i * 1.0 / num_steps;
         std::cout << i << " : " << val << " / ";
         times.push_back(val);
     }
@@ -242,6 +243,12 @@ main(int argc, char** argv)
         std::cout << "step : " << step << " time : " << time << std::endl;
         if (newton_step())
         {
+            auto top_force_value = elements->getBindingIntegral<faces, displacement_element, hdg>("TOP", "TopForce", 0, 0);
+            auto bottom_force_value = elements->getBindingIntegral<faces, displacement_element, hdg>("BOTTOM", "BottomForce", 0, 0);
+            auto left_force_value = elements->getBindingIntegral<faces, displacement_element, hdg>("LEFT", "LeftForce", 0, 0);
+            std::cout << "-- top_force_value " << std::setprecision(10) << std::scientific << top_force_value << std::endl;
+            std::cout << "-- bottom_force_value " << std::setprecision(10) << std::scientific << bottom_force_value << std::endl;
+            std::cout << "-- left_force_value " << std::setprecision(10) << std::scientific << left_force_value << std::endl;
             std::cout << "time step convergence" << std::endl;
             elements->reserveBehaviorData<cells>("SQUARE", "Elasticity");
             elements->reserveUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("SQUARE", "Displacement");
