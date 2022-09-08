@@ -1,18 +1,19 @@
 {
     // "cmake.cmakePath": "/home/dsiedel/spack/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/cmake-3.23.1-thkpc37ug5mfsnzfrfv37ngyklt72cks/bin/cmake",
     "cmake.configureSettings": {
-        "G": "Unix Makefiles",
+        // "G": "Unix Makefiles",
         "Eigen3_DIR": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/share/eigen3/cmake",
         "INTEL_MKL_HOME": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f",
         "GTEST_ROOT": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.11.0-fym76qqgkka37m27u25kkn2h2sosbwad",
         "MGIS_ROOT": "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/mgis-master-t4wcfvs2egl4l2hx5lp4dngzzghtyhhq",
         "PETSC_DIR": "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/petsc-3.17.4-4aqc3hvfmpk7zbqldmjerouabd5y2kqs",
         "MPI_HOME": "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/openmpi-4.1.4-3s2qlbpz3dleyz2ok72uku4a7n7rsmat",
+        //
         // "MPI_HOME": "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/mpich-4.0.2-qdztofsqll2azrwxhw3i4mjckyr6k5kw",
         // "MPIEXEC_EXECUTABLE": "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/openmpi-4.1.4-3s2qlbpz3dleyz2ok72uku4a7n7rsmat/bin/mpiexec",
         // "MPI_CXX_SKIP_MPICXX": "TRUE",
         "TEST_MODE": "test",
-        "CMAKE_FIND_DEBUG_MODE": "ON"
+        // "CMAKE_FIND_DEBUG_MODE": "ON"
     },
     "files.associations": {
         "string_view": "cpp",
@@ -88,7 +89,11 @@
         "sparsecore": "cpp",
         "cinttypes": "cpp",
         "list": "cpp",
-        "codecvt": "cpp"
+        "codecvt": "cpp",
+        "pardisosupport": "cpp",
+        "sparse": "cpp",
+        "cholesky": "cpp",
+        "dense": "cpp"
     },
     "cSpell.words": [
         "discretization",

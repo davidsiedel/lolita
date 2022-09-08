@@ -56,40 +56,38 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
 # endif()
 
 ######################################################################
-## Package: Threading support
-# set(THREADS_PREFER_PTHREAD_FLAG ON)
-# find_package(Threads REQUIRED)
-# if (COMPILER_IS_CLANG OR COMPILER_IS_INTEL OR COMPILER_IS_GNU)
-#    set(LINK_LIBS ${LINK_LIBS} Threads::Threads)
-# endif()
+## Package: MPI
+find_package(MPI REQUIRED)
+if (MPI_FOUND)
+    message(STATUS "MPI found")
+    #include_directories(${MPI_INCLUDE_DIRS})
+    set(LINK_LIBS ${LINK_LIBS} ${MPI_CXX_LIBRARIES})
+    set(LINK_LIBS ${LINK_LIBS} ${MPI_CXX_LINK_FLAGS})
+    set(INCL_DIRS ${INCL_DIRS} ${MPI_CXX_INCLUDE_DIRS})
+    # message(STATUS "MPI :")
+    # message(STATUS ${MPI_CXX_LINK_FLAGS})
+    # message(STATUS "MPI :")
+    # message(STATUS ${MPI_CXX_INCLUDE_DIRS})
+    set(HAVE_MPI TRUE)
+    add_definitions(-DHAVE_MPI)
+else()
+    message(STATUS "MPI not found")
+    set(HAVE_MPI FALSE)
+endif()
 
 ######################################################################
-## Package: MPI support
-# find_package(MPI REQUIRED)
-# if (MPI_FOUND)
-#     message(STATUS "MPI found")
-#     include_directories(${MPI_INCLUDE_DIRS})
-#     set(INCL_DIRS ${INCL_DIRS} ${MPI_INCLUDE_DIRS})
-#     set(LINK_LIBS ${LINK_LIBS} ${MPI_LIBRARIES})
-#     set(HAVE_MPI TRUE)
-#     add_definitions(-DHAVE_MPI)
-# else()
-#     message(STATUS "MPI not found")
-#     set(HAVE_MPI FALSE)
-# endif()
-
-######################################################################
-## Package: Intel MKL support
+## Package: Intel MKL
 find_package(MKL REQUIRED)
 if (MKL_FOUND)
-    include_directories(${MKL_INCLUDE_DIRS})
-    set(INCL_DIRS ${INCL_DIRS} ${MKL_INCLUDE_DIRS})
+    message(STATUS "MKL found")
+    # include_directories(${MKL_INCLUDE_DIRS})
     set(LINK_LIBS ${LINK_LIBS} ${MKL_LIBRARIES})
-    set(HAVE_INTEL_MKL TRUE)
+    set(INCL_DIRS ${INCL_DIRS} ${MKL_INCLUDE_DIRS})
+    set(HAVE_MKL TRUE)
     add_definitions(-DHAVE_INTEL_MKL)
 else()
-    message(STATUS "INTEL_MKL not found")
-    set(HAVE_INTEL_MKL FALSE)
+    message(STATUS "MKL not found")
+    set(HAVE_MKL FALSE)
 endif()
 
 ######################################################################
@@ -97,8 +95,9 @@ endif()
 find_package(Eigen3 REQUIRED)
 if (Eigen3_FOUND)
     message(STATUS "Eigen3 found")
-    include_directories(${EIGEN3_INCLUDE_DIR})
-    set(LINK_LIBS ${LINK_LIBS} Eigen3::Eigen)
+    # include_directories(${EIGEN3_INCLUDE_DIR})
+    # set(LINK_LIBS ${LINK_LIBS} Eigen3::Eigen)
+    set(LINK_LIBS ${LINK_LIBS} ${EIGEN3_LIBRARIES})
     set(INCL_DIRS ${INCL_DIRS} ${EIGEN3_INCLUDE_DIR})
     set(HAVE_EIGEN3 TRUE)
     add_definitions(-DHAVE_EIGEN3)
@@ -108,18 +107,32 @@ else()
 endif()
 
 ######################################################################
+## Package: MGIS
+find_package(MGIS REQUIRED)
+if (MGIS_FOUND)
+    message(STATUS "MGIS found")
+    set(LINK_LIBS ${LINK_LIBS} ${MGIS_LIBRARIES})
+    set(INCL_DIRS ${INCL_DIRS} ${MGIS_INCLUDE_DIRS})
+    set(HAVE_MGIS TRUE)
+    add_definitions(-DHAVE_MGIS)
+else()
+    message(STATUS "MGIS not found")
+    set(HAVE_MGIS FALSE)
+endif()
+
+######################################################################
 ## Package: PETSc
-# find_package(PETSc REQUIRED)
-# if (PETSc_FOUND)
-#     message(STATUS "PETSc found")
-#     set(INCL_DIRS ${INCL_DIRS} ${PETSC_INC})
-#     set(LINK_LIBS ${LINK_LIBS} ${PETSC_LIBRARIES})
-#     set(HAVE_PETSc TRUE)
-#     add_definitions(-DHAVE_PETSc)
-# else()
-#     message(STATUS "PETSc not found")
-#     set(HAVE_PETSc FALSE)
-# endif()
+find_package(PETSc REQUIRED)
+if (PETSc_FOUND)
+    message(STATUS "PETSc found")
+    set(LINK_LIBS ${LINK_LIBS} ${PETSC_LIBRARIES})
+    set(INCL_DIRS ${INCL_DIRS} ${PETSC_INC})
+    set(HAVE_PETSc TRUE)
+    add_definitions(-DHAVE_PETSc)
+else()
+    message(STATUS "PETSc not found")
+    set(HAVE_PETSc FALSE)
+endif()
 
 ######################################################################
 ## Package: Boost
@@ -151,12 +164,11 @@ endif()
 #endif()
 
 
-######################################################################
-## Package: MGIS
 #find_package(MFrontGenericInterface REQUIRED)
 #if (MFrontGenericInterface_FOUND)
 #    message(STATUS "MGIS found")
 #    #    include_directories(${MGIS_INCLUDE_DIRS})
+    # include_directories(${MGIS_INCLUDE_DIRS})
 #    set(LINK_LIBS ${LINK_LIBS} mgis::MFrontGenericInterface)
 #    set(HAVE_MGIS TRUE)
 #    add_definitions(-DHAVE_MGIS)
@@ -164,17 +176,6 @@ endif()
 #    message(STATUS "MGIS not found")
 #    set(HAVE_MGIS FALSE)
 #endif()
-find_package(MGIS REQUIRED)
-if (MGIS_FOUND)
-    message(STATUS "MGIS found")
-    include_directories(${MGIS_INCLUDE_DIRS})
-    set(LINK_LIBS ${LINK_LIBS} ${MGIS_LIBRARIES})
-    set(HAVE_MGIS TRUE)
-    add_definitions(-DHAVE_MGIS)
-else()
-    message(STATUS "MGIS not found")
-    set(HAVE_MGIS FALSE)
-endif()
 
 ######################################################################
 ## Package: fmt
@@ -229,6 +230,14 @@ endif()
 #    if (CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Minfo")
 #    endif()
+# endif()
+
+######################################################################
+## Package: Threading support
+# set(THREADS_PREFER_PTHREAD_FLAG ON)
+# find_package(Threads REQUIRED)
+# if (COMPILER_IS_CLANG OR COMPILER_IS_INTEL OR COMPILER_IS_GNU)
+#    set(LINK_LIBS ${LINK_LIBS} Threads::Threads)
 # endif()
 
 ######################################################################

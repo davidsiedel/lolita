@@ -135,6 +135,67 @@ namespace lolita
             return sub_set;
         }
 
+        // template<ElementType t_ii, auto... t_args>
+        // void
+        // setElementarySystems(
+        //     std::basic_string<Character> domain_label,
+        //     std::basic_string<Character> behavior_label,
+        //     std::basic_string<Character> unknown_label,
+        //     std::unique_ptr<System> const & system
+        // )
+        // const
+        // {
+        //     auto fun = [&] (auto const & element)
+        //     {
+        //         element->template setElementarySystem<t_args...>(behavior_label, unknown_label, system);
+        //     };
+        //     caller2<t_ii>(domain_label, fun);
+        // }
+
+        // template<ElementType t_ii>
+        // Natural
+        // getFormulationSize(
+        //     std::basic_string<Character> domain_label,
+        //     std::basic_string<Character> behavior_label
+        // )
+        // const
+        // {
+        //     auto value = Natural(0);
+        //     auto mutex = std::mutex();
+        //     auto set_value = [&] (auto input_value)
+        //     {
+        //         auto lock = std::scoped_lock<std::mutex>(mutex);
+        //         value += input_value;
+        //     };
+        //     auto fun = [&] (auto const & element)
+        //     {
+        //         set_value(element->quadrature_.at(behavior_label).residual_vector_.size());
+        //     };
+        //     caller2<t_ii>(domain_label, fun);
+        //     return value;
+        // }
+
+        // template<ElementType t_ii>
+        // void
+        // addDomain(
+        //     std::basic_string_view<Character> domain_label,
+        //     std::basic_string_view<Character> sub_domain_label,
+        //     Integer sub_domain_dim,
+        //     std::function<Boolean(Point const &)> && function
+        // )
+        // const
+        // {
+        //     auto sub_domain = std::make_shared<MeshDomain>(sub_domain_dim, sub_domain_label);
+        //     auto fun = [&] (auto const & element)
+        //     {
+        //         if (std::forward<std::function<Boolean(Point const &)>>(function)(* element->coordinates_))
+        //         {
+        //             element->domains_.push_back(sub_domain);
+        //         }
+        //     };
+        //     caller2<t_ii>(domain_label, fun);
+        // }
+
         template<ElementType t_ii>
         void
         setParameter(

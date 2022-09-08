@@ -1232,6 +1232,113 @@ namespace lolita
                 return FieldTraits<t_finite_element_method.getField()>::template getSize<t_domain>();
             }
 
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
+            
+            // Integer
+            // getElementarySystemSize(
+            //     std::basic_string_view<Character> behavior_label
+            // )
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     auto const & formulation = this->quadrature_.at(std::string(behavior_label));
+            //     return formulation.residual_vector_.size();
+            // }
+
+            // template<FiniteElementMethodConcept auto t_finite_element_method>
+            // void
+            // setElementarySystem(
+            //     std::basic_string_view<Character> behavior_label,
+            //     std::basic_string_view<Character> degree_of_freedom_label,
+            //     std::unique_ptr<System> const & system
+            // )
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     auto constexpr num_cell_unknowns = getNumCellUnknowns<t_finite_element_method.getField()>();
+            //     auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
+            //     auto & formulation = this->quadrature_.at(std::string(behavior_label));
+            //     auto internal_forces = getInternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+            //     auto external_forces = getExternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+            //     auto residual = external_forces - internal_forces;
+            //     auto jacobian = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+            //     auto k_tt = jacobian.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
+            //     auto k_tf = jacobian.template block<num_cell_unknowns, num_face_unknowns>(0, num_cell_unknowns);
+            //     auto k_ft = jacobian.template block<num_face_unknowns, num_cell_unknowns>(num_cell_unknowns, 0);
+            //     auto k_ff = jacobian.template block<num_face_unknowns, num_face_unknowns>(num_cell_unknowns, num_cell_unknowns);
+            //     auto r_t = residual.template segment<num_cell_unknowns>(0);
+            //     auto r_f = residual.template segment<num_face_unknowns>(num_cell_unknowns);
+            //     auto k_tt_inv = k_tt.llt().solve(decltype(k_tt)::Identity());
+            //     auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
+            //     auto r_c = r_f - k_ft * k_tt_inv * r_t;
+            //     formulation.jacobian_matrix_ = k_c;
+            //     formulation.residual_vector_ = r_c;
+            //     formulation.auxiliary_matrix_terms_["KTT"] = k_tt_inv;
+            //     formulation.auxiliary_matrix_terms_["KTF"] = k_tf;
+            //     formulation.auxiliary_matrix_terms_["KFT"] = k_ft;
+            //     formulation.auxiliary_matrix_terms_["KFF"] = k_ff;
+            //     formulation.auxiliary_vector_terms_["RC"] = r_c;
+            //     system->setNormalization(external_forces.cwiseAbs().maxCoeff());
+            // }
+
+            // template<FiniteElementMethodConcept auto t_finite_element_method>
+            // void
+            // assembleUnknownBlock(
+            //     std::basic_string_view<Character> behavior_label,
+            //     std::basic_string_view<Character> degree_of_freedom_label,
+            //     std::vector<System::MatrixEntry> & lhs_values,
+            //     std::unique_ptr<System> const & system
+            // )
+            // {
+            //     auto constexpr t_field = t_finite_element_method.getField();
+            //     auto const & formulation = this->quadrature_.at(std::string(behavior_label));
+            //     auto global_offset = system->getUnknownOffset(degree_of_freedom_label);
+            //     auto offset_i = 0;
+            //     auto set_faces_unknowns = [&] <Integer t_i = 0> (
+            //         auto & self
+            //     )
+            //     constexpr mutable
+            //     {
+            //         for (auto const & face_i : this->template getInnerNeighbors<0, t_i>())
+            //         {
+            //             auto const & face_i_dof = face_i->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+            //             auto constexpr size_iii = face_i_dof.template getSize<t_field, getFaceBasis()>();
+            //             auto iii = global_offset + face_i_dof.getTag();
+            //             auto offset_j = 0;
+            //             auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
+            //                 auto & self2
+            //             )
+            //             constexpr mutable
+            //             {
+            //                 for (auto const & face_j : this->template getInnerNeighbors<0, t_j>())
+            //                 {
+            //                     auto const & face_j_dof = face_j->degrees_of_freedom_.at(std::string(degree_of_freedom_label));
+            //                     auto constexpr size_jjj = face_j_dof.template getSize<t_field, getFaceBasis()>();
+            //                     auto jjj = global_offset + face_j_dof.getTag();
+            //                     system->addLhsValues(iii, jjj, formulation.jacobian_matrix_.template block<size_iii, size_jjj>(offset_i, offset_j));
+            //                     offset_j += size_jjj;
+            //                 }
+            //                 if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+            //                 {
+            //                     self2.template operator ()<t_j + 1>(self2);
+            //                 }
+            //             };
+            //             set_faces_unknowns2(set_faces_unknowns2);
+            //             offset_i += size_iii;
+            //         }
+            //         if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<0>() - 1)
+            //         {
+            //             self.template operator ()<t_i + 1>(self);
+            //         }
+            //     };
+            //     set_faces_unknowns(set_faces_unknowns);
+            //     // <- TEST
+            // }
+
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
+
             template<FiniteElementMethodConcept auto t_finite_element_method>
             void
             condensateUnknown(

@@ -2557,6 +2557,14 @@ namespace lolita
             
             std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
 
+            Matrix<Real> jacobian_matrix_;
+
+            Vector<Real> residual_vector_;
+
+            std::map<std::basic_string<Character>, Matrix<Real>> auxiliary_matrix_terms_;
+
+            std::map<std::basic_string<Character>, Vector<Real>> auxiliary_vector_terms_;
+
         };
 
         template<Quadrature t_quadrature>
@@ -2641,6 +2649,17 @@ namespace lolita
                 // std::cout << "strain_view :\n" << strain_view << std::endl;
                 // strain_view.setZero();
             }
+        }
+
+        template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
+        void
+        setElementarySystem(
+            std::basic_string_view<Character> behavior_label,
+            std::basic_string_view<Character> degree_of_freedom_label,
+            std::unique_ptr<System> const & system
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template setElementarySystem<t_finite_element_method>(behavior_label, degree_of_freedom_label, system);
         }
 
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>

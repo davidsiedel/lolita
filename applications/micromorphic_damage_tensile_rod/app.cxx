@@ -1,5 +1,7 @@
 #include "lolita_lolita/lolita_core/lolita_core_n_4004.hxx"
 
+#include <mpi.h>
+
 // class Polygon {
 //     public:
 //     virtual void show() {
@@ -31,7 +33,7 @@ main(int argc, char** argv)
     auto lib_displacement_label = "MicromorphicDisplacement";
     // declaring behavior
     auto lib_damage_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/data/behavior/bhv_micromorphic_damage/src/libBehaviour.so";
-    auto lib_damage_name = "MicromorphicDamage";
+    auto lib_damage_label = "MicromorphicDamage";
     //
     auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
         mgis::behaviour::FiniteStrainBehaviourOptions::PK1,
@@ -57,19 +59,19 @@ main(int argc, char** argv)
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
     // mesh
-    auto file_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/mesh.msh";
-    auto out_displacement_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_u.msh";
-    auto out_damage_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_d.msh";
+    auto file_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.mesh.msh";
+    auto out_displacement_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_u.msh";
+    auto out_damage_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_d.msh";
     auto force_out_stream = std::basic_ofstream<lolita::Character>();
     auto damage_dissipated_energy_out_stream = std::basic_ofstream<lolita::Character>();
     auto damage_stored_energy_out_stream = std::basic_ofstream<lolita::Character>();
     auto displacement_dissipated_energy_out_stream = std::basic_ofstream<lolita::Character>();
     auto displacement_stored_energy_out_stream = std::basic_ofstream<lolita::Character>();
-    force_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_force.txt");
-    damage_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_damage_dissipated_energy.txt");
-    damage_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_damage_stored_energy.txt");
-    displacement_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_displacement_dissipated_energy.txt");
-    displacement_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/out_displacement_stored_energy.txt");
+    force_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_force.txt");
+    damage_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_damage_dissipated_energy.txt");
+    damage_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_damage_stored_energy.txt");
+    displacement_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_displacement_dissipated_energy.txt");
+    displacement_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_displacement_stored_energy.txt");
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // dofs
@@ -105,8 +107,12 @@ main(int argc, char** argv)
     // <- RIGHT
     auto load2 = elements->setConstraint<faces>("BOTTOM", "FixedB", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 1, 0);
     // adding behavior
+    std::cout << lib_displacement_label << std::endl;
+    std::cout << lib_displacement_path << std::endl;
+    std::cout << lib_damage_label << std::endl;
+    std::cout << lib_damage_path << std::endl;
     auto micromorphic_displacement = elements->setBehavior<cells, quadrature>("ROD", lib_displacement_path, lib_displacement_label, hyp);
-    auto micromorphic_damage = elements->setBehavior<cells, quadrature>("ROD", lib_damage_path, lib_damage_name, hyp);
+    auto micromorphic_damage = elements->setBehavior<cells, quadrature>("ROD", lib_damage_path, lib_damage_label, hyp);
     //making operators
     elements->setStrainOperators<cells, displacement_element, hdg>("ROD", "MicromorphicDisplacement", "Displacement");
     elements->setStrainOperators<cells, damage_element, hdg>("ROD", "MicromorphicDamage", "Damage");
@@ -142,6 +148,9 @@ main(int argc, char** argv)
     std::cout << elements->getElements<2, 1>()[0]->quadrature_.at("MicromorphicDamage").ips_[0].ops_.at("Damage") << std::endl;
     std::cout << "elements->getElements<2, 1>()[0]->quadrature_.at(MicromorphicDisplacement).ips_[0].ops_.at(Displacement)" << std::endl;
     std::cout << elements->getElements<2, 1>()[0]->quadrature_.at("MicromorphicDisplacement").ips_[0].ops_.at("Displacement") << std::endl;
+    // elements->setElementarySystems<cells, displacement_element, hdg>("ROD", "MicromorphicDisplacement", "Displacement", displacement_system);
+    // std::cout << "elements->getFormulationSize : " << elements->getFormulationSize<cells>("ROD", "MicromorphicDisplacement") << std::endl;
+
     // <- TEST
     
     auto num_steps = 50;
