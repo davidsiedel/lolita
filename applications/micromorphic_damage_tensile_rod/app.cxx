@@ -148,8 +148,6 @@ main(int argc, char** argv)
     std::cout << elements->getElements<2, 1>()[0]->quadrature_.at("MicromorphicDamage").ips_[0].ops_.at("Damage") << std::endl;
     std::cout << "elements->getElements<2, 1>()[0]->quadrature_.at(MicromorphicDisplacement).ips_[0].ops_.at(Displacement)" << std::endl;
     std::cout << elements->getElements<2, 1>()[0]->quadrature_.at("MicromorphicDisplacement").ips_[0].ops_.at("Displacement") << std::endl;
-    // elements->setElementarySystems<cells, displacement_element, hdg>("ROD", "MicromorphicDisplacement", "Displacement", displacement_system);
-    // std::cout << "elements->getFormulationSize : " << elements->getFormulationSize<cells>("ROD", "MicromorphicDisplacement") << std::endl;
 
     // <- TEST
     
@@ -185,6 +183,8 @@ main(int argc, char** argv)
             }
             else
             {
+                elements->setElementarySystems<cells, displacement_element, hdg>("ROD", "MicromorphicDisplacement", "Displacement", displacement_system);
+                std::cout << "elements->getFormulationSize : " << elements->getFormulationSize<cells>("ROD", "MicromorphicDisplacement") << std::endl;
                 elements->assembleUnknownVector<cells, displacement_element, hdg>("ROD", "MicromorphicDisplacement", "Displacement", displacement_system);
                 elements->assembleBindingVector<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system, time);
                 elements->assembleBindingVector<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system, time);
@@ -213,6 +213,8 @@ main(int argc, char** argv)
                     // -> RIGHT
                     elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system);
                     // std::cout << "solve" << std::endl;
+                    std::cout << "lhs_values size" << std::endl;
+                    std::cout << displacement_system->lhs_values_.size() << std::endl;
                     displacement_system->setCorrection();
                     // std::cout << lolita::mat2str(displacement_system->correction_values_) << std::endl;
                     elements->updateUnknown<cells, displacement_element, hdg>("ROD", "Displacement", displacement_system);

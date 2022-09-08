@@ -307,6 +307,14 @@ namespace lolita
         {
             return Basis(Polynomial::Monomial, ord);
         }
+
+        constexpr
+        Polynomial
+        getPolynomial()
+        const
+        {
+            return polynomial_;
+        }
         
         constexpr
         Boolean

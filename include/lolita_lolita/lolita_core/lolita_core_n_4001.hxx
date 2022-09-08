@@ -50,14 +50,6 @@ namespace lolita
             {
                 return FiniteElementBasisTraits::template getSize<t_element>();
             }
-            
-            // template<Field t_field>
-            // static constexpr
-            // Integer
-            // getSize()
-            // {
-            //     return FiniteElementBasisTraits::template getSize<t_element, t_field>();
-            // }
 
         private:
         
@@ -117,63 +109,16 @@ namespace lolita
                 }
                 return exponents;
             }
-        
-            // Real
-            // getLocalFrameDistance1(
-            //     Point const & first_point,
-            //     Point const & second_point,
-            //     Integer kkk
-            // )
-            // const
-            // requires(t_element.isSub(t_domain, 0))
-            // {
-            //     // auto first_point_mapping = Point();
-            //     // auto second_point_mapping = Point();
-            //     // auto const & current_coordinates = this->getCurrentCoordinates();
-            //     // first_point_mapping.setZero();
-            //     // second_point_mapping.setZero();
-            //     // for (auto i = 0; i < t_domain.getDim(); ++i)
-            //     // {
-            //     //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-            //     //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-            //     // }
-            //     // return (second_point_mapping - first_point_mapping)(kkk);
-            //     return (second_point - first_point)(kkk);
-            // }
-            
-            // Real
-            // getLocalFrameDistance1(
-            //     Point const & first_point,
-            //     Point const & second_point,
-            //     Integer kkk
-            // )
-            // const
-            // requires(t_element.isSub(t_domain, 1))
-            // {
-            //     auto rotation_matrix = this->getRotationMatrix(this->getReferenceCentroid());
-            //     // auto first_point_mapping = Point();
-            //     // auto second_point_mapping = Point();
-            //     // auto const & current_coordinates = this->getCurrentCoordinates();
-            //     // first_point_mapping.setZero();
-            //     // second_point_mapping.setZero();
-            //     // for (auto i = 0; i < t_domain.getDim(); ++i)
-            //     // {
-            //     //     first_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), first_point);
-            //     //     second_point_mapping(i) = FiniteElementHolder::getShapeMappingEvaluation(current_coordinates.row(i), second_point);
-            //     // }
-            //     // // return (rotation_matrix * (second_point_mapping - first_point_mapping))(kkk);
-            //     return (rotation_matrix * (second_point - first_point))(kkk);
-            // }
 
         public:
         
-            lolita::algebra::Vector<Real, getSize()>
+            Vector<Real, getSize()>
             getBasisEvaluation(
                 Point const & point
             )
             const
             {
-                auto basis_vector_values = lolita::algebra::Vector<Real, getSize()>();
+                auto basis_vector_values = Vector<Real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 // auto const centroid = this->getCurrentCentroid();
                 // auto const diameters = this->getCurrentDiameters();
@@ -192,14 +137,14 @@ namespace lolita
                 return basis_vector_values;
             }
             
-            lolita::algebra::Vector<Real, getSize()>
+            Vector<Real, getSize()>
             getBasisDerivative(
                 Point const & point,
                 Integer derivative_direction
             )
             const
             {
-                auto basis_vector_values = lolita::algebra::Vector<Real, getSize()>();
+                auto basis_vector_values = Vector<Real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 // auto const centroid = this->getCurrentCentroid();
                 // auto const diameters = this->getCurrentDiameters();
@@ -251,28 +196,29 @@ namespace lolita
         Basis
         getCellBasis()
         {
-            return t_discretization.cell_basis_;
+            return t_discretization.getCellBasis();
         }
 
         static constexpr
         Basis
         getFaceBasis()
         {
-            return t_discretization.face_basis_;
+            return t_discretization.getFaceBasis();
         }
 
         static constexpr
         Basis
         getGradBasis()
         {
-            return t_discretization.grad_basis_;
+            return t_discretization.getGradBasis();
         }
 
         static constexpr
         Basis
         getPotentialBasis()
         {
-            return Basis::monomial(t_discretization.face_basis_.getOrd() + 1);
+            // return Basis::monomial(getFaceBasis().getOrd() + 1);
+            return Basis(t_discretization.getFaceBasis().getPolynomial(), t_discretization.getFaceBasis().getOrd() + 1);
         }
 
         template<Element t_element>
@@ -280,7 +226,7 @@ namespace lolita
         Integer
         getCellBasisSize()
         {
-            return FiniteElementBasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
+            return FiniteElementBasisTraits<getCellBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element>
@@ -288,7 +234,7 @@ namespace lolita
         Integer
         getFaceBasisSize()
         {
-            return FiniteElementBasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
+            return FiniteElementBasisTraits<getFaceBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element>
@@ -296,7 +242,7 @@ namespace lolita
         Integer
         getGradBasisSize()
         {
-            return FiniteElementBasisTraits<t_discretization.grad_basis_>::template getSize<t_element>();
+            return FiniteElementBasisTraits<getGradBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element>
@@ -388,9 +334,6 @@ namespace lolita
             getNumCellUnknowns()
             requires(t_element.isSub(t_domain, 0))
             {
-                // auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
-                // auto constexpr basis_size = FiniteElementBasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
-                // return field_size * basis_size;
                 return HybridDiscontinuousGalerkinTraits::template getNumCellUnknowns<t_element, t_domain, t_field>();
             }
 
@@ -400,9 +343,6 @@ namespace lolita
             getNumFaceUnknowns()
             requires(t_element.isSub(t_domain, 1))
             {
-                // auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
-                // auto constexpr basis_size = FiniteElementBasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
-                // return field_size * basis_size;
                 return HybridDiscontinuousGalerkinTraits::template getNumFaceUnknowns<t_element, t_domain, t_field>();
             }
 
@@ -1235,51 +1175,43 @@ namespace lolita
             // -------------------------------------------------------------------------------------------------------------------------------------------------
             // -------------------------------------------------------------------------------------------------------------------------------------------------
             // -------------------------------------------------------------------------------------------------------------------------------------------------
-            
-            // Integer
-            // getElementarySystemSize(
-            //     std::basic_string_view<Character> behavior_label
-            // )
-            // requires(t_element.isSub(t_domain, 0))
-            // {
-            //     auto const & formulation = this->quadrature_.at(std::string(behavior_label));
-            //     return formulation.residual_vector_.size();
-            // }
 
-            // template<FiniteElementMethodConcept auto t_finite_element_method>
-            // void
-            // setElementarySystem(
-            //     std::basic_string_view<Character> behavior_label,
-            //     std::basic_string_view<Character> degree_of_freedom_label,
-            //     std::unique_ptr<System> const & system
-            // )
-            // requires(t_element.isSub(t_domain, 0))
-            // {
-            //     auto constexpr num_cell_unknowns = getNumCellUnknowns<t_finite_element_method.getField()>();
-            //     auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
-            //     auto & formulation = this->quadrature_.at(std::string(behavior_label));
-            //     auto internal_forces = getInternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
-            //     auto external_forces = getExternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
-            //     auto residual = external_forces - internal_forces;
-            //     auto jacobian = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
-            //     auto k_tt = jacobian.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
-            //     auto k_tf = jacobian.template block<num_cell_unknowns, num_face_unknowns>(0, num_cell_unknowns);
-            //     auto k_ft = jacobian.template block<num_face_unknowns, num_cell_unknowns>(num_cell_unknowns, 0);
-            //     auto k_ff = jacobian.template block<num_face_unknowns, num_face_unknowns>(num_cell_unknowns, num_cell_unknowns);
-            //     auto r_t = residual.template segment<num_cell_unknowns>(0);
-            //     auto r_f = residual.template segment<num_face_unknowns>(num_cell_unknowns);
-            //     auto k_tt_inv = k_tt.llt().solve(decltype(k_tt)::Identity());
-            //     auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
-            //     auto r_c = r_f - k_ft * k_tt_inv * r_t;
-            //     formulation.jacobian_matrix_ = k_c;
-            //     formulation.residual_vector_ = r_c;
-            //     formulation.auxiliary_matrix_terms_["KTT"] = k_tt_inv;
-            //     formulation.auxiliary_matrix_terms_["KTF"] = k_tf;
-            //     formulation.auxiliary_matrix_terms_["KFT"] = k_ft;
-            //     formulation.auxiliary_matrix_terms_["KFF"] = k_ff;
-            //     formulation.auxiliary_vector_terms_["RC"] = r_c;
-            //     system->setNormalization(external_forces.cwiseAbs().maxCoeff());
-            // }
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            void
+            setElementarySystem(
+                std::basic_string<Character> const & behavior_label,
+                std::basic_string_view<Character> degree_of_freedom_label,
+                std::unique_ptr<System> const & system
+            )
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr num_cell_unknowns = getNumCellUnknowns<t_finite_element_method.getField()>();
+                auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
+                auto & formulation = this->quadrature_.at(behavior_label);
+                auto const internal_forces = getInternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                auto const external_forces = getExternalForces<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                auto const residual = external_forces - internal_forces;
+                auto const jacobian = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
+                auto const k_tt = jacobian.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
+                auto const k_tf = jacobian.template block<num_cell_unknowns, num_face_unknowns>(0, num_cell_unknowns);
+                auto const k_ft = jacobian.template block<num_face_unknowns, num_cell_unknowns>(num_cell_unknowns, 0);
+                auto const k_ff = jacobian.template block<num_face_unknowns, num_face_unknowns>(num_cell_unknowns, num_cell_unknowns);
+                auto const r_t = residual.template segment<num_cell_unknowns>(0);
+                auto const r_f = residual.template segment<num_face_unknowns>(num_cell_unknowns);
+                // -> leave Matrix<Real, num_cell_unknowns, num_cell_unknowns> otherwise wont work !!
+                auto const k_tt_inv = Matrix<Real, num_cell_unknowns, num_cell_unknowns>(k_tt.llt().solve(decltype(k_tt)::Identity()));
+                // <-
+                auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
+                auto r_c = r_f - k_ft * k_tt_inv * r_t;
+                formulation.jacobian_matrix_ = k_c;
+                formulation.residual_vector_ = r_c;
+                formulation.auxiliary_matrix_terms_["KTT"] = k_tt_inv;
+                formulation.auxiliary_matrix_terms_["KTF"] = k_tf;
+                formulation.auxiliary_matrix_terms_["KFT"] = k_ft;
+                formulation.auxiliary_matrix_terms_["KFF"] = k_ff;
+                formulation.auxiliary_vector_terms_["RC"] = r_c;
+                system->setNormalization(external_forces.cwiseAbs().maxCoeff());
+            }
 
             // template<FiniteElementMethodConcept auto t_finite_element_method>
             // void

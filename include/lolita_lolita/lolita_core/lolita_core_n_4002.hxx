@@ -2654,7 +2654,7 @@ namespace lolita
         template<FiniteElementMethodConcept auto t_finite_element_method, auto t_discretization>
         void
         setElementarySystem(
-            std::basic_string_view<Character> behavior_label,
+            std::basic_string<Character> const & behavior_label,
             std::basic_string_view<Character> degree_of_freedom_label,
             std::unique_ptr<System> const & system
         )
