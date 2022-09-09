@@ -29,10 +29,10 @@ main(int argc, char** argv)
     // std::cout << std::fixed << std::setprecision(3);
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     // declaring behavior
-    auto lib_displacement_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/data/behavior/bhv_micromorphic_displacement/src/libBehaviour.so";
+    auto lib_displacement_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/data/behavior/bhv_micromorphic_displacement/src/libBehaviour.so";
     auto lib_displacement_label = "MicromorphicDisplacement";
     // declaring behavior
-    auto lib_damage_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/data/behavior/bhv_micromorphic_damage/src/libBehaviour.so";
+    auto lib_damage_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/data/behavior/bhv_micromorphic_damage/src/libBehaviour.so";
     auto lib_damage_label = "MicromorphicDamage";
     //
     auto opts = mgis::behaviour::FiniteStrainBehaviourOptions{
@@ -59,19 +59,19 @@ main(int argc, char** argv)
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
     // mesh
-    auto file_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/mesh.msh";
-    auto out_displacement_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_u.msh";
-    auto out_damage_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_d.msh";
+    auto file_path = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/mesh.msh";
+    auto out_displacement_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_u.msh";
+    auto out_damage_file = "/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_d.msh";
     auto force_out_stream = std::basic_ofstream<lolita::Character>();
     auto damage_dissipated_energy_out_stream = std::basic_ofstream<lolita::Character>();
     auto damage_stored_energy_out_stream = std::basic_ofstream<lolita::Character>();
     auto displacement_dissipated_energy_out_stream = std::basic_ofstream<lolita::Character>();
     auto displacement_stored_energy_out_stream = std::basic_ofstream<lolita::Character>();
-    force_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_force.txt");
-    damage_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_damage_dissipated_energy.txt");
-    damage_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_damage_stored_energy.txt");
-    displacement_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_displacement_dissipated_energy.txt");
-    displacement_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_tensile_rod/.out_displacement_stored_energy.txt");
+    force_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_force.txt");
+    damage_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_damage_dissipated_energy.txt");
+    damage_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_damage_stored_energy.txt");
+    displacement_dissipated_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_displacement_dissipated_energy.txt");
+    displacement_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_displacement_stored_energy.txt");
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
 
@@ -116,9 +116,6 @@ main(int argc, char** argv)
     //
     auto top_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
     auto left_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
-    // <- RIGHT
-    auto right_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("RIGHT", "RightForce");
-    // <- RIGHT
     auto bottom_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
     // systems
     auto displacement_system = lolita::System::make();
@@ -126,9 +123,6 @@ main(int argc, char** argv)
     displacement_system->setUnknown("Displacement", face_displacement->size());
     displacement_system->setBinding("TopForce", top_force->size());
     displacement_system->setBinding("LeftForce", left_force->size());
-    //
-    displacement_system->setBinding("RightForce", right_force->size());
-    //
     displacement_system->setBinding("BottomForce", bottom_force->size());
     displacement_system->initialize();
     damage_system->setUnknown("Damage", face_damage->size());
@@ -155,7 +149,7 @@ main(int argc, char** argv)
     // setting variable
     elements->setMaterialProperty<cells>("SANE", "MicromorphicDisplacement", "YoungModulus", [](lolita::Point const & p) { return 200.0; });
     elements->setMaterialProperty<cells>("DEFECT", "MicromorphicDisplacement", "YoungModulus", [](lolita::Point const & p) { return 199.9; });
-    elements->setMaterialProperty<cells>("ROD", "MicromorphicDisplacement", "PoissonRatio", [](lolita::Point const & p) { return 0.0; });
+    elements->setMaterialProperty<cells>("ROD", "MicromorphicDisplacement", "PoissonRatio", [](lolita::Point const & p) { return 0.2; });
     elements->setExternalVariable<cells>("ROD", "MicromorphicDisplacement", "Temperature", [](lolita::Point const & p) { return 293.15; });
     elements->setExternalVariable<cells>("ROD", "MicromorphicDisplacement", "Damage", [](lolita::Point const & p) { return 0.0; });
     // setting variable
@@ -167,12 +161,9 @@ main(int argc, char** argv)
     // setting parameter
     elements->setParameter<faces>("TOP", "TopForceLagrange", [](lolita::Point const & p) { return 200.0; });
     elements->setParameter<faces>("LEFT", "LeftForceLagrange", [](lolita::Point const & p) { return 200.0; });
-    // <- RIGHT
-    elements->setParameter<faces>("RIGHT", "RightForceLagrange", [](lolita::Point const & p) { return 200.0; });
-    // <- RIGHT
     elements->setParameter<faces>("BOTTOM", "BottomForceLagrange", [](lolita::Point const & p) { return 200.0; });
     // stab
-    elements->setParameter<cells>("ROD", "DisplacementStabilization", [](lolita::Point const & p) { return 200.0 / (1.0 + 0.0); });
+    elements->setParameter<cells>("ROD", "DisplacementStabilization", [](lolita::Point const & p) { return 200.0 / (1.0 + 0.2); });
     elements->setParameter<cells>("ROD", "DamageStabilization", [](lolita::Point const & p) { return 1.0 / 0.05; });
     //
     lolita::GmshFileParser::setOutput<domain>(out_displacement_file, elements, "MicromorphicDisplacement");
@@ -217,19 +208,11 @@ main(int argc, char** argv)
             }
             else
             {
-                // elements->setElementarySystems<cells, displacement_element, hdg>("ROD", "MicromorphicDisplacement", "Displacement", displacement_system);
-                // std::cout << "elements->getFormulationSize : " << elements->getFormulationSize<cells>("ROD", "MicromorphicDisplacement") << std::endl;
                 elements->assembleUnknownVector<cells, displacement_element, hdg>("ROD", "MicromorphicDisplacement", "Displacement", displacement_system);
                 elements->assembleBindingVector<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system, time);
                 elements->assembleBindingVector<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system, time);
-                // <- RIGHT
-                elements->assembleBindingVector<faces, displacement_element, hdg>("RIGHT", "RightForce", "Displacement", "FixedR", displacement_system, time);
-                // -> RIGHT
                 elements->assembleBindingVector<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system, time);
-                // std::cout << "displacement res eval : " << std::setprecision(17) << displacement_system->getResidualEvaluation() << std::endl;
-                // std::cout << "displacement res norm : " << std::setprecision(17) << displacement_system->getNormalization() << std::endl;
                 auto res = displacement_system->getResidualEvaluation();
-                // std::cout << "rhs\n" << lolita::mat2str(displacement_system->rhs_values_) << std::endl;
                 if (res < 1.e-6)
                 {
                     std::cout << "displacement iteration " << iteration << " | res " << std::setprecision(10) << std::scientific << res << " | convergence" << std::endl;
@@ -242,32 +225,13 @@ main(int argc, char** argv)
                     //
                     elements->assembleBindingBlock<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system);
                     elements->assembleBindingBlock<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system);
-                    // <- RIGHT
-                    elements->assembleBindingBlock<faces, displacement_element, hdg>("RIGHT", "RightForce", "Displacement", "FixedR", displacement_system);
-                    // -> RIGHT
                     elements->assembleBindingBlock<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system);
-                    // std::cout << "solve" << std::endl;
-                    std::cout << "lhs_values size" << std::endl;
-                    std::cout << displacement_system->lhs_values_.size() << std::endl;
                     displacement_system->setCorrection();
-                    // std::cout << lolita::mat2str(displacement_system->correction_values_) << std::endl;
                     elements->updateUnknown<cells, displacement_element, hdg>("ROD", "Displacement", displacement_system);
                     elements->updateUnknown<faces, displacement_element, hdg>("ROD", "Displacement", displacement_system);
                     elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce", displacement_system);
                     elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce", displacement_system);
-                    // <- RIGHT
-                    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("RIGHT", "RightForce", displacement_system);
-                    // -> RIGHT
                     elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce", displacement_system);
-                    #ifdef DEBUG
-                        // std::cout << "writing debug output" << std::endl;
-                        // lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_displacement_file, elements, total_iteration, total_iteration, "MicromorphicDisplacement", 0);
-                        // lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_displacement_file, elements, total_iteration, total_iteration, "MicromorphicDisplacement", 1);
-                        // lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_displacement_file, elements, total_iteration, total_iteration, "MicromorphicDisplacement", 0);
-                        // lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_displacement_file, elements, total_iteration, total_iteration, "MicromorphicDisplacement", 1);
-                        // lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_displacement_file, elements, total_iteration, total_iteration, "Displacement", "MicromorphicDisplacement", 0, 0);
-                        // lolita::GmshFileParser::addQuadratureDofOutput<2, domain, displacement_element, hdg>(out_displacement_file, elements, total_iteration, total_iteration, "Displacement", "MicromorphicDisplacement", 1, 0);
-                    #endif
                 }
             }
             iteration ++;
@@ -298,55 +262,19 @@ main(int argc, char** argv)
             else
             {
                 elements->assembleUnknownVector<cells, damage_element, hdg>("ROD", "MicromorphicDamage", "Damage", damage_system);
-                // elements->assembleBindingVector<faces, damage_element, hdg>("TOP", "TopForce", "Damage", "Pull", damage_system, time);
-                // elements->assembleBindingVector<faces, damage_element, hdg>("LEFT", "LeftForce", "Damage", "FixedL", damage_system, time);
-                // // <- RIGHT
-                // elements->assembleBindingVector<faces, damage_element, hdg>("RIGHT", "RightForce", "Damage", "FixedR", damage_system, time);
-                // // -> RIGHT
-                // elements->assembleBindingVector<faces, damage_element, hdg>("BOTTOM", "BottomForce", "Damage", "FixedB", damage_system, time);
-                // std::cout << "damage res eval : " << std::setprecision(17) << damage_system->getResidualEvaluation() << std::endl;
-                // std::cout << "damage res norm : " << std::setprecision(17) << damage_system->getNormalization() << std::endl;
                 auto res = damage_system->getResidualEvaluation();
-                // std::cout << "displacement iteration " << iteration << " | res " << std::setprecision(10) << std::scientific << res << " | convergence" << std::endl;
-                // std::cout << "rhs\n" << lolita::mat2str(damage_system->rhs_values_) << std::endl;
                 if (res < 1.e-6)
                 {
                     std::cout << "damage iteration " << iteration << " | res " << std::setprecision(10) << std::scientific << res << " | convergence" << std::endl;
-                    // std::cout << "damage convergence" << std::endl;
                     return true;
                 }
                 else
                 {
                     std::cout << "damage iteration " << iteration << " | res " << std::setprecision(10) << std::scientific << res << " | solve" << std::endl;
                     elements->assembleUnknownBlock<cells, damage_element, hdg>("ROD", "MicromorphicDamage", "Damage", damage_system);
-                    //
-                    // elements->assembleBindingBlock<faces, damage_element, hdg>("TOP", "TopForce", "Damage", "Pull", damage_system);
-                    // elements->assembleBindingBlock<faces, damage_element, hdg>("LEFT", "LeftForce", "Damage", "FixedL", damage_system);
-                    // // <- RIGHT
-                    // elements->assembleBindingBlock<faces, damage_element, hdg>("RIGHT", "RightForce", "Damage", "FixedR", damage_system);
-                    // // -> RIGHT
-                    // elements->assembleBindingBlock<faces, damage_element, hdg>("BOTTOM", "BottomForce", "Damage", "FixedB", damage_system);
-                    // std::cout << "solve" << std::endl;
                     damage_system->setCorrection();
-                    // std::cout << lolita::mat2str(damage_system->correction_values_) << std::endl;
                     elements->updateUnknown<cells, damage_element, hdg>("ROD", "Damage", damage_system);
                     elements->updateUnknown<faces, damage_element, hdg>("ROD", "Damage", damage_system);
-                    // elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce", damage_system);
-                    // elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce", damage_system);
-                    // // <- RIGHT
-                    // elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("RIGHT", "RightForce", damage_system);
-                    // // -> RIGHT
-                    // elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce", damage_system);
-                    #ifdef DEBUG
-                        // std::cout << "writing debug output" << std::endl;
-                        // lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_damage_file, elements, total_iteration, total_iteration, "MicromorphicDamage", 0);
-                        // lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_damage_file, elements, total_iteration, total_iteration, "MicromorphicDamage", 1);
-                        // lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_damage_file, elements, total_iteration, total_iteration, "MicromorphicDamage", 2);
-                        // lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_damage_file, elements, total_iteration, total_iteration, "MicromorphicDamage", 0);
-                        // lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_damage_file, elements, total_iteration, total_iteration, "MicromorphicDamage", 1);
-                        // lolita::GmshFileParser::addQuadratureStressOutput<2, domain>(out_damage_file, elements, total_iteration, total_iteration, "MicromorphicDamage", 2);
-                        // lolita::GmshFileParser::addQuadratureDofOutput<2, domain, damage_element, hdg>(out_damage_file, elements, total_iteration, total_iteration, "Damage", "MicromorphicDamage", 0, 0);
-                    #endif
                 }
             }
             iteration ++;
@@ -371,7 +299,6 @@ main(int argc, char** argv)
             elements->assembleUnknownVector<cells, displacement_element, hdg>("ROD", "MicromorphicDisplacement", "Displacement", displacement_system);
             elements->assembleBindingVector<faces, displacement_element, hdg>("TOP", "TopForce", "Displacement", "Pull", displacement_system, time);
             elements->assembleBindingVector<faces, displacement_element, hdg>("LEFT", "LeftForce", "Displacement", "FixedL", displacement_system, time);
-            elements->assembleBindingVector<faces, displacement_element, hdg>("RIGHT", "RightForce", "Displacement", "FixedR", displacement_system, time);
             elements->assembleBindingVector<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system, time);
             // std::cout << "displacement res eval : " << displacement_system->getResidualEvaluation() << std::endl;
             auto res = displacement_system->getResidualEvaluation();
@@ -477,9 +404,6 @@ displacement_dissipated_energy_out_stream << step << ", "<< time << ", " << std:
             elements->reserveUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("ROD", "Displacement");
             elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
             elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
-            // <- RIGHT
-            elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("RIGHT", "RightForce");
-            // -> RIGHT
             elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
             //
             elements->reserveBehaviorData<cells>("ROD", "MicromorphicDamage");
@@ -518,7 +442,6 @@ displacement_dissipated_energy_out_stream << step << ", "<< time << ", " << std:
             elements->recoverUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("ROD", "Displacement");
             elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
             elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("RIGHT", "RightForce");
             elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
             //
             elements->recoverBehaviorData<cells>("ROD", "MicromorphicDamage");

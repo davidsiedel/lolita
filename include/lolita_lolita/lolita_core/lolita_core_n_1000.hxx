@@ -1165,6 +1165,15 @@ namespace lolita
         tag_(tag)
         {}
 
+        MeshDomain(
+            Integer dim,
+            std::basic_string<Character> && tag
+        )
+        :
+        dim_(dim),
+        tag_(std::forward<std::basic_string<Character>>(tag))
+        {}
+
         Integer dim_;
 
         std::basic_string<Character> tag_;

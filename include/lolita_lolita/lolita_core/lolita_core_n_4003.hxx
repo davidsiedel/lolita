@@ -49,7 +49,8 @@ namespace lolita
         void
         caller2(
             std::basic_string_view<Character> domain,
-            auto & fun
+            auto & fun,
+            Integer num_threads = std::thread::hardware_concurrency()
         )
         const
         {
@@ -60,7 +61,7 @@ namespace lolita
             {
                 auto constexpr t_i = t_ii.getDim();
                 // auto num_threads = std::thread::hardware_concurrency() == 0 ? 1 : (std::thread::hardware_concurrency());
-                auto num_threads = std::thread::hardware_concurrency();
+                // auto num_threads = std::thread::hardware_concurrency();
                 // auto num_threads = 2;
                 if (num_threads == 0)
                 {
@@ -179,13 +180,13 @@ namespace lolita
         // void
         // addDomain(
         //     std::basic_string_view<Character> domain_label,
-        //     std::basic_string_view<Character> sub_domain_label,
+        //     std::basic_string<Character> && sub_domain_label,
         //     Integer sub_domain_dim,
         //     std::function<Boolean(Point const &)> && function
         // )
         // const
         // {
-        //     auto sub_domain = std::make_shared<MeshDomain>(sub_domain_dim, sub_domain_label);
+        //     auto sub_domain = std::make_shared<MeshDomain>(sub_domain_dim, std::forward<std::basic_string<Character>>(sub_domain_label));
         //     auto fun = [&] (auto const & element)
         //     {
         //         if (std::forward<std::function<Boolean(Point const &)>>(function)(* element->coordinates_))
@@ -195,6 +196,27 @@ namespace lolita
         //     };
         //     caller2<t_ii>(domain_label, fun);
         // }
+
+        template<ElementType t_ii>
+        void
+        addDomain(
+            std::basic_string_view<Character> domain_label,
+            std::basic_string<Character> && sub_domain_label,
+            Integer sub_domain_dim,
+            std::function<Boolean(Point const &)> const & function
+        )
+        const
+        {
+            auto sub_domain = std::make_shared<MeshDomain>(sub_domain_dim, std::forward<std::basic_string<Character>>(sub_domain_label));
+            auto fun = [&] (auto const & element)
+            {
+                if (function(element->getCurrentCentroid()))
+                {
+                    element->domains_.push_back(sub_domain);
+                }
+            };
+            caller<t_ii>(domain_label, fun);
+        }
 
         template<ElementType t_ii>
         void
