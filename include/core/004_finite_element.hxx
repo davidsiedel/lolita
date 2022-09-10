@@ -1,15 +1,20 @@
 #ifndef B9B48BEA_09F5_41DB_84A1_45A6E708901C
 #define B9B48BEA_09F5_41DB_84A1_45A6E708901C
 
-#include "lolita_lolita/lolita_core/lolita.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_1000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_2000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_3000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_4001.hxx"
+#include "core/lolita.hxx"
+#include "core/000_physics_traits.hxx"
+#include "core/001_geometry.hxx"
+#include "core/linear_system.hxx"
+#include "core/003_quadrature.hxx"
 
 namespace lolita
 {
+        
+    template<Basis t_basis>
+    struct FiniteElementBasisTraits;
+
+    template<auto t_discretization>
+    struct HybridDiscontinuousGalerkinTraits;
 
     struct Output
     {
@@ -314,16 +319,16 @@ namespace lolita
 
     private:
     
-        using t_ElementTraits = ElementTraits<t_element, t_domain>;
+        using t_ElementTraits = ElementTraits<t_element>;
         
         template<Element t__element, Domain t__domain>
         using t_ElementPointer = std::shared_ptr<FiniteElementHolder<t__element, t__domain>>;
 
     public:
     
-        using t_InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer>;
+        using t_InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer, t_domain>;
         
-        using t_OuterNeighbors = typename t_ElementTraits::template OuterConnectivity<t_ElementPointer>;
+        using t_OuterNeighbors = typename t_ElementTraits::template OuterConnectivity<t_ElementPointer, t_domain>;
 
         template<Basis t_basis>
         using t_Basis = typename FiniteElementBasisTraits<t_basis>::template Implementation<t_element, t_domain>;
@@ -364,7 +369,7 @@ namespace lolita
         )
         requires(!t_element.isNode())
         {
-            return std::get<t_j>(std::get<t_i>(ElementTraits<t_element, t_domain>::node_connectivity_))[component_index][node_index];
+            return std::get<t_j>(std::get<t_i>(ElementTraits<t_element>::node_connectivity_))[component_index][node_index];
         }
         
         Boolean
@@ -495,7 +500,7 @@ namespace lolita
             // return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
             auto constexpr t_inner_neighbor = t_ElementTraits::template getInnerNeighbor<t_i, t_j>();
             auto constexpr ggg = t_inner_neighbor.getDim() - 1;
-            auto constexpr t_num_inner_neighbor_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<t_inner_neighbor.getDim() - 1, 0>();
+            auto constexpr t_num_inner_neighbor_nodes = ElementTraits<t_inner_neighbor>::template getNumInnerNeighbors<t_inner_neighbor.getDim() - 1, 0>();
             // auto constexpr t_inner_neighbor_num_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
             auto ori = 1;
             for (auto node_tag = 0; node_tag < t_num_inner_neighbor_nodes; node_tag++)
@@ -624,7 +629,7 @@ namespace lolita
             Integer node_tag
         )
         {
-            return algebra::View<Point const>(ElementTraits<t_element, t_domain>::reference_nodes_[node_tag].data());
+            return algebra::View<Point const>(ElementTraits<t_element>::reference_nodes_[node_tag].data());
         }
         
         Matrix<Real, 3, t_element.getNumNodes()>
@@ -647,7 +652,7 @@ namespace lolita
         getReferenceCoordinates()
         {
             using t_ReferenceCoordinates = lolita::algebra::Span<Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>;
-            return t_ReferenceCoordinates(ElementTraits<t_element, t_domain>::reference_nodes_.begin()->begin());
+            return t_ReferenceCoordinates(ElementTraits<t_element>::reference_nodes_.begin()->begin());
         }
         
         static
@@ -857,7 +862,7 @@ namespace lolita
         const
         requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(2))
         {
-            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            using SegmentQuadrature = typename QuadratureTraits<Quadrature::gauss(4)>::template Rule<Element::segment(1)>;
             auto distance = Real(0);
             auto dt = Real();
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
@@ -896,7 +901,7 @@ namespace lolita
         // const
         // requires(!t_element.isSub(t_domain, 0))
         // {
-        //     using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+        //     using SegmentQuadrature = QuadratureTraits<Element::segment(1), Quadrature::gauss(4)>;
         //     auto const current_nodes_coordinates = this->getCurrentCoordinates();
         //     for (auto q = 0; q < SegmentQuadrature::getSize(); ++q)
         //     {
@@ -936,7 +941,7 @@ namespace lolita
         const
         requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(2))
         {
-            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            using SegmentQuadrature = typename QuadratureTraits<Quadrature::gauss(4)>::template Rule<Element::segment(1)>;
             auto distance = Real(0);
             auto dt = Real();
             // -> TEST
@@ -980,7 +985,7 @@ namespace lolita
         const
         requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(1))
         {
-            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            using SegmentQuadrature = typename QuadratureTraits<Quadrature::gauss(4)>::template Rule<Element::segment(1)>;
             auto distance = Real(0);
             auto dt = Real();
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
@@ -1017,7 +1022,7 @@ namespace lolita
         const
         requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(1))
         {
-            using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+            using SegmentQuadrature = typename QuadratureTraits<Quadrature::gauss(4)>::template Rule<Element::segment(1)>;
             auto distance = Real(0);
             auto dt = Real();
             // -> TEST
@@ -1100,7 +1105,7 @@ namespace lolita
         //     }
         //     else
         //     {
-        //         using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
+        //         using SegmentQuadrature = QuadratureTraits<Element::segment(1), Quadrature::gauss(4)>;
         //         auto distance = Real(0);
         //         auto dt = Real();
         //         auto const current_nodes_coordinates = this->getCurrentCoordinates();
@@ -1569,7 +1574,7 @@ namespace lolita
             Integer index
         )
         {
-            return ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_weights_[index];
+            return QuadratureTraits<t_quadrature>::template Rule<t_element>::reference_weights_[index];
         }
         
         template<Quadrature t_quadrature>
@@ -1579,7 +1584,7 @@ namespace lolita
             Integer index
         )
         {
-            return lolita::algebra::Span<Point const>(ElementQuadratureRuleTraits<t_element, t_quadrature>::reference_points_[index].begin());
+            return lolita::algebra::Span<Point const>(QuadratureTraits<t_quadrature>::template Rule<t_element>::reference_points_[index].begin());
         }
         
         template<Quadrature t_quadrature>
@@ -1634,7 +1639,7 @@ namespace lolita
             auto constexpr t_component = t_ElementTraits ::template getInnerNeighbor<_i, _j>();
             auto p = Point();
             p.setZero();
-            auto const & elt_reference_nodes = ElementTraits<t_element, t_domain>::reference_nodes_;
+            auto const & elt_reference_nodes = ElementTraits<t_element>::reference_nodes_;
             for (auto i = 0; i < t_domain.getDim(); ++i)
             {
                 auto cpt_coordinates = Vector<Real, t_component.getNumNodes()>();
@@ -1713,7 +1718,7 @@ namespace lolita
         // {
         //     auto mass_matrix = Matrix<Real, t_Basis<t_row_basis>::getSize(), t_Basis<t_col_basis>::getSize()>();
         //     mass_matrix.setZero();
-        //     for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
+        //     for (auto i = 0; i < QuadratureTraits<t_element, t_quadrature>::getSize(); i++)
         //     {
         //         auto point = getCurrentQuadraturePoint<t_quadrature>(i);
         //         auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
@@ -2575,7 +2580,7 @@ namespace lolita
         {
             auto behavior_label = behavior->behaviour;
             quadrature_[behavior_label] = QuadratureElement::make(behavior);
-            for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
+            for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
             {
                 auto point = getCurrentQuadraturePoint<t_quadrature>(i);
                 auto r_point = getReferenceQuadraturePoint<t_quadrature>(i);

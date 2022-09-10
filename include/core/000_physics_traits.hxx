@@ -1,7 +1,7 @@
 #ifndef DA9C5D5A_13CE_4129_A31C_3550B18DAB24
 #define DA9C5D5A_13CE_4129_A31C_3550B18DAB24
 
-#include "lolita_lolita/lolita_core/lolita.hxx"
+#include "core/lolita.hxx"
 
 namespace lolita
 {

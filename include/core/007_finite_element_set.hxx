@@ -1,13 +1,15 @@
 #ifndef AB07387F_F0B7_4F5A_875F_1CC5F0206148
 #define AB07387F_F0B7_4F5A_875F_1CC5F0206148
 
-#include "lolita_lolita/lolita_core/lolita.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_1000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_2000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_3000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_4001.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_4002.hxx"
+#include "core/lolita.hxx"
+#include "core/000_physics_traits.hxx"
+#include "core/001_geometry.hxx"
+#include "core/linear_system.hxx"
+#include "core/003_quadrature.hxx"
+#include "core/004_finite_element.hxx"
+#include "core/005_finite_element_basis.hxx"
+#include "core/006_finite_element_hdg_discretization.hxx"
+// #include "core/lolita_core_n_4001.hxx"
 
 namespace lolita
 {
@@ -726,16 +728,16 @@ namespace lolita
             {
                 if constexpr (!t_element.isNode())
                 {
-                    auto const constexpr t_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
+                    auto const constexpr t_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
                     for (auto const & c_ : element->template getInnerNeighbors<t_i, t_j>())
                     {
                         os << "layer : " << t_i << " type : " << t_j << " <-- " << t_neighbor << " " << c_->getHash() << std::endl;
                     }
-                    if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<t_i>() - 1)
+                    if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
                     {
                         self.template operator()<t_element, t_i, t_j + 1>(element, self);
                     }
-                    else if constexpr (t_i < ElementTraits<t_element, t_domain>::getNumInnerNeighbors() - 1)
+                    else if constexpr (t_i < ElementTraits<t_element>::getNumInnerNeighbors() - 1)
                     {
                         self.template operator()<t_element, t_i + 1, 0>(element, self);
                     }
@@ -747,7 +749,7 @@ namespace lolita
             )
             mutable
             {
-                auto const constexpr t_neighbor = ElementTraits<t_element, t_domain>::template getOuterNeighbor<t_i, t_j>();
+                auto const constexpr t_neighbor = ElementTraits<t_element>::template getOuterNeighbor<t_domain, t_i, t_j>();
                 for (auto const & c_ : element->template getOuterNeighbors<t_i, t_j>())
                 {
                     if constexpr (!t_element.isNode() && t_i == 0)
@@ -759,11 +761,11 @@ namespace lolita
                         os << "layer : " << t_i << " type : " << t_j << " --> " << t_neighbor << " " << c_->getHash() << std::endl;
                     }
                 }
-                if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumOuterNeighbors<t_i>() - 1)
+                if constexpr (t_j < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, t_i>() - 1)
                 {
                     self.template operator()<t_element, t_i, t_j + 1>(element, self);
                 }
-                else if constexpr (t_i < ElementTraits<t_element, t_domain>::getNumOuterNeighbors() - 1)
+                else if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain>() - 1)
                 {
                     self.template operator()<t_element, t_i + 1, 0>(element, self);
                 }
@@ -1203,7 +1205,7 @@ namespace lolita
                 mutable
                 {
                     sum += node->template getOuterNeighbors<t_coordinate - 1, t_j>().size();
-                    if constexpr (t_j < ElementTraits<Element::node(), t_domain>::template getNumOuterNeighbors<t_coordinate - 1>() - 1)
+                    if constexpr (t_j < ElementTraits<Element::node()>::template getNumOuterNeighbors<t_domain, t_coordinate - 1>() - 1)
                     {
                         self.template operator()<t_j + 1>(self);
                     }

@@ -10,10 +10,10 @@
 #include <MGIS/Behaviour/Integrate.hxx>
 #include <MGIS/Behaviour/Integrate.h>
 
-#include "lolita_lolita/utility.hxx"
-#include "lolita_lolita/config.hxx"
-#include "lolita_lolita/numerics.hxx"
-#include "lolita_lolita/algebra.hxx"
+#include "utility.hxx"
+#include "config.hxx"
+#include "numerics.hxx"
+#include "algebra.hxx"
 
 namespace lolita
 {
@@ -249,6 +249,16 @@ namespace lolita
         const
         {
             return rule_ == Rule::Gauss;
+        }
+        
+        constexpr
+        Boolean
+        isGauss(
+            Integer ord
+        )
+        const
+        {
+            return rule_ == Rule::Gauss && ord_ == ord;
         }
         
         constexpr

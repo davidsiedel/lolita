@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <filesystem>
 
-#include "lolita_lolita/config.hxx"
+#include "config.hxx"
 
 namespace lolita::utility
 {

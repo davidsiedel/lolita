@@ -3,7 +3,7 @@
 
 #include <limits>
 
-#include "lolita_lolita/utility.hxx"
+#include "utility.hxx"
 
 namespace lolita::numerics
 {

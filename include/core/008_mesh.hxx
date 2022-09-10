@@ -1,14 +1,15 @@
 #ifndef CB51704E_040A_4B3D_AE3C_46C0DE3B8543
 #define CB51704E_040A_4B3D_AE3C_46C0DE3B8543
 
-#include "lolita_lolita/lolita_core/lolita.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_1000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_2000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_3000.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_4001.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_4002.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_4003.hxx"
+#include "core/lolita.hxx"
+#include "core/000_physics_traits.hxx"
+#include "core/001_geometry.hxx"
+#include "core/linear_system.hxx"
+#include "core/003_quadrature.hxx"
+#include "core/004_finite_element.hxx"
+#include "core/005_finite_element_basis.hxx"
+#include "core/006_finite_element_hdg_discretization.hxx"
+#include "core/007_finite_element_set.hxx"
 
 namespace lolita
 {
@@ -65,7 +66,7 @@ namespace lolita
             Integer j
         )
         {
-            return std::get<t_j>(std::get<t_i>(ElementTraits<t_element, t_domain>::node_connectivity_))[i][j];
+            return std::get<t_j>(std::get<t_i>(ElementTraits<t_element>::node_connectivity_))[i][j];
         }
 
         static
@@ -96,14 +97,14 @@ namespace lolita
         )
         const
         {
-            auto const constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
+            auto const constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
             auto const constexpr t_is_initialized = t_i == 0 && t_j == 0;
             auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
-            auto const constexpr t_node_coordinates = ElementTraits<t_element, t_domain>::template getInnerNeighborCoordinates<Element::node()>();
+            auto const constexpr t_node_coordinates = ElementTraits<t_element>::template getInnerNeighborCoordinates<Element::node()>();
             auto const constexpr t_inner_neighbor_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_inner_neighbor>();
-            auto const constexpr t_neighbour_coordinates = ElementTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
+            auto const constexpr t_neighbour_coordinates = ElementTraits<t_inner_neighbor>::template getOuterNeighborCoordinates<t_domain, t_element>();
             auto & inner_neighbors = element_map.template getElements<t_inner_neighbor_coordinates.dim_, t_inner_neighbor_coordinates.tag_>();
-            for (Integer i = 0; i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<t_i, t_j>(); ++i)
+            for (Integer i = 0; i < ElementTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>(); ++i)
             {
                 auto inner_neighbor_hash = std::basic_string<Character>();
                 if constexpr(!t_inner_neighbor.isNode())
@@ -128,11 +129,11 @@ namespace lolita
                 ptr_element->template getInnerNeighbors<t_i, t_j>()[i] = inner_neighbor;
                 inner_neighbor->template getOuterNeighbors<t_neighbour_coordinates.dim_, t_neighbour_coordinates.tag_>().push_back(ptr_element);
             }
-            if constexpr (t_j < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<t_i>() - 1)
+            if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
             {
                 setElement<t_i, t_j + 1>(element_map, ptr_element);
             }
-            else if constexpr (t_i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<>() - 1)
+            else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
             {
                 setElement<t_i + 1, 0>(element_map, ptr_element);
             }
@@ -182,9 +183,9 @@ namespace lolita
         )
         {
             auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
-            auto const constexpr t_node_coordinates = ElementTraits<t_element, t_domain>::template getInnerNeighborCoordinates<Element::node()>();
+            auto const constexpr t_node_coordinates = ElementTraits<t_element>::template getInnerNeighborCoordinates<Element::node()>();
             auto const & element_nds = ptr_element->template getInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>();
-            for (auto i = 0; i < ElementTraits<t_element, t_domain>::template getNumInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>(); ++i)
+            for (auto i = 0; i < ElementTraits<t_element>::template getNumInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>(); ++i)
             {
                 auto const & nde = element_nds[i];
                 auto const & ngs = nde->template getOuterNeighbors<t_element_coordinates.dim_ - 1, t_i>();

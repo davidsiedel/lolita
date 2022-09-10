@@ -15,10 +15,9 @@
 #include <Eigen/Geometry>
 #include <Eigen/LU>
 #include <Eigen/PardisoSupport>
-// #include <Eigen/UmfPackSupport>
 #include <Eigen/Sparse>
 
-#include "lolita_lolita/utility.hxx"
+#include "utility.hxx"
 
 namespace lolita
 {    

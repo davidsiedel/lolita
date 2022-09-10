@@ -1,8 +1,8 @@
 #ifndef EF2B4A77_EED2_4520_9191_3588BA9717A9
 #define EF2B4A77_EED2_4520_9191_3588BA9717A9
 
-#include "lolita_lolita/lolita_core/lolita.hxx"
-#include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
+#include "core/lolita.hxx"
+#include "core/000_physics_traits.hxx"
 
 namespace lolita
 {
@@ -410,40 +410,484 @@ namespace lolita
 
     };
     
-    template<template<Element, auto...> typename t_T, auto... t_args>
+    template<template<Element, Domain> typename t_T, Domain t_domain>
     using Points = std::tuple<
-        t_T<Element::node(), t_args...>
+        t_T<Element::node(), t_domain>
     >;
     
-    template<template<Element, auto...> typename t_T, auto... t_args>
+    template<template<Element, Domain> typename t_T, Domain t_domain>
     using Curves = std::tuple<
-        t_T<Element::segment(1), t_args...>
+        t_T<Element::segment(1), t_domain>
     >;
     
-    template<template<Element, auto...> typename t_T, auto... t_args>
+    template<template<Element, Domain> typename t_T, Domain t_domain>
     using Facets = std::tuple<
-        t_T<Element::triangle(1), t_args...>,
-        t_T<Element::quadrangle(1), t_args...>
+        t_T<Element::triangle(1), t_domain>,
+        t_T<Element::quadrangle(1), t_domain>
     >;
     
-    template<template<Element, auto...> typename t_T, auto... t_args>
+    template<template<Element, Domain> typename t_T, Domain t_domain>
     using Solids = std::tuple<
-        t_T<Element::tetrahedron(1), t_args...>
+        t_T<Element::tetrahedron(1), t_domain>
     >;
 
-    template<template<Element, auto...> typename t_T, auto... t_args>
-    using ALLElements = std::tuple<
-        Points<t_T, t_args...>,
-        Curves<t_T, t_args...>,
-        Facets<t_T, t_args...>,
-        Solids<t_T, t_args...>
+    template<template<Element, Domain> typename t_T, Domain t_domain>
+    using ElementLibrary = std::tuple<
+        Points<t_T, t_domain>,
+        Curves<t_T, t_domain>,
+        Facets<t_T, t_domain>,
+        Solids<t_T, t_domain>
     >;
 
-    template<template<Element, auto...> typename t_T, Domain t_domain>
-    using Elements = lolita::utility::tuple_slice_t<ALLElements<t_T, t_domain>, 0, t_domain.getDim() + 1>;
+    template<template<Element, Domain> typename t_T, Domain t_domain>
+    using Elements = lolita::utility::tuple_slice_t<ElementLibrary<t_T, t_domain>, 0, t_domain.getDim() + 1>;
     
     template<Element t_element>
     struct ElementTraits;
+    
+    template<Element t_element, auto...>
+    using ElementNodeConnectivity = std::array<Integer, t_element.getNumNodes()>;
+    
+    template<Element t_element>
+    struct ElementInnerGeometryTraits;
+    
+    template<Element t_element>
+    requires (t_element.isNode())
+    struct ElementInnerGeometryTraits<t_element>
+    {
+        
+        template<template<Element, auto...> typename t_T, auto... t_args>
+        using InnerConnectivity = std::tuple<>;
+
+    private:
+
+        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+
+    public:
+    
+        static
+        Real
+        getShapeMappingEvaluation(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point
+        )
+        {
+            return nodal_field_values(0);
+        }
+        
+        static
+        Real
+        getShapeMappingDerivative(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point,
+            Integer derivative_direction
+        )
+        {
+            return Real(0);
+        }
+        
+        NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{};
+        
+        std::array<std::array<Real, 3>, 1> const static constexpr reference_nodes_ = {
+                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
+        };
+
+    };
+    
+    template<Element t_element>
+    requires (t_element.isSegment(1))
+    struct ElementInnerGeometryTraits<t_element>
+    {
+        
+        template<template<Element, auto...> typename t_T, auto... t_args>
+        using InnerConnectivity = std::tuple<
+            std::tuple<
+                std::array<t_T<Element::node(), t_args...>, 2>
+            >
+        >;
+
+    private:
+
+        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+
+    public:
+    
+        static
+        Real
+        getShapeMappingEvaluation(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point
+        )
+        {
+            auto value = Real(0);
+            value += nodal_field_values(0) * (1.0 / 2.0) * (1.0 - reference_point(0));
+            value += nodal_field_values(1) * (1.0 / 2.0) * (1.0 + reference_point(0));
+            return value;
+        }
+        
+        static
+        Real
+        getShapeMappingDerivative(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point,
+            Integer derivative_direction
+        )
+        {
+            assert(derivative_direction == 0);
+            auto value = Real(0);
+            value += -nodal_field_values(0) * (1.0 / 2.0);
+            value += +nodal_field_values(1) * (1.0 / 2.0);
+            return value;
+        }
+        
+        NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{
+            {
+                {
+                    0,
+                    1,
+                }
+            }
+        };
+        
+        std::array<std::array<Real, 3>, 2> const static constexpr reference_nodes_ = {
+            -1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+            +1.0000000000000000, +0.0000000000000000, +0.0000000000000000
+        };
+
+    };
+    
+    template<Element t_element>
+    requires (t_element.isTriangle(1))
+    struct ElementInnerGeometryTraits<t_element>
+    {
+        
+        template<template<Element, auto...> typename t_T, auto... t_args>
+        using InnerConnectivity = std::tuple<
+            std::tuple<
+                std::array<t_T<Element::segment(1), t_args...>, 3>
+            >,
+            std::tuple<
+                std::array<t_T<Element::node(), t_args...>, 3>
+            >
+        >;
+
+    private:
+
+        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+
+    public:
+    
+        static
+        Real
+        getShapeMappingEvaluation(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point
+        )
+        {
+            auto value = Real(0);
+            value += nodal_field_values(0) * (1.0 - reference_point(0) - reference_point(1));
+            value += nodal_field_values(1) * reference_point(0);
+            value += nodal_field_values(2) * reference_point(1);
+            return value;
+        }
+        
+        static
+        Real
+        getShapeMappingDerivative(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point,
+            Integer derivative_direction
+        )
+        {
+            assert(0 <= derivative_direction <= 1);
+            auto value = Real(0);
+            if (derivative_direction == 0)
+            {
+                value += -nodal_field_values(0);
+                value += +nodal_field_values(1);
+                value += +0.0;
+            }
+            else
+            {
+                value += -nodal_field_values(0);
+                value += +0.0;
+                value += +nodal_field_values(2);
+            }
+            return value;
+        }
+
+        NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{
+            {
+                {
+                    0, 1,
+                    1, 2,
+                    2, 0,
+                }
+            },
+            {
+                {
+                    0,
+                    1,
+                    2,
+                }
+            }
+        };
+        
+        std::array<std::array<Real, 3>, 3> const static constexpr reference_nodes_ = {
+            +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+            +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+            +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
+        };
+
+    };
+    
+    template<Element t_element>
+    requires (t_element.isQuadrangle(1))
+    struct ElementInnerGeometryTraits<t_element>
+    {
+        
+        template<template<Element, auto...> typename t_T, auto... t_args>
+        using InnerConnectivity = std::tuple<
+            std::tuple<
+                std::array<t_T<Element::segment(1), t_args...>, 4>
+            >,
+            std::tuple<
+                std::array<t_T<Element::node(), t_args...>, 4>
+            >
+        >;
+
+    private:
+
+        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+
+    public:
+    
+        static
+        Real
+        getShapeMappingEvaluation(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point
+        )
+        {
+            auto value = Real(0);
+            value += nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(0)) * (1.0 - reference_point(1));
+            value += nodal_field_values(1) * (1.0 / 4.0) * (1.0 + reference_point(0)) * (1.0 - reference_point(1));
+            value += nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(0)) * (1.0 + reference_point(1));
+            value += nodal_field_values(3) * (1.0 / 4.0) * (1.0 - reference_point(0)) * (1.0 + reference_point(1));
+            return value;
+        }
+        
+        static
+        Real
+        getShapeMappingDerivative(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point,
+            Integer derivative_direction
+        )
+        {
+            assert(0 <= derivative_direction <= 1);
+            auto value = Real(0);
+            if (derivative_direction == 0)
+            {
+                value += -nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(1));
+                value += +nodal_field_values(1) * (1.0 / 4.0) * (1.0 - reference_point(1));
+                value += +nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(1));
+                value += -nodal_field_values(3) * (1.0 / 4.0) * (1.0 + reference_point(1));
+            }
+            else
+            {
+                value += -nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(0));
+                value += -nodal_field_values(1) * (1.0 / 4.0) * (1.0 + reference_point(0));
+                value += +nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(0));
+                value += +nodal_field_values(3) * (1.0 / 4.0) * (1.0 - reference_point(0));
+            }
+            return value;
+        }
+        
+        NodeConnectivity const static constexpr node_connectivity_ = {
+            {
+                {
+                    0, 1,
+                    1, 2,
+                    2, 3,
+                    3, 0,
+                }
+            },
+            {
+                {
+                    0,
+                    1,
+                    2,
+                    3,
+                }
+            }
+        };
+        
+        std::array<std::array<Real, 3>, 4> const static constexpr reference_nodes_ = {
+            -1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
+            +1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
+            +1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
+            -1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
+        };
+
+    };
+    
+    template<Element t_element>
+    requires (t_element.isTetrahedron(1))
+    struct ElementInnerGeometryTraits<t_element>
+    {
+
+        template<template<Element, auto...> typename t_T, auto... t_args>
+        using InnerConnectivity = std::tuple<
+            std::tuple<
+                std::array<t_T<Element::triangle(1), t_args...>, 4>
+            >,
+            std::tuple<
+                std::array<t_T<Element::segment(1), t_args...>, 6>
+            >,
+            std::tuple<
+                std::array<t_T<Element::node(), t_args...>, 4>
+            >
+        >;
+
+    private:
+
+        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+
+    public:
+    
+        static
+        Real
+        getShapeMappingEvaluation(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point
+        )
+        {
+            auto value = Real(0);
+            return value;
+        }
+        
+        static
+        Real
+        getShapeMappingDerivative(
+            VectorConcept<Real> auto const & nodal_field_values,
+            PointConcept auto const & reference_point,
+            Integer derivative_direction
+        )
+        {
+            assert(0 <= derivative_direction <= 2);
+            auto value = Real(0);
+            if (derivative_direction == 0)
+            {
+
+            }
+            else if (derivative_direction == 1)
+            {
+
+            }
+            return value;
+        }
+        
+        NodeConnectivity const static constexpr node_connectivity_ = {
+            {
+                {
+                    0, 1, 3,
+                    0, 3, 2,
+                    0, 2, 1,
+                    1, 2, 3,
+                }
+            },
+            {
+                {
+                    0, 1,
+                    1, 2,
+                    2, 0,
+                    0, 3,
+                    3, 2,
+                    1, 3,
+                }
+            },
+            {
+                {
+                    0,
+                    1,
+                    2,
+                    3,
+                }
+            }
+        };
+        
+        std::array<std::array<Real, 3>, 4> const static constexpr reference_nodes_ = {
+            +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+            +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+            +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
+            +0.0000000000000000, +0.0000000000000000, +1.0000000000000000,
+        };
+
+    };
+        
+    template<Element t_element>
+    struct ElementOuterGeometryTraits;
+    
+    template<Element t_element>
+    requires(t_element.isNode())
+    struct ElementOuterGeometryTraits<t_element>
+    {
+
+    private:
+
+        template<template<Element, Domain> typename t_T>
+        struct OuterConnectivityTraits
+        {
+
+        private:
+
+            template<Element t__element, Domain t__domain>
+            using NeighbourVector = std::vector<t_T<t__element, t__domain>>;
+
+        public:
+
+            template<Domain t_domain>
+            using OuterConnectivity = lolita::utility::tuple_slice_t<Elements<NeighbourVector, t_domain>, 1, t_domain.getDim() + 1>;
+
+        };
+
+    public:
+    
+        template<template<Element, Domain> typename t_T, Domain t__domain>
+        using OuterConnectivity = typename OuterConnectivityTraits<t_T>::template OuterConnectivity<t__domain>;
+
+    };
+    
+    template<Element t_element>
+    requires(!t_element.isNode())
+    struct ElementOuterGeometryTraits<t_element>
+    {
+
+    private:
+
+        template<template<Element, Domain> typename t_T>
+        struct OuterConnectivityTraits
+        {
+
+        private:
+
+            template<Element t__element, Domain t__domain>
+            using NeighbourVector = std::vector<t_T<t__element, t__domain>>;
+
+        public:
+
+            template<Domain t_domain>
+            using OuterConnectivity = lolita::utility::tuple_slice_t<Elements<NeighbourVector, t_domain>, t_element.getDim(), t_domain.getDim() + 1>;
+
+        };
+
+    public:
+    
+        template<template<Element, Domain> typename t_T, Domain t__domain>
+        using OuterConnectivity = typename OuterConnectivityTraits<t_T>::template OuterConnectivity<t__domain>;
+
+    };
 
     namespace detail
     {
@@ -462,471 +906,18 @@ namespace lolita
         };
 
     }
-
-    namespace element_geometry
-    {
-        
-        template<Element t_element>
-        struct ElementOuterGeometryTraits;
-        
-        template<Element t_element>
-        requires(t_element.isNode())
-        struct ElementOuterGeometryTraits<t_element>
-        {
-
-        private:
-
-            template<template<Element, auto...> typename t_T>
-            struct OuterConnectivityTraits
-            {
-
-            private:
-
-                template<Element t__element, auto... t__args>
-                using NeighbourVector = std::vector<t_T<t__element, t__args...>>;
-
-            public:
-
-                template<Domain t_domain>
-                using OuterConnectivity = lolita::utility::tuple_slice_t<Elements<NeighbourVector, t_domain>, 1, t_domain.getDim() + 1>;
-
-            };
-
-        public:
-        
-            template<template<Element, auto...> typename t_T, Domain t__domain>
-            using OuterConnectivity = typename OuterConnectivityTraits<t_T>::template OuterConnectivity<t__domain>;
-
-        };
-        
-        template<Element t_element>
-        requires(!t_element.isNode())
-        struct ElementOuterGeometryTraits<t_element>
-        {
-
-        private:
-
-            template<template<Element, auto...> typename t_T>
-            struct OuterConnectivityTraits
-            {
-
-            private:
-
-                template<Element t__element, auto... t__args>
-                using NeighbourVector = std::vector<t_T<t__element, t__args...>>;
-
-            public:
-
-                template<Domain t_domain>
-                using OuterConnectivity = lolita::utility::tuple_slice_t<Elements<NeighbourVector, t_domain>, t_element.getDim(), t_domain.getDim() + 1>;
-
-            };
-
-        public:
-        
-            template<template<Element, auto...> typename t_T, Domain t__domain>
-            using OuterConnectivity = typename OuterConnectivityTraits<t_T>::template OuterConnectivity<t__domain>;
-
-        };
-        
-        template<Element t_element, auto...>
-        using ElementNodeConnectivity = std::array<Integer, t_element.getNumNodes()>;
-        
-        template<Element t_element>
-        struct ElementInnerGeometryTraits;
-        
-        template<Element t_element>
-        requires (t_element.isNode())
-        struct ElementInnerGeometryTraits<t_element>
-        {
-            
-            template<template<Element, auto...> typename t_T, auto... t_args>
-            using InnerConnectivity = std::tuple<>;
-
-        private:
-
-            using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
-
-        public:
-        
-            static
-            Real
-            getShapeMappingEvaluation(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point
-            )
-            {
-                return nodal_field_values(0);
-            }
-            
-            static
-            Real
-            getShapeMappingDerivative(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point,
-                Integer derivative_direction
-            )
-            {
-                return Real(0);
-            }
-            
-            NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{};
-            
-            std::array<std::array<Real, 3>, 1> const static constexpr reference_nodes_ = {
-                    +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
-            };
-
-        };
-        
-        template<Element t_element>
-        requires (t_element.isSegment(1))
-        struct ElementInnerGeometryTraits<t_element>
-        {
-            
-            template<template<Element, auto...> typename t_T, auto... t_args>
-            using InnerConnectivity = std::tuple<
-                std::tuple<
-                    std::array<t_T<Element::node(), t_args...>, 2>
-                >
-            >;
-
-        private:
-
-            using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
-
-        public:
-        
-            static
-            Real
-            getShapeMappingEvaluation(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point
-            )
-            {
-                auto value = Real(0);
-                value += nodal_field_values(0) * (1.0 / 2.0) * (1.0 - reference_point(0));
-                value += nodal_field_values(1) * (1.0 / 2.0) * (1.0 + reference_point(0));
-                return value;
-            }
-            
-            static
-            Real
-            getShapeMappingDerivative(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point,
-                Integer derivative_direction
-            )
-            {
-                assert(derivative_direction == 0);
-                auto value = Real(0);
-                value += -nodal_field_values(0) * (1.0 / 2.0);
-                value += +nodal_field_values(1) * (1.0 / 2.0);
-                return value;
-            }
-            
-            NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{
-                {
-                    {
-                        0,
-                        1,
-                    }
-                }
-            };
-            
-            std::array<std::array<Real, 3>, 2> const static constexpr reference_nodes_ = {
-                -1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                +1.0000000000000000, +0.0000000000000000, +0.0000000000000000
-            };
-
-        };
-        
-        template<Element t_element>
-        requires (t_element.isTriangle(1))
-        struct ElementInnerGeometryTraits<t_element>
-        {
-            
-            template<template<Element, auto...> typename t_T, auto... t_args>
-            using InnerConnectivity = std::tuple<
-                std::tuple<
-                    std::array<t_T<Element::segment(1), t_args...>, 3>
-                >,
-                std::tuple<
-                    std::array<t_T<Element::node(), t_args...>, 3>
-                >
-            >;
-
-        private:
-
-            using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
-
-        public:
-        
-            static
-            Real
-            getShapeMappingEvaluation(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point
-            )
-            {
-                auto value = Real(0);
-                value += nodal_field_values(0) * (1.0 - reference_point(0) - reference_point(1));
-                value += nodal_field_values(1) * reference_point(0);
-                value += nodal_field_values(2) * reference_point(1);
-                return value;
-            }
-            
-            static
-            Real
-            getShapeMappingDerivative(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point,
-                Integer derivative_direction
-            )
-            {
-                assert(0 <= derivative_direction <= 1);
-                auto value = Real(0);
-                if (derivative_direction == 0)
-                {
-                    value += -nodal_field_values(0);
-                    value += +nodal_field_values(1);
-                    value += +0.0;
-                }
-                else
-                {
-                    value += -nodal_field_values(0);
-                    value += +0.0;
-                    value += +nodal_field_values(2);
-                }
-                return value;
-            }
-
-            NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{
-                {
-                    {
-                        0, 1,
-                        1, 2,
-                        2, 0,
-                    }
-                },
-                {
-                    {
-                        0,
-                        1,
-                        2,
-                    }
-                }
-            };
-            
-            std::array<std::array<Real, 3>, 3> const static constexpr reference_nodes_ = {
-                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
-            };
-
-        };
-        
-        template<Element t_element>
-        requires (t_element.isQuadrangle(1))
-        struct ElementInnerGeometryTraits<t_element>
-        {
-            
-            template<template<Element, auto...> typename t_T, auto... t_args>
-            using InnerConnectivity = std::tuple<
-                std::tuple<
-                    std::array<t_T<Element::segment(1), t_args...>, 4>
-                >,
-                std::tuple<
-                    std::array<t_T<Element::node(), t_args...>, 4>
-                >
-            >;
-
-        private:
-
-            using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
-
-        public:
-        
-            static
-            Real
-            getShapeMappingEvaluation(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point
-            )
-            {
-                auto value = Real(0);
-                value += nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(0)) * (1.0 - reference_point(1));
-                value += nodal_field_values(1) * (1.0 / 4.0) * (1.0 + reference_point(0)) * (1.0 - reference_point(1));
-                value += nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(0)) * (1.0 + reference_point(1));
-                value += nodal_field_values(3) * (1.0 / 4.0) * (1.0 - reference_point(0)) * (1.0 + reference_point(1));
-                return value;
-            }
-            
-            static
-            Real
-            getShapeMappingDerivative(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point,
-                Integer derivative_direction
-            )
-            {
-                assert(0 <= derivative_direction <= 1);
-                auto value = Real(0);
-                if (derivative_direction == 0)
-                {
-                    value += -nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(1));
-                    value += +nodal_field_values(1) * (1.0 / 4.0) * (1.0 - reference_point(1));
-                    value += +nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(1));
-                    value += -nodal_field_values(3) * (1.0 / 4.0) * (1.0 + reference_point(1));
-                }
-                else
-                {
-                    value += -nodal_field_values(0) * (1.0 / 4.0) * (1.0 - reference_point(0));
-                    value += -nodal_field_values(1) * (1.0 / 4.0) * (1.0 + reference_point(0));
-                    value += +nodal_field_values(2) * (1.0 / 4.0) * (1.0 + reference_point(0));
-                    value += +nodal_field_values(3) * (1.0 / 4.0) * (1.0 - reference_point(0));
-                }
-                return value;
-            }
-            
-            NodeConnectivity const static constexpr node_connectivity_ = {
-                {
-                    {
-                        0, 1,
-                        1, 2,
-                        2, 3,
-                        3, 0,
-                    }
-                },
-                {
-                    {
-                        0,
-                        1,
-                        2,
-                        3,
-                    }
-                }
-            };
-            
-            std::array<std::array<Real, 3>, 4> const static constexpr reference_nodes_ = {
-                -1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
-                +1.0000000000000000, -1.0000000000000000, +0.0000000000000000,
-                +1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
-                -1.0000000000000000, +1.0000000000000000, +0.0000000000000000,
-            };
-
-        };
-        
-        template<Element t_element>
-        requires (t_element.isTetrahedron(1))
-        struct ElementInnerGeometryTraits<t_element>
-        {
-
-            template<template<Element, auto...> typename t_T, auto... t_args>
-            using InnerConnectivity = std::tuple<
-                std::tuple<
-                    std::array<t_T<Element::triangle(1), t_args...>, 4>
-                >,
-                std::tuple<
-                    std::array<t_T<Element::segment(1), t_args...>, 6>
-                >,
-                std::tuple<
-                    std::array<t_T<Element::node(), t_args...>, 4>
-                >
-            >;
-
-        private:
-
-            using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
-
-        public:
-        
-            static
-            Real
-            getShapeMappingEvaluation(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point
-            )
-            {
-                auto value = Real(0);
-                return value;
-            }
-            
-            static
-            Real
-            getShapeMappingDerivative(
-                VectorConcept<Real> auto const & nodal_field_values,
-                PointConcept auto const & reference_point,
-                Integer derivative_direction
-            )
-            {
-                assert(0 <= derivative_direction <= 2);
-                auto value = Real(0);
-                if (derivative_direction == 0)
-                {
-
-                }
-                else if (derivative_direction == 1)
-                {
-
-                }
-                return value;
-            }
-            
-            NodeConnectivity const static constexpr node_connectivity_ = {
-                {
-                    {
-                        0, 1, 3,
-                        0, 3, 2,
-                        0, 2, 1,
-                        1, 2, 3,
-                    }
-                },
-                {
-                    {
-                        0, 1,
-                        1, 2,
-                        2, 0,
-                        0, 3,
-                        3, 2,
-                        1, 3,
-                    }
-                },
-                {
-                    {
-                        0,
-                        1,
-                        2,
-                        3,
-                    }
-                }
-            };
-            
-            std::array<std::array<Real, 3>, 4> const static constexpr reference_nodes_ = {
-                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                +1.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-                +0.0000000000000000, +1.0000000000000000, +0.0000000000000000,
-                +0.0000000000000000, +0.0000000000000000, +1.0000000000000000,
-            };
-
-        };
-
-    }
     
     template<Element t_element>
-    struct ElementTraits
-    :
-    element_geometry::ElementOuterGeometryTraits<t_element>,
-    element_geometry::ElementInnerGeometryTraits<t_element>
+    struct ElementTraits : ElementOuterGeometryTraits<t_element>, ElementInnerGeometryTraits<t_element>
     {
 
     private:
 
-        template<Domain t_domain>
-        using t_ElementOuterNeighborhood = typename ElementTraits<t_element>::template OuterConnectivity<detail::ElementView, t_domain>;
-
         using t_ElementInnerNeighborhood = typename ElementTraits<t_element>::template InnerConnectivity<detail::ElementView>;
 
-        // using t_Elements = ALLElements<detail::ElementView>;
+        template<Domain t_domain>
+        using t_ElementOuterNeighborhood = typename ElementTraits<t_element>::template OuterConnectivity<detail::ElementView, t_domain>;
+        
         template<Domain t_domain>
         using t_Elements = Elements<detail::ElementView, t_domain>;
 
@@ -1049,7 +1040,7 @@ namespace lolita
             )
             constexpr mutable
             {
-                using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood<t_domain>>>;
+                using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood<t_domain>>>::value_type;
                 if (NeighbourT::getElement() == t_neighbour)
                 {
                     coordinates.dim_ = t_i;
@@ -1073,7 +1064,7 @@ namespace lolita
         Element
         getOuterNeighbor()
         {
-            return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood<t_domain>>>::getElement();
+            return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood<t_domain>>>::value_type::getElement();
         }
         
         template<Domain t_domain, Integer... t_i>
