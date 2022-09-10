@@ -1,5 +1,5 @@
-#ifndef D95DBEAA_910F_4201_AFBF_FEDDCE22F29E
-#define D95DBEAA_910F_4201_AFBF_FEDDCE22F29E
+#ifndef EF2B4A77_EED2_4520_9191_3588BA9717A9
+#define EF2B4A77_EED2_4520_9191_3588BA9717A9
 
 #include "lolita_lolita/lolita_core/lolita.hxx"
 #include "lolita_lolita/lolita_core/lolita_core_n_0000.hxx"
@@ -410,50 +410,45 @@ namespace lolita
 
     };
     
-    template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
+    template<template<Element, auto...> typename t_T, auto... t_args>
     using Points = std::tuple<
-        t_T<Element::node(), t_domain, t_args...>
+        t_T<Element::node(), t_args...>
     >;
     
-    template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
+    template<template<Element, auto...> typename t_T, auto... t_args>
     using Curves = std::tuple<
-        t_T<Element::segment(1), t_domain, t_args...>
+        t_T<Element::segment(1), t_args...>
     >;
     
-    template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
+    template<template<Element, auto...> typename t_T, auto... t_args>
     using Facets = std::tuple<
-        t_T<Element::triangle(1), t_domain, t_args...>,
-        t_T<Element::quadrangle(1), t_domain, t_args...>
+        t_T<Element::triangle(1), t_args...>,
+        t_T<Element::quadrangle(1), t_args...>
     >;
     
-    template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
+    template<template<Element, auto...> typename t_T, auto... t_args>
     using Solids = std::tuple<
-        t_T<Element::tetrahedron(1), t_domain, t_args...>
+        t_T<Element::tetrahedron(1), t_args...>
     >;
 
-    namespace detail
-    {
+    template<template<Element, auto...> typename t_T, auto... t_args>
+    using ALLElements = std::tuple<
+        Points<t_T, t_args...>,
+        Curves<t_T, t_args...>,
+        Facets<t_T, t_args...>,
+        Solids<t_T, t_args...>
+    >;
 
-        template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
-        using Elements = std::tuple<
-            Points<t_T, t_domain, t_args...>,
-            Curves<t_T, t_domain, t_args...>,
-            Facets<t_T, t_domain, t_args...>,
-            Solids<t_T, t_domain, t_args...>
-        >;
-
-    }
-
-    template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
-    using Elements = lolita::utility::tuple_slice_t<detail::Elements<t_T, t_domain, t_args...>, 0, t_domain.dim_ + 1>;
+    template<template<Element, auto...> typename t_T, Domain t_domain>
+    using Elements = lolita::utility::tuple_slice_t<ALLElements<t_T, t_domain>, 0, t_domain.getDim() + 1>;
     
-    template<Element t_element, Domain t_domain>
+    template<Element t_element>
     struct ElementTraits;
 
     namespace detail
     {
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element, auto...>
         struct ElementView
         {
             
@@ -471,77 +466,81 @@ namespace lolita
     namespace element_geometry
     {
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element>
         struct ElementOuterGeometryTraits;
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element>
         requires(t_element.isNode())
-        struct ElementOuterGeometryTraits<t_element, t_domain>
+        struct ElementOuterGeometryTraits<t_element>
         {
 
         private:
 
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
-            struct OuterConnectivityTraits {
+            template<template<Element, auto...> typename t_T>
+            struct OuterConnectivityTraits
+            {
 
             private:
 
-                template<Element t__element, Domain t__domain, auto... t__args>
-                using NeighbourVector = std::vector<t_T<t__element, t__domain, t__args...>>;
+                template<Element t__element, auto... t__args>
+                using NeighbourVector = std::vector<t_T<t__element, t__args...>>;
 
             public:
 
-                using OuterConnectivity = lolita::utility::tuple_slice_t<Elements<NeighbourVector, t_domain, t_args...>, 1, t_domain.dim_ + 1>;
+                template<Domain t_domain>
+                using OuterConnectivity = lolita::utility::tuple_slice_t<Elements<NeighbourVector, t_domain>, 1, t_domain.getDim() + 1>;
 
             };
 
         public:
         
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
-            using OuterConnectivity = typename OuterConnectivityTraits<t_T, t_args...>::OuterConnectivity;
+            template<template<Element, auto...> typename t_T, Domain t__domain>
+            using OuterConnectivity = typename OuterConnectivityTraits<t_T>::template OuterConnectivity<t__domain>;
 
         };
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element>
         requires(!t_element.isNode())
-        struct ElementOuterGeometryTraits<t_element, t_domain>
+        struct ElementOuterGeometryTraits<t_element>
         {
 
         private:
 
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
-            struct OuterConnectivityTraits {
+            template<template<Element, auto...> typename t_T>
+            struct OuterConnectivityTraits
+            {
 
             private:
 
-                template<Element t__element, Domain t__domain, auto... t__args>
-                using NeighbourVector = std::vector<t_T<t__element, t__domain, t__args...>>;
+                template<Element t__element, auto... t__args>
+                using NeighbourVector = std::vector<t_T<t__element, t__args...>>;
 
             public:
 
-                using OuterConnectivity = lolita::utility::tuple_slice_t<Elements<NeighbourVector, t_domain, t_args...>, t_element.dim_, t_domain.dim_ + 1>;
+                template<Domain t_domain>
+                using OuterConnectivity = lolita::utility::tuple_slice_t<Elements<NeighbourVector, t_domain>, t_element.getDim(), t_domain.getDim() + 1>;
 
             };
 
         public:
         
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
-            using OuterConnectivity = typename OuterConnectivityTraits<t_T, t_args...>::OuterConnectivity;
+            template<template<Element, auto...> typename t_T, Domain t__domain>
+            using OuterConnectivity = typename OuterConnectivityTraits<t_T>::template OuterConnectivity<t__domain>;
 
         };
-        
-        template<Element t_element, Domain t_domain>
-        struct ElementInnerGeometryTraits;
         
         template<Element t_element, auto...>
         using ElementNodeConnectivity = std::array<Integer, t_element.getNumNodes()>;
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element>
+        struct ElementInnerGeometryTraits;
+        
+        template<Element t_element>
         requires (t_element.isNode())
-        struct ElementInnerGeometryTraits<t_element, t_domain>
+        struct ElementInnerGeometryTraits<t_element>
         {
             
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
+            template<template<Element, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<>;
 
         private:
@@ -553,8 +552,8 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                VectorConcept<Real, t_element.getNumNodes()> auto const & nodal_field_values,
-                Point const &reference_point
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point
             )
             {
                 return nodal_field_values(0);
@@ -563,8 +562,8 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                VectorConcept<Real, t_element.getNumNodes()> auto const & nodal_field_values,
-                Point const &reference_point,
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point,
                 Integer derivative_direction
             )
             {
@@ -579,15 +578,15 @@ namespace lolita
 
         };
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element>
         requires (t_element.isSegment(1))
-        struct ElementInnerGeometryTraits<t_element, t_domain>
+        struct ElementInnerGeometryTraits<t_element>
         {
             
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
+            template<template<Element, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
                 std::tuple<
-                    std::array<t_T<Element::node(), t_domain, t_args...>, 2>
+                    std::array<t_T<Element::node(), t_args...>, 2>
                 >
             >;
 
@@ -600,8 +599,8 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                VectorConcept<Real, t_element.getNumNodes()> auto const & nodal_field_values,
-                Point const &reference_point
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point
             )
             {
                 auto value = Real(0);
@@ -613,8 +612,8 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                VectorConcept<Real, t_element.getNumNodes()> auto const & nodal_field_values,
-                Point const &reference_point,
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point,
                 Integer derivative_direction
             )
             {
@@ -641,18 +640,18 @@ namespace lolita
 
         };
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element>
         requires (t_element.isTriangle(1))
-        struct ElementInnerGeometryTraits<t_element, t_domain>
+        struct ElementInnerGeometryTraits<t_element>
         {
             
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
+            template<template<Element, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
                 std::tuple<
-                    std::array<t_T<Element::segment(1), t_domain, t_args...>, 3>
+                    std::array<t_T<Element::segment(1), t_args...>, 3>
                 >,
                 std::tuple<
-                    std::array<t_T<Element::node(), t_domain, t_args...>, 3>
+                    std::array<t_T<Element::node(), t_args...>, 3>
                 >
             >;
 
@@ -665,8 +664,8 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
-                Point const &reference_point
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point
             )
             {
                 auto value = Real(0);
@@ -679,8 +678,8 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
-                Point const &reference_point,
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point,
                 Integer derivative_direction
             )
             {
@@ -726,18 +725,18 @@ namespace lolita
 
         };
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element>
         requires (t_element.isQuadrangle(1))
-        struct ElementInnerGeometryTraits<t_element, t_domain>
+        struct ElementInnerGeometryTraits<t_element>
         {
             
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
+            template<template<Element, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
                 std::tuple<
-                    std::array<t_T<Element::segment(1), t_domain, t_args...>, 4>
+                    std::array<t_T<Element::segment(1), t_args...>, 4>
                 >,
                 std::tuple<
-                    std::array<t_T<Element::node(), t_domain, t_args...>, 4>
+                    std::array<t_T<Element::node(), t_args...>, 4>
                 >
             >;
 
@@ -750,8 +749,8 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
-                Point const &reference_point
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point
             )
             {
                 auto value = Real(0);
@@ -765,8 +764,8 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
-                Point const &reference_point,
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point,
                 Integer derivative_direction
             )
             {
@@ -817,21 +816,21 @@ namespace lolita
 
         };
         
-        template<Element t_element, Domain t_domain>
+        template<Element t_element>
         requires (t_element.isTetrahedron(1))
-        struct ElementInnerGeometryTraits<t_element, t_domain>
+        struct ElementInnerGeometryTraits<t_element>
         {
 
-            template<template<Element, Domain, auto...> typename t_T, auto... t_args>
+            template<template<Element, auto...> typename t_T, auto... t_args>
             using InnerConnectivity = std::tuple<
                 std::tuple<
-                    std::array<t_T<Element::triangle(1), t_domain, t_args...>, 4>
+                    std::array<t_T<Element::triangle(1), t_args...>, 4>
                 >,
                 std::tuple<
-                    std::array<t_T<Element::segment(1), t_domain, t_args...>, 6>
+                    std::array<t_T<Element::segment(1), t_args...>, 6>
                 >,
                 std::tuple<
-                    std::array<t_T<Element::node(), t_domain, t_args...>, 4>
+                    std::array<t_T<Element::node(), t_args...>, 4>
                 >
             >;
 
@@ -844,8 +843,8 @@ namespace lolita
             static
             Real
             getShapeMappingEvaluation(
-                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
-                Point const &reference_point
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point
             )
             {
                 auto value = Real(0);
@@ -855,8 +854,8 @@ namespace lolita
             static
             Real
             getShapeMappingDerivative(
-                lolita::algebra::Vector<Real, t_element.getNumNodes()> const &nodal_field_values,
-                Point const &reference_point,
+                VectorConcept<Real> auto const & nodal_field_values,
+                PointConcept auto const & reference_point,
                 Integer derivative_direction
             )
             {
@@ -913,39 +912,34 @@ namespace lolita
 
     }
     
-    template<Element t_element, Domain t_domain>
+    template<Element t_element>
     struct ElementTraits
     :
-    element_geometry::ElementOuterGeometryTraits<t_element, t_domain>,
-    element_geometry::ElementInnerGeometryTraits<t_element, t_domain>
+    element_geometry::ElementOuterGeometryTraits<t_element>,
+    element_geometry::ElementInnerGeometryTraits<t_element>
     {
 
     private:
 
-        using t_ElementOuterNeighborhood = typename ElementTraits<t_element, t_domain>::template OuterConnectivity<detail::ElementView>;
+        template<Domain t_domain>
+        using t_ElementOuterNeighborhood = typename ElementTraits<t_element>::template OuterConnectivity<detail::ElementView, t_domain>;
 
-        using t_ElementInnerNeighborhood = typename ElementTraits<t_element, t_domain>::template InnerConnectivity<detail::ElementView>;
+        using t_ElementInnerNeighborhood = typename ElementTraits<t_element>::template InnerConnectivity<detail::ElementView>;
 
+        // using t_Elements = ALLElements<detail::ElementView>;
+        template<Domain t_domain>
         using t_Elements = Elements<detail::ElementView, t_domain>;
 
     public:
     
         static constexpr
-        Element
+        Element const &
         getElement()
         {
             return t_element;
         }
         
-        static constexpr
-        Boolean
-        hasDim(
-                Integer i
-        )
-        {
-            return t_domain.dim_ - t_element.dim_ == i;
-        }
-        
+        template<Domain t_domain>
         static constexpr
         ElementCoordinates
         getCoordinates()
@@ -956,17 +950,17 @@ namespace lolita
             )
             constexpr mutable
             {
-                using ElementT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>>;
+                using ElementT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements<t_domain>>>;
                 if (ElementT::getElement() == t_element)
                 {
                     coordinates.dim_ = t_i;
                     coordinates.tag_ = t_j;
                 }
-                if constexpr (t_j < std::tuple_size_v<std::tuple_element_t<t_i, t_Elements>> - 1)
+                if constexpr (t_j < std::tuple_size_v<std::tuple_element_t<t_i, t_Elements<t_domain>>> - 1)
                 {
                     t_set_coordinates.template operator()<t_i, t_j + 1>(t_set_coordinates);
                 }
-                else if constexpr (t_i < std::tuple_size_v<t_Elements> - 1)
+                else if constexpr (t_i < std::tuple_size_v<t_Elements<t_domain>> - 1)
                 {
                     t_set_coordinates.template operator()<t_i + 1, 0>(t_set_coordinates);
                 }
@@ -1015,15 +1009,6 @@ namespace lolita
             return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementInnerNeighborhood>>::value_type::getElement();
         }
         
-        // template<Integer t_i, Integer t_j>
-        // static constexpr
-        // ElementTraits<getInnerNeighbor<t_i, t_j>(), t_domain>
-        // getInnerNeighborDescription()
-        // requires(!t_element.isNode())
-        // {
-        //     return ElementTraits<getInnerNeighbor<t_i, t_j>(), t_domain>();
-        // }
-        
         template<Integer... t_i>
         static constexpr
         Integer
@@ -1053,7 +1038,7 @@ namespace lolita
             return std::tuple_size_v<t_ElementInnerNeighborhood>;
         }
         
-        template<Element t_neighbour>
+        template<Domain t_domain, Element t_neighbour>
         static constexpr
         ElementCoordinates
         getOuterNeighborCoordinates()
@@ -1064,17 +1049,17 @@ namespace lolita
             )
             constexpr mutable
             {
-                using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood>>::value_type;
+                using NeighbourT = typename std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood<t_domain>>>;
                 if (NeighbourT::getElement() == t_neighbour)
                 {
                     coordinates.dim_ = t_i;
                     coordinates.tag_ = t_j;
                 }
-                if constexpr (t_j < std::tuple_size_v<std::tuple_element_t<t_i, t_ElementOuterNeighborhood>> - 1)
+                if constexpr (t_j < std::tuple_size_v<std::tuple_element_t<t_i, t_ElementOuterNeighborhood<t_domain>>> - 1)
                 {
                     t_set_coordinates.template operator()<t_i, t_j + 1>(t_set_coordinates);
                 }
-                else if constexpr (t_i < std::tuple_size_v<t_ElementOuterNeighborhood> - 1)
+                else if constexpr (t_i < std::tuple_size_v<t_ElementOuterNeighborhood<t_domain>> - 1)
                 {
                     t_set_coordinates.template operator()<t_i + 1, 0>(t_set_coordinates);
                 }
@@ -1083,39 +1068,31 @@ namespace lolita
             return coordinates;
         }
         
-        template<Integer t_i, Integer t_j>
+        template<Domain t_domain, Integer t_i, Integer t_j>
         static constexpr
         Element
         getOuterNeighbor()
         {
-            return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood>>::value_type::getElement();
+            return std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_ElementOuterNeighborhood<t_domain>>>::getElement();
         }
         
-        // template<Integer t_i, Integer t_j>
-        // static constexpr
-        // ElementTraits<getOuterNeighbor<t_i, t_j>(), t_domain>
-        // getOuterNeighborDescription()
-        // {
-        //     return ElementTraits<getOuterNeighbor<t_i, t_j>(), t_domain>();
-        // }
-        
-        template<Integer... t_i>
+        template<Domain t_domain, Integer... t_i>
         static constexpr
         Integer
         getNumOuterNeighbors()
         requires(sizeof...(t_i) == 1)
         {
             auto const constexpr _coordinates = std::array<Integer, 1>{t_i...};
-            return std::tuple_size_v<std::tuple_element_t<_coordinates[0], t_ElementOuterNeighborhood>>;
+            return std::tuple_size_v<std::tuple_element_t<_coordinates[0], t_ElementOuterNeighborhood<t_domain>>>;
         }
         
-        template<Integer... t_i>
+        template<Domain t_domain, Integer... t_i>
         static constexpr
         Integer
         getNumOuterNeighbors()
         requires(sizeof...(t_i) == 0)
         {
-            return std::tuple_size_v<t_ElementOuterNeighborhood>;
+            return std::tuple_size_v<t_ElementOuterNeighborhood<t_domain>>;
         }
 
     };
@@ -1282,4 +1259,4 @@ namespace lolita
 
 } // namespace lolita
 
-#endif /* D95DBEAA_910F_4201_AFBF_FEDDCE22F29E */
+#endif /* EF2B4A77_EED2_4520_9191_3588BA9717A9 */

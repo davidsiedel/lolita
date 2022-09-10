@@ -23,9 +23,31 @@
 //     }
 // };
 
+static void
+dummy(
+    lolita::MatrixConcept<lolita::Real, 2, 2> auto matrix
+)
+{
+    std::cout << matrix << std::endl;
+}
+
+static void
+dummy2(
+    lolita::MatrixConcept<lolita::Real> auto matrix
+)
+{
+    std::cout << matrix << std::endl;
+}
+
 int
 main(int argc, char** argv)
 {
+
+    dummy(lolita::Matrix<lolita::Real, 2, 2>::Ones() * lolita::Matrix<lolita::Real, 2, 2>::Identity());
+    // dummy(lolita::Matrix<lolita::Real, 2, 2>::Ones() * lolita::Matrix<lolita::Real>::Identity(2, 2));
+    dummy2(lolita::Matrix<lolita::Real, 2, 2>::Ones() * lolita::Matrix<lolita::Real>::Identity(2, 2));
+
+    static_assert(lolita::MatrixConcept<lolita::Matrix<lolita::Real, 2, 2>, lolita::Real, 2, 2>);
     // std::cout << std::fixed << std::setprecision(3);
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     // declaring behavior

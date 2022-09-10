@@ -383,12 +383,12 @@ namespace lolita
                 }
             }
             
-            RealMatrix<getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
+            Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
             getGradientLhs()
             const
             {
                 auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
-                auto lhs = RealMatrix<getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
+                auto lhs = Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
                 lhs.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
                 {
@@ -401,12 +401,12 @@ namespace lolita
                 return lhs.llt().solve(decltype(lhs)::Identity());
             }
             
-            RealMatrix<getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>
+            Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>
             getPotentialLhs()
             const
             {
                 auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
-                auto lhs = RealMatrix<getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>();
+                auto lhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>();
                 lhs.setZero();
                 for (auto i_component = 0; i_component < t_domain.getDim(); i_component++)
                 {
@@ -424,7 +424,7 @@ namespace lolita
             }
 
             template<Field t_field>
-            RealMatrix<getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>
+            Matrix<Real, getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>
             getPotentialRhs(
                 Integer row
             )
@@ -432,7 +432,7 @@ namespace lolita
             {
                 auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
-                auto rhs = RealMatrix<getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>();
+                auto rhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
                 for (auto i_component = 0; i_component < t_domain.getDim(); i_component++)
                 {
@@ -627,7 +627,7 @@ namespace lolita
             }
 
             template<Field t_field>
-            RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
+            Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
             getGradientRhs(
                 Integer row,
                 Integer col
@@ -637,7 +637,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
+                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
                 {
@@ -726,7 +726,7 @@ namespace lolita
             }
 
             template<Field t_field>
-            RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
+            Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
             getSymmetricGradientRhs(
                 Integer row,
                 Integer col
@@ -736,7 +736,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
+                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
                 {
@@ -819,7 +819,7 @@ namespace lolita
             }
 
             template<Field t_field>
-            RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
+            Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
             getSymmetricGradientRhsDEBUG(
                 Integer row,
                 Integer col
@@ -829,7 +829,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = RealMatrix<getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
+                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
                 for (auto i = 0; i < ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); i++)
                 {

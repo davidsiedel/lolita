@@ -676,7 +676,7 @@ namespace lolita
             Point const & point
         )
         const
-        requires(t_element.isSolid())
+        requires(t_element.hasDim(3))
         {
             auto const current_coordinates = this->getCurrentCoordinates();
             auto ru = Matrix<Real, 3, 3>();
@@ -698,7 +698,7 @@ namespace lolita
             Point const & point
         )
         const
-        requires(t_element.isFacet())
+        requires(t_element.hasDim(2))
         {
             auto const current_coordinates = this->getCurrentCoordinates();
             auto ru = Matrix<Real, 3, 3>();
@@ -729,7 +729,7 @@ namespace lolita
             Point const & point
         )
         const
-        requires(t_element.isCurve())
+        requires(t_element.hasDim(1))
         {
             auto const current_coordinates = this->getCurrentCoordinates();
             auto ru = Matrix<Real, 3, 3>();
@@ -855,7 +855,7 @@ namespace lolita
             Point const & second_point
         )
         const
-        requires(!t_element.isSub(t_domain, 0) && t_element.isFacet())
+        requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(2))
         {
             using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
             auto distance = Real(0);
@@ -934,7 +934,7 @@ namespace lolita
             Integer direction
         )
         const
-        requires(!t_element.isSub(t_domain, 0) && t_element.isFacet())
+        requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(2))
         {
             using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
             auto distance = Real(0);
@@ -978,7 +978,7 @@ namespace lolita
             Point const & second_point
         )
         const
-        requires(!t_element.isSub(t_domain, 0) && t_element.isCurve())
+        requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(1))
         {
             using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
             auto distance = Real(0);
@@ -1015,7 +1015,7 @@ namespace lolita
             Integer direction
         )
         const
-        requires(!t_element.isSub(t_domain, 0) && t_element.isCurve())
+        requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(1))
         {
             using SegmentQuadrature = ElementQuadratureRuleTraits<Element::segment(1), Quadrature::gauss(4)>;
             auto distance = Real(0);
@@ -1124,14 +1124,14 @@ namespace lolita
         //                     }
         //                 }
         //             }
-        //             if constexpr (t_element.isFacet())
+        //             if constexpr (t_element.hasDim(2))
         //             {
         //                 auto Eff = ru.col(0).template dot(ru.col(0));
         //                 auto Fff = ru.col(0).template dot(ru.col(1));
         //                 auto Gff = ru.col(1).template dot(ru.col(1));
         //                 dt = std::sqrt(Eff + 2.0 * Fff + Gff);
         //             }
-        //             else if constexpr (t_element.isCurve())
+        //             else if constexpr (t_element.hasDim(1))
         //             {
         //                 auto Eff = ru.col(0).template dot(ru.col(0));
         //                 dt = std::sqrt(Eff);
@@ -1423,7 +1423,7 @@ namespace lolita
         //     if constexpr (t_element.isNode()) {
         //         return Point{0, 0, 0};
         //     }
-        //     else if constexpr (t_element.isCurve())
+        //     else if constexpr (t_element.hasDim(1))
         //     {
         //         return Point{ru(1)/ru.norm(), -ru(0)/ru.norm(), 0};
         //     }
@@ -1550,7 +1550,7 @@ namespace lolita
             Integer direction
         )
         const
-        requires(t_element.isCurve())
+        requires(t_element.hasDim(1))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
             auto tangent_vector = Point();

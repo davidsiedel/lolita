@@ -18,7 +18,10 @@
 namespace lolita
 {
     
-    using Point = RealVector<3>;
+    using Point = Vector<Real, 3>;
+
+    template<typename t_T>
+    concept PointConcept = VectorConcept<t_T, Real, 3>;
 
     using Loading = std::function<Real(Point const &, Real const &)>;
 

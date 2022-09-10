@@ -53,7 +53,7 @@ namespace lolita
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Segment) && t_quadrature.hasOrd(1))
+    requires(t_element.hasDim(1) && t_quadrature.hasOrd(1))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -89,7 +89,7 @@ namespace lolita
     };
     
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Segment) && t_quadrature.hasOrd(2))
+    requires(t_element.hasDim(1) && t_quadrature.hasOrd(2))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -127,7 +127,7 @@ namespace lolita
     };
     
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Segment) && t_quadrature.hasOrd(3))
+    requires(t_element.hasDim(1) && t_quadrature.hasOrd(3))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -167,7 +167,7 @@ namespace lolita
     };
     
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Segment) && t_quadrature.hasOrd(4))
+    requires(t_element.hasDim(1) && t_quadrature.hasOrd(4))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -209,7 +209,7 @@ namespace lolita
     };
     
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Segment) && t_quadrature.hasOrd(5))
+    requires(t_element.hasDim(1) && t_quadrature.hasOrd(5))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -253,7 +253,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Segment) && t_quadrature.hasOrd(6))
+    requires(t_element.hasDim(1) && t_quadrature.hasOrd(6))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -299,7 +299,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Segment) && t_quadrature.hasOrd(7))
+    requires(t_element.hasDim(1) && t_quadrature.hasOrd(7))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -347,7 +347,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Segment) && t_quadrature.hasOrd(8))
+    requires(t_element.hasDim(1) && t_quadrature.hasOrd(8))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -401,7 +401,7 @@ namespace lolita
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Triangle) && t_quadrature.hasOrd(1))
+    requires(t_element.isTriangle() && t_quadrature.hasOrd(1))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -437,7 +437,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Triangle) && t_quadrature.hasOrd(2))
+    requires(t_element.isTriangle() && t_quadrature.hasOrd(2))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -477,7 +477,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Triangle) && t_quadrature.hasOrd(3))
+    requires(t_element.isTriangle() && t_quadrature.hasOrd(3))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -519,7 +519,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Triangle) && t_quadrature.hasOrd(4))
+    requires(t_element.isTriangle() && t_quadrature.hasOrd(4))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -565,7 +565,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Triangle) && t_quadrature.hasOrd(5))
+    requires(t_element.isTriangle() && t_quadrature.hasOrd(5))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -613,7 +613,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Triangle) && t_quadrature.hasOrd(6))
+    requires(t_element.isTriangle() && t_quadrature.hasOrd(6))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -671,7 +671,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Triangle) && t_quadrature.hasOrd(7))
+    requires(t_element.isTriangle() && t_quadrature.hasOrd(7))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -731,7 +731,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Triangle) && t_quadrature.hasOrd(8))
+    requires(t_element.isTriangle() && t_quadrature.hasOrd(8))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -801,7 +801,7 @@ namespace lolita
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Quadrangle) && t_quadrature.hasOrd(1))
+    requires(t_element.isQuadrangle() && t_quadrature.hasOrd(1))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -837,7 +837,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Quadrangle) && t_quadrature.hasOrd(2))
+    requires(t_element.isQuadrangle() && t_quadrature.hasOrd(2))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -879,7 +879,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Quadrangle) && t_quadrature.hasOrd(3))
+    requires(t_element.isQuadrangle() && t_quadrature.hasOrd(3))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -931,7 +931,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Quadrangle) && t_quadrature.hasOrd(4))
+    requires(t_element.isQuadrangle() && t_quadrature.hasOrd(4))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -997,7 +997,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Quadrangle) && t_quadrature.hasOrd(5))
+    requires(t_element.isQuadrangle() && t_quadrature.hasOrd(5))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -1081,7 +1081,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Quadrangle) && t_quadrature.hasOrd(6))
+    requires(t_element.isQuadrangle() && t_quadrature.hasOrd(6))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -1187,7 +1187,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Quadrangle) && t_quadrature.hasOrd(7))
+    requires(t_element.isQuadrangle() && t_quadrature.hasOrd(7))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
@@ -1319,7 +1319,7 @@ namespace lolita
     };
 
     template<Element t_element, Quadrature t_quadrature>
-    requires(t_element.hasShape(Element::Shape::Quadrangle) && t_quadrature.hasOrd(8))
+    requires(t_element.isQuadrangle() && t_quadrature.hasOrd(8))
     struct ElementQuadratureRuleTraits<t_element, t_quadrature>
     {
 
