@@ -336,6 +336,16 @@ namespace lolita
         {
             return polynomial_ == Polynomial::Monomial;
         }
+        
+        constexpr
+        Boolean
+        isMonomial(
+            Integer order
+        )
+        const
+        {
+            return polynomial_ == Polynomial::Monomial && ord_ == order;
+        }
 
         constexpr
         Integer

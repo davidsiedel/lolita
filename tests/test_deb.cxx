@@ -92,8 +92,8 @@ TEST(t_deb, t_deb)
         for (auto const & finite_element : elements->template getElements<2, t_i>())
         {
             auto constexpr cell_cols_ = lolita::ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize();
-            auto constexpr cell_rows_ = lolita::FiniteElementBasisTraits<t_cell_basis>::template getSize<t_element>();
-            auto constexpr grad_rows_ = lolita::FiniteElementBasisTraits<t_grad_basis>::template getSize<t_element>();
+            auto constexpr cell_rows_ = lolita::BasisTraits<t_cell_basis>::template getSize<t_element>();
+            auto constexpr grad_rows_ = lolita::BasisTraits<t_grad_basis>::template getSize<t_element>();
             // auto mat = lolita::Matrix<lolita::Real, rows_, cols_>();
             auto cell_row_vectors = lolita::Matrix<lolita::Real, grad_rows_, cell_cols_>();
             auto cell_colI_vectors = lolita::Matrix<lolita::Real, cell_rows_, cell_cols_>();
@@ -158,7 +158,7 @@ TEST(t_deb, t_deb)
                 std::cout << "* normal_vector :" << std::endl;
                 std::cout << face->getNormalVector(face->getReferenceCentroid()) << std::endl;
                 auto constexpr cols_ = lolita::ElementQuadratureRuleTraits<t_face, t_quadrature>::getSize();
-                auto constexpr rows_ = lolita::FiniteElementBasisTraits<t_face_basis>::template getSize<t_face>();
+                auto constexpr rows_ = lolita::BasisTraits<t_face_basis>::template getSize<t_face>();
                 auto mat = lolita::Matrix<lolita::Real, rows_, cols_>();
                 auto matips = lolita::Matrix<lolita::Real, 3, cols_>();
                 auto matips2 = lolita::Matrix<lolita::Real, 3, cols_>();

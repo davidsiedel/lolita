@@ -1,7 +1,7 @@
 #ifndef ADE371C2_0D15_4707_B243_25103F8F862B
 #define ADE371C2_0D15_4707_B243_25103F8F862B
 
-#include "core/lolita.hxx"
+#include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
 #include "core/001_geometry.hxx"
 #include "core/linear_system.hxx"
@@ -13,7 +13,7 @@ namespace lolita
 
     template<Basis t_basis>
     requires(t_basis.isMonomial())
-    struct FiniteElementBasisTraits<t_basis>
+    struct BasisTraits<t_basis>
     {
 
         template<Integer t_dim>
@@ -21,7 +21,7 @@ namespace lolita
         Integer
         getSize()
         {
-            return lolita::numerics::binomial(t_dim + t_basis.ord_, t_dim);
+            return lolita::numerics::binomial(t_dim + t_basis.getOrd(), t_dim);
         }
 
         template<Element t_element>
@@ -29,18 +29,18 @@ namespace lolita
         Integer
         getSize()
         {
-            return lolita::numerics::binomial(t_element.dim_ + t_basis.ord_, t_element.dim_);
+            return lolita::numerics::binomial(t_element.getDim() + t_basis.getOrd(), t_element.getDim());
         }
         
         template<Element t_element, Domain t_domain>
-        struct Implementation : FiniteElementHolder<t_element, t_domain>
+        struct Implementation : FiniteElement<t_element, t_domain>
         {
 
             static constexpr
             Integer
             getSize()
             {
-                return FiniteElementBasisTraits::template getSize<t_element>();
+                return BasisTraits::template getSize<t_element>();
             }
 
         private:
@@ -51,15 +51,15 @@ namespace lolita
             {
                 auto exponents = std::array<std::array<Integer, 3>, getSize()>();
                 auto row = Integer(0);
-                if constexpr (t_element.dim_ == 0)
+                if constexpr (t_element.getDim() == 0)
                 {
                     exponents[row][0] = 0;
                     exponents[row][1] = 0;
                     exponents[row][2] = 0;
                 }
-                else if constexpr (t_element.dim_ == 1)
+                else if constexpr (t_element.getDim() == 1)
                 {
-                    for (auto i = 0; i < t_basis.ord_ + 1; ++i)
+                    for (auto i = 0; i < t_basis.getOrd() + 1; ++i)
                     {
                         exponents[row][0] = i;
                         exponents[row][1] = 0;
@@ -67,9 +67,9 @@ namespace lolita
                         row += 1;
                     }
                 }
-                else if constexpr (t_element.dim_ == 2)
+                else if constexpr (t_element.getDim() == 2)
                 {
-                    for (auto i = 0; i < t_basis.ord_ + 1; ++i)
+                    for (auto i = 0; i < t_basis.getOrd() + 1; ++i)
                     {
                         for (auto j = 0; j < i + 1; ++j)
                         {
@@ -80,9 +80,9 @@ namespace lolita
                         }
                     }
                 }
-                else if constexpr (t_element.dim_ == 3)
+                else if constexpr (t_element.getDim() == 3)
                 {
-                    for (auto i = 0; i < t_basis.ord_ + 1; ++i)
+                    for (auto i = 0; i < t_basis.getOrd() + 1; ++i)
                     {
                         for (auto j = 0; j < i + 1; ++j)
                         {
@@ -106,7 +106,7 @@ namespace lolita
         
             Vector<Real, getSize()>
             getBasisEvaluation(
-                Point const & point
+                PointConcept auto const & point
             )
             const
             {
@@ -118,7 +118,7 @@ namespace lolita
                 for (auto i = 0; i < getSize(); ++i)
                 {
                     auto value = Real(1);
-                    for (auto j = 0; j < t_element.dim_; ++j)
+                    for (auto j = 0; j < t_element.getDim(); ++j)
                     {
                         // auto dist = this->getRiemannianDistance(centroid, point, j);
                         auto dist = this->getLocalFrameDistance(centroid, point, j);
@@ -131,7 +131,7 @@ namespace lolita
             
             Vector<Real, getSize()>
             getBasisDerivative(
-                Point const & point,
+                PointConcept auto const & point,
                 Integer derivative_direction
             )
             const
@@ -144,7 +144,7 @@ namespace lolita
                 for (auto i = 0; i < getSize(); ++i)
                 {
                     auto value = Real(1);
-                    for (auto j = 0; j < t_element.dim_; ++j)
+                    for (auto j = 0; j < t_element.getDim(); ++j)
                     {
                         if (j != derivative_direction)
                         {
@@ -177,6 +177,29 @@ namespace lolita
             std::array<std::array<Integer, 3>, getSize()> static constexpr exponents_ = getExponents();
 
         };
+
+    };
+
+    template<>
+    struct BasisTraits<>
+    {
+
+        static
+        Integer
+        getSize(
+            Basis basis,
+            Element element
+        )
+        {
+            if (basis.isMonomial())
+            {
+                return lolita::numerics::binomial(element.getDim() + basis.getOrd(), element.getDim());
+            }
+            else
+            {
+                throw std::runtime_error("Basis Not implemented");
+            }
+        }
 
     };
     

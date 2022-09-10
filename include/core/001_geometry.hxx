@@ -1,7 +1,7 @@
 #ifndef EF2B4A77_EED2_4520_9191_3588BA9717A9
 #define EF2B4A77_EED2_4520_9191_3588BA9717A9
 
-#include "core/lolita.hxx"
+#include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
 
 namespace lolita

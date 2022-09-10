@@ -16,17 +16,17 @@ TEST(test_quadrangle, test_quadrangle)
     auto constexpr displacement_behavior = lolita::Behavior(displacement_generalized_strain);
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     //
-    auto node_0 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
-    auto node_1 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
-    auto node_2 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
-    auto node_3 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
+    auto node_0 = std::make_shared<lolita::FiniteElement<node, domain>>();
+    auto node_1 = std::make_shared<lolita::FiniteElement<node, domain>>();
+    auto node_2 = std::make_shared<lolita::FiniteElement<node, domain>>();
+    auto node_3 = std::make_shared<lolita::FiniteElement<node, domain>>();
     //
-    auto segment_0 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
-    auto segment_1 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
-    auto segment_2 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
-    auto segment_3 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
+    auto segment_0 = std::make_shared<lolita::FiniteElement<segment, domain>>();
+    auto segment_1 = std::make_shared<lolita::FiniteElement<segment, domain>>();
+    auto segment_2 = std::make_shared<lolita::FiniteElement<segment, domain>>();
+    auto segment_3 = std::make_shared<lolita::FiniteElement<segment, domain>>();
     //
-    auto quadrangle_0 = std::make_shared<lolita::FiniteElementHolder<quadrangle, domain>>();
+    auto quadrangle_0 = std::make_shared<lolita::FiniteElement<quadrangle, domain>>();
     // node 0
     node_0->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({0.0, 0.0, 0.0}));
     // node 1

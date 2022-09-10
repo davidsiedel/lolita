@@ -1,12 +1,131 @@
 #ifndef E11520F9_5899_4E9B_8D95_F11263F73062
 #define E11520F9_5899_4E9B_8D95_F11263F73062
 
-#include "core/lolita.hxx"
+#include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
 #include "core/001_geometry.hxx"
 
 namespace lolita
 {
+    
+    struct DegreeOfFreedom
+    {
+
+        inline
+        static
+        std::shared_ptr<DegreeOfFreedom>
+        make(
+            std::basic_string<Character> && label
+        )
+        {
+            return std::make_shared<DegreeOfFreedom>(std::forward<std::basic_string<Character>>(label));
+        }
+
+        inline
+        static
+        std::shared_ptr<DegreeOfFreedom>
+        make(
+            std::basic_string<Character> const & label
+        )
+        {
+            return std::make_shared<DegreeOfFreedom>(label);
+        }
+
+    // private:
+
+        DegreeOfFreedom(
+            // Field field,
+            std::basic_string<Character> && label
+        )
+        :
+        // field_(field),
+        label_(std::forward<std::basic_string<Character>>(label)),
+        offset_(std::numeric_limits<Natural>::max()),
+        size_(0)
+        {}
+
+        DegreeOfFreedom(
+            // Field field,
+            std::basic_string<Character> const & label
+        )
+        :
+        // field_(field),
+        label_(label),
+        offset_(std::numeric_limits<Natural>::max()),
+        size_(0)
+        {}
+
+    public:
+
+        inline
+        void
+        setOffset(
+            Integer offset
+        )
+        {
+            offset_ = offset;
+        }
+
+        inline
+        Natural
+        getOffset()
+        const
+        {
+            return offset_;
+        }
+
+        inline
+        void
+        setSize(
+            Natural size
+        )
+        {
+            size_ = size;
+        }
+
+        inline
+        void
+        addSize(
+            Natural size
+        )
+        {
+            size_ += size;
+        }
+
+        inline
+        Natural
+        getSize()
+        const
+        {
+            return size_;
+        }
+
+        inline
+        std::basic_string<Character> const &
+        getLabel()
+        {
+            return label_;
+        }
+
+        // inline
+        // Field
+        // getField()
+        // const
+        // {
+        //     return field_;
+        // }
+
+    private:
+
+        // Field field_;
+
+        Natural size_;
+
+        Natural offset_;
+
+        std::basic_string<Character> label_;
+
+    };
 
     struct Function
     {
@@ -91,6 +210,26 @@ namespace lolita
     
     struct System
     {
+
+        std::vector<std::shared_ptr<DegreeOfFreedom>> dofss_;
+
+        inline
+        void
+        addDegreeOfFreedom(
+            std::shared_ptr<DegreeOfFreedom> const & degree_of_freedom
+        )
+        {
+            if (std::find(dofss_.begin(), dofss_.end(), degree_of_freedom) == dofss_.end())
+            {
+                auto offset = Natural(0);
+                for (auto const & dof : dofss_)
+                {
+                    offset += dof->getSize();
+                }
+                degree_of_freedom->setOffset(offset);
+                dofss_.push_back(degree_of_freedom);
+            }
+        }
 
         using MatrixEntry = Eigen::Triplet<Real>;
 

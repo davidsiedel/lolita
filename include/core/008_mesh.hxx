@@ -1,7 +1,7 @@
 #ifndef CB51704E_040A_4B3D_AE3C_46C0DE3B8543
 #define CB51704E_040A_4B3D_AE3C_46C0DE3B8543
 
-#include "core/lolita.hxx"
+#include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
 #include "core/001_geometry.hxx"
 #include "core/linear_system.hxx"
@@ -15,7 +15,7 @@ namespace lolita
 {
 
     template<Domain t_domain>
-    struct FiniteElementMap : ElementMap<FiniteElementHolder, t_domain>
+    struct FiniteElementMap : ElementMap<FiniteElement, t_domain>
     {
 
         std::unique_ptr<FiniteElementSet<t_domain>>
@@ -93,7 +93,7 @@ namespace lolita
         void
         setElement(
             FiniteElementMap<t_domain> & element_map,
-            std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & ptr_element
+            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
         )
         const
         {
@@ -117,7 +117,7 @@ namespace lolita
                     inner_neighbor_hash = MeshElement<t_inner_neighbor, t_domain>::getHash(cpt.node_tags_);
                     if (!inner_neighbors.contains(inner_neighbor_hash))
                     {
-                        auto ptr_inner_neighbor = std::make_shared<FiniteElementHolder<t_inner_neighbor, t_domain>>();
+                        auto ptr_inner_neighbor = std::make_shared<FiniteElement<t_inner_neighbor, t_domain>>();
                         cpt.template setElement<0, 0>(element_map, ptr_inner_neighbor);
                     }
                 }
@@ -171,7 +171,7 @@ namespace lolita
         )
         const
         {
-            auto ptr_element = std::make_shared<FiniteElementHolder<t_element, t_domain>>(FiniteElementHolder<t_element, t_domain>());
+            auto ptr_element = std::make_shared<FiniteElement<t_element, t_domain>>(FiniteElement<t_element, t_domain>());
             setElement<0, 0>(element_map, ptr_element);
         }
 
@@ -179,7 +179,7 @@ namespace lolita
         static
         void
         setElementOuterNeighborhood(
-            std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & ptr_element
+            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
         )
         {
             auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
@@ -219,7 +219,7 @@ namespace lolita
         static inline
         void
         initialize(
-            std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & ptr_element
+            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
         )
         {
             setElementOuterNeighborhood<0>(ptr_element);
@@ -255,7 +255,7 @@ namespace lolita
         void
         setElement(
             FiniteElementMap<t_domain> & element_set,
-            std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & ptr_element
+            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
         )
         const
         {
@@ -272,14 +272,14 @@ namespace lolita
         )
         const
         {
-            auto ptr_element = std::make_shared<FiniteElementHolder<t_element, t_domain>>();
+            auto ptr_element = std::make_shared<FiniteElement<t_element, t_domain>>();
             setElement(element_set, ptr_element);
         }
         
         static inline
         void
         initialize(
-            std::shared_ptr<FiniteElementHolder<t_element, t_domain>> & ptr_element
+            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
         )
         {}
         

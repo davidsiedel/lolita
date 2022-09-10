@@ -1,7 +1,7 @@
 #ifndef AB07387F_F0B7_4F5A_875F_1CC5F0206148
 #define AB07387F_F0B7_4F5A_875F_1CC5F0206148
 
-#include "core/lolita.hxx"
+#include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
 #include "core/001_geometry.hxx"
 #include "core/linear_system.hxx"
@@ -15,7 +15,7 @@ namespace lolita
 {
 
     template<Domain t_domain>
-    struct FiniteElementSet : ElementSet<FiniteElementHolder, t_domain>
+    struct FiniteElementSet : ElementSet<FiniteElement, t_domain>
     {
 
         template<ElementType t_ii>

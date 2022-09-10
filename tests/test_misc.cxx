@@ -97,13 +97,13 @@ TEST(tm, tm)
     // // std::cout << "ici : " << lolita::core::FiniteElementMethodTraits<damage_element>::template getNumElementUnknowns<t_element, domain>() << std::endl;
     // // std::cout << "ici : " << lolita::core::FiniteElementMethodTraits<damage_element>::template getNumCellUnknowns<t_element, domain>() << std::endl;
     // std::cout << "ici fld size : " << lolita::core::FieldTraits<displacement_field>::template size<domain>() << std::endl;
-    // std::cout << "ici basis size : " << lolita::core::FiniteElementBasisTraits<cell_basis>::template size<t_element>() << std::endl;
+    // std::cout << "ici basis size : " << lolita::core::BasisTraits<cell_basis>::template size<t_element>() << std::endl;
     // // std::cout << "ici displacement_behavior size : " << lolita::core::BehaviorTraits<displacement_behavior>::template strainSize<domain>() << std::endl;
 
     // std::cout << "yo : " << std::endl;
-    // std::cout << lolita::core::FiniteElementHolder<t_element, domain, displacement_element, damage_element>::template getArgIndex<displacement_element>();
+    // std::cout << lolita::core::FiniteElement<t_element, domain, displacement_element, damage_element>::template getArgIndex<displacement_element>();
     // std::cout << " , ";
-    // std::cout << lolita::core::FiniteElementHolder<t_element, domain, displacement_element, damage_element>::template getArgIndex<damage_element>();
+    // std::cout << lolita::core::FiniteElement<t_element, domain, displacement_element, damage_element>::template getArgIndex<damage_element>();
     // std::cout << std::endl;
     
 

@@ -16,24 +16,24 @@ TEST(test_triangle, test_triangle)
     auto constexpr displacement_behavior = lolita::Behavior(displacement_generalized_strain);
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     //
-    auto node_0 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
+    auto node_0 = std::make_shared<lolita::FiniteElement<node, domain>>();
     node_0->tag_ = 0;
     node_0->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({0.1, 0., 0.}));
-    auto node_1 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
+    auto node_1 = std::make_shared<lolita::FiniteElement<node, domain>>();
     node_1->tag_ = 1;
     node_1->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({1.2, 0., 0.}));
-    auto node_2 = std::make_shared<lolita::FiniteElementHolder<node, domain>>();
+    auto node_2 = std::make_shared<lolita::FiniteElement<node, domain>>();
     node_2->tag_ = 2;
     node_2->coordinates_ = std::make_shared<lolita::Point>(lolita::Point({0., 0.9, 0.}));
     //
-    auto segment_0 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
+    auto segment_0 = std::make_shared<lolita::FiniteElement<segment, domain>>();
     segment_0->tag_ = 0;
-    auto segment_1 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
+    auto segment_1 = std::make_shared<lolita::FiniteElement<segment, domain>>();
     segment_1->tag_ = 1;
-    auto segment_2 = std::make_shared<lolita::FiniteElementHolder<segment, domain>>();
+    auto segment_2 = std::make_shared<lolita::FiniteElement<segment, domain>>();
     segment_2->tag_ = 2;
     //
-    auto triangle_0 = std::make_shared<lolita::FiniteElementHolder<triangle, domain>>();
+    auto triangle_0 = std::make_shared<lolita::FiniteElement<triangle, domain>>();
     triangle_0->tag_ = 0;
     // segment 0 / nodes
     segment_0->getInnerNeighbors<0, 0>()[0] = node_0;

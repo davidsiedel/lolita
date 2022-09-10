@@ -1,7 +1,7 @@
 #ifndef B536F722_1A61_4366_8C7E_4B005041A1BF
 #define B536F722_1A61_4366_8C7E_4B005041A1BF
 
-#include "core/lolita.hxx"
+#include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
 #include "core/001_geometry.hxx"
 #include "core/linear_system.hxx"
@@ -13,7 +13,7 @@ namespace lolita
 {
 
     template<auto t_discretization>
-    struct HybridDiscontinuousGalerkinTraits
+    struct DiscretizationTraits
     {
 
         static constexpr
@@ -49,7 +49,7 @@ namespace lolita
         Integer
         getCellBasisSize()
         {
-            return FiniteElementBasisTraits<getCellBasis()>::template getSize<t_element>();
+            return BasisTraits<getCellBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element>
@@ -57,7 +57,7 @@ namespace lolita
         Integer
         getFaceBasisSize()
         {
-            return FiniteElementBasisTraits<getFaceBasis()>::template getSize<t_element>();
+            return BasisTraits<getFaceBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element>
@@ -65,7 +65,7 @@ namespace lolita
         Integer
         getGradBasisSize()
         {
-            return FiniteElementBasisTraits<getGradBasis()>::template getSize<t_element>();
+            return BasisTraits<getGradBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element>
@@ -73,16 +73,17 @@ namespace lolita
         Integer
         getPotentialBasisSize()
         {
-            return FiniteElementBasisTraits<getPotentialBasis()>::template getSize<t_element>();
+            return BasisTraits<getPotentialBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element, Domain t_domain, Field t_field>
         static constexpr
         Integer
         getNumCellUnknowns()
+        requires(t_element.isSub(t_domain, 0))
         {
             auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
-            auto constexpr basis_size = FiniteElementBasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
+            auto constexpr basis_size = BasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
             return field_size * basis_size;
         }
 
@@ -90,9 +91,10 @@ namespace lolita
         static constexpr
         Integer
         getNumFaceUnknowns()
+        requires(t_element.isSub(t_domain, 1))
         {
             auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
-            auto constexpr basis_size = FiniteElementBasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
+            auto constexpr basis_size = BasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
             return field_size * basis_size;
         }
 
@@ -100,6 +102,7 @@ namespace lolita
         static constexpr
         Integer
         getNumElementUnknowns()
+        requires(t_element.isSub(t_domain, 0))
         {
             auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain, t_field>();
             auto set_num_faces_unknowns = [&] <Integer t_i = 0> (
@@ -107,9 +110,9 @@ namespace lolita
             )
             constexpr mutable
             {
-                auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-                auto constexpr t_num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
-                num_element_unknowns += getNumFaceUnknowns<t_inner_neighbor, t_domain, t_field>() * t_num_inner_neighbors;
+                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
+                num_element_unknowns += getNumFaceUnknowns<inner_neighbor, t_domain, t_field>() * num_inner_neighbors;
                 if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                 {
                     self.template operator ()<t_i + 1>(self);
@@ -120,26 +123,10 @@ namespace lolita
         }
 
         template<Element t_element, Domain t_domain>
-        struct Implementation : FiniteElementHolder<t_element, t_domain>
+        struct Implementation : FiniteElement<t_element, t_domain>
         {
 
         private:
-
-            // template<Field t_field>
-            // static constexpr
-            // Integer
-            // getNumCellUnknowns()
-            // {
-            //     return HybridDiscontinuousGalerkinTraits::template getNumCellUnknowns<t_element, t_domain, t_field>();
-            // }
-
-            // template<Field t_field>
-            // static constexpr
-            // Integer
-            // getNumFaceUnknowns()
-            // {
-            //     return HybridDiscontinuousGalerkinTraits::template getNumFaceUnknowns<t_element, t_domain, t_field>();
-            // }
 
             template<Mapping t_mapping, Field t_field>
             static constexpr
@@ -157,7 +144,7 @@ namespace lolita
             getNumCellUnknowns()
             requires(t_element.isSub(t_domain, 0))
             {
-                return HybridDiscontinuousGalerkinTraits::template getNumCellUnknowns<t_element, t_domain, t_field>();
+                return DiscretizationTraits::template getNumCellUnknowns<t_element, t_domain, t_field>();
             }
 
             template<Field t_field>
@@ -166,7 +153,7 @@ namespace lolita
             getNumFaceUnknowns()
             requires(t_element.isSub(t_domain, 1))
             {
-                return HybridDiscontinuousGalerkinTraits::template getNumFaceUnknowns<t_element, t_domain, t_field>();
+                return DiscretizationTraits::template getNumFaceUnknowns<t_element, t_domain, t_field>();
             }
 
             template<Field t_field>
@@ -175,7 +162,7 @@ namespace lolita
             getNumElementUnknowns()
             requires(t_element.isSub(t_domain, 0))
             {
-                return HybridDiscontinuousGalerkinTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
+                return DiscretizationTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
             }
 
             static constexpr
@@ -206,27 +193,10 @@ namespace lolita
                 }
             }
             
-            Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
-            getGradientLhs()
-            const
-            {
-                auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
-                auto lhs = Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
-                lhs.setZero();
-                for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
-                {
-                    auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                    // auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
-                    auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
-                    auto vector = this->template getBasisEvaluation<getGradBasis()>(point);
-                    lhs += weight * vector * vector.transpose();
-                }
-                return lhs.llt().solve(decltype(lhs)::Identity());
-            }
-            
             Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>
             getPotentialLhs()
             const
+            requires(t_element.isSub(t_domain, 0))
             {
                 auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto lhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>();
@@ -236,7 +206,6 @@ namespace lolita
                     for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                     {
                         auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                        // auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
                         auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
                         auto vector = this->template getBasisDerivative<getPotentialBasis()>(point, i_component);
                         auto vector_j = vector.template segment<getPotentialBasisSize<t_element>() - 1>(1);
@@ -252,6 +221,7 @@ namespace lolita
                 Integer row
             )
             const
+            requires(t_element.isSub(t_domain, 0))
             {
                 auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
@@ -263,7 +233,6 @@ namespace lolita
                     for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                     {
                         auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                        // auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
                         auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
                         auto row_cell_vector = this->template getBasisDerivative<getPotentialBasis()>(point, i_component);
                         auto row_cell_vector_j = row_cell_vector.template segment<getPotentialBasisSize<t_element>() - 1>(1);
@@ -291,9 +260,7 @@ namespace lolita
                                 auto argf = i;
                                 //
                                 auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
-                                // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
                                 auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
-                                // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                                 auto normal_vector = face->getNormalVector(point);
                                 //
                                 auto row_cell_vector = this->template getBasisDerivative<getPotentialBasis()>(i_p, i_component);
@@ -326,6 +293,7 @@ namespace lolita
             Matrix<Real, getNumElementUnknowns<t_field>(), getNumElementUnknowns<t_field>()>
             getStabilization()
             const
+            requires(t_element.isSub(t_domain, 0))
             {
                 auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
@@ -344,7 +312,6 @@ namespace lolita
                     for (auto i_quadrature = 0; i_quadrature < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i_quadrature++)
                     {
                         auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i_quadrature);
-                        // auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i_quadrature);
                         auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i_quadrature);
                         auto row_cell_vector = this->template getBasisEvaluation<getPotentialBasis()>(point);
                         auto row_cell_vector_j = row_cell_vector.template segment<getPotentialBasisSize<t_element>() - 1>(1);
@@ -360,7 +327,6 @@ namespace lolita
                     for (auto i_quadrature = 0; i_quadrature < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i_quadrature++)
                     {
                         auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i_quadrature);
-                        // auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i_quadrature);
                         auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i_quadrature);
                         auto row_cell_vector = this->template getBasisEvaluation<getCellBasis()>(point);
                         cell_projection_lhs += weight * row_cell_vector * row_cell_vector.transpose();
@@ -392,23 +358,8 @@ namespace lolita
                                 auto argf = i_quadrature;
                                 //
                                 auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
-                                // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
                                 auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
-                                // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                                 auto normal_vector = face->getNormalVector(point);
-                                //
-                                // //
-                                // auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
-                                // //
-                                // // auto face_rotation_matrix = face->getRotationMatrix(face->getReferenceCentroid());
-                                // // auto hhh = face_rotation_matrix * (face->getCurrentCentroid() - this->getCurrentCentroid());
-                                // // auto face_orientation = hhh(t_domain.getDim() - 1) > 0 ? 1 : -1;
-                                // //
-                                // auto argh = face_orientation == 1 ? i_quadrature : QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize() - (i_quadrature + 1);
-                                // auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
-                                // //
-                                // auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i_quadrature);
-                                // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i_quadrature);
                                 auto row_face_vector = face->template getBasisEvaluation<getFaceBasis()>(point);
                                 auto col_potential_vector = this->template getBasisEvaluation<getPotentialBasis()>(i_p);
                                 auto col_cell_vector = this->template getBasisEvaluation<getCellBasis()>(i_p);
@@ -426,10 +377,9 @@ namespace lolita
                                 face_block += weight * row_face_vector * row_face_vector.transpose();
                             }
                             auto fa_ce_proj = face_projection_lhs.llt().solve(decltype(face_projection_lhs)::Identity()) * face_projection_rhs;
-                            for (auto i_quadrature = 0; i_quadrature < QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize(); i_quadrature++)
+                            for (auto i_quadrature = 0; i_quadrature < quadrature_size; i_quadrature++)
                             {
                                 auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i_quadrature);
-                                // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i_quadrature);
                                 auto point = face->template getReferenceQuadraturePoint<t_quadrature>(i_quadrature);
                                 auto row_face_vector = face->template getBasisEvaluation<getFaceBasis()>(point);
                                 auto V_E_C_T_O_R = row_face_vector.transpose() * fa_ce_proj;
@@ -448,6 +398,24 @@ namespace lolita
                 }
                 return S_T_A_B_I_L_I_Z_A_T_I_O_N;
             }
+            
+            Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
+            getGradientLhs()
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
+                auto lhs = Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
+                lhs.setZero();
+                for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
+                {
+                    auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
+                    auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
+                    auto vector = this->template getBasisEvaluation<getGradBasis()>(point);
+                    lhs += weight * vector * vector.transpose();
+                }
+                return lhs.llt().solve(decltype(lhs)::Identity());
+            }
 
             template<Field t_field>
             Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
@@ -456,6 +424,7 @@ namespace lolita
                 Integer col
             )
             const
+            requires(t_element.isSub(t_domain, 0))
             {
                 auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
@@ -465,7 +434,6 @@ namespace lolita
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
                     auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                    // auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
                     auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
                     auto row_cell_vector = this->template getBasisEvaluation<getGradBasis()>(point);
                     auto col_cell_vector = this->template getBasisDerivative<getCellBasis()>(point, col);
@@ -492,49 +460,18 @@ namespace lolita
                             auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
                             //
                             auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
-                            // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
                             auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
-                            // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                             auto normal_vector = face->getNormalVector(point);
-                            //
-                            //
-                            //
-                            // auto face_rotation_matrix = face->getRotationMatrix(face->getReferenceCentroid());
-                            // auto hhh = face_rotation_matrix * (face->getCurrentCentroid() - this->getCurrentCentroid());
-                            // auto face_orientation = hhh(t_domain.getDim() - 1) > 0 ? 1 : -1;
-                            //
-                            // auto argh = face_orientation == 1 ? i : QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize() - (i + 1);
-                            // auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
-                            //
-                            // auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i);
-                            // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                            //
-                            //
                             auto row_cell_vector = this->template getBasisEvaluation<getGradBasis()>(i_p);
                             auto col_face_vector = face->template getBasisEvaluation<getFaceBasis()>(point);
                             auto col_cell_vector = this->template getBasisEvaluation<getCellBasis()>(i_p);
-                            // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                             auto normal_vector_component = face_orientation * normal_vector(col);
                             auto face_col_offset = face_offset + row * getFaceBasisSize<t_inner_neighbor>();
                             auto face_block = rhs.template block<getGradBasisSize<t_element>(), getFaceBasisSize<t_inner_neighbor>()>(0, face_col_offset);
                             face_block += normal_vector_component * weight * row_cell_vector * col_face_vector.transpose();
-                            //
                             auto cell_col_offset = row * getCellBasisSize<t_element>();
                             auto cell_block = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, cell_col_offset);
                             cell_block -= normal_vector_component * weight * row_cell_vector * col_cell_vector.transpose();
-                            // PRINTS
-                            // std::cout << "i_face ------------------ " << i << " \n";
-                            // std::cout << i_face << "\n";
-                            // std::cout << "------------------ " << "\n";
-                            // std::cout << "face_orientation ------------------ " << i << " \n";
-                            // std::cout << face_orientation << "\n";
-                            // std::cout << "------------------ " << "\n";
-                            // std::cout << "normal_vector ------------------ " << i << " \n";
-                            // std::cout << normal_vector << "\n";
-                            // std::cout << "------------------ " << "\n";
-                            // std::cout << "col_face_vector ------------------ " << i << " \n";
-                            // std::cout << col_face_vector << "\n";
-                            // std::cout << "------------------ " << "\n";
                         }
                         face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>();
                         i_face ++;
@@ -555,6 +492,7 @@ namespace lolita
                 Integer col
             )
             const
+            requires(t_element.isSub(t_domain, 0))
             {
                 auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
@@ -564,7 +502,6 @@ namespace lolita
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
                     auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                    // auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
                     auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
                     auto row_cell_vector = this->template getBasisEvaluation<getGradBasis()>(point);
                     auto col_cell_vector_i = this->template getBasisDerivative<getCellBasis()>(point, col);
@@ -593,24 +530,12 @@ namespace lolita
                             auto argh = face_sign == 1 ? i : QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize() - (i + 1);
                             auto argf = i;
                             auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
-                            //
                             auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
-                            // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
                             auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
-                            // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                             auto normal_vector = face->getNormalVector(point);
-                            //
-                            // auto argh = face_orientation == 1 ? i : QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize() - (i + 1);
-                            // auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
-                            //
-                            // auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i);
-                            // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                            //
-                            //
                             auto row_cell_vector = this->template getBasisEvaluation<getGradBasis()>(i_p);
                             auto col_face_vector = face->template getBasisEvaluation<getFaceBasis()>(point);
                             auto col_cell_vector = this->template getBasisEvaluation<getCellBasis()>(i_p);
-                            // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
                             auto normal_vector_component_i = face_orientation * normal_vector(col);
                             auto normal_vector_component_j = face_orientation * normal_vector(row);
                             auto face_col_offset_i = face_offset + row * getFaceBasisSize<t_inner_neighbor>();
@@ -629,143 +554,6 @@ namespace lolita
                             auto cell_block_j = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, cell_col_offset_j);
                             cell_block_j -= (1.0 / 2.0) * normal_vector_component_j * weight * row_cell_vector * col_cell_vector.transpose();
                         }
-                        face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>();
-                        i_face ++;
-                    }
-                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
-                    {
-                        self.template operator()<t_i + 1>(self);
-                    }
-                };
-                set_faces_blocks(set_faces_blocks);
-                return rhs;
-            }
-
-            template<Field t_field>
-            Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
-            getSymmetricGradientRhsDEBUG(
-                Integer row,
-                Integer col
-            )
-            const
-            {
-                auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
-                auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
-                auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
-                rhs.setZero();
-                for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
-                {
-                    auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                    // auto point = this->template getCurrentQuadraturePoint<t_quadrature>(i);
-                    auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
-                    auto row_cell_vector = this->template getBasisEvaluation<getGradBasis()>(point);
-                    auto col_cell_vector_i = this->template getBasisDerivative<getCellBasis()>(point, col);
-                    auto col_cell_vector_j = this->template getBasisDerivative<getCellBasis()>(point, row);
-                    auto col_offset_i = row * getCellBasisSize<t_element>();
-                    auto block_i = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, col_offset_i);
-                    block_i += (1.0 / 2.0) * weight * row_cell_vector * col_cell_vector_i.transpose();
-                    auto col_offset_j = col * getCellBasisSize<t_element>();
-                    auto block_j = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, col_offset_j);
-                    block_j += (1.0 / 2.0) * weight * row_cell_vector * col_cell_vector_j.transpose();
-                }
-                std::cout << "----- rhs" << row << " " << col << std::endl;
-                std::cout << mat2str(rhs) << std::endl;
-                std::cout << "---------------------------------------------------------------> element " << std::endl;
-                std::cout << mat2str(this->getCurrentCoordinates()) << std::endl;
-                std::cout << "------> centroid " << std::endl;
-                std::cout << mat2str(this->getCurrentCentroid()) << std::endl;
-                auto set_faces_blocks = [&] <Integer t_i = 0> (
-                    auto & self
-                )
-                constexpr mutable
-                {
-                    auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-                    auto constexpr t_num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
-                    auto i_face = 0;
-                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
-                    {
-                        auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
-                        auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
-                        std::cout << "----------------------> face " << i_face << " : " << std::endl;
-                        std::cout << mat2str(face->getCurrentCoordinates()) << std::endl;
-                        std::cout << "------> face_centroid " << std::endl;
-                        std::cout << mat2str(face->getCurrentCentroid()) << std::endl;
-                        std::cout << "------> face_orientation " << std::endl;
-                        std::cout << face_orientation << std::endl;
-                        std::cout << "------> face_rotation " << std::endl;
-                        std::cout << mat2str(face->getRotationMatrix(face->getReferenceCentroid())) << std::endl;
-                        for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize(); i++)
-                        {
-                            auto argh = face_sign == 1 ? i : QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize() - (i + 1);
-                            auto argf = i;
-                            // argh = i;
-                            auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
-                            //
-                            auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(argf);
-                            // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                            auto point = face->template getReferenceQuadraturePoint<t_quadrature>(argf);
-                            // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
-                            auto normal_vector = face->getNormalVector(point);
-                            //
-                            //
-                            // std::cout << "------> face_orientation : " << face_orientation << std::endl;
-                            //
-                            // auto face_rotation_matrix = face->getRotationMatrix(face->getReferenceCentroid());
-                            // auto hhh = face_rotation_matrix * (face->getCurrentCentroid() - this->getCurrentCentroid());
-                            // auto face_orientation = hhh(t_domain.getDim() - 1) > 0 ? 1 : -1;
-                            //
-                            // auto argh = face_orientation == 1 ? i : QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize() - (i + 1);
-                            // // auto i_p = this->template getInnerNeighborReferenceQuadraturePoint<t_quadrature, 0, t_i>(i_face, argh);
-                            // auto i_p2 = face->template getCurrentQuadraturePoint<t_quadrature>(argh);
-                            // //
-                            // auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(i);
-                            // auto point = face->template getCurrentQuadraturePoint<t_quadrature>(i);
-                            std::cout << "------> weight " << i << " : " << std::endl;
-                            std::cout << weight << std::endl;
-                            std::cout << "------> point " << i << " : " << std::endl;
-                            std::cout << mat2str(face->template getCurrentQuadraturePoint<t_quadrature>(i)) << std::endl;
-                            //
-                            //
-                            auto row_cell_vector = this->template getBasisEvaluation<getGradBasis()>(i_p);
-                            auto col_face_vector = face->template getBasisEvaluation<getFaceBasis()>(point);
-                            auto col_cell_vector = this->template getBasisEvaluation<getCellBasis()>(i_p);
-                            // auto normal_vector = face->getNormalVector(face->template getReferenceQuadraturePoint<t_quadrature>(i));
-                            std::cout << "------> row_cell_vector " << i << " : " << std::endl;
-                            std::cout << mat2str(row_cell_vector) << std::endl;
-                            std::cout << "------> col_face_vector " << i << " : " << std::endl;
-                            std::cout << mat2str(col_face_vector) << std::endl;
-                            std::cout << "------> col_cell_vector " << i << " : " << std::endl;
-                            std::cout << mat2str(col_cell_vector) << std::endl;
-                            std::cout << "------> normal_vector " << i << " : " << std::endl;
-                            std::cout << mat2str(normal_vector) << std::endl;
-                            auto normal_vector_component_i = face_orientation * normal_vector(col);
-                            auto normal_vector_component_j = face_orientation * normal_vector(row);
-                            //
-                            auto face_col_offset_i = face_offset + row * getFaceBasisSize<t_inner_neighbor>();
-                            auto face_block_i = rhs.template block<getGradBasisSize<t_element>(), getFaceBasisSize<t_inner_neighbor>()>(0, face_col_offset_i);
-                            face_block_i += (1.0 / 2.0) * normal_vector_component_i * weight * row_cell_vector * col_face_vector.transpose();
-                            //
-                            auto face_col_offset_j = face_offset + col * getFaceBasisSize<t_inner_neighbor>();
-                            auto face_block_j = rhs.template block<getGradBasisSize<t_element>(), getFaceBasisSize<t_inner_neighbor>()>(0, face_col_offset_j);
-                            face_block_j += (1.0 / 2.0) * normal_vector_component_j * weight * row_cell_vector * col_face_vector.transpose();
-                            //
-                            auto cell_col_offset_i = row * getCellBasisSize<t_element>();
-                            auto cell_block_i = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, cell_col_offset_i);
-                            cell_block_i -= (1.0 / 2.0) * normal_vector_component_i * weight * row_cell_vector * col_cell_vector.transpose();
-                            //
-                            auto cell_col_offset_j = col * getCellBasisSize<t_element>();
-                            auto cell_block_j = rhs.template block<getGradBasisSize<t_element>(), getCellBasisSize<t_element>()>(0, cell_col_offset_j);
-                            cell_block_j -= (1.0 / 2.0) * normal_vector_component_j * weight * row_cell_vector * col_cell_vector.transpose();
-                        }
-                        auto face_col_offset_i = face_offset + row * getFaceBasisSize<t_inner_neighbor>();
-                        auto face_col_offset_j = face_offset + col * getFaceBasisSize<t_inner_neighbor>();
-                        auto face_block_i = rhs.template block<getGradBasisSize<t_element>(), getFaceBasisSize<t_inner_neighbor>()>(0, face_col_offset_i);
-                        auto face_block_j = rhs.template block<getGradBasisSize<t_element>(), getFaceBasisSize<t_inner_neighbor>()>(0, face_col_offset_j);
-                        std::cout << "------> face block " << row << " : " << std::endl;
-                        std::cout << mat2str(face_block_i) << std::endl;
-                        std::cout << "------> face block " << col << " : " << std::endl;
-                        std::cout << mat2str(face_block_j) << std::endl;
                         face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>();
                         i_face ++;
                     }
@@ -781,7 +569,7 @@ namespace lolita
             template<Mapping t_mapping, Field t_field>
             Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>
             getMapping(
-                Point const & point
+                PointConcept auto const & point
             )
             const
             requires(t_mapping.isGradient() || t_mapping.isLargeStrain())
@@ -801,7 +589,7 @@ namespace lolita
             template<Mapping t_mapping, Field t_field>
             Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>
             getMapping(
-                Point const & point
+                PointConcept auto const & point
             )
             const
             requires(t_mapping.isSmallStrain())
@@ -821,7 +609,7 @@ namespace lolita
             template<Mapping t_mapping, Field t_field>
             Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>
             getMapping(
-                Point const & point
+                PointConcept auto const & point
             )
             const
             requires(t_mapping.isIdentity())
@@ -838,6 +626,10 @@ namespace lolita
                 }
                 return mapping;
             }
+
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
+            // -------------------------------------------------------------------------------------------------------------------------------------------------
 
             template<Field t_field>
             Vector<Real, getNumCellUnknowns<t_field>()>
@@ -921,7 +713,6 @@ namespace lolita
                 {
                     auto strain_operator_view = StrainOperatorView(integration_point.ops_.at(std::string(degree_of_freedom_label)).data());
                     auto stress_view = StrainView(integration_point.behavior_data_->s1.thermodynamic_forces.data());
-                    // std::cout << "stress_view : " << Matrix<Real, 1, -1>(stress_view) << std::endl;
                     internal_forces += integration_point.weight_ * strain_operator_view.transpose() * stress_view;
                 }
                 auto stabilization_label = std::string(degree_of_freedom_label) + "Stabilization";

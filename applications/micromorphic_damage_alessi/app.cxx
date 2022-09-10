@@ -142,6 +142,10 @@ main(int argc, char** argv)
     // systems
     auto displacement_system = lolita::System::make();
     auto damage_system = lolita::System::make();
+    // -> TEST
+    auto doftest = lolita::DegreeOfFreedom::make("Hello");
+    displacement_system->addDegreeOfFreedom(doftest);
+    // <- TEST
     displacement_system->setUnknown("Displacement", face_displacement->size());
     displacement_system->setBinding("TopForce", top_force->size());
     displacement_system->setBinding("LeftForce", left_force->size());

@@ -1,7 +1,7 @@
 #ifndef F402E53D_B7DA_4E80_B9B0_6CC57A882459
 #define F402E53D_B7DA_4E80_B9B0_6CC57A882459
 
-#include "core/lolita.hxx"
+#include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
 #include "core/001_geometry.hxx"
 #include "core/linear_system.hxx"

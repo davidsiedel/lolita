@@ -1,12 +1,82 @@
 #ifndef DA9C5D5A_13CE_4129_A31C_3550B18DAB24
 #define DA9C5D5A_13CE_4129_A31C_3550B18DAB24
 
-#include "core/lolita.hxx"
+#include "lolita.hxx"
 
 namespace lolita
 {
+    
+    template<Field... t_field>
+    struct FieldTraits;
+    
+    template<>
+    struct FieldTraits<>
+    {
+
+        static
+        Integer
+        getCols(
+            Field field,
+            Domain domain
+        )
+        {
+            if (field.isTensor(0) || field.isTensor(1))
+            {
+                return lolita::numerics::pow(domain.getDim(), 0);
+            }
+            else if (field.isTensor(2) || field.isTensor(3))
+            {
+                return lolita::numerics::pow(domain.getDim(), 1);
+            }
+            else if (field.isTensor(4))
+            {
+                return lolita::numerics::pow(domain.getDim(), 2);
+            }
+            else
+            {
+                throw std::runtime_error("Field dim not implemented");
+            }
+        }
+
+        static
+        Integer
+        getRows(
+            Field field,
+            Domain domain
+        )
+        {
+            if (field.isTensor(0))
+            {
+                return lolita::numerics::pow(domain.getDim(), 0);
+            }
+            else if (field.isTensor(0) || field.isTensor(2))
+            {
+                return lolita::numerics::pow(domain.getDim(), 1);
+            }
+            else if (field.isTensor(3) || field.isTensor(4))
+            {
+                return lolita::numerics::pow(domain.getDim(), 2);
+            }
+            else
+            {
+                throw std::runtime_error("Field dim not implemented");
+            }
+        }
+
+        static
+        Integer
+        getSize(
+            Field field,
+            Domain domain
+        )
+        {
+            return getRows(field, domain) * getCols(field, domain);
+        }
+
+    };
+
     template<Field t_field>
-    struct FieldTraits
+    struct FieldTraits<t_field>
     {
 
         template<Domain t_domain>
@@ -15,7 +85,7 @@ namespace lolita
         getCols()
         requires(t_field.isTensor(0))
         {
-            return lolita::numerics::pow(t_domain.dim_, 0);
+            return lolita::numerics::pow(t_domain.getDim(), 0);
         }
 
         template<Domain t_domain>
@@ -24,7 +94,7 @@ namespace lolita
         getCols()
         requires(t_field.isTensor(1))
         {
-            return lolita::numerics::pow(t_domain.dim_, 0);
+            return lolita::numerics::pow(t_domain.getDim(), 0);
         }
 
         template<Domain t_domain>
@@ -33,7 +103,7 @@ namespace lolita
         getCols()
         requires(t_field.isTensor(2))
         {
-            return lolita::numerics::pow(t_domain.dim_, 1);
+            return lolita::numerics::pow(t_domain.getDim(), 1);
         }
 
         template<Domain t_domain>
@@ -42,7 +112,7 @@ namespace lolita
         getCols()
         requires(t_field.isTensor(3))
         {
-            return lolita::numerics::pow(t_domain.dim_, 1);
+            return lolita::numerics::pow(t_domain.getDim(), 1);
         }
 
         template<Domain t_domain>
@@ -51,7 +121,7 @@ namespace lolita
         getCols()
         requires(t_field.isTensor(4))
         {
-            return lolita::numerics::pow(t_domain.dim_, 2);
+            return lolita::numerics::pow(t_domain.getDim(), 2);
         }
 
         // ---
@@ -62,7 +132,7 @@ namespace lolita
         getRows()
         requires(t_field.isTensor(0))
         {
-            return lolita::numerics::pow(t_domain.dim_, 0);
+            return lolita::numerics::pow(t_domain.getDim(), 0);
         }
 
         template<Domain t_domain>
@@ -71,7 +141,7 @@ namespace lolita
         getRows()
         requires(t_field.isTensor(1))
         {
-            return lolita::numerics::pow(t_domain.dim_, 1);
+            return lolita::numerics::pow(t_domain.getDim(), 1);
         }
 
         template<Domain t_domain>
@@ -80,7 +150,7 @@ namespace lolita
         getRows()
         requires(t_field.isTensor(2))
         {
-            return lolita::numerics::pow(t_domain.dim_, 1);
+            return lolita::numerics::pow(t_domain.getDim(), 1);
         }
 
         template<Domain t_domain>
@@ -89,7 +159,7 @@ namespace lolita
         getRows()
         requires(t_field.isTensor(3))
         {
-            return lolita::numerics::pow(t_domain.dim_, 2);
+            return lolita::numerics::pow(t_domain.getDim(), 2);
         }
 
         template<Domain t_domain>
@@ -98,7 +168,7 @@ namespace lolita
         getRows()
         requires(t_field.isTensor(4))
         {
-            return lolita::numerics::pow(t_domain.dim_, 2);
+            return lolita::numerics::pow(t_domain.getDim(), 2);
         }
 
         // ---
