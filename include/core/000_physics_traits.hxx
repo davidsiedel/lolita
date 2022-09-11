@@ -787,6 +787,35 @@ namespace lolita
             return p;
         }
 
+        template<Domain t_domain, GeneralizedStrainConcept auto t_generalized_strain>
+        static constexpr
+        Integer
+        getGeneralizedStrainOffset()
+        {
+            auto p = Integer(0);
+            auto set = false;
+            auto cnt = [&] <Integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                if (t_behavior.template getGeneralizedStrain<t_i>() == t_generalized_strain)
+                {
+                    set = true;
+                }
+                if (!set)
+                {
+                    p += GeneralizedStrainTraits<t_behavior.template getGeneralizedStrain<t_i>()>::template getSize<t_domain>();
+                }
+                if constexpr (t_i < t_behavior.getNumGeneralizedStrains() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            cnt(cnt);
+            return p;
+        }
+
     };
 
     template<FiniteElementMethodConcept auto t_finite_element_method>

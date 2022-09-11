@@ -7,6 +7,81 @@
 
 namespace lolita
 {
+
+    struct Strategy
+    {
+
+        enum Type
+        {
+            EigenLU,
+            EigenLDLT,
+        };
+
+        static constexpr
+        Strategy
+        eigenLU()
+        {
+            return Strategy(EigenLU);
+        }
+
+    private:
+
+        constexpr
+        Strategy(
+            Type type
+        )
+        :
+        type_(type)
+        {}
+
+    public:
+
+        Type type_;
+
+    };
+
+    template<Strategy t_s>
+    struct LinearSystem
+    {
+
+        static
+        std::unique_ptr<LinearSystem>
+        make()
+        {
+            return std::make_unique<LinearSystem>();
+        }
+
+        LinearSystem()
+        :
+        size_(0)
+        {}
+
+        void
+        setSize(
+            Natural size
+        )
+        {
+            size_ = size;
+        }
+
+        void
+        addSize(
+            Integer size
+        )
+        {
+            size_ += size;
+        }
+
+        Natural
+        getSize()
+        const
+        {
+            return size_;
+        }
+
+        std::atomic<Natural> size_;
+
+    };
     
     struct DegreeOfFreedom
     {
@@ -30,8 +105,6 @@ namespace lolita
         {
             return std::make_shared<DegreeOfFreedom>(label);
         }
-
-    // private:
 
         DegreeOfFreedom(
             // Field field,

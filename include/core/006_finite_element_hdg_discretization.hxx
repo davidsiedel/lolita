@@ -1546,6 +1546,44 @@ namespace lolita
 
             }
 
+            template<GeneralizedStrainConcept auto t_strain>
+            void
+            addDof()
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr field = t_strain.getField();
+                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<field, getCellBasis()>());
+            }
+
+            template<GeneralizedStrainConcept auto t_strain, Strategy t_s>
+            void
+            addDof(
+                std::unique_ptr<LinearSystem<t_s>> const & linear_system
+            )
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto constexpr field = t_strain.getField();
+                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<field, getFaceBasis()>(linear_system));
+            }
+
+            template<Field t_field>
+            void
+            addDof()
+            requires(t_element.isSub(t_domain, 0))
+            {
+                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getCellBasis()>());
+            }
+
+            template<Field t_field, Strategy t_s>
+            void
+            addDof(
+                std::unique_ptr<LinearSystem<t_s>> const & linear_system
+            )
+            requires(t_element.isSub(t_domain, 1))
+            {
+                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getFaceBasis()>(linear_system));
+            }
+
         };
 
     };

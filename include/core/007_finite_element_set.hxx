@@ -18,6 +18,34 @@ namespace lolita
     struct FiniteElementSet : ElementSet<FiniteElement, t_domain>
     {
 
+        template<Integer t_i>
+        void
+        caller(
+            std::basic_string_view<Character> domain,
+            auto & fun
+        )
+        const
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & element : this->template getElements<t_i, t_j>())
+                {
+                    if (element->isIn(domain))
+                    {
+                        fun(element);
+                    }
+                }
+                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }
+            }; 
+            activate_elements(activate_elements);
+        }
+
         template<ElementType t_ii>
         void
         caller(
@@ -45,6 +73,61 @@ namespace lolita
                 }
             }; 
             activate_elements(activate_elements);
+        }
+
+        template<Integer t_i>
+        void
+        caller2(
+            std::basic_string_view<Character> domain,
+            auto & fun,
+            Integer num_threads = std::thread::hardware_concurrency()
+        )
+        const
+        {
+            auto activate_elements = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            mutable
+            {
+                if (num_threads == 0)
+                {
+                    caller<t_i>(domain, fun);
+                }
+                else
+                {
+                    auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
+                    auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
+                    auto threads = std::vector<std::jthread>(num_threads);
+                    //
+                    auto doit = [&] (
+                        Integer start,
+                        Integer stop
+                    )
+                    {
+                        for (auto i = start; i < stop; ++i)
+                        {
+                            auto const & finite_element = this->template getElements<t_i, t_j>()[i];
+                            if (finite_element->isIn(domain))
+                            {
+                                fun(finite_element);
+                            }
+                        }
+                    };
+                    //
+                    for(auto i = 0; i < num_threads; ++i)
+                    {
+                        threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
+                    }
+                    doit(num_threads * batch_size, num_threads * batch_size + batch_remainder);
+                    //
+                    if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                    {
+                        self.template operator()<t_j + 1>(self);
+                    }
+                }
+            }; 
+            activate_elements(activate_elements);
+            // caller<t_ii>(domain, fun);
         }
 
         template<ElementType t_ii>
@@ -136,6 +219,46 @@ namespace lolita
             }; 
             activate_elements(activate_elements);
             return sub_set;
+        }
+
+        template<Integer t_i>
+        void
+        setDof(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template setDof();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, auto... t_args, Strategy t_s>
+        void
+        addDof(
+            std::basic_string<Character> && domain_label,
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addDof<t_args...>(linear_system);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, auto... t_args>
+        void
+        addDof(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addDof<t_args...>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
         template<ElementType t_ii, auto... t_args>

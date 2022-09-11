@@ -147,11 +147,13 @@ namespace lolita
                 return BasisTraits<t_basis>::template getSize<t_element>();
             }
 
-            Coefficients()
-            :
-            s1(),
-            s0()
-            {}
+            template<Basis t_basis>
+            static
+            Coefficients
+            make()
+            {
+                return Coefficients(getSize<t_basis>());
+            }
 
             explicit
             Coefficients(
@@ -235,40 +237,55 @@ namespace lolita
             return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_basis>::template getSize<t_element>();
         }
 
-        template<Field t_field, Basis t_basis>
+        template<Field t_field, Basis t_basis, Strategy t_s>
         static
         ElementDegreeOfFreedom
         make(
-            std::shared_ptr<DegreeOfFreedom> const & degree_of_freedom
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom(degree_of_freedom);
-            element_degree_of_freedom.setOffset(degree_of_freedom->getSize());
-            degree_of_freedom->addSize(getSize<t_field, t_basis>());
+            auto element_degree_of_freedom = ElementDegreeOfFreedom();
+            element_degree_of_freedom.setOffset(linear_system->getSize());
+            linear_system->addSize(getSize<t_field, t_basis>());
             for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
             {
-                element_degree_of_freedom.coefficients_.push_back(Coefficients(BasisTraits<t_basis>::template getSize<t_element>()));
-                // element_degree_of_freedom.addComponent(BasisTraits<t_basis>::template getSize<t_element>());
+                element_degree_of_freedom.coefficients_.push_back(Coefficients::template make<t_basis>());
             }
             return element_degree_of_freedom;
         }
 
-        ElementDegreeOfFreedom(
-            std::shared_ptr<DegreeOfFreedom> const & degree_of_freedom
-        )
-        :
-        offset_(0),
-        degree_of_freedom_(degree_of_freedom),
-        coefficients_()
-        {}
+        template<Field t_field, Basis t_basis>
+        static
+        ElementDegreeOfFreedom
+        make()
+        {
+            auto element_degree_of_freedom = ElementDegreeOfFreedom();
+            for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
+            {
+                element_degree_of_freedom.coefficients_.push_back(Coefficients::template make<t_basis>());
+            }
+            return element_degree_of_freedom;
+        }
 
     private:
 
+        ElementDegreeOfFreedom()
+        :
+        offset_(0),
+        coefficients_()
+        {}
+
         Natural offset_;
 
-        std::shared_ptr<DegreeOfFreedom> degree_of_freedom_;
-
         std::vector<Coefficients> coefficients_;
+
+        std::vector<Matrix<Real>> matrix_auxiliaries_;
+
+        std::vector<Vector<Real>> vector_auxiliaries_;
+
+        std::vector<Real> parameter_auxiliaries_;
+
+        std::vector<Boolean> binary_auxiliaries_;
 
     public:
         
@@ -299,12 +316,12 @@ namespace lolita
             return offset_;
         }
 
-        std::basic_string<Character> const &
-        getLabel()
-        const
-        {
-            return degree_of_freedom_->getLabel();
-        }
+        // std::basic_string<Character> const &
+        // getLabel()
+        // const
+        // {
+        //     return degree_of_freedom_->getLabel();
+        // }
 
         // template<Field t_field>
         // void
@@ -435,10 +452,181 @@ namespace lolita
     };
 
     template<Element t_element, Domain t_domain>
-    struct FiniteElement
+    struct ElementFormulation
     {
 
-        std::unique_ptr<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>> ptr_degrees_of_freedom_;
+        struct IntegrationPoint
+        {
+
+        private:
+
+            template<FiniteElementMethodConcept auto t_finite_element_method>
+            static constexpr
+            Integer
+            getGeneralizedStrainSize()
+            {
+                return FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
+            }
+
+            template<BehaviorConcept auto t_behavior>
+            static constexpr
+            Integer
+            getGeneralizedStrainSize()
+            {
+                return BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
+            }
+
+        public:
+
+            IntegrationPoint(
+                PointConcept auto && ref_pt,
+                PointConcept auto && coordinates,
+                Real const & weight,
+                std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+            )
+            :
+            reference_coordinates_(std::forward(ref_pt)),
+            coordinates_(std::forward(coordinates)),
+            weight_(weight),
+            behavior_(behavior),
+            behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behavior)))
+            {}
+        
+            Boolean
+            operator==(
+                IntegrationPoint const & other
+            )
+            const = default;
+            
+            Boolean
+            operator!=(
+                IntegrationPoint const & other
+            )
+            const = default;
+
+            void
+            integrate(
+                std::atomic<Boolean> & output_handler
+            )
+            {
+                behavior_data_->K[0] = 4;
+                auto behaviour_data_view = mgis::behaviour::make_view(* behavior_data_);
+                auto res = mgis::behaviour::integrate(behaviour_data_view, * behavior_);
+                if (res < 1)
+                {
+                    output_handler = false;
+                }
+            }
+
+            void
+            reserve()
+            {
+                mgis::behaviour::update(* behavior_data_);
+            }
+
+            void
+            recover()
+            {
+                mgis::behaviour::revert(* behavior_data_);
+            }
+
+            void
+            setMaterialProperty(
+                std::basic_string_view<Character> material_property_label,
+                std::function<Real(Point const &)> && function
+            )
+            {
+                auto value = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
+                mgis::behaviour::setMaterialProperty(behavior_data_->s0, std::string(material_property_label), value);
+                mgis::behaviour::setMaterialProperty(behavior_data_->s1, std::string(material_property_label), value);
+            }
+
+            void
+            setExternalVariable(
+                std::basic_string_view<Character> material_property_label,
+                std::function<Real(Point const &)> && function
+            )
+            {
+                auto value = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
+                mgis::behaviour::setExternalStateVariable(behavior_data_->s0, std::string(material_property_label), value);
+                mgis::behaviour::setExternalStateVariable(behavior_data_->s1, std::string(material_property_label), value);
+            }
+
+            template<GeneralizedStrainConcept auto t_strain>
+            Matrix<Real, t_strain.getSize(), t_strain.getSize()>
+            getJacobian()
+            const
+            {
+                auto jacobian_matrix = Matrix<Real, t_strain.getSize(), t_strain.getSize()>();
+                jacobian_matrix.setZero();
+                auto set_mapping_block = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr mapping = t_strain.template getMapping<t_i>();
+                    auto constexpr mapping_size = GeneralizedStrainTraits<t_strain>::template getMappingSize<t_domain, mapping>();
+                    auto constexpr offset = GeneralizedStrainTraits<t_strain>::template getMappingOffset<t_domain, mapping>();
+                    auto rhs = algebra::View<Matrix<Real, mapping_size, mapping_size> const>(behavior_data_->K.data() + offset * offset);
+                    auto lhs = jacobian_matrix.template block<mapping_size, mapping_size>(offset, offset);
+                    lhs = rhs;
+                    if constexpr (t_i < t_strain.getNumMappings() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_mapping_block(set_mapping_block);
+                return jacobian_matrix;
+            }
+
+            Point &
+            getCurrentCoordinates()
+            {
+                return coordinates_;
+            }
+            
+            Point const &
+            getCurrentCoordinates()
+            const
+            {
+                return coordinates_;
+            }
+            
+            algebra::View<Point const>
+            getReferenceCoordinates()
+            const
+            {
+                return reference_coordinates_;
+            }
+
+            algebra::View<Point const> reference_coordinates_;
+        
+            Point coordinates_;
+            
+            Real weight_;
+        
+            std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+
+            std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
+
+            std::map<std::basic_string<Character>, Matrix<Real>> ops_;
+
+            std::vector<Matrix<Real>> strain_matrix_list_;
+        };
+
+        std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
+
+        // std::vector<std::shared_ptr<ElementDegreeOfFreedom<t_element, t_domain>>> ptr_degrees_of_freedom_;
+
+        Matrix<Real> jacobian_matrix_;
+
+        Vector<Real> residual_vector_;
+
+    };
+    
+    template<Element t_element, Domain t_domain>
+    struct FiniteElement
+    {
 
     private:
     
@@ -458,6 +646,30 @@ namespace lolita
 
         template<auto t_discretization>
         using t_Disc = typename DiscretizationTraits<t_discretization>::template Implementation<t_element, t_domain>;
+
+        void
+        setDof()
+        {
+            ptr_degrees_of_freedom_ = std::make_unique<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>>();
+        }
+
+        template<auto t_discretization, auto... t_args>
+        void
+        addDof()
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template addDof<t_args...>();
+        }
+
+        template<auto t_discretization, auto... t_args, Strategy t_s>
+        void
+        addDof(
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template addDof<t_args...>(linear_system);
+        }
+
+        std::unique_ptr<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>> ptr_degrees_of_freedom_;
 
         template<Basis t_basis>
         static constexpr

@@ -143,6 +143,11 @@ main(int argc, char** argv)
     auto displacement_system = lolita::System::make();
     auto damage_system = lolita::System::make();
     // -> TEST
+    auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make();
+    elements->setDof<1>("ROD");
+    elements->setDof<2>("ROD");
+    elements->addDof<1, hdg, lolita::Field::vector()>("ROD", linear_system);
+    elements->addDof<2, hdg, lolita::Field::vector()>("ROD");
     auto doftest = lolita::DegreeOfFreedom::make("Hello");
     displacement_system->addDegreeOfFreedom(doftest);
     // <- TEST
