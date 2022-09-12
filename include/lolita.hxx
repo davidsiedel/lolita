@@ -375,13 +375,63 @@ namespace lolita
 
         };
 
+        static constexpr
+        Mapping
+        gradient()
+        {
+            return Mapping(Type::Gradient);
+        }
+
+        static constexpr
+        Mapping
+        identity()
+        {
+            return Mapping(Type::Identity);
+        }
+
+        static constexpr
+        Mapping
+        divergence()
+        {
+            return Mapping(Type::Divergence);
+        }
+
+        static constexpr
+        Mapping
+        smallStrain()
+        {
+            return Mapping(Type::SmallStrain);
+        }
+
+        static constexpr
+        Mapping
+        largeStrain()
+        {
+            return Mapping(Type::LargeStrain);
+        }
+
+    private:
+
         constexpr
         Mapping(
             Type type
         )
         :
-        type_(type)
+        type_(type),
+        tag_(-1)
         {}
+
+        constexpr
+        Mapping(
+            Type type,
+            Integer tag
+        )
+        :
+        type_(type),
+        tag_(tag)
+        {}
+
+    public:
 
         constexpr
         Boolean
@@ -397,11 +447,12 @@ namespace lolita
         )
         const = default;
 
-        static constexpr
-        Mapping
-        gradient()
+        constexpr
+        Integer
+        getTag()
+        const
         {
-            return Mapping(Type::Gradient);
+            return tag_;
         }
 
         constexpr
@@ -412,26 +463,12 @@ namespace lolita
             return type_ == Type::Gradient;
         }
 
-        static constexpr
-        Mapping
-        identity()
-        {
-            return Mapping(Type::Identity);
-        }
-
         constexpr
         Boolean
         isIdentity()
         const
         {
             return type_ == Type::Identity;
-        }
-
-        static constexpr
-        Mapping
-        divergence()
-        {
-            return Mapping(Type::Divergence);
         }
 
         constexpr
@@ -442,26 +479,12 @@ namespace lolita
             return type_ == Type::Divergence;
         }
 
-        static constexpr
-        Mapping
-        smallStrain()
-        {
-            return Mapping(Type::SmallStrain);
-        }
-
         constexpr
         Boolean
         isSmallStrain()
         const
         {
             return type_ == Type::SmallStrain;
-        }
-
-        static constexpr
-        Mapping
-        largeStrain()
-        {
-            return Mapping(Type::LargeStrain);
         }
 
         constexpr
@@ -474,10 +497,21 @@ namespace lolita
 
         Type type_;
 
+        Integer tag_;
+
     };
 
     struct Field
     {
+
+        static constexpr
+        Field
+        tensor(
+            Integer dim
+        )
+        {
+            return Field(dim);
+        }
 
         static constexpr
         Field
@@ -492,14 +526,29 @@ namespace lolita
         {
             return Field(1);
         }
+
+    private:
         
         constexpr
         Field(
             Integer dim
         )
         :
-        dim_(dim)
+        dim_(dim),
+        tag_(-1)
         {}
+        
+        constexpr
+        Field(
+            Integer dim,
+            Integer tag
+        )
+        :
+        dim_(dim),
+        tag_(tag)
+        {}
+
+    public:
 
         constexpr
         Boolean
@@ -524,6 +573,14 @@ namespace lolita
         }
 
         constexpr
+        Integer
+        getTag()
+        const
+        {
+            return tag_;
+        }
+
+        constexpr
         Boolean
         isTensor(
             Integer dim
@@ -534,6 +591,8 @@ namespace lolita
         }
 
         Integer dim_;
+
+        Integer tag_;
 
     };
 
@@ -696,10 +755,12 @@ namespace lolita
 
         constexpr
         GeneralizedStrain(
+            Integer tag,
             Field field,
             t_Mappings... mappings
         )
         :
+        tag_(tag),
         field_(field),
         mappings_(mappings...)
         {}
@@ -719,6 +780,14 @@ namespace lolita
         const = default;
 
         constexpr
+        Integer
+        getTag()
+        const
+        {
+            return tag_;
+        }
+
+        constexpr
         Field
         getField()
         const
@@ -734,6 +803,8 @@ namespace lolita
         {
             return utility::get<t_i>(mappings_);
         }
+
+        Integer tag_;
 
         Field field_;
 
@@ -770,9 +841,11 @@ namespace lolita
 
         constexpr
         Behavior(
+            Integer tag,
             t_GeneralizedStrains... generalized_strains
         )
         :
+        tag_(tag),
         generalized_strains_(generalized_strains...)
         {}
 
@@ -790,6 +863,14 @@ namespace lolita
         )
         const = default;
 
+        constexpr
+        Integer
+        getTag()
+        const
+        {
+            return tag_;
+        }
+
         template<Integer t_i>
         constexpr
         std::tuple_element_t<t_i, std::tuple<t_GeneralizedStrains...>> const &
@@ -798,6 +879,8 @@ namespace lolita
         {
             return utility::get<t_i>(generalized_strains_);
         }
+
+        Integer tag_;
 
         GeneralizedStrains generalized_strains_;
 
@@ -929,6 +1012,95 @@ namespace lolita
 
     template<typename t_T>
     concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
+
+    struct Strategy
+    {
+
+        enum Type
+        {
+            EigenLU,
+            EigenLDLT,
+        };
+
+        static constexpr
+        Strategy
+        eigenLU()
+        {
+            return Strategy(EigenLU);
+        }
+
+        static constexpr
+        Strategy
+        eigenLU(
+            Integer tag
+        )
+        {
+            return Strategy(EigenLU, tag);
+        }
+
+    private:
+
+        constexpr
+        Strategy(
+            Type type
+        )
+        :
+        type_(type),
+        tag_(-1)
+        {}
+
+        constexpr
+        Strategy(
+            Type type,
+            Integer tag
+        )
+        :
+        type_(type),
+        tag_(tag)
+        {}
+
+    public:
+
+        Type type_;
+
+        Integer tag_;
+
+    };
+
+    template<Strategy t_s>
+    struct LinearSystem
+    {
+
+        static
+        std::unique_ptr<LinearSystem>
+        make_unique()
+        {
+            return std::make_unique<LinearSystem>();
+        }
+
+        LinearSystem()
+        :
+        size_(0)
+        {}
+
+        std::atomic<Natural> const &
+        getSize()
+        const
+        {
+            return size_;
+        }
+
+        std::atomic<Natural> &
+        getSize()
+        {
+            return size_;
+        }
+
+    private:
+
+        std::atomic<Natural> size_;
+
+    };
 
 } // namespace lolita
 

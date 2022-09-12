@@ -3,10 +3,12 @@
 
 #include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
-#include "core/001_geometry.hxx"
+#include "core/100_geometry.hxx"
 #include "core/linear_system.hxx"
-#include "core/003_quadrature.hxx"
-#include "core/004_finite_element.hxx"
+#include "core/200_quadrature.hxx"
+#include "core/201_finite_element_dof.hxx"
+#include "core/202_finite_element_frm.hxx"
+#include "core/300_finite_element.hxx"
 
 namespace lolita
 {

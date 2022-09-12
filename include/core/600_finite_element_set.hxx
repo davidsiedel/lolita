@@ -3,12 +3,14 @@
 
 #include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
-#include "core/001_geometry.hxx"
+#include "core/100_geometry.hxx"
 #include "core/linear_system.hxx"
-#include "core/003_quadrature.hxx"
-#include "core/004_finite_element.hxx"
-#include "core/005_finite_element_basis.hxx"
-#include "core/006_finite_element_hdg_discretization.hxx"
+#include "core/200_quadrature.hxx"
+#include "core/201_finite_element_dof.hxx"
+#include "core/202_finite_element_frm.hxx"
+#include "core/300_finite_element.hxx"
+#include "core/400_finite_element_basis.hxx"
+#include "core/500_finite_element_hdg_discretization.hxx"
 // #include "core/lolita_core_n_4001.hxx"
 
 namespace lolita
@@ -221,20 +223,9 @@ namespace lolita
             return sub_set;
         }
 
-        template<Integer t_i>
-        void
-        setDof(
-            std::basic_string<Character> && domain_label
-        )
-        {
-            auto fun = [&] (auto const & finite_element)
-            {
-                finite_element->template setDof();
-            };
-            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
-        }
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-        template<Integer t_i, auto... t_args, Strategy t_s>
+        template<Integer t_i, auto t_discretization, GeneralizedStrainConcept auto t_strain, Strategy t_s>
         void
         addDof(
             std::basic_string<Character> && domain_label,
@@ -243,12 +234,12 @@ namespace lolita
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template addDof<t_args...>(linear_system);
+                finite_element->template addDof<t_discretization, t_strain>(linear_system);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, auto... t_args>
+        template<Integer t_i, auto t_discretization, GeneralizedStrainConcept auto t_strain>
         void
         addDof(
             std::basic_string<Character> && domain_label
@@ -256,10 +247,108 @@ namespace lolita
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template addDof<t_args...>();
+                finite_element->template addDof<t_discretization, t_strain>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
+
+        template<Integer t_i, BehaviorConcept auto t_behavior>
+        void
+        addFormulation(
+            std::basic_string<Character> && domain_label,
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addFormulation<t_behavior>(behavior);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, BehaviorConcept auto t_behavior>
+        void
+        addFormulation(
+            std::basic_string<Character> && domain_label,
+            auto const &... args
+        )
+        {
+            auto behavior = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(args...));
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addFormulation<t_behavior>(behavior);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, Quadrature t_quadrature, BehaviorConcept auto t_behavior>
+        void
+        addFormulation(
+            std::basic_string<Character> && domain_label,
+            auto const &... args
+        )
+        {
+            auto behavior = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(args...));
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addFormulation<t_quadrature, t_behavior>(behavior);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, BehaviorConcept auto t_behavior>
+        void
+        addFormulation(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addFormulation<t_behavior>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, auto t_discretization, BehaviorConcept auto t_behavior, GeneralizedStrainConcept auto t_strain>
+        void
+        addStrainOperators(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                element->template addStrainOperators<t_discretization, t_behavior, t_strain>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, auto t_discretization, BehaviorConcept auto t_behavior, GeneralizedStrainConcept auto t_strain>
+        void
+        setStrainValues(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                element->template setStrainValues<t_discretization, t_behavior, t_strain>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, auto t_discretization, GeneralizedStrainConcept auto t_strain>
+        void
+        addElementOperators(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & element)
+            {
+                element->template addElementOperator<t_discretization, t_strain>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
         template<ElementType t_ii, auto... t_args>
         void

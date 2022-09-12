@@ -3,626 +3,14 @@
 
 #include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
-#include "core/001_geometry.hxx"
+#include "core/100_geometry.hxx"
 #include "core/linear_system.hxx"
-#include "core/003_quadrature.hxx"
+#include "core/200_quadrature.hxx"
+#include "core/201_finite_element_dof.hxx"
+#include "core/202_finite_element_frm.hxx"
 
 namespace lolita
 {
-        
-    template<Basis... t_basis>
-    struct BasisTraits;
-
-    template<auto t_discretization>
-    struct DiscretizationTraits;
-
-    struct Output
-    {
-
-        enum Type
-        {
-            Success,
-            Failure,
-            Warning
-        };
-
-        static constexpr
-        Output
-        success()
-        {
-            return Output(Output::Success);
-        }
-
-        static constexpr
-        Output
-        failure()
-        {
-            return Output(Output::Failure);
-        }
-
-        static constexpr
-        Output
-        warning()
-        {
-            return Output(Output::Warning);
-        }
-
-        constexpr explicit
-        Output(
-            Type type
-        )
-        :
-        type_(type)
-        {}
-
-        constexpr
-        Boolean
-        isSuccess()
-        const
-        {
-            return type_ == Output::Success;
-        }
-
-        constexpr
-        Boolean
-        isFailure()
-        const
-        {
-            return type_ == Output::Failure;
-        }
-
-        constexpr
-        Boolean
-        isWarning()
-        const
-        {
-            return type_ == Output::Warning;
-        }
-
-        Type type_;
-
-    };
-
-    struct OutputHandler
-    {
-
-        OutputHandler()
-        :
-        output_(Output::success())
-        {}
-
-        inline
-        void
-        setSuccess()
-        {
-            auto lock = std::scoped_lock<std::mutex>(mutex_);
-            output_ = Output::success();
-        }
-
-        inline
-        void
-        setFailure()
-        {
-            auto lock = std::scoped_lock<std::mutex>(mutex_);
-            output_ = Output::failure();
-        }
-
-        inline
-        void
-        setWarning()
-        {
-            auto lock = std::scoped_lock<std::mutex>(mutex_);
-            output_ = Output::warning();
-        }
-
-        inline
-        Output
-        getOutput()
-        {
-            return output_;
-        }
-
-    private:
-
-        Output output_;
-
-        std::mutex mutex_;
-
-    };
-    
-    template<Element t_element, Domain t_domain>
-    struct ElementDegreeOfFreedom
-    {
-
-    private:
-
-        struct Coefficients
-        {
-
-            template<Basis t_basis>
-            static constexpr
-            Integer
-            getSize()
-            {
-                return BasisTraits<t_basis>::template getSize<t_element>();
-            }
-
-            template<Basis t_basis>
-            static
-            Coefficients
-            make()
-            {
-                return Coefficients(getSize<t_basis>());
-            }
-
-            explicit
-            Coefficients(
-                Integer size
-            )
-            :
-            s1(Vector<Real>::Zero(size)),
-            s0(Vector<Real>::Zero(size))
-            {}
-        
-            Boolean
-            operator==(
-                Coefficients const & other
-            )
-            const = default;
-            
-            Boolean
-            operator!=(
-                Coefficients const & other
-            )
-            const = default;
-
-            void
-            set(
-                VectorConcept<Real> auto && input
-            )
-            {
-                s1 = std::forward(input);
-            }
-
-            void
-            add(
-                VectorConcept<Real> auto && input
-            )
-            {
-                s1 += std::forward(input);
-            }
-
-            Vector<Real> const &
-            get()
-            const
-            {
-                return s1;
-            }
-
-            template<Basis t_basis>
-            algebra::View<Vector<Real, getSize<t_basis>()> const>
-            get()
-            const
-            {
-                return algebra::View<Vector<Real, getSize<t_basis>()> const>(s1.data());
-            }
-
-            void
-            reserve()
-            {
-                s0 = s1;
-            }
-
-            void
-            recover()
-            {
-                s1 = s0;
-            }
-
-        private:
-
-            Vector<Real> s0;
-
-            Vector<Real> s1;
-
-        };
-
-    public:
-
-        template<Field t_field, Basis t_basis>
-        static constexpr
-        Integer
-        getSize()
-        {
-            return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_basis>::template getSize<t_element>();
-        }
-
-        template<Field t_field, Basis t_basis, Strategy t_s>
-        static
-        ElementDegreeOfFreedom
-        make(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
-        )
-        {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom();
-            element_degree_of_freedom.setOffset(linear_system->getSize());
-            linear_system->addSize(getSize<t_field, t_basis>());
-            for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
-            {
-                element_degree_of_freedom.coefficients_.push_back(Coefficients::template make<t_basis>());
-            }
-            return element_degree_of_freedom;
-        }
-
-        template<Field t_field, Basis t_basis>
-        static
-        ElementDegreeOfFreedom
-        make()
-        {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom();
-            for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
-            {
-                element_degree_of_freedom.coefficients_.push_back(Coefficients::template make<t_basis>());
-            }
-            return element_degree_of_freedom;
-        }
-
-    private:
-
-        ElementDegreeOfFreedom()
-        :
-        offset_(0),
-        coefficients_()
-        {}
-
-        Natural offset_;
-
-        std::vector<Coefficients> coefficients_;
-
-        std::vector<Matrix<Real>> matrix_auxiliaries_;
-
-        std::vector<Vector<Real>> vector_auxiliaries_;
-
-        std::vector<Real> parameter_auxiliaries_;
-
-        std::vector<Boolean> binary_auxiliaries_;
-
-    public:
-        
-        Boolean
-        operator==(
-            ElementDegreeOfFreedom const & other
-        )
-        const = default;
-        
-        Boolean
-        operator!=(
-            ElementDegreeOfFreedom const & other
-        )
-        const = default;
-
-        void
-        setOffset(
-            Natural offset
-        )
-        {
-            offset_ = offset;
-        }
-        
-        Natural
-        getOffset()
-        const
-        {
-            return offset_;
-        }
-
-        // std::basic_string<Character> const &
-        // getLabel()
-        // const
-        // {
-        //     return degree_of_freedom_->getLabel();
-        // }
-
-        // template<Field t_field>
-        // void
-        // set(
-        //     Integer row,
-        //     Integer col,
-        //     VectorConcept<Real> auto && input
-        // )
-        // {
-        //     auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-        //     coefficients_[index].set(std::forward(input));
-        // }
-
-        // template<Field t_field, Basis t_basis>
-        // void
-        // set(
-        //     VectorConcept<Real> auto && input
-        // )
-        // {
-        //     auto constexpr offset = BasisTraits<t_basis>::template getSize<t_element>();
-        //     for (auto row = 0; row < FieldTraits<t_field>::template getRows<t_domain>(); row++)
-        //     {
-        //         for (auto col = 0; col < FieldTraits<t_field>::template getCols<t_domain>(); col++)
-        //         {
-        //             auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-        //             coefficients_[index].set(std::forward(input).template segment<offset>(index * offset));
-        //         }
-        //     }
-        // }
-
-        // template<Field t_field>
-        // void
-        // add(
-        //     Integer row,
-        //     Integer col,
-        //     VectorConcept<Real> auto && input
-        // )
-        // {
-        //     auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-        //     coefficients_[index].add(std::forward(input));
-        // }
-
-        template<Field t_field, Basis t_basis>
-        void
-        add(
-            VectorConcept<Real> auto && input
-        )
-        {
-            auto constexpr offset = BasisTraits<t_basis>::template getSize<t_element>();
-            for (auto row = 0; row < FieldTraits<t_field>::template getRows<t_domain>(); row++)
-            {
-                for (auto col = 0; col < FieldTraits<t_field>::template getCols<t_domain>(); col++)
-                {
-                    auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-                    coefficients_[index].add(std::forward(input).template segment<offset>(offset_ + index * offset));
-                }
-            }
-        }
-
-        // template<Field t_field>
-        // Vector<Real> const &
-        // get(
-        //     Integer row,
-        //     Integer col,
-        // )
-        // const
-        // {
-        //     auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-        //     return coefficients_[index].get();
-        // }
-
-        template<Field t_field, Basis t_basis>
-        algebra::View<Vector<Real, Coefficients::template getSize<t_basis>()> const>
-        get(
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-            return coefficients_[index].template get<t_basis>();
-        }
-
-        template<Field t_field, Basis t_basis>
-        Vector<Real, getSize<t_field, t_basis>()>
-        get()
-        const
-        {
-            auto constexpr offset = BasisTraits<t_basis>::template getSize<t_element>();
-            auto output = Vector<Real, getSize<t_field, t_basis>()>();
-            for (auto row = 0; row < FieldTraits<t_field>::template getRows<t_domain>(); row++)
-            {
-                for (auto col = 0; col < FieldTraits<t_field>::template getCols<t_domain>(); col++)
-                {
-                    auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-                    output.template segment<offset>(index * offset) = coefficients_[index].template get<t_basis>();
-                }
-            }
-            return output;
-        }
-
-        // void
-        // addComponent(
-        //     Integer size
-        // )
-        // {
-        //     coefficients_.push_back(Coefficients(size));
-        // }
-
-        void
-        reserve()
-        {
-            for (auto & c : coefficients_)
-            {
-                c.reserve();
-            }
-        }
-
-        void
-        recover()
-        {
-            for (auto & c : coefficients_)
-            {
-                c.recover();
-            }
-        }
-
-    };
-
-    template<Element t_element, Domain t_domain>
-    struct ElementFormulation
-    {
-
-        struct IntegrationPoint
-        {
-
-        private:
-
-            template<FiniteElementMethodConcept auto t_finite_element_method>
-            static constexpr
-            Integer
-            getGeneralizedStrainSize()
-            {
-                return FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
-            }
-
-            template<BehaviorConcept auto t_behavior>
-            static constexpr
-            Integer
-            getGeneralizedStrainSize()
-            {
-                return BehaviorTraits<t_behavior>::template getGeneralizedStrainSize<t_domain>();
-            }
-
-        public:
-
-            IntegrationPoint(
-                PointConcept auto && ref_pt,
-                PointConcept auto && coordinates,
-                Real const & weight,
-                std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
-            )
-            :
-            reference_coordinates_(std::forward(ref_pt)),
-            coordinates_(std::forward(coordinates)),
-            weight_(weight),
-            behavior_(behavior),
-            behavior_data_(std::make_unique<mgis::behaviour::BehaviourData>(mgis::behaviour::BehaviourData(* behavior)))
-            {}
-        
-            Boolean
-            operator==(
-                IntegrationPoint const & other
-            )
-            const = default;
-            
-            Boolean
-            operator!=(
-                IntegrationPoint const & other
-            )
-            const = default;
-
-            void
-            integrate(
-                std::atomic<Boolean> & output_handler
-            )
-            {
-                behavior_data_->K[0] = 4;
-                auto behaviour_data_view = mgis::behaviour::make_view(* behavior_data_);
-                auto res = mgis::behaviour::integrate(behaviour_data_view, * behavior_);
-                if (res < 1)
-                {
-                    output_handler = false;
-                }
-            }
-
-            void
-            reserve()
-            {
-                mgis::behaviour::update(* behavior_data_);
-            }
-
-            void
-            recover()
-            {
-                mgis::behaviour::revert(* behavior_data_);
-            }
-
-            void
-            setMaterialProperty(
-                std::basic_string_view<Character> material_property_label,
-                std::function<Real(Point const &)> && function
-            )
-            {
-                auto value = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
-                mgis::behaviour::setMaterialProperty(behavior_data_->s0, std::string(material_property_label), value);
-                mgis::behaviour::setMaterialProperty(behavior_data_->s1, std::string(material_property_label), value);
-            }
-
-            void
-            setExternalVariable(
-                std::basic_string_view<Character> material_property_label,
-                std::function<Real(Point const &)> && function
-            )
-            {
-                auto value = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
-                mgis::behaviour::setExternalStateVariable(behavior_data_->s0, std::string(material_property_label), value);
-                mgis::behaviour::setExternalStateVariable(behavior_data_->s1, std::string(material_property_label), value);
-            }
-
-            template<GeneralizedStrainConcept auto t_strain>
-            Matrix<Real, t_strain.getSize(), t_strain.getSize()>
-            getJacobian()
-            const
-            {
-                auto jacobian_matrix = Matrix<Real, t_strain.getSize(), t_strain.getSize()>();
-                jacobian_matrix.setZero();
-                auto set_mapping_block = [&] <Integer t_i = 0> (
-                    auto & self
-                )
-                constexpr mutable
-                {
-                    auto constexpr mapping = t_strain.template getMapping<t_i>();
-                    auto constexpr mapping_size = GeneralizedStrainTraits<t_strain>::template getMappingSize<t_domain, mapping>();
-                    auto constexpr offset = GeneralizedStrainTraits<t_strain>::template getMappingOffset<t_domain, mapping>();
-                    auto rhs = algebra::View<Matrix<Real, mapping_size, mapping_size> const>(behavior_data_->K.data() + offset * offset);
-                    auto lhs = jacobian_matrix.template block<mapping_size, mapping_size>(offset, offset);
-                    lhs = rhs;
-                    if constexpr (t_i < t_strain.getNumMappings() - 1)
-                    {
-                        self.template operator ()<t_i + 1>(self);
-                    }
-                };
-                set_mapping_block(set_mapping_block);
-                return jacobian_matrix;
-            }
-
-            Point &
-            getCurrentCoordinates()
-            {
-                return coordinates_;
-            }
-            
-            Point const &
-            getCurrentCoordinates()
-            const
-            {
-                return coordinates_;
-            }
-            
-            algebra::View<Point const>
-            getReferenceCoordinates()
-            const
-            {
-                return reference_coordinates_;
-            }
-
-            algebra::View<Point const> reference_coordinates_;
-        
-            Point coordinates_;
-            
-            Real weight_;
-        
-            std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
-
-            std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
-
-            std::map<std::basic_string<Character>, Matrix<Real>> ops_;
-
-            std::vector<Matrix<Real>> strain_matrix_list_;
-        };
-
-        std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
-
-        // std::vector<std::shared_ptr<ElementDegreeOfFreedom<t_element, t_domain>>> ptr_degrees_of_freedom_;
-
-        Matrix<Real> jacobian_matrix_;
-
-        Vector<Real> residual_vector_;
-
-    };
     
     template<Element t_element, Domain t_domain>
     struct FiniteElement
@@ -647,29 +35,240 @@ namespace lolita
         template<auto t_discretization>
         using t_Disc = typename DiscretizationTraits<t_discretization>::template Implementation<t_element, t_domain>;
 
-        void
-        setDof()
-        {
-            ptr_degrees_of_freedom_ = std::make_unique<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>>();
-        }
-
-        template<auto t_discretization, auto... t_args>
+        template<auto t_discretization, GeneralizedStrainConcept auto t_strain>
         void
         addDof()
         {
-            static_cast<t_Disc<t_discretization> *>(this)->template addDof<t_args...>();
+            static_cast<t_Disc<t_discretization> *>(this)->template addDof<t_strain>();
         }
 
-        template<auto t_discretization, auto... t_args, Strategy t_s>
+        template<auto t_discretization, GeneralizedStrainConcept auto t_strain, Strategy t_s>
         void
         addDof(
             std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            static_cast<t_Disc<t_discretization> *>(this)->template addDof<t_args...>(linear_system);
+            static_cast<t_Disc<t_discretization> *>(this)->template addDof<t_strain>(linear_system);
+        }
+
+        template<GeneralizedStrainConcept auto t_strain>
+        ElementDegreeOfFreedom<t_element, t_domain> const &
+        getDof()
+        const
+        {
+            auto find_it = [&] (auto const & item)
+            {
+                return item.getTag() == t_strain.getTag();
+            };
+            return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
+        }
+
+        template<GeneralizedStrainConcept auto t_strain>
+        ElementDegreeOfFreedom<t_element, t_domain> &
+        getDof()
+        {
+            auto find_it = [&] (auto const & item)
+            {
+                return item.getTag() == t_strain.getTag();
+            };
+            return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
         }
 
         std::unique_ptr<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>> ptr_degrees_of_freedom_;
+
+        template<BehaviorConcept auto t_behavior>
+        void
+        addFormulation()
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
+            }
+            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>::make(t_behavior.getTag()));
+        }
+
+        template<BehaviorConcept auto t_behavior>
+        void
+        addFormulation(
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+        )
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
+            }
+            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>::make(t_behavior.getTag(), behavior));
+        }
+
+        template<Quadrature t_quadrature, BehaviorConcept auto t_behavior>
+        void
+        addFormulation(
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+        )
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
+            }
+            auto frm = ElementFormulation<t_element, t_domain>::make(t_behavior.getTag(), behavior);
+            for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
+            {
+                auto point = getCurrentQuadraturePoint<t_quadrature>(i);
+                auto r_point = getReferenceQuadraturePoint<t_quadrature>(i);
+                auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
+                frm.addIntegrationPoint(std::move(r_point), std::move(point), weight, behavior);
+            }
+            ptr_formulations_->push_back(std::move(frm));
+        }
+
+        template<BehaviorConcept auto t_behavior>
+        ElementFormulation<t_element, t_domain> const &
+        getFormulation()
+        const
+        {
+            auto find_it = [&] (auto const & item)
+            {
+                return item.getTag() == t_behavior.getTag();
+            };
+            return * std::find_if(ptr_formulations_->begin(), ptr_formulations_->end(), find_it);
+        }
+
+        template<BehaviorConcept auto t_behavior>
+        ElementFormulation<t_element, t_domain> &
+        getFormulation()
+        {
+            auto find_it = [&] (auto const & item)
+            {
+                return item.getTag() == t_behavior.getTag();
+            };
+            return * std::find_if(ptr_formulations_->begin(), ptr_formulations_->end(), find_it);
+        }
+
+        std::unique_ptr<std::vector<ElementFormulation<t_element, t_domain>>> ptr_formulations_;
+
+        template<auto t_discretization, GeneralizedStrainConcept auto t_strain>
+        Vector<Real>
+        getUnknowns()
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknowns<t_strain>();
+        }
+
+        template<auto t_discretization, BehaviorConcept auto t_behavior, GeneralizedStrainConcept auto t_strain>
+        void
+        addStrainOperators()
+        {
+            auto strain_operator_num_rows = GeneralizedStrainTraits<t_strain>::template getSize<t_domain>();
+            auto strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_strain.getField()>();
+            auto quadrature_point_count = 0;
+            for (auto & ip : getFormulation<t_behavior>().integration_points_)
+            {
+                auto strain_operator = Matrix<Real>(strain_operator_num_rows, strain_operator_num_cols);
+                strain_operator.setZero();
+                auto set_mapping_block = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr mapping = t_strain.template getMapping<t_i>();
+                    auto constexpr mapping_size = GeneralizedStrainTraits<t_strain>::template getMappingSize<t_domain, mapping>();
+                    auto constexpr offset = GeneralizedStrainTraits<t_strain>::template getMappingOffset<t_domain, mapping>();
+                    auto rhs = this->template getMapping<t_strain.getField(), mapping, t_discretization>(ip.getReferenceCoordinates());
+                    auto lhs = strain_operator.block(mapping_size, strain_operator_num_cols, offset, 0);
+                    lhs = rhs;
+                    if constexpr (t_i < t_strain.getNumMappings() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_mapping_block(set_mapping_block);
+                ip.template addStrainOperator<t_strain>(strain_operator);
+                quadrature_point_count ++;
+            }
+        }
+
+        template<auto t_discretization, BehaviorConcept auto t_behavior, GeneralizedStrainConcept auto t_strain>
+        void
+        setStrainValues()
+        {
+            auto const unknown = this->template getUnknowns<t_discretization, t_strain>();
+            for (auto & ip : getFormulation<t_behavior>().integration_points_)
+            {
+                auto rhs = ip.template getStrainOperator<t_strain>() * unknown;
+                auto lhs = algebra::View<Vector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
+                lhs = rhs;
+            }
+        }
+
+        template<auto t_discretization, GeneralizedStrainConcept auto t_strain>
+        void
+        addElementOperator()
+        {
+            getDof<t_strain>().addElementMatrix(this->template getStabilization<t_strain.getField(), t_discretization>());
+        }
+
+        template<BehaviorConcept auto t_behavior>
+        void
+        integrate(
+            std::atomic<Boolean> & output_handler
+        )
+        {
+            getFormulation<t_behavior>().integrate(output_handler);
+        }
+
+        template<BehaviorConcept auto t_behavior>
+        void
+        reserveBehaviorData()
+        {
+            getFormulation<t_behavior>().reserve();
+        }
+
+        template<BehaviorConcept auto t_behavior>
+        void
+        recoverBehaviorData(
+            std::basic_string_view<Character> behavior_label
+        )
+        {
+            getFormulation<t_behavior>().recover();
+        }
+
+        template<BehaviorConcept auto t_behavior>
+        void
+        setMaterialProperty(
+            std::basic_string_view<Character> material_property_label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            for (auto & ip : getFormulation<t_behavior>().getIntegrationPoints())
+            {
+                ip.setMaterialProperty(material_property_label, std::forward<std::function<Real(Point const &)>>(function));
+            }
+        }
+
+        template<BehaviorConcept auto t_behavior>
+        void
+        setExternalVariable(
+            std::basic_string_view<Character> material_property_label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            for (auto & ip : getFormulation<t_behavior>().getIntegrationPoints())
+            {
+                ip.setExternalVariable(material_property_label, std::forward<std::function<Real(Point const &)>>(function));
+            }
+        }
+
+        template<GeneralizedStrainConcept auto t_strain>
+        void
+        setParameter(
+            Integer tag,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            getDof<t_strain>().getRealParameter(tag) = std::forward<std::function<Real(Point const &)>>(function)(* coordinates_);
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
         template<Basis t_basis>
         static constexpr

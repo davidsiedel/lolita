@@ -3,11 +3,13 @@
 
 #include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
-#include "core/001_geometry.hxx"
+#include "core/100_geometry.hxx"
 #include "core/linear_system.hxx"
-#include "core/003_quadrature.hxx"
-#include "core/004_finite_element.hxx"
-#include "core/005_finite_element_basis.hxx"
+#include "core/200_quadrature.hxx"
+#include "core/201_finite_element_dof.hxx"
+#include "core/202_finite_element_frm.hxx"
+#include "core/300_finite_element.hxx"
+#include "core/400_finite_element_basis.hxx"
 
 namespace lolita
 {
@@ -1546,13 +1548,41 @@ namespace lolita
 
             }
 
+            template<Field t_field>
+            void
+            addDof(
+                Integer tag
+            )
+            requires(t_element.isSub(t_domain, 0))
+            {
+                if (this->ptr_degrees_of_freedom_ == nullptr)
+                {
+                    this->ptr_degrees_of_freedom_ = std::make_unique<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>>();
+                }
+                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getCellBasis()>(tag));
+            }
+
+            template<Field t_field, Strategy t_s>
+            void
+            addDof(
+                Integer tag,
+                std::unique_ptr<LinearSystem<t_s>> const & linear_system
+            )
+            requires(t_element.isSub(t_domain, 1))
+            {
+                if (this->ptr_degrees_of_freedom_ == nullptr)
+                {
+                    this->ptr_degrees_of_freedom_ = std::make_unique<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>>();
+                }
+                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getFaceBasis()>(tag, linear_system));
+            }
+
             template<GeneralizedStrainConcept auto t_strain>
             void
             addDof()
             requires(t_element.isSub(t_domain, 0))
             {
-                auto constexpr field = t_strain.getField();
-                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<field, getCellBasis()>());
+                addDof<t_strain.getField()>(t_strain.getTag());
             }
 
             template<GeneralizedStrainConcept auto t_strain, Strategy t_s>
@@ -1562,26 +1592,42 @@ namespace lolita
             )
             requires(t_element.isSub(t_domain, 1))
             {
-                auto constexpr field = t_strain.getField();
-                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<field, getFaceBasis()>(linear_system));
+                addDof<t_strain.getField()>(t_strain.getTag(), linear_system);
             }
 
-            template<Field t_field>
-            void
-            addDof()
-            requires(t_element.isSub(t_domain, 0))
+            template<GeneralizedStrainConcept auto t_strain>
+            Vector<Real>
+            getUnknowns()
+            const
             {
-                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getCellBasis()>());
-            }
-
-            template<Field t_field, Strategy t_s>
-            void
-            addDof(
-                std::unique_ptr<LinearSystem<t_s>> const & linear_system
-            )
-            requires(t_element.isSub(t_domain, 1))
-            {
-                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getFaceBasis()>(linear_system));
+                auto offset = 0;
+                auto unknown = Vector<Real>(getNumElementUnknowns<t_strain.getField()>());
+                auto const & cell_dof = this->template getDof<t_strain>();
+                auto cell_lhs = unknown.template segment<cell_dof.template getSize<t_strain.getField(), getCellBasis()>()>(offset);
+                auto cell_rhs = cell_dof.template get<t_strain.getField(), getCellBasis()>();
+                cell_lhs = cell_rhs;
+                offset += cell_dof.template getSize<t_strain.getField(), getCellBasis()>();
+                auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        auto const & face_dof = face->template getDof<t_strain>();
+                        auto face_lhs = unknown.template segment<face_dof.template getSize<t_strain.getField(), getFaceBasis()>()>(offset);
+                        auto face_rhs = face_dof.template get<t_strain.getField(), getFaceBasis()>();
+                        face_lhs = face_rhs;
+                        offset += face_dof.template getSize<t_strain.getField(), getFaceBasis()>();
+                    }
+                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_unknowns(set_faces_unknowns);
+                return unknown;
             }
 
         };

@@ -3,7 +3,7 @@
 
 #include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
-#include "core/001_geometry.hxx"
+#include "core/100_geometry.hxx"
 #include "core/linear_system.hxx"
 
 namespace lolita

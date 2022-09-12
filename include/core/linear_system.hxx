@@ -3,202 +3,127 @@
 
 #include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
-#include "core/001_geometry.hxx"
+#include "core/100_geometry.hxx"
 
 namespace lolita
 {
-
-    struct Strategy
-    {
-
-        enum Type
-        {
-            EigenLU,
-            EigenLDLT,
-        };
-
-        static constexpr
-        Strategy
-        eigenLU()
-        {
-            return Strategy(EigenLU);
-        }
-
-    private:
-
-        constexpr
-        Strategy(
-            Type type
-        )
-        :
-        type_(type)
-        {}
-
-    public:
-
-        Type type_;
-
-    };
-
-    template<Strategy t_s>
-    struct LinearSystem
-    {
-
-        static
-        std::unique_ptr<LinearSystem>
-        make()
-        {
-            return std::make_unique<LinearSystem>();
-        }
-
-        LinearSystem()
-        :
-        size_(0)
-        {}
-
-        void
-        setSize(
-            Natural size
-        )
-        {
-            size_ = size;
-        }
-
-        void
-        addSize(
-            Integer size
-        )
-        {
-            size_ += size;
-        }
-
-        Natural
-        getSize()
-        const
-        {
-            return size_;
-        }
-
-        std::atomic<Natural> size_;
-
-    };
     
-    struct DegreeOfFreedom
-    {
+    // struct DegreeOfFreedom
+    // {
 
-        inline
-        static
-        std::shared_ptr<DegreeOfFreedom>
-        make(
-            std::basic_string<Character> && label
-        )
-        {
-            return std::make_shared<DegreeOfFreedom>(std::forward<std::basic_string<Character>>(label));
-        }
+    //     inline
+    //     static
+    //     std::shared_ptr<DegreeOfFreedom>
+    //     make(
+    //         std::basic_string<Character> && label
+    //     )
+    //     {
+    //         return std::make_shared<DegreeOfFreedom>(std::forward<std::basic_string<Character>>(label));
+    //     }
 
-        inline
-        static
-        std::shared_ptr<DegreeOfFreedom>
-        make(
-            std::basic_string<Character> const & label
-        )
-        {
-            return std::make_shared<DegreeOfFreedom>(label);
-        }
+    //     inline
+    //     static
+    //     std::shared_ptr<DegreeOfFreedom>
+    //     make(
+    //         std::basic_string<Character> const & label
+    //     )
+    //     {
+    //         return std::make_shared<DegreeOfFreedom>(label);
+    //     }
 
-        DegreeOfFreedom(
-            // Field field,
-            std::basic_string<Character> && label
-        )
-        :
-        // field_(field),
-        label_(std::forward<std::basic_string<Character>>(label)),
-        offset_(std::numeric_limits<Natural>::max()),
-        size_(0)
-        {}
+    //     DegreeOfFreedom(
+    //         // Field field,
+    //         std::basic_string<Character> && label
+    //     )
+    //     :
+    //     // field_(field),
+    //     label_(std::forward<std::basic_string<Character>>(label)),
+    //     offset_(std::numeric_limits<Natural>::max()),
+    //     size_(0)
+    //     {}
 
-        DegreeOfFreedom(
-            // Field field,
-            std::basic_string<Character> const & label
-        )
-        :
-        // field_(field),
-        label_(label),
-        offset_(std::numeric_limits<Natural>::max()),
-        size_(0)
-        {}
+    //     DegreeOfFreedom(
+    //         // Field field,
+    //         std::basic_string<Character> const & label
+    //     )
+    //     :
+    //     // field_(field),
+    //     label_(label),
+    //     offset_(std::numeric_limits<Natural>::max()),
+    //     size_(0)
+    //     {}
 
-    public:
+    // public:
 
-        inline
-        void
-        setOffset(
-            Integer offset
-        )
-        {
-            offset_ = offset;
-        }
+    //     inline
+    //     void
+    //     setOffset(
+    //         Integer offset
+    //     )
+    //     {
+    //         offset_ = offset;
+    //     }
 
-        inline
-        Natural
-        getOffset()
-        const
-        {
-            return offset_;
-        }
+    //     inline
+    //     Natural
+    //     getOffset()
+    //     const
+    //     {
+    //         return offset_;
+    //     }
 
-        inline
-        void
-        setSize(
-            Natural size
-        )
-        {
-            size_ = size;
-        }
+    //     inline
+    //     void
+    //     setSize(
+    //         Natural size
+    //     )
+    //     {
+    //         size_ = size;
+    //     }
 
-        inline
-        void
-        addSize(
-            Natural size
-        )
-        {
-            size_ += size;
-        }
+    //     inline
+    //     void
+    //     addSize(
+    //         Natural size
+    //     )
+    //     {
+    //         size_ += size;
+    //     }
 
-        inline
-        Natural
-        getSize()
-        const
-        {
-            return size_;
-        }
+    //     inline
+    //     Natural
+    //     getSize()
+    //     const
+    //     {
+    //         return size_;
+    //     }
 
-        inline
-        std::basic_string<Character> const &
-        getLabel()
-        {
-            return label_;
-        }
+    //     inline
+    //     std::basic_string<Character> const &
+    //     getLabel()
+    //     {
+    //         return label_;
+    //     }
 
-        // inline
-        // Field
-        // getField()
-        // const
-        // {
-        //     return field_;
-        // }
+    //     // inline
+    //     // Field
+    //     // getField()
+    //     // const
+    //     // {
+    //     //     return field_;
+    //     // }
 
-    private:
+    // private:
 
-        // Field field_;
+    //     // Field field_;
 
-        Natural size_;
+    //     Natural size_;
 
-        Natural offset_;
+    //     Natural offset_;
 
-        std::basic_string<Character> label_;
+    //     std::basic_string<Character> label_;
 
-    };
+    // };
 
     struct Function
     {
@@ -284,25 +209,25 @@ namespace lolita
     struct System
     {
 
-        std::vector<std::shared_ptr<DegreeOfFreedom>> dofss_;
+        // std::vector<std::shared_ptr<DegreeOfFreedom>> dofss_;
 
-        inline
-        void
-        addDegreeOfFreedom(
-            std::shared_ptr<DegreeOfFreedom> const & degree_of_freedom
-        )
-        {
-            if (std::find(dofss_.begin(), dofss_.end(), degree_of_freedom) == dofss_.end())
-            {
-                auto offset = Natural(0);
-                for (auto const & dof : dofss_)
-                {
-                    offset += dof->getSize();
-                }
-                degree_of_freedom->setOffset(offset);
-                dofss_.push_back(degree_of_freedom);
-            }
-        }
+        // inline
+        // void
+        // addDegreeOfFreedom(
+        //     std::shared_ptr<DegreeOfFreedom> const & degree_of_freedom
+        // )
+        // {
+        //     if (std::find(dofss_.begin(), dofss_.end(), degree_of_freedom) == dofss_.end())
+        //     {
+        //         auto offset = Natural(0);
+        //         for (auto const & dof : dofss_)
+        //         {
+        //             offset += dof->getSize();
+        //         }
+        //         degree_of_freedom->setOffset(offset);
+        //         dofss_.push_back(degree_of_freedom);
+        //     }
+        // }
 
         using MatrixEntry = Eigen::Triplet<Real>;
 

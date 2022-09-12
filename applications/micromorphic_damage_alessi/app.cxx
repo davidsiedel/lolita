@@ -1,4 +1,4 @@
-#include "core/008_mesh.hxx"
+#include "core/700_mesh.hxx"
 
 #include <mpi.h>
 
@@ -72,11 +72,13 @@ main(int argc, char** argv)
     // discretization
     auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
     // generalized strains
-    auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(lolita::Field::vector(), lolita::Mapping::smallStrain());
-    auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(lolita::Field::scalar(), lolita::Mapping::gradient(), lolita::Mapping::identity());
+    auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(0, lolita::Field::vector(), lolita::Mapping::smallStrain());
+    auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(1, lolita::Field::scalar(), lolita::Mapping::gradient(), lolita::Mapping::identity());
+    auto constexpr lag_generalized_strain = lolita::GeneralizedStrain(2, lolita::Field::scalar(), lolita::Mapping::identity());
     // behaviors
-    auto constexpr displacement_behavior = lolita::Behavior(displacement_generalized_strain);
-    auto constexpr damage_behavior = lolita::Behavior(damage_generalized_strain);
+    auto constexpr displacement_behavior = lolita::Behavior(0, displacement_generalized_strain);
+    auto constexpr damage_behavior = lolita::Behavior(1, damage_generalized_strain);
+    auto constexpr lag_behavior = lolita::Behavior(2, lag_generalized_strain, displacement_generalized_strain);
     // finite elements
     auto constexpr displacement_element =  lolita::FiniteElementMethod(displacement_generalized_strain, displacement_behavior, hdg, quadrature);
     auto constexpr damage_element =  lolita::FiniteElementMethod(damage_generalized_strain, damage_behavior, hdg, quadrature);
@@ -96,6 +98,16 @@ main(int argc, char** argv)
     displacement_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_displacement_stored_energy.txt");
     // mesh build
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
+    // -> TEST -------------------------------------------------------------------------------------------------------------------------------------------------
+    auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make_unique();
+    elements->addDof<1, hdg, displacement_generalized_strain>("ROD", linear_system);
+    elements->addDof<2, hdg, displacement_generalized_strain>("ROD");
+    elements->addFormulation<2, quadrature, displacement_behavior>("ROD", lib_displacement_path, lib_displacement_label, hyp);
+    elements->addFormulation<1, lag_behavior>("TOP");
+    elements->addStrainOperators<2, hdg, displacement_behavior, displacement_generalized_strain>("ROD");
+    elements->setStrainValues<2, hdg, displacement_behavior, displacement_generalized_strain>("ROD");
+    elements->addElementOperators<2, hdg, displacement_generalized_strain>("ROD");
+    // <- TEST -------------------------------------------------------------------------------------------------------------------------------------------------
 
     auto defect = [] (lolita::Point const & point)
     {
@@ -142,15 +154,6 @@ main(int argc, char** argv)
     // systems
     auto displacement_system = lolita::System::make();
     auto damage_system = lolita::System::make();
-    // -> TEST
-    auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make();
-    elements->setDof<1>("ROD");
-    elements->setDof<2>("ROD");
-    elements->addDof<1, hdg, lolita::Field::vector()>("ROD", linear_system);
-    elements->addDof<2, hdg, lolita::Field::vector()>("ROD");
-    auto doftest = lolita::DegreeOfFreedom::make("Hello");
-    displacement_system->addDegreeOfFreedom(doftest);
-    // <- TEST
     displacement_system->setUnknown("Displacement", face_displacement->size());
     displacement_system->setBinding("TopForce", top_force->size());
     displacement_system->setBinding("LeftForce", left_force->size());
@@ -166,10 +169,10 @@ main(int argc, char** argv)
     // <- RIGHT
     auto load2 = elements->setConstraint<faces>("BOTTOM", "FixedB", [](lolita::Point const & p, lolita::Real const & t) { return 0.0; }, 1, 0);
     // adding behavior
-    std::cout << lib_displacement_label << std::endl;
-    std::cout << lib_displacement_path << std::endl;
-    std::cout << lib_damage_label << std::endl;
-    std::cout << lib_damage_path << std::endl;
+    // std::cout << lib_displacement_label << std::endl;
+    // std::cout << lib_displacement_path << std::endl;
+    // std::cout << lib_damage_label << std::endl;
+    // std::cout << lib_damage_path << std::endl;
     auto micromorphic_displacement = elements->setBehavior<cells, quadrature>("ROD", lib_displacement_path, lib_displacement_label, hyp);
     auto micromorphic_damage = elements->setBehavior<cells, quadrature>("ROD", lib_damage_path, lib_damage_label, hyp);
     //making operators
