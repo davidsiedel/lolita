@@ -1061,6 +1061,20 @@ namespace lolita
 
     public:
 
+        constexpr
+        Boolean
+        operator==(
+            Strategy const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Strategy const & other
+        )
+        const = default;
+
         Type type_;
 
         Integer tag_;
@@ -1083,6 +1097,20 @@ namespace lolita
         size_(0)
         {}
 
+        inline
+        Boolean
+        operator==(
+            LinearSystem const & other
+        )
+        const = default;
+
+        inline
+        Boolean
+        operator!=(
+            LinearSystem const & other
+        )
+        const = default;
+
         std::atomic<Natural> const &
         getSize()
         const
@@ -1101,6 +1129,352 @@ namespace lolita
         std::atomic<Natural> size_;
 
     };
+    
+    // struct FieldDescription
+    // {
+
+    //     struct DataBase
+    //     {
+
+    //         DataBase()
+    //         {}
+        
+    //         inline
+    //         void
+    //         addReal(
+    //             std::basic_string<Character> && label
+    //         )
+    //         {
+    //             if (std::find(reals_.begin(), reals_.end(), std::forward<std::basic_string<Character>>(label)) == reals_.end())
+    //             {
+    //                 reals_.push_back(std::forward<std::basic_string<Character>>(label));
+    //             }
+    //         }
+            
+    //         inline
+    //         Integer
+    //         getRealIndex(
+    //             std::basic_string<Character> && label
+    //         )
+    //         const
+    //         {
+    //             return std::distance(reals_.begin(), std::find(reals_.begin(), reals_.end(), std::forward<std::basic_string<Character>>(label)));
+    //         }
+            
+    //         inline
+    //         Integer
+    //         getNumReals()
+    //         const
+    //         {
+    //             return reals_.size();
+    //         }
+            
+    //         inline
+    //         void
+    //         addMatrix(
+    //             std::basic_string<Character> && label
+    //         )
+    //         {
+    //             if (std::find(matrices_.begin(), matrices_.end(), std::forward<std::basic_string<Character>>(label)) == matrices_.end())
+    //             {
+    //                 matrices_.push_back(std::forward<std::basic_string<Character>>(label));
+    //             }
+    //         }
+            
+    //         inline
+    //         Integer
+    //         getMatrixIndex(
+    //             std::basic_string<Character> && label
+    //         )
+    //         const
+    //         {
+    //             return std::distance(matrices_.begin(), std::find(matrices_.begin(), matrices_.end(), std::forward<std::basic_string<Character>>(label)));
+    //         }
+            
+    //         inline
+    //         Integer
+    //         getNumMatrices()
+    //         const
+    //         {
+    //             return matrices_.size();
+    //         }
+            
+    //         inline
+    //         void
+    //         addVector(
+    //             std::basic_string<Character> && label
+    //         )
+    //         {
+    //             if (std::find(vectors_.begin(), vectors_.end(), std::forward<std::basic_string<Character>>(label)) == vectors_.end())
+    //             {
+    //                 vectors_.push_back(std::forward<std::basic_string<Character>>(label));
+    //             }
+    //         }
+            
+    //         inline
+    //         Integer
+    //         getVectorIndex(
+    //             std::basic_string<Character> && label
+    //         )
+    //         const
+    //         {
+    //             return std::distance(vectors_.begin(), std::find(vectors_.begin(), vectors_.end(), std::forward<std::basic_string<Character>>(label)));
+    //         }
+            
+    //         inline
+    //         Integer
+    //         getNumVectors()
+    //         const
+    //         {
+    //             return matrices_.size();
+    //         }
+
+    //     private:
+        
+    //         std::vector<std::basic_string<Character>> reals_;
+            
+    //         std::vector<std::basic_string<Character>> vectors_;
+            
+    //         std::vector<std::basic_string<Character>> matrices_;
+
+    //     };
+
+    //     struct IntegrationPointData : DataBase
+    //     {
+
+    //         inline
+    //         Boolean
+    //         operator==(
+    //             IntegrationPointData const & other
+    //         )
+    //         const = default;
+
+    //         inline
+    //         Boolean
+    //         operator!=(
+    //             IntegrationPointData const & other
+    //         )
+    //         const = default;
+        
+    //     };
+
+    //     struct ElementData : DataBase
+    //     {
+
+    //         template<auto t_discretization>
+    //         static
+    //         std::shared_ptr<ElementData>
+    //         make()
+    //         {
+    //             auto element_data = std::make_shared<ElementData>();
+    //             element_data->addReal("StabilizationParamater");
+    //             element_data->addMatrix("StabilizationOperator");
+    //             element_data->addMatrix("KTT");
+    //             element_data->addVector("RT");
+    //             return element_data;
+    //         }
+
+    //         inline
+    //         Boolean
+    //         operator==(
+    //             ElementData const & other
+    //         )
+    //         const = default;
+
+    //         inline
+    //         Boolean
+    //         operator!=(
+    //             ElementData const & other
+    //         )
+    //         const = default;
+        
+    //     };
+
+    //     struct MeshData : DataBase
+    //     {
+            
+    //         struct ExternalLoad
+    //         {
+                
+    //             ExternalLoad(
+    //                 std::function<Real(Point const &, Real const &)> const & function,
+    //                 Integer row,
+    //                 Integer col
+    //             )
+    //             :
+    //             function_(function),
+    //             row_(row),
+    //             col_(col)
+    //             {}
+                
+    //             ExternalLoad(
+    //                 std::function<Real(Point const &, Real const &)> && function,
+    //                 Integer row,
+    //                 Integer col
+    //             )
+    //             :
+    //             function_(std::move(function)),
+    //             row_(row),
+    //             col_(col)
+    //             {}
+
+    //             inline
+    //             Boolean
+    //             operator==(
+    //                 ExternalLoad const & other
+    //             )
+    //             const = default;
+
+    //             inline
+    //             Boolean
+    //             operator!=(
+    //                 ExternalLoad const & other
+    //             )
+    //             const = default;
+
+    //             inline
+    //             Integer
+    //             getRow()
+    //             const
+    //             {
+    //                 return row_;
+    //             }
+
+    //             inline
+    //             Integer
+    //             getCol()
+    //             const
+    //             {
+    //                 return row_;
+    //             }
+
+    //             inline
+    //             Real
+    //             getValue(
+    //                 Point const & point,
+    //                 Real const & time
+    //             )
+    //             const
+    //             {
+    //                 return function_(point, time);
+    //             }
+
+    //         private:
+
+    //             Integer row_;
+
+    //             Integer col_;
+
+    //             std::function<Real(Point const &, Real const &)> function_;
+            
+    //         };
+
+    //         inline
+    //         Boolean
+    //         operator==(
+    //             MeshData const & other
+    //         )
+    //         const = default;
+
+    //         inline
+    //         Boolean
+    //         operator!=(
+    //             MeshData const & other
+    //         )
+    //         const = default;
+
+    //         std::vector<ExternalLoad> loads_;
+
+    //     };
+        
+    //     explicit
+    //     FieldDescription(
+    //         std::basic_string<Character> const & label
+    //     )
+    //     :
+    //     label_(label)
+    //     {}
+        
+    //     explicit
+    //     FieldDescription(
+    //         std::basic_string<Character> && label
+    //     )
+    //     :
+    //     label_(std::move(label))
+    //     {}
+
+    //     inline
+    //     Boolean
+    //     operator==(
+    //         FieldDescription const & other
+    //     )
+    //     const = default;
+
+    //     inline
+    //     Boolean
+    //     operator!=(
+    //         FieldDescription const & other
+    //     )
+    //     const = default;
+        
+    //     inline
+    //     std::basic_string<Character> const &
+    //     getLabel()
+    //     const
+    //     {
+    //         return label_;
+    //     }
+
+    //     IntegrationPointData const &
+    //     getIntegrationPointData()
+    //     const
+    //     {
+    //         return integration_point_data_;
+    //     }
+
+    //     IntegrationPointData &
+    //     getIntegrationPointData()
+    //     {
+    //         return integration_point_data_;
+    //     }
+
+    //     ElementData const &
+    //     getElementData()
+    //     const
+    //     {
+    //         return element_data_;
+    //     }
+
+    //     ElementData &
+    //     getElementData()
+    //     {
+    //         return element_data_;
+    //     }
+
+    //     MeshData const &
+    //     getMeshData()
+    //     const
+    //     {
+    //         return mesh_data_;
+    //     }
+
+    //     MeshData &
+    //     getMeshData()
+    //     {
+    //         return mesh_data_;
+    //     }
+
+    // private:
+
+    //     MeshData mesh_data_;
+
+    //     ElementData element_data_;
+
+    //     IntegrationPointData integration_point_data_;
+    
+    //     std::basic_string<Character> label_;
+
+    // };
 
 } // namespace lolita
 
