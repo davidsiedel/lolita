@@ -54,7 +54,7 @@ Transfinite Curve {3, 5} = 200 Using Progression 1;
 //+ SIDES
 Transfinite Curve {9, 10} = 200 Using Progression 1;
 //+
-Transfinite Surface {2};
+// Transfinite Surface {2};
 //+
 Physical Curve("TOP", 11) = {1};
 //+

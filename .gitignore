@@ -39,5 +39,6 @@
 tmp.*
 **/**bhv_**/include/
 **/**bhv_**/src/
+**/**res_**/src/
 *.msh
 .*.*
