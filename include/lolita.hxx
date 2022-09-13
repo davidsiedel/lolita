@@ -522,9 +522,27 @@ namespace lolita
 
         static constexpr
         Field
+        scalar(
+            Integer tag
+        )
+        {
+            return Field(0, tag);
+        }
+
+        static constexpr
+        Field
         vector()
         {
             return Field(1);
+        }
+
+        static constexpr
+        Field
+        vector(
+            Integer tag
+        )
+        {
+            return Field(1, tag);
         }
 
     private:

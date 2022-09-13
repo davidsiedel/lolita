@@ -58,7 +58,7 @@ namespace lolita
         {
             auto find_it = [&] (auto const & item)
             {
-                return item.getTag() == t_strain.getTag();
+                return item.getField() == t_strain.getField();
             };
             return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
         }
@@ -69,7 +69,7 @@ namespace lolita
         {
             auto find_it = [&] (auto const & item)
             {
-                return item.getTag() == t_strain.getTag();
+                return item.getField() == t_strain.getField();
             };
             return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
         }

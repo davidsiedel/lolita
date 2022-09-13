@@ -354,11 +354,10 @@ namespace lolita
         static
         ElementDegreeOfFreedom
         make(
-            Integer tag,
             std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom(tag);
+            auto element_degree_of_freedom = ElementDegreeOfFreedom(t_field);
             element_degree_of_freedom.getOffset() = linear_system->getSize();
             linear_system->getSize() += getSize<t_field, t_basis>();
             for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
@@ -371,11 +370,9 @@ namespace lolita
         template<Field t_field, Basis t_basis>
         static
         ElementDegreeOfFreedom
-        make(
-            Integer tag
-        )
+        make()
         {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom(tag);
+            auto element_degree_of_freedom = ElementDegreeOfFreedom(t_field);
             for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
             {
                 element_degree_of_freedom.coefficients_.push_back(Coefficients::template make<t_basis>());
@@ -386,10 +383,10 @@ namespace lolita
     private:
 
         ElementDegreeOfFreedom(
-            Integer tag
+            Field const & field
         )
         :
-        tag_(tag),
+        field_(field),
         offset_(0),
         coefficients_()
         {}
@@ -407,13 +404,6 @@ namespace lolita
             ElementDegreeOfFreedom const & other
         )
         const = default;
-
-        Integer
-        getTag()
-        const
-        {
-            return tag_;
-        }
         
         Natural &
         getOffset()
@@ -568,9 +558,16 @@ namespace lolita
             return parameter_auxiliaries_[tag];
         }
 
+        Field const &
+        getField()
+        const
+        {
+            return field_;
+        }
+
     private:
 
-        Integer tag_;
+        Field const & field_;
 
         Natural offset_;
 
@@ -581,8 +578,6 @@ namespace lolita
         std::vector<Vector<Real>> vector_auxiliaries_;
 
         std::vector<Real> parameter_auxiliaries_;
-
-        std::vector<Boolean> binary_auxiliaries_;
 
     };
     

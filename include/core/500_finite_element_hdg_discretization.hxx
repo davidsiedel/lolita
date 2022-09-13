@@ -1550,22 +1550,19 @@ namespace lolita
 
             template<Field t_field>
             void
-            addDof(
-                Integer tag
-            )
+            addDof()
             requires(t_element.isSub(t_domain, 0))
             {
                 if (this->ptr_degrees_of_freedom_ == nullptr)
                 {
                     this->ptr_degrees_of_freedom_ = std::make_unique<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>>();
                 }
-                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getCellBasis()>(tag));
+                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getCellBasis()>());
             }
 
             template<Field t_field, Strategy t_s>
             void
             addDof(
-                Integer tag,
                 std::unique_ptr<LinearSystem<t_s>> const & linear_system
             )
             requires(t_element.isSub(t_domain, 1))
@@ -1574,7 +1571,7 @@ namespace lolita
                 {
                     this->ptr_degrees_of_freedom_ = std::make_unique<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>>();
                 }
-                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getFaceBasis()>(tag, linear_system));
+                this->ptr_degrees_of_freedom_->push_back(ElementDegreeOfFreedom<t_element, t_domain>::template make<t_field, getFaceBasis()>(linear_system));
             }
 
             template<GeneralizedStrainConcept auto t_strain>
@@ -1582,7 +1579,7 @@ namespace lolita
             addDof()
             requires(t_element.isSub(t_domain, 0))
             {
-                addDof<t_strain.getField()>(t_strain.getTag());
+                addDof<t_strain.getField()>();
             }
 
             template<GeneralizedStrainConcept auto t_strain, Strategy t_s>
@@ -1592,7 +1589,7 @@ namespace lolita
             )
             requires(t_element.isSub(t_domain, 1))
             {
-                addDof<t_strain.getField()>(t_strain.getTag(), linear_system);
+                addDof<t_strain.getField()>(linear_system);
             }
 
             template<GeneralizedStrainConcept auto t_strain>

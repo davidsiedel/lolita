@@ -72,9 +72,9 @@ main(int argc, char** argv)
     // discretization
     auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
     // generalized strains
-    auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(0, lolita::Field::vector(), lolita::Mapping::smallStrain());
-    auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(1, lolita::Field::scalar(), lolita::Mapping::gradient(), lolita::Mapping::identity());
-    auto constexpr lag_generalized_strain = lolita::GeneralizedStrain(2, lolita::Field::scalar(), lolita::Mapping::identity());
+    auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(0, lolita::Field::vector(0), lolita::Mapping::smallStrain());
+    auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(1, lolita::Field::scalar(1), lolita::Mapping::gradient(), lolita::Mapping::identity());
+    auto constexpr lag_generalized_strain = lolita::GeneralizedStrain(2, lolita::Field::scalar(1), lolita::Mapping::identity());
     // behaviors
     auto constexpr displacement_behavior = lolita::Behavior(0, displacement_generalized_strain);
     auto constexpr damage_behavior = lolita::Behavior(1, damage_generalized_strain);
