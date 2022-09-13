@@ -379,35 +379,35 @@ namespace lolita
         Mapping
         gradient()
         {
-            return Mapping(Type::Gradient);
+            return Mapping(Gradient);
         }
 
         static constexpr
         Mapping
         identity()
         {
-            return Mapping(Type::Identity);
+            return Mapping(Identity);
         }
 
         static constexpr
         Mapping
         divergence()
         {
-            return Mapping(Type::Divergence);
+            return Mapping(Divergence);
         }
 
         static constexpr
         Mapping
         smallStrain()
         {
-            return Mapping(Type::SmallStrain);
+            return Mapping(SmallStrain);
         }
 
         static constexpr
         Mapping
         largeStrain()
         {
-            return Mapping(Type::LargeStrain);
+            return Mapping(LargeStrain);
         }
 
     private:
@@ -417,18 +417,7 @@ namespace lolita
             Type type
         )
         :
-        type_(type),
-        tag_(-1)
-        {}
-
-        constexpr
-        Mapping(
-            Type type,
-            Integer tag
-        )
-        :
-        type_(type),
-        tag_(tag)
+        type_(type)
         {}
 
     public:
@@ -446,14 +435,6 @@ namespace lolita
             Mapping const & other
         )
         const = default;
-
-        constexpr
-        Integer
-        getTag()
-        const
-        {
-            return tag_;
-        }
 
         constexpr
         Boolean
@@ -497,9 +478,28 @@ namespace lolita
 
         Type type_;
 
-        Integer tag_;
-
     };
+
+    // struct Field;
+
+    // struct StrainA
+    // {
+        
+    //     constexpr
+    //     StrainA(
+    //         Field field,
+    //         Mapping mapping
+    //     )
+    //     :
+    //     field_(field),
+    //     mapping_(mapping)
+    //     {}
+
+    //     Field field_;
+
+    //     Mapping mapping_;
+
+    // };
 
     struct Field
     {
@@ -515,6 +515,16 @@ namespace lolita
 
         static constexpr
         Field
+        tensor(
+            Integer tag,
+            Integer dim
+        )
+        {
+            return Field(tag, dim);
+        }
+
+        static constexpr
+        Field
         scalar()
         {
             return Field(0);
@@ -526,7 +536,7 @@ namespace lolita
             Integer tag
         )
         {
-            return Field(0, tag);
+            return Field(tag, 0);
         }
 
         static constexpr
@@ -542,7 +552,7 @@ namespace lolita
             Integer tag
         )
         {
-            return Field(1, tag);
+            return Field(tag, 1);
         }
 
     private:
@@ -552,18 +562,18 @@ namespace lolita
             Integer dim
         )
         :
-        dim_(dim),
-        tag_(-1)
+        tag_(-1),
+        dim_(dim)
         {}
         
         constexpr
         Field(
-            Integer dim,
-            Integer tag
+            Integer tag,
+            Integer dim
         )
         :
-        dim_(dim),
-        tag_(tag)
+        tag_(tag),
+        dim_(dim)
         {}
 
     public:
