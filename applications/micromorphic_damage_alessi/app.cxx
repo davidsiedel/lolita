@@ -43,9 +43,31 @@ int
 main(int argc, char** argv)
 {
 
-    dummy(lolita::Matrix<lolita::Real, 2, 2>::Ones() * lolita::Matrix<lolita::Real, 2, 2>::Identity());
-    // dummy(lolita::Matrix<lolita::Real, 2, 2>::Ones() * lolita::Matrix<lolita::Real>::Identity(2, 2));
-    dummy2(lolita::Matrix<lolita::Real, 2, 2>::Ones() * lolita::Matrix<lolita::Real>::Identity(2, 2));
+    auto constexpr dom_ = lolita::domain("Cartesian", 2);
+    auto constexpr u_ = lolita::field("Vector", 'U');
+    auto constexpr d_ = lolita::field("Scalar", 'D');
+    auto constexpr f_ = lolita::field("Scalar", 'F');
+    auto constexpr g_u = lolita::mapping("Gradient", u_);
+    auto constexpr i_d = lolita::mapping("Identity", d_);
+    // auto constexpr i_dj = lolita::mapping("Identit", d_);
+    auto constexpr bhvvv = lolita::potential('U', g_u, i_d);
+    auto constexpr qq = lolita::quadrature("Gauss", 2);
+
+    // auto vec = std::vector<lolita::Integer>{1, 2, 3};
+    // vec.end() = 4;
+    
+    // for (auto const & m : vec)
+    // {
+    //     std::cout << m << std::endl;
+    // }
+    
+
+    auto dataa = lolita::data(u_);
+    auto dum = lolita::Dummy(* dataa);
+    dataa->addVectorField("Vec");
+    dataa->addVectorField("Vec2");
+    dataa->addVectorField("Vec");
+    std::cout << dum.data_.getVectorTag("Vec") << std::endl;
 
     static_assert(lolita::MatrixConcept<lolita::Matrix<lolita::Real, 2, 2>, lolita::Real, 2, 2>);
     // std::cout << std::fixed << std::setprecision(3);
@@ -65,16 +87,16 @@ main(int argc, char** argv)
     auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     // constants
-    auto constexpr domain = lolita::Domain::cartesian(2);
-    auto constexpr quadrature = lolita::Quadrature::gauss(2);
+    auto constexpr domain = lolita::domain("Cartesian", 2);
+    auto constexpr quadrature = lolita::quadrature("Gauss", 2);
     auto constexpr cells = lolita::ElementType::cells(domain);
     auto constexpr faces = lolita::ElementType::faces(domain);
     // discretization
     auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
     // generalized strains
-    auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(0, lolita::Field::vector(0), lolita::Mapping::smallStrain());
-    auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(1, lolita::Field::scalar(1), lolita::Mapping::gradient(), lolita::Mapping::identity());
-    auto constexpr lag_generalized_strain = lolita::GeneralizedStrain(2, lolita::Field::scalar(1), lolita::Mapping::identity());
+    auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(0, u_, lolita::mapping("SmallStrain", u_));
+    auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(1, d_, lolita::mapping("Gradient", d_), lolita::mapping("Identity", d_));
+    auto constexpr lag_generalized_strain = lolita::GeneralizedStrain(2, f_, lolita::mapping("Identity", f_));
     // behaviors
     auto constexpr displacement_behavior = lolita::Behavior(0, displacement_generalized_strain);
     auto constexpr damage_behavior = lolita::Behavior(1, damage_generalized_strain);
@@ -100,13 +122,19 @@ main(int argc, char** argv)
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     // -> TEST -------------------------------------------------------------------------------------------------------------------------------------------------
     auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make_unique();
-    elements->addDof<1, hdg, displacement_generalized_strain>("ROD", linear_system);
-    elements->addDof<2, hdg, displacement_generalized_strain>("ROD");
+    elements->addDiscreteField<1, u_>("ROD");
+    elements->addDiscreteField<2, u_>("ROD");
+    elements->addDiscreteFieldDegreeOfFreedom<1, u_, hdg>("ROD", linear_system);
+    elements->addDiscreteFieldDegreeOfFreedom<2, u_, hdg>("ROD");
+    elements->addDiscreteFieldLoad<2, u_>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
+    elements->addDiscreteFieldOperator<2, u_, hdg>("ROD", "Stabilization");
+    // elements->addDof<1, hdg, displacement_generalized_strain>("ROD", linear_system);
+    // elements->addDof<2, hdg, displacement_generalized_strain>("ROD");
     elements->addFormulation<2, quadrature, displacement_behavior>("ROD", lib_displacement_path, lib_displacement_label, hyp);
     elements->addFormulation<1, lag_behavior>("TOP");
-    elements->addStrainOperators<2, hdg, displacement_behavior, displacement_generalized_strain>("ROD");
-    elements->setStrainValues<2, hdg, displacement_behavior, displacement_generalized_strain>("ROD");
-    elements->addElementOperators<2, hdg, displacement_generalized_strain>("ROD");
+    // elements->addStrainOperators<2, hdg, displacement_behavior, displacement_generalized_strain>("ROD");
+    // elements->setStrainValues<2, hdg, displacement_behavior, displacement_generalized_strain>("ROD");
+    // elements->addElementOperators<2, hdg, displacement_generalized_strain>("ROD");
     // <- TEST -------------------------------------------------------------------------------------------------------------------------------------------------
 
     auto defect = [] (lolita::Point const & point)
@@ -143,14 +171,14 @@ main(int argc, char** argv)
     elements->addDomain<cells>("ROD", "SANE", 2, sane);
 
     // dofs
-    auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::Field::vector(), hdg.getFaceBasis()>("ROD", "Displacement");
-    auto cell_displacement = elements->setDegreeOfFreedom<cells, lolita::Field::vector(), hdg.getCellBasis()>("ROD", "Displacement");
-    auto face_damage = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("ROD", "Damage");
-    auto cell_damage = elements->setDegreeOfFreedom<cells, lolita::Field::scalar(), hdg.getCellBasis()>("ROD", "Damage");
+    auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::field("Vector", 'A'), hdg.getFaceBasis()>("ROD", "Displacement");
+    auto cell_displacement = elements->setDegreeOfFreedom<cells, lolita::field("Vector", 'A'), hdg.getCellBasis()>("ROD", "Displacement");
+    auto face_damage = elements->setDegreeOfFreedom<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("ROD", "Damage");
+    auto cell_damage = elements->setDegreeOfFreedom<cells, lolita::field("Scalar", 'A'), hdg.getCellBasis()>("ROD", "Damage");
     //
-    auto top_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
-    auto left_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
-    auto bottom_force = elements->setDegreeOfFreedom<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
+    auto top_force = elements->setDegreeOfFreedom<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("TOP", "TopForce");
+    auto left_force = elements->setDegreeOfFreedom<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("LEFT", "LeftForce");
+    auto bottom_force = elements->setDegreeOfFreedom<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
     // systems
     auto displacement_system = lolita::System::make();
     auto damage_system = lolita::System::make();
@@ -263,9 +291,9 @@ main(int argc, char** argv)
                     displacement_system->setCorrection();
                     elements->updateUnknown<cells, displacement_element, hdg>("ROD", "Displacement", displacement_system);
                     elements->updateUnknown<faces, displacement_element, hdg>("ROD", "Displacement", displacement_system);
-                    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce", displacement_system);
-                    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce", displacement_system);
-                    elements->updateBinding<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce", displacement_system);
+                    elements->updateBinding<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("TOP", "TopForce", displacement_system);
+                    elements->updateBinding<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("LEFT", "LeftForce", displacement_system);
+                    elements->updateBinding<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("BOTTOM", "BottomForce", displacement_system);
                 }
             }
             iteration ++;
@@ -434,15 +462,15 @@ damage_dissipated_energy_out_stream << step << ", "<< time << ", " << std::setpr
 displacement_stored_energy_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << displacement_stored_energy_value << "\n";
 displacement_dissipated_energy_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << displacement_dissipated_energy_value << "\n";
             elements->reserveBehaviorData<cells>("ROD", "MicromorphicDisplacement");
-            elements->reserveUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("ROD", "Displacement");
-            elements->reserveUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("ROD", "Displacement");
-            elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
-            elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
-            elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
+            elements->reserveUnknownCoefficients<cells, lolita::field("Vector", 'A'), hdg.getCellBasis()>("ROD", "Displacement");
+            elements->reserveUnknownCoefficients<faces, lolita::field("Vector", 'A'), hdg.getFaceBasis()>("ROD", "Displacement");
+            elements->reserveUnknownCoefficients<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("TOP", "TopForce");
+            elements->reserveUnknownCoefficients<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("LEFT", "LeftForce");
+            elements->reserveUnknownCoefficients<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
             //
             elements->reserveBehaviorData<cells>("ROD", "MicromorphicDamage");
-            elements->reserveUnknownCoefficients<cells, lolita::Field::scalar(), hdg.getCellBasis()>("ROD", "Damage");
-            elements->reserveUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("ROD", "Damage");
+            elements->reserveUnknownCoefficients<cells, lolita::field("Scalar", 'A'), hdg.getCellBasis()>("ROD", "Damage");
+            elements->reserveUnknownCoefficients<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("ROD", "Damage");
             #ifndef DEBUG
                 // std::cout << "writing regular output" << std::endl;
                 lolita::GmshFileParser::addQuadratureStrainOutput<2, domain>(out_displacement_file, elements, step, time, "MicromorphicDisplacement", 0);
@@ -472,15 +500,15 @@ displacement_dissipated_energy_out_stream << step << ", "<< time << ", " << std:
         {
             std::cout << "-- time step split" << std::endl;
             elements->recoverBehaviorData<cells>("ROD", "MicromorphicDisplacement");
-            elements->recoverUnknownCoefficients<cells, lolita::Field::vector(), hdg.getCellBasis()>("ROD", "Displacement");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::vector(), hdg.getFaceBasis()>("ROD", "Displacement");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("TOP", "TopForce");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("LEFT", "LeftForce");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
+            elements->recoverUnknownCoefficients<cells, lolita::field("Vector", 'A'), hdg.getCellBasis()>("ROD", "Displacement");
+            elements->recoverUnknownCoefficients<faces, lolita::field("Vector", 'A'), hdg.getFaceBasis()>("ROD", "Displacement");
+            elements->recoverUnknownCoefficients<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("TOP", "TopForce");
+            elements->recoverUnknownCoefficients<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("LEFT", "LeftForce");
+            elements->recoverUnknownCoefficients<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
             //
             elements->recoverBehaviorData<cells>("ROD", "MicromorphicDamage");
-            elements->recoverUnknownCoefficients<cells, lolita::Field::scalar(), hdg.getCellBasis()>("ROD", "Damage");
-            elements->recoverUnknownCoefficients<faces, lolita::Field::scalar(), hdg.getFaceBasis()>("ROD", "Damage");
+            elements->recoverUnknownCoefficients<cells, lolita::field("Scalar", 'A'), hdg.getCellBasis()>("ROD", "Damage");
+            elements->recoverUnknownCoefficients<faces, lolita::field("Scalar", 'A'), hdg.getFaceBasis()>("ROD", "Damage");
             time = times[step - 1] + (1.0 / 2.0) * (time - times[step - 1]);
             // -> DEBUG
             // step ++;

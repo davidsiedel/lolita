@@ -248,99 +248,100 @@ namespace lolita
         std::vector<Item> items_;
 
     };
+
+
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
     
     template<Element t_element, Domain t_domain>
-    struct ElementDegreeOfFreedom
+    struct Coefficients
     {
+
+        template<Basis t_basis>
+        static constexpr
+        Integer
+        getSize()
+        {
+            return BasisTraits<t_basis>::template getSize<t_element>();
+        }
+
+        template<Basis t_basis>
+        static
+        Coefficients
+        make()
+        {
+            return Coefficients(getSize<t_basis>());
+        }
 
     private:
 
-        struct Coefficients
-        {
-
-            template<Basis t_basis>
-            static constexpr
-            Integer
-            getSize()
-            {
-                return BasisTraits<t_basis>::template getSize<t_element>();
-            }
-
-            template<Basis t_basis>
-            static
-            Coefficients
-            make()
-            {
-                return Coefficients(getSize<t_basis>());
-            }
-
-        private:
-
-            explicit
-            Coefficients(
-                Integer size
-            )
-            :
-            s1(Vector<Real>::Zero(size)),
-            s0(Vector<Real>::Zero(size))
-            {}
-
-        public:
-        
-            Boolean
-            operator==(
-                Coefficients const & other
-            )
-            const = default;
-            
-            Boolean
-            operator!=(
-                Coefficients const & other
-            )
-            const = default;
-
-            Vector<Real> const &
-            get()
-            const
-            {
-                return s1;
-            }
-
-            Vector<Real> &
-            get()
-            {
-                return s1;
-            }
-
-            template<Basis t_basis>
-            algebra::View<Vector<Real, getSize<t_basis>()> const>
-            get()
-            const
-            {
-                return algebra::View<Vector<Real, getSize<t_basis>()> const>(s1.data());
-            }
-
-            void
-            reserve()
-            {
-                s0 = s1;
-            }
-
-            void
-            recover()
-            {
-                s1 = s0;
-            }
-
-        private:
-
-            Vector<Real> s0;
-
-            Vector<Real> s1;
-
-        };
+        explicit
+        Coefficients(
+            Integer size
+        )
+        :
+        s1(Vector<Real>::Zero(size)),
+        s0(Vector<Real>::Zero(size))
+        {}
 
     public:
+    
+        Boolean
+        operator==(
+            Coefficients const & other
+        )
+        const = default;
+        
+        Boolean
+        operator!=(
+            Coefficients const & other
+        )
+        const = default;
+
+        Vector<Real> const &
+        get()
+        const
+        {
+            return s1;
+        }
+
+        Vector<Real> &
+        get()
+        {
+            return s1;
+        }
+
+        template<Basis t_basis>
+        algebra::View<Vector<Real, getSize<t_basis>()> const>
+        get()
+        const
+        {
+            return algebra::View<Vector<Real, getSize<t_basis>()> const>(s1.data());
+        }
+
+        void
+        reserve()
+        {
+            s0 = s1;
+        }
+
+        void
+        recover()
+        {
+            s1 = s0;
+        }
+
+    private:
+
+        Vector<Real> s0;
+
+        Vector<Real> s1;
+
+    };
+
+    template<Element t_element, Domain t_domain>
+    struct ElementDegreeOfFreedom
+    {
 
         template<Field t_field, Basis t_basis>
         static constexpr
@@ -357,12 +358,12 @@ namespace lolita
             std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom(t_field);
+            auto element_degree_of_freedom = ElementDegreeOfFreedom();
             element_degree_of_freedom.getOffset() = linear_system->getSize();
             linear_system->getSize() += getSize<t_field, t_basis>();
             for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
             {
-                element_degree_of_freedom.coefficients_.push_back(Coefficients::template make<t_basis>());
+                element_degree_of_freedom.coefficients_.push_back(Coefficients<t_element, t_domain>::template make<t_basis>());
             }
             return element_degree_of_freedom;
         }
@@ -372,21 +373,19 @@ namespace lolita
         ElementDegreeOfFreedom
         make()
         {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom(t_field);
+            auto element_degree_of_freedom = ElementDegreeOfFreedom();
             for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
             {
-                element_degree_of_freedom.coefficients_.push_back(Coefficients::template make<t_basis>());
+                element_degree_of_freedom.coefficients_.push_back(Coefficients<t_element, t_domain>::template make<t_basis>());
             }
             return element_degree_of_freedom;
         }
 
     private:
 
-        ElementDegreeOfFreedom(
-            Field const & field
-        )
+        explicit
+        ElementDegreeOfFreedom()
         :
-        field_(field),
         offset_(0),
         coefficients_()
         {}
@@ -436,7 +435,7 @@ namespace lolita
         }
 
         template<Field t_field, Basis t_basis>
-        algebra::View<Vector<Real, Coefficients::template getSize<t_basis>()> const>
+        algebra::View<Vector<Real, Coefficients<t_element, t_domain>::template getSize<t_basis>()> const>
         get(
             Integer row,
             Integer col
@@ -483,101 +482,438 @@ namespace lolita
             }
         }
 
-        void
-        addElementMatrix(
-            MatrixConcept<Real> auto && input
-        )
-        {
-            matrix_auxiliaries_.push_back(std::forward<decltype(input)>(input));
-        }
+    private:
 
-        void
-        addElementVector(
-            VectorConcept<Real> auto && input
-        )
-        {
-            vector_auxiliaries_.push_back(std::forward<decltype(input)>(input));
-        }
+        Natural offset_;
 
-        void
-        addRealParameter(
-            Real && input
-        )
-        {
-            parameter_auxiliaries_.push_back(std::forward<Real>(input));
-        }
+        std::vector<Coefficients<t_element, t_domain>> coefficients_;
 
-        Matrix<Real> const &
-        getElementMatrix(
+    };
+
+    template<typename t_T>
+    struct ElementOperator
+    {
+
+        explicit
+        ElementOperator(
             Integer tag
         )
+        :
+        tag_(tag),
+        operator_(t_T())
+        {}
+        
+        ElementOperator(
+            Integer tag,
+            auto const & value
+        )
+        :
+        tag_(tag),
+        operator_(value)
+        {}
+        
+        ElementOperator(
+            Integer tag,
+            auto && value
+        )
+        :
+        tag_(tag),
+        operator_(std::move(value))
+        {}
+
+        Integer
+        getTag()
         const
         {
-            return matrix_auxiliaries_[tag];
+            return tag_;
         }
 
-        Matrix<Real> &
-        getElementMatrix(
-            Integer tag
-        )
-        {
-            return matrix_auxiliaries_[tag];
-        }
-
-        Vector<Real> const &
-        getElementVector(
-            Integer tag
-        )
+        t_T const &
+        getOperator()
         const
         {
-            return vector_auxiliaries_[tag];
+            return operator_;
         }
 
-        Vector<Real> &
-        getElementVector(
-            Integer tag
-        )
+        t_T &
+        getOperator()
         {
-            return vector_auxiliaries_[tag];
-        }
-
-        Real const &
-        getRealParameter(
-            Integer tag
-        )
-        const
-        {
-            return parameter_auxiliaries_[tag];
-        }
-
-        Real &
-        getRealParameter(
-            Integer tag
-        )
-        {
-            return parameter_auxiliaries_[tag];
-        }
-
-        Field const &
-        getField()
-        const
-        {
-            return field_;
+            return operator_;
         }
 
     private:
 
-        Field const & field_;
+        Integer tag_;
 
-        Natural offset_;
+        t_T operator_;
 
-        std::vector<Coefficients> coefficients_;
+    };
 
-        std::vector<Matrix<Real>> matrix_auxiliaries_;
+    template<Element t_element, Domain t_domain>
+    struct ElementDiscretization
+    {
 
-        std::vector<Vector<Real>> vector_auxiliaries_;
+        using HHH = ElementDegreeOfFreedom<t_element, t_domain>;
 
-        std::vector<Real> parameter_auxiliaries_;
+        explicit
+        ElementDiscretization(
+            Field const & field
+        )
+        :
+        tag_(field.getTag())
+        {}
+        
+        Boolean
+        operator==(
+            ElementDiscretization const & other
+        )
+        const = default;
+        
+        Boolean
+        operator!=(
+            ElementDiscretization const & other
+        )
+        const = default;
+
+        Character
+        getTag()
+        const
+        {
+            return tag_;
+        }
+
+        void
+        addLoad(
+            Integer row,
+            Integer col,
+            std::function<Real(Point const &, Real const &)> && function
+        )
+        {
+            if (loads_ == nullptr)
+            {
+                loads_ = std::make_unique<std::vector<ExternalLoad>>();
+            }
+            for (auto & load : * loads_)
+            {
+                if (load.getRow() == row && load.getCol() == col)
+                {
+                    load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+                    return;
+                }
+            }
+            loads_->push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
+        }
+
+        template<Field t_field, Basis t_basis, Strategy t_s>
+        void
+        addDegreeOfFreedom(
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        )
+        {
+            dof_ = std::make_unique<HHH>(HHH::template make<t_field, t_basis>(linear_system));
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        addDegreeOfFreedom()
+        {
+            dof_ = std::make_unique<HHH>(HHH::template make<t_field, t_basis>());
+        }
+
+        HHH const &
+        getDegreeOfFreedom()
+        const
+        {
+            if (dof_ == nullptr)
+            {
+                throw std::runtime_error("No such field data");
+            }
+            return * dof_;
+        }
+
+        HHH &
+        getDegreeOfFreedom()
+        {
+            if (dof_ == nullptr)
+            {
+                throw std::runtime_error("No such field data");
+            }
+            return * dof_;
+        }
+
+        void
+        addScalar(
+            Integer tag,
+            auto &&... scalar
+        )
+        {
+            if (scalar_items_ == nullptr)
+            {
+                scalar_items_ = std::make_unique<std::vector<ElementOperator<Real>>>();
+            }
+            else
+            {
+                for (auto & m : * scalar_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return;
+                    }
+                }
+                scalar_items_->push_back(ElementOperator<Real>(tag, std::forward<decltype(scalar)>(scalar)...));
+            }
+        }
+
+        void
+        addVector(
+            Integer tag,
+            VectorConcept<Real> auto &&... vector
+        )
+        {
+            if (vector_items_ == nullptr)
+            {
+                vector_items_ = std::make_unique<std::vector<ElementOperator<Vector<Real>>>>();
+            }
+            else
+            {
+                for (auto & m : * vector_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return;
+                    }
+                }
+                vector_items_->push_back(ElementOperator<Vector<Real>>(tag, std::forward<decltype(vector)>(vector)...));
+            }
+        }
+
+        void
+        addMatrix(
+            Integer tag,
+            MatrixConcept<Real> auto &&... matrix
+        )
+        {
+            if (matrix_items_ == nullptr)
+            {
+                matrix_items_ = std::make_unique<std::vector<ElementOperator<Matrix<Real>>>>();
+            }
+            else
+            {
+                for (auto & m : * matrix_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return;
+                    }
+                }
+                matrix_items_->push_back(ElementOperator<Matrix<Real>>(tag, std::forward<decltype(matrix)>(matrix)...));
+            }
+        }
+
+        Real const &
+        getScalar(
+            Integer tag
+        )
+        const
+        {
+            if (scalar_items_ == nullptr)
+            {
+                throw std::runtime_error("No scalar field data");
+            }
+            else
+            {
+                for (auto const & m : * scalar_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return m.getOperator();
+                    }
+                }
+                throw std::runtime_error("No scalar with this tag");
+            }
+            // return scalar_items_->operator[](tag);
+        }
+
+        Real &
+        getScalar(
+            Integer tag
+        )
+        {
+            if (scalar_items_ == nullptr)
+            {
+                throw std::runtime_error("No scalar field data");
+            }
+            else
+            {
+                for (auto & m : * scalar_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return m.getOperator();
+                    }
+                }
+                throw std::runtime_error("No scalar with this tag");
+            }
+            // return scalar_items_->operator[](tag);
+        }
+
+        Vector<Real> const &
+        getVector(
+            Integer tag
+        )
+        const
+        {
+            if (vector_items_ == nullptr)
+            {
+                throw std::runtime_error("No vector field data");
+            }
+            else
+            {
+                for (auto const & m : * vector_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return m.getOperator();
+                    }
+                }
+                throw std::runtime_error("No vector with this tag");
+            }
+            // return vector_items_->operator[](tag);
+        }
+
+        Vector<Real> &
+        getVector(
+            Integer tag
+        )
+        {
+            if (vector_items_ == nullptr)
+            {
+                throw std::runtime_error("No vector field data");
+            }
+            else
+            {
+                for (auto & m : * vector_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return m.getOperator();
+                    }
+                }
+                throw std::runtime_error("No vector with this tag");
+            }
+            // return vector_items_->operator[](tag);
+        }
+
+        Matrix<Real> const &
+        getMatrix(
+            Integer tag
+        )
+        const
+        {
+            if (matrix_items_ == nullptr)
+            {
+                throw std::runtime_error("No matrix field data");
+            }
+            else
+            {
+                for (auto const & m : * matrix_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return m.getOperator();
+                    }
+                }
+                throw std::runtime_error("No matrix with this tag");
+            }
+            // return matrix_items_->operator[](tag);
+        }
+
+        Matrix<Real> &
+        getMatrix(
+            Integer tag
+        )
+        {
+            if (matrix_items_ == nullptr)
+            {
+                throw std::runtime_error("No matrix field data");
+            }
+            else
+            {
+                for (auto & m : * matrix_items_)
+                {
+                    if (m.getTag() == tag)
+                    {
+                        return m.getOperator();
+                    }
+                }
+                throw std::runtime_error("No matrix with this tag");
+            }
+        }
+
+    private:
+
+        Character tag_;
+
+        std::unique_ptr<HHH> dof_;
+
+        std::unique_ptr<std::vector<ExternalLoad>> loads_;
+
+        std::unique_ptr<std::vector<ElementOperator<Real>>> scalar_items_;
+
+        std::unique_ptr<std::vector<ElementOperator<Vector<Real>>>> vector_items_;
+
+        std::unique_ptr<std::vector<ElementOperator<Matrix<Real>>>> matrix_items_;
+
+        // Real const &
+        // getScalar(
+        //     std::basic_string<Character> && label
+        // )
+        // const
+        // {
+        //     return scalar_items_[data_.getScalarTag(std::forward<std::basic_string<Character>>(label))];
+        // }
+
+        // Real &
+        // getScalar(
+        //     std::basic_string<Character> && label
+        // )
+        // {
+        //     return scalar_items_[data_.getScalarTag(std::forward<std::basic_string<Character>>(label))];
+        // }
+
+        // Vector<Real> const &
+        // getVector(
+        //     std::basic_string<Character> && label
+        // )
+        // const
+        // {
+        //     return vector_items_[data_.getVectorTag(std::forward<std::basic_string<Character>>(label))];
+        // }
+
+        // Vector<Real> &
+        // getVector(
+        //     std::basic_string<Character> && label
+        // )
+        // {
+        //     return vector_items_[data_.getVectorTag(std::forward<std::basic_string<Character>>(label))];
+        // }
+
+        // Matrix<Real> const &
+        // getMatrix(
+        //     std::basic_string<Character> && label
+        // )
+        // const
+        // {
+        //     return matrix_items_[data_.getMatrixTag(std::forward<std::basic_string<Character>>(label))];
+        // }
+
+        // Matrix<Real> &
+        // getMatrix(
+        //     std::basic_string<Character> && label
+        // )
+        // {
+        //     return matrix_items_[data_.getMatrixTag(std::forward<std::basic_string<Character>>(label))];
+        // }
 
     };
     

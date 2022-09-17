@@ -17,6 +17,7 @@ namespace lolita
     // struct QuadratureTraits<t_quadrature>
     template<>
     struct QuadratureTraits<Quadrature::gauss(1)>
+    // struct QuadratureTraits<Quadrature(1, Quadrature::Gauss)>
     {
 
         template<Element t_element>
@@ -173,6 +174,7 @@ namespace lolita
     // struct QuadratureTraits<t_quadrature>
     template<>
     struct QuadratureTraits<Quadrature::gauss(2)>
+    // struct QuadratureTraits<Quadrature(2, Quadrature::Gauss)>
     {
 
         template<Element t_element>
@@ -341,6 +343,7 @@ namespace lolita
     // struct QuadratureTraits<t_quadrature>
     template<>
     struct QuadratureTraits<Quadrature::gauss(3)>
+    // struct QuadratureTraits<Quadrature(3, Quadrature::Gauss)>
     {
 
         template<Element t_element>
@@ -523,6 +526,7 @@ namespace lolita
     // struct QuadratureTraits<t_quadrature>
     template<>
     struct QuadratureTraits<Quadrature::gauss(4)>
+    // struct QuadratureTraits<Quadrature(4, Quadrature::Gauss)>
     {
 
         template<Element t_element>
@@ -725,6 +729,7 @@ namespace lolita
     // struct QuadratureTraits<t_quadrature>
     template<>
     struct QuadratureTraits<Quadrature::gauss(5)>
+    // struct QuadratureTraits<Quadrature(5, Quadrature::Gauss)>
     {
 
         template<Element t_element>
@@ -949,6 +954,7 @@ namespace lolita
     // struct QuadratureTraits<t_quadrature>
     template<>
     struct QuadratureTraits<Quadrature::gauss(6)>
+    // struct QuadratureTraits<Quadrature(6, Quadrature::Gauss)>
     {
 
         template<Element t_element>
@@ -1207,6 +1213,7 @@ namespace lolita
     // struct QuadratureTraits<t_quadrature>
     template<>
     struct QuadratureTraits<Quadrature::gauss(7)>
+    // struct QuadratureTraits<Quadrature(7, Quadrature::Gauss)>
     {
 
         template<Element t_element>
@@ -1495,6 +1502,7 @@ namespace lolita
     // struct QuadratureTraits<t_quadrature>
     template<>
     struct QuadratureTraits<Quadrature::gauss(8)>
+    // struct QuadratureTraits<Quadrature(8, Quadrature::Gauss)>
     {
 
         template<Element t_element>

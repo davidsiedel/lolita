@@ -35,46 +35,134 @@ namespace lolita
         template<auto t_discretization>
         using t_Disc = typename DiscretizationTraits<t_discretization>::template Implementation<t_element, t_domain>;
 
-        template<auto t_discretization, GeneralizedStrainConcept auto t_strain>
         void
-        addDof()
-        {
-            static_cast<t_Disc<t_discretization> *>(this)->template addDof<t_strain>();
-        }
-
-        template<auto t_discretization, GeneralizedStrainConcept auto t_strain, Strategy t_s>
-        void
-        addDof(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        addDiscreteField(
+            Field const & field
         )
         {
-            static_cast<t_Disc<t_discretization> *>(this)->template addDof<t_strain>(linear_system);
+            if (ptr_data_ == nullptr)
+            {
+                ptr_data_ = std::make_unique<std::vector<ElementDiscretization<t_element, t_domain>>>();
+            }
+            for (auto const & item : * ptr_data_)
+            {
+                if (item.getTag() == field.getTag())
+                {
+                    return;
+                }
+            }
+            ptr_data_->push_back(ElementDiscretization<t_element, t_domain>(field));
         }
 
-        template<GeneralizedStrainConcept auto t_strain>
-        ElementDegreeOfFreedom<t_element, t_domain> const &
-        getDof()
+        ElementDiscretization<t_element, t_domain> const &
+        getDiscreteField(
+            Field const & field
+        )
         const
         {
-            auto find_it = [&] (auto const & item)
+            if (ptr_data_ == nullptr)
             {
-                return item.getField() == t_strain.getField();
-            };
-            return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto const & item : * ptr_data_)
+                {
+                    if (item.getTag() == field.getTag())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
         }
 
-        template<GeneralizedStrainConcept auto t_strain>
-        ElementDegreeOfFreedom<t_element, t_domain> &
-        getDof()
+        ElementDiscretization<t_element, t_domain> &
+        getDiscreteField(
+            Field const & field
+        )
         {
-            auto find_it = [&] (auto const & item)
+            if (ptr_data_ == nullptr)
             {
-                return item.getField() == t_strain.getField();
-            };
-            return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto & item : * ptr_data_)
+                {
+                    if (item.getTag() == field.getTag())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
         }
 
-        std::unique_ptr<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>> ptr_degrees_of_freedom_;
+        template<Field t_field>
+        void
+        addDiscreteFieldLoad(
+            Integer row,
+            Integer col,
+            std::function<Real(Point const &, Real const &)> && function
+        )
+        {
+            getDiscreteField(t_field).addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+        }
+
+        template<Field t_field, DiscretizationConcept auto t_discretization>
+        void
+        addDiscreteFieldDegreeOfFreedom(
+            auto const &... args
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        addDiscreteFieldDegreeOfFreedom(
+            auto const &... args
+        )
+        {
+            getDiscreteField(t_field).template addDegreeOfFreedom<t_field, t_basis>(args...);
+        }
+
+        template<Field t_field, DiscretizationConcept auto t_discretization>
+        void
+        addDiscreteFieldOperator(
+            std::basic_string<Character> && label
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldOperator<t_field>(std::forward<std::basic_string<Character>>(label));
+        }
+
+        std::unique_ptr<std::vector<ElementDiscretization<t_element, t_domain>>> ptr_data_;
+
+        // std::unique_ptr<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>> ptr_degrees_of_freedom_;
+
+        // template<GeneralizedStrainConcept auto t_strain>
+        // ElementDegreeOfFreedom<t_element, t_domain> const &
+        // getDof()
+        // const
+        // {
+        //     auto find_it = [&] (auto const & item)
+        //     {
+        //         return item.getField() == t_strain.getField();
+        //     };
+        //     return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
+        // }
+
+        // template<GeneralizedStrainConcept auto t_strain>
+        // ElementDegreeOfFreedom<t_element, t_domain> &
+        // getDof()
+        // {
+        //     auto find_it = [&] (auto const & item)
+        //     {
+        //         return item.getField() == t_strain.getField();
+        //     };
+        //     return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
+        // }
 
         template<BehaviorConcept auto t_behavior>
         void
@@ -200,12 +288,12 @@ namespace lolita
             }
         }
 
-        template<auto t_discretization, GeneralizedStrainConcept auto t_strain>
-        void
-        addElementOperator()
-        {
-            getDof<t_strain>().addElementMatrix(this->template getStabilization<t_strain.getField(), t_discretization>());
-        }
+        // template<auto t_discretization, GeneralizedStrainConcept auto t_strain>
+        // void
+        // addElementOperator()
+        // {
+        //     getDof<t_strain>().addElementMatrix(this->template getStabilization<t_strain.getField(), t_discretization>());
+        // }
 
         template<BehaviorConcept auto t_behavior>
         void
@@ -258,15 +346,15 @@ namespace lolita
             }
         }
 
-        template<GeneralizedStrainConcept auto t_strain>
-        void
-        setParameter(
-            Integer tag,
-            std::function<Real(Point const &)> && function
-        )
-        {
-            getDof<t_strain>().getRealParameter(tag) = std::forward<std::function<Real(Point const &)>>(function)(* coordinates_);
-        }
+        // template<GeneralizedStrainConcept auto t_strain>
+        // void
+        // setParameter(
+        //     Integer tag,
+        //     std::function<Real(Point const &)> && function
+        // )
+        // {
+        //     getDof<t_strain>().getRealParameter(tag) = std::forward<std::function<Real(Point const &)>>(function)(* coordinates_);
+        // }
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -797,6 +885,7 @@ namespace lolita
         requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(2))
         {
             using SegmentQuadrature = typename QuadratureTraits<Quadrature::gauss(4)>::template Rule<Element::segment(1)>;
+            // using SegmentQuadrature = typename QuadratureTraits<Quadrature(4, Quadrature::Gauss)>::template Rule<Element::segment(1)>;
             auto distance = Real(0);
             auto dt = Real();
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
@@ -876,6 +965,7 @@ namespace lolita
         requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(2))
         {
             using SegmentQuadrature = typename QuadratureTraits<Quadrature::gauss(4)>::template Rule<Element::segment(1)>;
+            // using SegmentQuadrature = typename QuadratureTraits<Quadrature(4, Quadrature::Gauss)>::template Rule<Element::segment(1)>;
             auto distance = Real(0);
             auto dt = Real();
             // -> TEST
@@ -920,6 +1010,7 @@ namespace lolita
         requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(1))
         {
             using SegmentQuadrature = typename QuadratureTraits<Quadrature::gauss(4)>::template Rule<Element::segment(1)>;
+            // using SegmentQuadrature = typename QuadratureTraits<Quadrature(4, Quadrature::Gauss)>::template Rule<Element::segment(1)>;
             auto distance = Real(0);
             auto dt = Real();
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
@@ -957,6 +1048,7 @@ namespace lolita
         requires(!t_element.isSub(t_domain, 0) && t_element.hasDim(1))
         {
             using SegmentQuadrature = typename QuadratureTraits<Quadrature::gauss(4)>::template Rule<Element::segment(1)>;
+            // using SegmentQuadrature = typename QuadratureTraits<Quadrature(4, Quadrature::Gauss)>::template Rule<Element::segment(1)>;
             auto distance = Real(0);
             auto dt = Real();
             // -> TEST
