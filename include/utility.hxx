@@ -544,7 +544,7 @@ namespace lolita::utility
             t_T && value
         )
         :
-        value_(std::forward<t_T>(value))
+        value_(std::move(value))
         {}
 
         constexpr
@@ -612,8 +612,8 @@ namespace lolita::utility
             t_U &&... values
         )
         :
-        AggregateTail<t_i, t_T>(std::forward<t_T>(value)),
-        AggregateHead<t_i + 1, t_U...>(std::forward<t_U>(values)...)
+        AggregateTail<t_i, t_T>(std::move(value)),
+        AggregateHead<t_i + 1, t_U...>(std::move(values)...)
         {}
 
         constexpr
@@ -708,94 +708,129 @@ namespace lolita::utility
 
     // ------------------------------------------------------------------------------------------------------
 
-    // struct Label
-    // {
+    struct Label
+    {
 
-    //     using Tag = std::array<Character, 50>;
+    private:
 
-    // private:
+        Integer static constexpr size_ = 50;
 
-    //     static constexpr
-    //     Label::Tag
-    //     setTag(
-    //         std::basic_string_view<Character> str
-    //     )
-    //     {
-    //         auto tag = Label::Tag();
-    //         auto count = Integer(0);
-    //         for (auto c : str) {
-    //             tag[count] = c;
-    //             count ++;
-    //         }
-    //         return tag;
-    //     }
+        static constexpr
+        std::array<Character, size_>
+        tag(
+            std::basic_string_view<Character> && str
+        )
+        {
+            auto tag = std::array<Character, size_>();
+            for (auto i = 0; i < std::forward<std::basic_string_view<Character>>(str).size(); i++)
+            {
+                tag[i] = std::forward<std::basic_string_view<Character>>(str)[i];
+            }
+            return tag;
+        }
 
-    // public:
+    public:
 
-    //     constexpr
-    //     Label(
-    //         std::basic_string_view<Character> str
-    //     )
-    //     :
-    //     tag_(setTag(str))
-    //     {}
+        constexpr
+        Label()
+        :
+        tag_()
+        {}
 
-    //     constexpr
-    //     Boolean
-    //     operator==(
-    //         Label const & other
-    //     )
-    //     const = default;
+        constexpr
+        Label(
+            std::basic_string_view<Character> && str
+        )
+        :
+        tag_(tag(std::forward<std::basic_string_view<Character>>(str)))
+        {}
 
-    //     constexpr
-    //     Boolean
-    //     operator!=(
-    //         Label const & other
-    //     )
-    //     const = default;
+        constexpr
+        Boolean
+        operator==(
+            Label const & other
+        )
+        const = default;
 
-    //     constexpr inline
-    //     Boolean
-    //     operator==(
-    //         std::basic_string_view<Character> str
-    //     )
-    //     const
-    //     {
-    //         return str == this->view();
-    //     }
+        constexpr
+        Boolean
+        operator!=(
+            Label const & other
+        )
+        const = default;
 
-    //     constexpr inline
-    //     Boolean
-    //     operator!=(
-    //         std::basic_string_view<Character> str
-    //     )
-    //     const
-    //     {
-    //         return !(* this == str);
-    //     }
+        // constexpr
+        // Boolean
+        // operator==(
+        //     auto const & str
+        // )
+        // const
+        // {
+        //     return str == this->view();
+        // }
 
-    //     constexpr inline
-    //     std::basic_string_view<Character>
-    //     view()
-    //     const
-    //     {
-    //         return std::basic_string_view<Character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), Character())));
-    //     }
+        // constexpr
+        // Boolean
+        // operator!=(
+        //     auto const & str
+        // )
+        // const
+        // {
+        //     return !(* this == str);
+        // }
 
-    //     friend inline
-    //     std::ostream &
-    //     operator<<(
-    //         std::ostream & os,
-    //         Label const & label
-    //     )
-    //     {
-    //         os << label.view();
-    //         return os;
-    //     }
+        constexpr
+        Boolean
+        operator==(
+            auto && str
+        )
+        const
+        {
+            return std::forward<decltype(str)>(str) == this->view();
+        }
 
-    //     Label::Tag tag_;
+        constexpr
+        Boolean
+        operator!=(
+            auto && str
+        )
+        const
+        {
+            return !(* this == str);
+        }
 
-    // };
+        constexpr
+        std::basic_string_view<Character>
+        view()
+        const
+        {
+            return std::basic_string_view<Character>(tag_.data(), std::distance(tag_.begin(), std::find(tag_.begin(), tag_.end(), Character())));
+        }
+
+        friend inline
+        std::ostream &
+        operator<<(
+            std::ostream & os,
+            Label const & label
+        )
+        {
+            os << label.view();
+            return os;
+        }
+
+        std::array<Character, size_> tag_;
+
+    };
+
+    template<typename... t_T>
+    static constexpr
+    std::array<Label, sizeof...(t_T)>
+    makeLabels(
+        t_T &&... strs
+    )
+    {
+        return std::array<Label, sizeof...(t_T)>{Label(std::forward<std::basic_string_view<Character>>(strs))...};
+    }
 
     // ------------------------------------------------------------------------------------------------------
 

@@ -31,6 +31,63 @@ namespace lolita
 
         static constexpr
         Integer
+        getNumCellOperators()
+        {
+            return 6;
+        }
+        
+        std::array<std::basic_string_view<Character>, getNumCellOperators()> static constexpr cell_operators2_ = {
+            "Stabilization",
+            "CellResidual",
+            "CellCellJacobian",
+            "CellFaceJacobian",
+            "FaceCellJacobian",
+            "FaceFaceJacobian",
+        };
+        
+        std::array<utility::Label, getNumCellOperators()> static constexpr cell_operators3_ = {
+            utility::Label("Stabilization"),
+            utility::Label("CellResidual"),
+            utility::Label("CellCellJacobian"),
+            utility::Label("CellFaceJacobian"),
+            utility::Label("FaceCellJacobian"),
+            utility::Label("FaceFaceJacobian"),
+        };
+
+        static constexpr
+        utility::Label const &
+        getOperatorLabel(
+            std::basic_string<Character> && label
+        )
+        {
+            for (auto const & l : cell_operators3_)
+            {
+                if (l == std::forward<std::basic_string<Character>>(label))
+                {
+                    return l;
+                }
+            }
+            throw std::logic_error("Hello, but no");
+        }
+
+        // static constexpr
+        // std::basic_string_view<Character> const &
+        // getOperatorLabel(
+        //     std::basic_string_view<Character> && label
+        // )
+        // {
+        //     for (auto const & l : cell_operators2_)
+        //     {
+        //         if (l == std::forward<std::basic_string_view<Character>>(label))
+        //         {
+        //             return l;
+        //         }
+        //     }
+        //     throw std::logic_error("Hello, but no");
+        // }
+
+        static constexpr
+        Integer
         getOperatorIndex(
             std::basic_string_view<Character> label
         )
@@ -167,34 +224,34 @@ namespace lolita
             return num_element_unknowns;
         }
         
-        template<Domain t_domain, Integer t_i>
-        static
-        GeneralData
-        makeDiscreteField(
-            Field const & field
-        )
-        requires(t_domain.hasDim(t_i))
-        {
-            auto discrete_field = GeneralData(field);
-            discrete_field.addScalarField("Stabilization");
-            discrete_field.addMatrixField("Stabilization");
-            discrete_field.addVectorField("RT");
-            discrete_field.addMatrixField("KTT");
-            discrete_field.addMatrixField("KTF");
-            discrete_field.addMatrixField("KFT");
-            discrete_field.addMatrixField("KFF");
-            return discrete_field;
-        }
+        // template<Domain t_domain, Integer t_i>
+        // static
+        // GeneralData
+        // makeDiscreteField(
+        //     Field const & field
+        // )
+        // requires(t_domain.hasDim(t_i))
+        // {
+        //     auto discrete_field = GeneralData(field);
+        //     discrete_field.addScalarField("Stabilization");
+        //     discrete_field.addMatrixField("Stabilization");
+        //     discrete_field.addVectorField("RT");
+        //     discrete_field.addMatrixField("KTT");
+        //     discrete_field.addMatrixField("KTF");
+        //     discrete_field.addMatrixField("KFT");
+        //     discrete_field.addMatrixField("KFF");
+        //     return discrete_field;
+        // }
         
-        template<Domain t_domain, Integer t_i>
-        static
-        GeneralData
-        makeDiscreteField(
-            Field const & field
-        )
-        {
-            return GeneralData(field);
-        }
+        // template<Domain t_domain, Integer t_i>
+        // static
+        // GeneralData
+        // makeDiscreteField(
+        //     Field const & field
+        // )
+        // {
+        //     return GeneralData(field);
+        // }
 
         template<Element t_element, Domain t_domain>
         struct Implementation : FiniteElement<t_element, t_domain>
@@ -699,6 +756,39 @@ namespace lolita
                     line = mapping_value.value() * this->template getBasisEvaluation<getCellBasis()>(point);
                 }
                 return mapping;
+            }
+
+            template<Field t_field>
+            Vector<Real, getNumElementUnknowns<t_field>()>
+            getUnknowns()
+            const
+            {
+                auto offset = 0;
+                auto unknown = Vector<Real, getNumElementUnknowns<t_field>()>();
+                auto const & cell_dof = this->getDiscreteField(t_field).getDegreeOfFreedom();
+                auto cell_block = unknown.template segment<cell_dof.template getSize<t_field, getCellBasis()>()>(offset);
+                cell_block = cell_dof.template get<t_field, getCellBasis()>();
+                offset += cell_dof.template getSize<t_field, getCellBasis()>();
+                auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        auto const & face_dof = face->getDiscreteField(t_field).getDegreeOfFreedom();
+                        auto face_block = unknown.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(offset);
+                        face_block = face_dof.template get<t_field, getFaceBasis()>();
+                        offset += face_dof.template getSize<t_field, getFaceBasis()>();
+                    }
+                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_unknowns(set_faces_unknowns);
+                return unknown;
             }
 
             // -------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1779,8 +1869,7 @@ namespace lolita
                 std::basic_string<Character> && label
             )
             {
-                auto tag = getOperatorIndex(std::forward<std::basic_string<Character>>(label));
-                this->getDiscreteField(t_field).addMatrix(tag, getStabilization<t_field>());
+                this->getDiscreteField(t_field).addMatrix(getOperatorLabel(std::forward<std::basic_string<Character>>(label)), getStabilization<t_field>());
             }
 
             // template<Field t_field, Strategy t_s>

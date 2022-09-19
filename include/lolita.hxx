@@ -422,10 +422,10 @@ namespace lolita
         static constexpr
         Field
         scalar(
-            Character tag
+            std::basic_string_view<Character> && label
         )
         {
-            return Field(tag, 0);
+            return Field(std::forward<std::basic_string_view<Character>>(label), 0);
         }
 
         static constexpr
@@ -438,10 +438,10 @@ namespace lolita
         static constexpr
         Field
         vector(
-            Character tag
+            std::basic_string_view<Character> && label
         )
         {
-            return Field(tag, 1);
+            return Field(std::forward<std::basic_string_view<Character>>(label), 1);
         }
 
         static constexpr
@@ -456,11 +456,11 @@ namespace lolita
         static constexpr
         Field
         tensor(
-            Character tag,
+            std::basic_string_view<Character> && label,
             Integer dim
         )
         {
-            return Field(tag, dim);
+            return Field(std::forward<std::basic_string_view<Character>>(label), dim);
         }
         
         constexpr explicit
@@ -468,17 +468,17 @@ namespace lolita
             Integer dim
         )
         :
-        tag_(Character()),
+        label_(),
         dim_(dim)
         {}
         
         constexpr
         Field(
-            Character tag,
+            std::basic_string_view<Character> && label,
             Integer dim
         )
         :
-        tag_(tag),
+        label_(std::forward<std::basic_string_view<Character>>(label)),
         dim_(dim)
         {}
 
@@ -505,11 +505,19 @@ namespace lolita
         }
 
         constexpr
-        Character
-        getTag()
+        utility::Label const &
+        getLabel()
         const
         {
-            return tag_;
+            return label_;
+        }
+
+        constexpr
+        std::basic_string_view<Character>
+        getLabelView()
+        const
+        {
+            return label_.view();
         }
 
         constexpr
@@ -522,7 +530,7 @@ namespace lolita
             return dim_ == dim;
         }
 
-        Character tag_;
+        utility::Label label_;
 
         Integer dim_;
 
@@ -531,21 +539,21 @@ namespace lolita
     static constexpr
     Field
     field(
-        std::basic_string_view<Character> label,
-        Character c
+        std::basic_string_view<Character> && label,
+        std::basic_string_view<Character> && label2
     )
     {
-        if (label == "Scalar")
+        if (std::forward<std::basic_string_view<Character>>(label) == "Scalar")
         {
-            return Field(c, 0);
+            return Field(std::forward<std::basic_string_view<Character>>(label2), 0);
         }
-        else if (label == "Vector")
+        else if (std::forward<std::basic_string_view<Character>>(label) == "Vector")
         {
-            return Field(c, 1);
+            return Field(std::forward<std::basic_string_view<Character>>(label2), 1);
         }
-        else if (label == "Tensor")
+        else if (std::forward<std::basic_string_view<Character>>(label) == "Tensor")
         {
-            return Field(c, 2);
+            return Field(std::forward<std::basic_string_view<Character>>(label2), 2);
         }
         else
         {
@@ -727,7 +735,7 @@ namespace lolita
     struct Potential
     {
 
-        using Strains = lolita::utility::Aggregate<t_Strains...>;
+        using Strains = utility::Aggregate<t_Strains...>;
         
         static constexpr
         Integer
@@ -738,12 +746,22 @@ namespace lolita
 
         constexpr
         Potential(
-            Character tag,
+            std::basic_string_view<Character> && label,
             t_Strains const &... strains
         )
         :
-        tag_(tag),
+        label_(std::forward<std::basic_string_view<Character>>(label)),
         strains_(strains...)
+        {}
+
+        constexpr
+        Potential(
+            std::basic_string_view<Character> && label,
+            t_Strains &&... strains
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        strains_(std::move(strains)...)
         {}
 
         constexpr
@@ -761,11 +779,19 @@ namespace lolita
         const = default;
 
         constexpr
-        Character
-        getTag()
+        utility::Label const &
+        getLabel()
         const
         {
-            return tag_;
+            return label_;
+        }
+
+        constexpr
+        std::basic_string_view<Character>
+        getLabelView()
+        const
+        {
+            return label_.view();
         }
 
         template<Integer t_i>
@@ -820,21 +846,54 @@ namespace lolita
         //     set(set);
         // }
 
-        Character tag_;
+        utility::Label label_;
 
         Strains strains_;
 
     };
 
+    // struct TestConst
+    // {
+
+    //     constexpr
+    //     TestConst(
+    //         std::basic_string_view<Character> && label
+    //     )
+    //     :
+    //     tag_(std::forward<std::basic_string_view<Character>>(label))
+    //     {}
+
+    //     utility::Label tag_;
+
+    // };
+
+    // template<TestConst value>
+    // struct TestStruct
+    // {};
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsPotential : std::false_type {};
+        
+        template<typename... t_T>
+        struct IsPotential<Potential<t_T...>> : std::true_type {};
+
+    }
+
+    template<typename t_T>
+    concept PotentialConcept = detail::IsPotential<std::decay_t<t_T>>::value;
+
     template<typename... t_Strains>
     static constexpr
     Potential<t_Strains...>
     potential(
-        Character tag,
+        std::basic_string_view<Character> && label,
         t_Strains const &... strains
     )
     {
-        return Potential<t_Strains...>(tag, strains...);
+        return Potential<t_Strains...>(std::forward<std::basic_string_view<Character>>(label), strains...);
     }
 
     struct ExternalLoad
@@ -896,292 +955,292 @@ namespace lolita
 
     };
 
-    /**
-     * @brief Linked to a mesh set, and a field. can be one for faces, one for cells, one for nodes, etc.
-     * Not necessarily linked to a Dof, can be in a placeholder where no dofs are present.
-     * But the counterpart in the element contains the Dofs, which is done by the discretization part.
-     * 
-     */
-    struct GeneralData
-    {
+    // /**
+    //  * @brief Linked to a mesh set, and a field. can be one for faces, one for cells, one for nodes, etc.
+    //  * Not necessarily linked to a Dof, can be in a placeholder where no dofs are present.
+    //  * But the counterpart in the element contains the Dofs, which is done by the discretization part.
+    //  * 
+    //  */
+    // struct GeneralData
+    // {
 
-        explicit
-        GeneralData(
-            Field const & field
-        )
-        :
-        tag_(field.getTag())
-        {}
+    //     explicit
+    //     GeneralData(
+    //         Field const & field
+    //     )
+    //     :
+    //     tag_(field.getTag())
+    //     {}
 
-        Character
-        getTag()
-        const
-        {
-            return tag_;
-        }
+    //     Character
+    //     getTag()
+    //     const
+    //     {
+    //         return tag_;
+    //     }
 
-        inline
-        void
-        addScalarField(
-            std::basic_string<Character> && label
-        )
-        {
-            for (auto const & scalar_field : scalar_fields_)
-            {
-                if (scalar_field == std::forward<std::basic_string<Character>>(label))
-                {
-                    return;
-                }
-            }
-            scalar_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-            // auto itr_field = std::find(scalar_fields_.begin(), scalar_fields_.end(), std::forward<std::basic_string<Character>>(label));
-            // if (itr_field == scalar_fields_.end())
-            // {
-            //     scalar_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-            // }
-        }
+    //     inline
+    //     void
+    //     addScalarField(
+    //         std::basic_string<Character> && label
+    //     )
+    //     {
+    //         for (auto const & scalar_field : scalar_fields_)
+    //         {
+    //             if (scalar_field == std::forward<std::basic_string<Character>>(label))
+    //             {
+    //                 return;
+    //             }
+    //         }
+    //         scalar_fields_.push_back(std::forward<std::basic_string<Character>>(label));
+    //         // auto itr_field = std::find(scalar_fields_.begin(), scalar_fields_.end(), std::forward<std::basic_string<Character>>(label));
+    //         // if (itr_field == scalar_fields_.end())
+    //         // {
+    //         //     scalar_fields_.push_back(std::forward<std::basic_string<Character>>(label));
+    //         // }
+    //     }
 
-        inline
-        void
-        addVectorField(
-            std::basic_string<Character> && label
-        )
-        {
-            for (auto const & vector_field : vector_fields_)
-            {
-                if (vector_field == std::forward<std::basic_string<Character>>(label))
-                {
-                    return;
-                }
-            }
-            vector_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-            // auto itr_field = std::find(vector_fields_.begin(), vector_fields_.end(), std::forward<std::basic_string<Character>>(label));
-            // if (itr_field == vector_fields_.end())
-            // {
-            //     vector_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-            // }
-        }
+    //     inline
+    //     void
+    //     addVectorField(
+    //         std::basic_string<Character> && label
+    //     )
+    //     {
+    //         for (auto const & vector_field : vector_fields_)
+    //         {
+    //             if (vector_field == std::forward<std::basic_string<Character>>(label))
+    //             {
+    //                 return;
+    //             }
+    //         }
+    //         vector_fields_.push_back(std::forward<std::basic_string<Character>>(label));
+    //         // auto itr_field = std::find(vector_fields_.begin(), vector_fields_.end(), std::forward<std::basic_string<Character>>(label));
+    //         // if (itr_field == vector_fields_.end())
+    //         // {
+    //         //     vector_fields_.push_back(std::forward<std::basic_string<Character>>(label));
+    //         // }
+    //     }
 
-        inline
-        void
-        addMatrixField(
-            std::basic_string<Character> && label
-        )
-        {
-            for (auto const & matrix_field : matrix_fields_)
-            {
-                if (matrix_field == std::forward<std::basic_string<Character>>(label))
-                {
-                    return;
-                }
-            }
-            matrix_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-            // auto itr_field = std::find(matrix_fields_.begin(), matrix_fields_.end(), std::forward<std::basic_string<Character>>(label));
-            // if (itr_field == matrix_fields_.end())
-            // {
-            //     matrix_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-            // }
-        }
+    //     inline
+    //     void
+    //     addMatrixField(
+    //         std::basic_string<Character> && label
+    //     )
+    //     {
+    //         for (auto const & matrix_field : matrix_fields_)
+    //         {
+    //             if (matrix_field == std::forward<std::basic_string<Character>>(label))
+    //             {
+    //                 return;
+    //             }
+    //         }
+    //         matrix_fields_.push_back(std::forward<std::basic_string<Character>>(label));
+    //         // auto itr_field = std::find(matrix_fields_.begin(), matrix_fields_.end(), std::forward<std::basic_string<Character>>(label));
+    //         // if (itr_field == matrix_fields_.end())
+    //         // {
+    //         //     matrix_fields_.push_back(std::forward<std::basic_string<Character>>(label));
+    //         // }
+    //     }
 
-        inline
-        Integer
-        getScalarTag(
-            std::basic_string<Character> && label
-        )
-        const
-        {
-            auto tag = Integer(0);
-            for (auto const & scalar_field : scalar_fields_)
-            {
-                if (scalar_field == std::forward<std::basic_string<Character>>(label))
-                {
-                    return tag;
-                }
-                tag ++;
-            }
-            throw std::runtime_error("NO!");
-            // auto itr_field = std::find(scalar_fields_.begin(), scalar_fields_.end(), std::forward<std::basic_string<Character>>(label));
-            // if (itr_field != scalar_fields_.end())
-            // {
-            //     return std::distance(scalar_fields_.begin(), itr_field);
-            // }
-            // else
-            // {
-            //     throw std::runtime_error("NO!");
-            // }
-        }
+    //     inline
+    //     Integer
+    //     getScalarTag(
+    //         std::basic_string<Character> && label
+    //     )
+    //     const
+    //     {
+    //         auto tag = Integer(0);
+    //         for (auto const & scalar_field : scalar_fields_)
+    //         {
+    //             if (scalar_field == std::forward<std::basic_string<Character>>(label))
+    //             {
+    //                 return tag;
+    //             }
+    //             tag ++;
+    //         }
+    //         throw std::runtime_error("NO!");
+    //         // auto itr_field = std::find(scalar_fields_.begin(), scalar_fields_.end(), std::forward<std::basic_string<Character>>(label));
+    //         // if (itr_field != scalar_fields_.end())
+    //         // {
+    //         //     return std::distance(scalar_fields_.begin(), itr_field);
+    //         // }
+    //         // else
+    //         // {
+    //         //     throw std::runtime_error("NO!");
+    //         // }
+    //     }
 
-        inline
-        Integer
-        getVectorTag(
-            std::basic_string<Character> && label
-        )
-        const
-        {
-            auto tag = Integer(0);
-            for (auto const & vector_field : vector_fields_)
-            {
-                if (vector_field == std::forward<std::basic_string<Character>>(label))
-                {
-                    return tag;
-                }
-                tag ++;
-            }
-            throw std::runtime_error("NO!");
-            // auto itr_field = std::find(vector_fields_.begin(), vector_fields_.end(), std::forward<std::basic_string<Character>>(label));
-            // if (itr_field != vector_fields_.end())
-            // {
-            //     return std::distance(vector_fields_.begin(), itr_field);
-            // }
-            // else
-            // {
-            //     throw std::runtime_error("NO!");
-            // }
-        }
+    //     inline
+    //     Integer
+    //     getVectorTag(
+    //         std::basic_string<Character> && label
+    //     )
+    //     const
+    //     {
+    //         auto tag = Integer(0);
+    //         for (auto const & vector_field : vector_fields_)
+    //         {
+    //             if (vector_field == std::forward<std::basic_string<Character>>(label))
+    //             {
+    //                 return tag;
+    //             }
+    //             tag ++;
+    //         }
+    //         throw std::runtime_error("NO!");
+    //         // auto itr_field = std::find(vector_fields_.begin(), vector_fields_.end(), std::forward<std::basic_string<Character>>(label));
+    //         // if (itr_field != vector_fields_.end())
+    //         // {
+    //         //     return std::distance(vector_fields_.begin(), itr_field);
+    //         // }
+    //         // else
+    //         // {
+    //         //     throw std::runtime_error("NO!");
+    //         // }
+    //     }
 
-        inline
-        Integer
-        getMatrixTag(
-            std::basic_string<Character> && label
-        )
-        const
-        {
-            auto tag = Integer(0);
-            for (auto const & matrix_field : matrix_fields_)
-            {
-                if (matrix_field == std::forward<std::basic_string<Character>>(label))
-                {
-                    return tag;
-                }
-                tag ++;
-            }
-            throw std::runtime_error("NO!");
-            // auto itr_field = std::find(matrix_fields_.begin(), matrix_fields_.end(), std::forward<std::basic_string<Character>>(label));
-            // if (itr_field != matrix_fields_.end())
-            // {
-            //     return std::distance(matrix_fields_.begin(), itr_field);
-            // }
-            // else
-            // {
-            //     throw std::runtime_error("NO!");
-            // }
-        }
+    //     inline
+    //     Integer
+    //     getMatrixTag(
+    //         std::basic_string<Character> && label
+    //     )
+    //     const
+    //     {
+    //         auto tag = Integer(0);
+    //         for (auto const & matrix_field : matrix_fields_)
+    //         {
+    //             if (matrix_field == std::forward<std::basic_string<Character>>(label))
+    //             {
+    //                 return tag;
+    //             }
+    //             tag ++;
+    //         }
+    //         throw std::runtime_error("NO!");
+    //         // auto itr_field = std::find(matrix_fields_.begin(), matrix_fields_.end(), std::forward<std::basic_string<Character>>(label));
+    //         // if (itr_field != matrix_fields_.end())
+    //         // {
+    //         //     return std::distance(matrix_fields_.begin(), itr_field);
+    //         // }
+    //         // else
+    //         // {
+    //         //     throw std::runtime_error("NO!");
+    //         // }
+    //     }
 
-        inline
-        Integer
-        getNumScalarFields()
-        const
-        {
-            return scalar_fields_.size();
-        }
+    //     inline
+    //     Integer
+    //     getNumScalarFields()
+    //     const
+    //     {
+    //         return scalar_fields_.size();
+    //     }
 
-        inline
-        Integer
-        getNumVectorFields()
-        const
-        {
-            return vector_fields_.size();
-        }
+    //     inline
+    //     Integer
+    //     getNumVectorFields()
+    //     const
+    //     {
+    //         return vector_fields_.size();
+    //     }
 
-        inline
-        Integer
-        getNumMatrixFields()
-        const
-        {
-            return matrix_fields_.size();
-        }
+    //     inline
+    //     Integer
+    //     getNumMatrixFields()
+    //     const
+    //     {
+    //         return matrix_fields_.size();
+    //     }
 
-        inline
-        void
-        addLoadField(
-            Integer row,
-            Integer col,
-            std::function<Real(Point const &, Real const &)> && function
-        )
-        {
-            for (auto & load : loads_)
-            {
-                if (load.getRow() == row && load.getCol() == col)
-                {
-                    load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-                    return;
-                }
-            }
-            loads_.push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
-            // auto find_load = [&] (
-            //     ExternalLoad const & load
-            // )
-            // {
-            //     return load.getRow() == row && load.getCol() == col;
-            // };
-            // auto itr_load = std::find_if(loads_.begin(), loads_.end(), find_load);
-            // if (itr_load == loads_.end())
-            // {
-            //     loads_.push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
-            // }
-            // else
-            // {
-            //     * itr_load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-            // }
-        }
+    //     inline
+    //     void
+    //     addLoadField(
+    //         Integer row,
+    //         Integer col,
+    //         std::function<Real(Point const &, Real const &)> && function
+    //     )
+    //     {
+    //         for (auto & load : loads_)
+    //         {
+    //             if (load.getRow() == row && load.getCol() == col)
+    //             {
+    //                 load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+    //                 return;
+    //             }
+    //         }
+    //         loads_.push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
+    //         // auto find_load = [&] (
+    //         //     ExternalLoad const & load
+    //         // )
+    //         // {
+    //         //     return load.getRow() == row && load.getCol() == col;
+    //         // };
+    //         // auto itr_load = std::find_if(loads_.begin(), loads_.end(), find_load);
+    //         // if (itr_load == loads_.end())
+    //         // {
+    //         //     loads_.push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
+    //         // }
+    //         // else
+    //         // {
+    //         //     * itr_load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+    //         // }
+    //     }
 
-    private:
+    // private:
 
-        Character tag_;
+    //     Character tag_;
 
-        std::vector<std::basic_string<Character>> scalar_fields_;
+    //     std::vector<std::basic_string<Character>> scalar_fields_;
 
-        std::vector<std::basic_string<Character>> vector_fields_;
+    //     std::vector<std::basic_string<Character>> vector_fields_;
 
-        std::vector<std::basic_string<Character>> matrix_fields_;
+    //     std::vector<std::basic_string<Character>> matrix_fields_;
 
-        std::vector<ExternalLoad> loads_;
+    //     std::vector<ExternalLoad> loads_;
 
-    };
+    // };
 
-    static inline
-    std::shared_ptr<GeneralData>
-    data(
-        Field const & field
-    )
-    {
-        return std::make_shared<GeneralData>(field);
-    }
+    // static inline
+    // std::shared_ptr<GeneralData>
+    // data(
+    //     Field const & field
+    // )
+    // {
+    //     return std::make_shared<GeneralData>(field);
+    // }
 
 
-    struct PotentialData
-    {
+    // struct PotentialData
+    // {
 
-        explicit
-        PotentialData(
-            auto const & pot
-        )
-        :
-        tag_(pot.getTag())
-        {}
+    //     explicit
+    //     PotentialData(
+    //         auto const & pot
+    //     )
+    //     :
+    //     tag_(pot.getTag())
+    //     {}
 
-        inline
-        void
-        addBehavior(
-            auto const &... args
-        )
-        {
-            bhv_ = mgis::behaviour::load(args...);
-        }
+    //     inline
+    //     void
+    //     addBehavior(
+    //         auto const &... args
+    //     )
+    //     {
+    //         bhv_ = mgis::behaviour::load(args...);
+    //     }
 
-    private:
+    // private:
 
-        Character tag_;
+    //     Character tag_;
 
-        mgis::behaviour::Behaviour bhv_;
+    //     mgis::behaviour::Behaviour bhv_;
 
-    };
+    // };
 
-    struct Dummy
-    {
-        Dummy(GeneralData const & data) : data_(data) {}
-        GeneralData const & data_;
-    };
+    // struct Dummy
+    // {
+    //     Dummy(GeneralData const & data) : data_(data) {}
+    //     GeneralData const & data_;
+    // };
     
     struct HybridDiscontinuousGalerkin
     {

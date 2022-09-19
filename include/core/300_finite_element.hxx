@@ -42,19 +42,19 @@ namespace lolita
         {
             if (ptr_data_ == nullptr)
             {
-                ptr_data_ = std::make_unique<std::vector<ElementDiscretization<t_element, t_domain>>>();
+                ptr_data_ = std::make_unique<std::vector<ElementDiscreteField<t_element, t_domain>>>();
             }
             for (auto const & item : * ptr_data_)
             {
-                if (item.getTag() == field.getTag())
+                if (item.getLabel() == field.getLabel())
                 {
                     return;
                 }
             }
-            ptr_data_->push_back(ElementDiscretization<t_element, t_domain>(field));
+            ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(field));
         }
 
-        ElementDiscretization<t_element, t_domain> const &
+        ElementDiscreteField<t_element, t_domain> const &
         getDiscreteField(
             Field const & field
         )
@@ -68,7 +68,7 @@ namespace lolita
             {
                 for (auto const & item : * ptr_data_)
                 {
-                    if (item.getTag() == field.getTag())
+                    if (item.getLabel() == field.getLabel())
                     {
                         return item;
                     }
@@ -77,7 +77,7 @@ namespace lolita
             }
         }
 
-        ElementDiscretization<t_element, t_domain> &
+        ElementDiscreteField<t_element, t_domain> &
         getDiscreteField(
             Field const & field
         )
@@ -90,7 +90,7 @@ namespace lolita
             {
                 for (auto & item : * ptr_data_)
                 {
-                    if (item.getTag() == field.getTag())
+                    if (item.getLabel() == field.getLabel())
                     {
                         return item;
                     }
@@ -110,15 +110,6 @@ namespace lolita
             getDiscreteField(t_field).addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
         }
 
-        template<Field t_field, DiscretizationConcept auto t_discretization>
-        void
-        addDiscreteFieldDegreeOfFreedom(
-            auto const &... args
-        )
-        {
-            static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
-        }
-
         template<Field t_field, Basis t_basis>
         void
         addDiscreteFieldDegreeOfFreedom(
@@ -130,6 +121,15 @@ namespace lolita
 
         template<Field t_field, DiscretizationConcept auto t_discretization>
         void
+        addDiscreteFieldDegreeOfFreedom(
+            auto const &... args
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
+        }
+
+        template<Field t_field, DiscretizationConcept auto t_discretization>
+        void
         addDiscreteFieldOperator(
             std::basic_string<Character> && label
         )
@@ -137,7 +137,7 @@ namespace lolita
             static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldOperator<t_field>(std::forward<std::basic_string<Character>>(label));
         }
 
-        std::unique_ptr<std::vector<ElementDiscretization<t_element, t_domain>>> ptr_data_;
+        std::unique_ptr<std::vector<ElementDiscreteField<t_element, t_domain>>> ptr_data_;
 
         // std::unique_ptr<std::vector<ElementDegreeOfFreedom<t_element, t_domain>>> ptr_degrees_of_freedom_;
 
@@ -164,20 +164,28 @@ namespace lolita
         //     return * std::find_if(ptr_degrees_of_freedom_->begin(), ptr_degrees_of_freedom_->end(), find_it);
         // }
 
-        template<BehaviorConcept auto t_behavior>
         void
-        addFormulation()
+        addFormulation(
+            PotentialConcept auto const & t_behavior
+        )
         {
             if (ptr_formulations_ == nullptr)
             {
                 ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
             }
-            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>::make(t_behavior.getTag()));
+            for (auto const & item : * ptr_formulations_)
+            {
+                if (item.getLabel() == t_behavior.getLabel())
+                {
+                    return;
+                }
+            }
+            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>(t_behavior));
         }
 
-        template<BehaviorConcept auto t_behavior>
         void
         addFormulation(
+            PotentialConcept auto const & t_behavior,
             std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
         )
         {
@@ -185,12 +193,20 @@ namespace lolita
             {
                 ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
             }
-            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>::make(t_behavior.getTag(), behavior));
+            for (auto const & item : * ptr_formulations_)
+            {
+                if (item.getLabel() == t_behavior.getLabel())
+                {
+                    return;
+                }
+            }
+            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>(t_behavior, behavior));
         }
 
-        template<Quadrature t_quadrature, BehaviorConcept auto t_behavior>
+        template<Quadrature t_quadrature>
         void
         addFormulation(
+            PotentialConcept auto const & t_behavior,
             std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
         )
         {
@@ -198,95 +214,219 @@ namespace lolita
             {
                 ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
             }
-            auto frm = ElementFormulation<t_element, t_domain>::make(t_behavior.getTag(), behavior);
+            for (auto const & item : * ptr_formulations_)
+            {
+                if (item.getLabel() == t_behavior.getLabel())
+                {
+                    return;
+                }
+            }
+            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>(t_behavior, behavior));
+            // auto frm = ElementFormulation<t_element, t_domain>::make(t_behavior, behavior);
             for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
             {
                 auto point = getCurrentQuadraturePoint<t_quadrature>(i);
                 auto r_point = getReferenceQuadraturePoint<t_quadrature>(i);
                 auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
-                frm.addIntegrationPoint(std::move(r_point), std::move(point), weight, behavior);
+                // frm.addIntegrationPoint(std::move(r_point), std::move(point), weight, behavior);
+                ptr_formulations_->back().addIntegrationPoint(std::move(r_point), std::move(point), weight, behavior);
             }
-            ptr_formulations_->push_back(std::move(frm));
         }
 
-        template<BehaviorConcept auto t_behavior>
         ElementFormulation<t_element, t_domain> const &
-        getFormulation()
+        getFormulation(
+            PotentialConcept auto const & t_behavior
+        )
         const
         {
-            auto find_it = [&] (auto const & item)
+            if (ptr_formulations_ == nullptr)
             {
-                return item.getTag() == t_behavior.getTag();
-            };
-            return * std::find_if(ptr_formulations_->begin(), ptr_formulations_->end(), find_it);
-        }
-
-        template<BehaviorConcept auto t_behavior>
-        ElementFormulation<t_element, t_domain> &
-        getFormulation()
-        {
-            auto find_it = [&] (auto const & item)
+                throw std::runtime_error("Empty");
+            }
+            else
             {
-                return item.getTag() == t_behavior.getTag();
-            };
-            return * std::find_if(ptr_formulations_->begin(), ptr_formulations_->end(), find_it);
-        }
-
-        std::unique_ptr<std::vector<ElementFormulation<t_element, t_domain>>> ptr_formulations_;
-
-        template<auto t_discretization, GeneralizedStrainConcept auto t_strain>
-        Vector<Real>
-        getUnknowns()
-        const
-        {
-            return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknowns<t_strain>();
-        }
-
-        template<auto t_discretization, BehaviorConcept auto t_behavior, GeneralizedStrainConcept auto t_strain>
-        void
-        addStrainOperators()
-        {
-            auto strain_operator_num_rows = GeneralizedStrainTraits<t_strain>::template getSize<t_domain>();
-            auto strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_strain.getField()>();
-            auto quadrature_point_count = 0;
-            for (auto & ip : getFormulation<t_behavior>().integration_points_)
-            {
-                auto strain_operator = Matrix<Real>(strain_operator_num_rows, strain_operator_num_cols);
-                strain_operator.setZero();
-                auto set_mapping_block = [&] <Integer t_i = 0> (
-                    auto & self
-                )
-                constexpr mutable
+                for (auto const & item : * ptr_formulations_)
                 {
-                    auto constexpr mapping = t_strain.template getMapping<t_i>();
-                    auto constexpr mapping_size = GeneralizedStrainTraits<t_strain>::template getMappingSize<t_domain, mapping>();
-                    auto constexpr offset = GeneralizedStrainTraits<t_strain>::template getMappingOffset<t_domain, mapping>();
-                    auto rhs = this->template getMapping<t_strain.getField(), mapping, t_discretization>(ip.getReferenceCoordinates());
-                    auto lhs = strain_operator.block(mapping_size, strain_operator_num_cols, offset, 0);
-                    lhs = rhs;
-                    if constexpr (t_i < t_strain.getNumMappings() - 1)
+                    if (item.getLabel() == t_behavior.getLabel())
                     {
-                        self.template operator ()<t_i + 1>(self);
+                        return item;
                     }
-                };
-                set_mapping_block(set_mapping_block);
+                }
+                throw std::runtime_error("No such field data");
+            }
+        }
+
+        // template<PotentialConcept auto t_behavior>
+        ElementFormulation<t_element, t_domain> &
+        getFormulation(
+            PotentialConcept auto const & t_behavior
+        )
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto & item : * ptr_formulations_)
+                {
+                    if (item.getLabel() == t_behavior.getLabel())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
+        }
+
+        template<PotentialConcept auto t_behavior, Mapping t_strain, DiscretizationConcept auto t_discretization>
+        void
+        addFormulationStrainOperator()
+        {
+            auto quadrature_point_count = 0;
+            for (auto & ip : getFormulation(t_behavior).getIntegrationPoints())
+            {
+                auto strain_operator = this->template getMapping<t_strain.getField(), t_strain, t_discretization>(ip.getReferenceCoordinates());
                 ip.template addStrainOperator<t_strain>(strain_operator);
                 quadrature_point_count ++;
             }
         }
 
-        template<auto t_discretization, BehaviorConcept auto t_behavior, GeneralizedStrainConcept auto t_strain>
-        void
-        setStrainValues()
+        template<Field t_field, auto t_discretization>
+        auto
+        getUnknowns()
+        const
         {
-            auto const unknown = this->template getUnknowns<t_discretization, t_strain>();
-            for (auto & ip : getFormulation<t_behavior>().integration_points_)
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknowns<t_field>();
+        }
+
+        template<PotentialConcept auto t_behavior, Mapping t_strain, DiscretizationConcept auto t_discretization>
+        void
+        setFormulationStrain()
+        {
+            auto const unknown = this->template getUnknowns<t_strain.getField(), t_discretization>();
+            for (auto & ip : getFormulation(t_behavior).getIntegrationPoints())
             {
-                auto rhs = ip.template getStrainOperator<t_strain>() * unknown;
+                auto rhs = Vector<Real>();
+                if (ip.template hasStrainOperator<t_strain>())
+                {
+                    rhs = ip.template getStrainOperator<t_strain>() * unknown;
+                }
+                else
+                {
+                    rhs = this->template getMapping<t_strain.getField(), t_strain, t_discretization>(ip.getReferenceCoordinates()) * unknown;
+                }
                 auto lhs = algebra::View<Vector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
                 lhs = rhs;
             }
         }
+
+        template<PotentialConcept auto t_behavior>
+        void
+        integrate(
+            std::atomic<Boolean> & output_handler
+        )
+        {
+            getFormulation(t_behavior).integrate(output_handler);
+        }
+
+        template<PotentialConcept auto t_behavior>
+        void
+        reserveBehaviorData()
+        {
+            getFormulation(t_behavior).reserve();
+        }
+
+        template<PotentialConcept auto t_behavior>
+        void
+        recoverBehaviorData()
+        {
+            getFormulation(t_behavior).recover();
+        }
+
+        template<PotentialConcept auto t_behavior>
+        void
+        setMaterialProperty(
+            std::basic_string<Character> && label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            for (auto & ip : getFormulation(t_behavior).getIntegrationPoints())
+            {
+                ip.setMaterialProperty(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+            }
+        }
+
+        template<PotentialConcept auto t_behavior>
+        void
+        setExternalVariable(
+            std::basic_string<Character> && label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            for (auto & ip : getFormulation(t_behavior).getIntegrationPoints())
+            {
+                ip.setExternalVariable(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+            }
+        }
+
+        // template<BehaviorConcept auto t_behavior>
+        // ElementFormulation<t_element, t_domain> const &
+        // getFormulation()
+        // const
+        // {
+        //     auto find_it = [&] (auto const & item)
+        //     {
+        //         return item.getTag() == t_behavior.getTag();
+        //     };
+        //     return * std::find_if(ptr_formulations_->begin(), ptr_formulations_->end(), find_it);
+        // }
+
+        // template<BehaviorConcept auto t_behavior>
+        // ElementFormulation<t_element, t_domain> &
+        // getFormulation()
+        // {
+        //     auto find_it = [&] (auto const & item)
+        //     {
+        //         return item.getTag() == t_behavior.getTag();
+        //     };
+        //     return * std::find_if(ptr_formulations_->begin(), ptr_formulations_->end(), find_it);
+        // }
+
+        std::unique_ptr<std::vector<ElementFormulation<t_element, t_domain>>> ptr_formulations_;
+
+        // template<auto t_discretization, BehaviorConcept auto t_behavior, GeneralizedStrainConcept auto t_strain>
+        // void
+        // addStrainOperators()
+        // {
+        //     auto strain_operator_num_rows = GeneralizedStrainTraits<t_strain>::template getSize<t_domain>();
+        //     auto strain_operator_num_cols = t_Disc<t_discretization>::template getNumElementUnknowns<t_strain.getField()>();
+        //     auto quadrature_point_count = 0;
+        //     for (auto & ip : getFormulation<t_behavior>().getIntegrationPoints())
+        //     {
+        //         auto strain_operator = Matrix<Real>(strain_operator_num_rows, strain_operator_num_cols);
+        //         strain_operator.setZero();
+        //         auto set_mapping_block = [&] <Integer t_i = 0> (
+        //             auto & self
+        //         )
+        //         constexpr mutable
+        //         {
+        //             auto constexpr mapping = t_strain.template getMapping<t_i>();
+        //             auto constexpr mapping_size = GeneralizedStrainTraits<t_strain>::template getMappingSize<t_domain, mapping>();
+        //             auto constexpr offset = GeneralizedStrainTraits<t_strain>::template getMappingOffset<t_domain, mapping>();
+        //             auto rhs = this->template getMapping<t_strain.getField(), mapping, t_discretization>(ip.getReferenceCoordinates());
+        //             auto lhs = strain_operator.block(mapping_size, strain_operator_num_cols, offset, 0);
+        //             lhs = rhs;
+        //             if constexpr (t_i < t_strain.getNumMappings() - 1)
+        //             {
+        //                 self.template operator ()<t_i + 1>(self);
+        //             }
+        //         };
+        //         set_mapping_block(set_mapping_block);
+        //         ip.template addStrainOperator<t_strain>(strain_operator);
+        //         quadrature_point_count ++;
+        //     }
+        // }
 
         // template<auto t_discretization, GeneralizedStrainConcept auto t_strain>
         // void
@@ -294,57 +434,6 @@ namespace lolita
         // {
         //     getDof<t_strain>().addElementMatrix(this->template getStabilization<t_strain.getField(), t_discretization>());
         // }
-
-        template<BehaviorConcept auto t_behavior>
-        void
-        integrate(
-            std::atomic<Boolean> & output_handler
-        )
-        {
-            getFormulation<t_behavior>().integrate(output_handler);
-        }
-
-        template<BehaviorConcept auto t_behavior>
-        void
-        reserveBehaviorData()
-        {
-            getFormulation<t_behavior>().reserve();
-        }
-
-        template<BehaviorConcept auto t_behavior>
-        void
-        recoverBehaviorData(
-            std::basic_string_view<Character> behavior_label
-        )
-        {
-            getFormulation<t_behavior>().recover();
-        }
-
-        template<BehaviorConcept auto t_behavior>
-        void
-        setMaterialProperty(
-            std::basic_string_view<Character> material_property_label,
-            std::function<Real(Point const &)> && function
-        )
-        {
-            for (auto & ip : getFormulation<t_behavior>().getIntegrationPoints())
-            {
-                ip.setMaterialProperty(material_property_label, std::forward<std::function<Real(Point const &)>>(function));
-            }
-        }
-
-        template<BehaviorConcept auto t_behavior>
-        void
-        setExternalVariable(
-            std::basic_string_view<Character> material_property_label,
-            std::function<Real(Point const &)> && function
-        )
-        {
-            for (auto & ip : getFormulation<t_behavior>().getIntegrationPoints())
-            {
-                ip.setExternalVariable(material_property_label, std::forward<std::function<Real(Point const &)>>(function));
-            }
-        }
 
         // template<GeneralizedStrainConcept auto t_strain>
         // void
