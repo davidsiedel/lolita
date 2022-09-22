@@ -16,71 +16,139 @@ namespace lolita
     template<auto t_discretization>
     struct DiscretizationTraits;
 
-    
-    template<Element t_element, Domain t_domain>
-    struct Coefficients
+    template<Domain t_domain>
+    struct ElementDegreeOfFreedom2
     {
 
-        template<Basis t_basis>
+        template<Integer t_size>
         static constexpr
         Integer
         getSize()
         {
-            return BasisTraits<t_basis>::template getSize<t_element>();
+            return t_size;
         }
 
-        template<Basis t_basis>
+        template<Field t_field, Integer t_size>
+        static constexpr
+        Integer
+        getSize()
+        {
+            return FieldTraits<t_field>::template getSize<t_domain>() * t_size;
+        }
+
+        template<Field t_field, Integer t_size, Strategy t_s>
         static
-        Coefficients
+        ElementDegreeOfFreedom2
+        make(
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        )
+        {
+            auto element_degree_of_freedom = ElementDegreeOfFreedom2(getSize<t_field, t_size>(), linear_system->getSize());
+            linear_system->getSize() += getSize<t_field, t_size>();
+            return element_degree_of_freedom;
+        }
+
+        template<Field t_field, Integer t_size>
+        static
+        ElementDegreeOfFreedom2
         make()
         {
-            return Coefficients(getSize<t_basis>());
+            auto element_degree_of_freedom = ElementDegreeOfFreedom2(getSize<t_field, t_size>());
+            return element_degree_of_freedom;
         }
 
     private:
 
         explicit
-        Coefficients(
+        ElementDegreeOfFreedom2(
             Integer size
         )
         :
-        s1(Vector<Real>::Zero(size)),
-        s0(Vector<Real>::Zero(size))
+        offset_(-1),
+        s0(Vector<Real>::Zero(size)),
+        s1(Vector<Real>::Zero(size))
+        {}
+        
+        ElementDegreeOfFreedom2(
+            Integer size,
+            Integer offset
+        )
+        :
+        offset_(offset),
+        s0(Vector<Real>::Zero(size)),
+        s1(Vector<Real>::Zero(size))
         {}
 
     public:
-    
+        
         Boolean
         operator==(
-            Coefficients const & other
+            ElementDegreeOfFreedom2 const & other
         )
         const = default;
         
         Boolean
         operator!=(
-            Coefficients const & other
+            ElementDegreeOfFreedom2 const & other
         )
         const = default;
-
-        Vector<Real> const &
-        get()
+        
+        Natural &
+        getOffset()
+        {
+            return offset_;
+        }
+        
+        Natural const &
+        getOffset()
         const
         {
-            return s1;
+            return offset_;
         }
 
-        Vector<Real> &
-        get()
+        template<Field t_field, Integer t_size>
+        void
+        addCoefficients(
+            VectorConcept<Real> auto && input
+        )
         {
-            return s1;
+            s1 += std::forward<decltype(input)>(input).template segment<getSize<t_field, t_size>()>(offset_);
         }
 
-        template<Basis t_basis>
-        algebra::View<Vector<Real, getSize<t_basis>()> const>
-        get()
+        template<Field t_field, Integer t_size>
+        algebra::View<Vector<Real, getSize<t_size>()> const>
+        getCoefficients(
+            Integer row,
+            Integer col
+        )
         const
         {
-            return algebra::View<Vector<Real, getSize<t_basis>()> const>(s1.data());
+            return algebra::View<Vector<Real, getSize<t_size>()> const>(s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col);
+        }
+
+        template<Field t_field, Integer t_size>
+        algebra::View<Vector<Real, getSize<t_field, t_size>()> const>
+        getCoefficients()
+        const
+        {
+            return algebra::View<Vector<Real, getSize<t_field, t_size>()> const>(s1.data());
+        }
+
+        template<Field t_field, Integer t_size>
+        algebra::View<Vector<Real, getSize<t_size>()>>
+        getCoefficients(
+            Integer row,
+            Integer col
+        )
+        {
+            return algebra::View<Vector<Real, getSize<t_size>()> const>(s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col);
+        }
+
+        template<Field t_field, Integer t_size>
+        algebra::View<Vector<Real, getSize<t_field, t_size>()>>
+        getCoefficients()
+        {
+            return algebra::View<Vector<Real, getSize<t_field, t_size>()> const>(s1.data());
         }
 
         void
@@ -97,6 +165,8 @@ namespace lolita
 
     private:
 
+        Natural offset_;
+
         Vector<Real> s0;
 
         Vector<Real> s1;
@@ -106,6 +176,14 @@ namespace lolita
     template<Element t_element, Domain t_domain>
     struct ElementDegreeOfFreedom
     {
+
+        template<Basis t_basis>
+        static constexpr
+        Integer
+        getSize()
+        {
+            return BasisTraits<t_basis>::template getSize<t_element>();
+        }
 
         template<Field t_field, Basis t_basis>
         static constexpr
@@ -122,13 +200,8 @@ namespace lolita
             std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom();
-            element_degree_of_freedom.getOffset() = linear_system->getSize();
+            auto element_degree_of_freedom = ElementDegreeOfFreedom(getSize<t_field, t_basis>(), linear_system->getSize());
             linear_system->getSize() += getSize<t_field, t_basis>();
-            for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
-            {
-                element_degree_of_freedom.coefficients_.push_back(Coefficients<t_element, t_domain>::template make<t_basis>());
-            }
             return element_degree_of_freedom;
         }
 
@@ -137,21 +210,31 @@ namespace lolita
         ElementDegreeOfFreedom
         make()
         {
-            auto element_degree_of_freedom = ElementDegreeOfFreedom();
-            for (auto i = 0; i < FieldTraits<t_field>::template getSize<t_domain>(); i++)
-            {
-                element_degree_of_freedom.coefficients_.push_back(Coefficients<t_element, t_domain>::template make<t_basis>());
-            }
+            auto element_degree_of_freedom = ElementDegreeOfFreedom(getSize<t_field, t_basis>());
             return element_degree_of_freedom;
         }
 
     private:
 
         explicit
-        ElementDegreeOfFreedom()
+        ElementDegreeOfFreedom(
+            Integer size
+        )
         :
-        offset_(0),
-        coefficients_()
+        offset_(-1),
+        s0(Vector<Real>::Zero(size)),
+        s1(Vector<Real>::Zero(size))
+        {}
+
+        explicit
+        ElementDegreeOfFreedom(
+            Integer size,
+            Integer offset
+        )
+        :
+        offset_(offset),
+        s0(Vector<Real>::Zero(size)),
+        s1(Vector<Real>::Zero(size))
         {}
 
     public:
@@ -183,73 +266,68 @@ namespace lolita
 
         template<Field t_field, Basis t_basis>
         void
-        add(
+        addCoefficients(
             VectorConcept<Real> auto && input
         )
         {
-            auto constexpr offset = BasisTraits<t_basis>::template getSize<t_element>();
-            for (auto row = 0; row < FieldTraits<t_field>::template getRows<t_domain>(); row++)
-            {
-                for (auto col = 0; col < FieldTraits<t_field>::template getCols<t_domain>(); col++)
-                {
-                    auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-                    coefficients_[index].add(std::forward<decltype(input)>(input).template segment<offset>(offset_ + index * offset));
-                }
-            }
+            s1 += std::forward<decltype(input)>(input).template segment<getSize<t_field, t_basis>()>(offset_);
         }
 
         template<Field t_field, Basis t_basis>
-        algebra::View<Vector<Real, Coefficients<t_element, t_domain>::template getSize<t_basis>()> const>
-        get(
+        algebra::View<Vector<Real, getSize<t_basis>()> const>
+        getCoefficients(
             Integer row,
             Integer col
         )
         const
         {
-            return coefficients_[FieldTraits<t_field>::template getCols<t_domain>() * row + col].template get<t_basis>();
+            return algebra::View<Vector<Real, getSize<t_basis>()> const>(s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col);
         }
 
         template<Field t_field, Basis t_basis>
-        Vector<Real, getSize<t_field, t_basis>()>
-        get()
+        algebra::View<Vector<Real, getSize<t_field, t_basis>()> const>
+        getCoefficients()
         const
         {
-            auto constexpr offset = BasisTraits<t_basis>::template getSize<t_element>();
-            auto output = Vector<Real, getSize<t_field, t_basis>()>();
-            for (auto row = 0; row < FieldTraits<t_field>::template getRows<t_domain>(); row++)
-            {
-                for (auto col = 0; col < FieldTraits<t_field>::template getCols<t_domain>(); col++)
-                {
-                    auto index = FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-                    output.template segment<offset>(index * offset) = coefficients_[index].template get<t_basis>();
-                }
-            }
-            return output;
+            return algebra::View<Vector<Real, getSize<t_field, t_basis>()> const>(s1.data());
+        }
+
+        template<Field t_field, Basis t_basis>
+        algebra::View<Vector<Real, getSize<t_basis>()>>
+        getCoefficients(
+            Integer row,
+            Integer col
+        )
+        {
+            return algebra::View<Vector<Real, getSize<t_basis>()> const>(s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col);
+        }
+
+        template<Field t_field, Basis t_basis>
+        algebra::View<Vector<Real, getSize<t_field, t_basis>()>>
+        getCoefficients()
+        {
+            return algebra::View<Vector<Real, getSize<t_field, t_basis>()> const>(s1.data());
         }
 
         void
         reserve()
         {
-            for (auto & c : coefficients_)
-            {
-                c.reserve();
-            }
+            s0 = s1;
         }
 
         void
         recover()
         {
-            for (auto & c : coefficients_)
-            {
-                c.recover();
-            }
+            s1 = s0;
         }
 
     private:
 
         Natural offset_;
 
-        std::vector<Coefficients<t_element, t_domain>> coefficients_;
+        Vector<Real> s0;
+
+        Vector<Real> s1;
 
     };
 
@@ -311,115 +389,54 @@ namespace lolita
         t_Value operator_;
 
     };
-
-    template<Element t_element, Domain t_domain>
-    struct ElementDiscreteField
+    
+    template<Domain t_domain>
+    struct DegreeOfFreedomBase
     {
 
-        using HHH = ElementDegreeOfFreedom<t_element, t_domain>;
-
-        explicit
-        ElementDiscreteField(
-            Field const & field
-        )
-        :
-        label_(field.getLabel())
-        {}
+        // explicit
+        // DegreeOfFreedomBase(
+        //     Field const & field
+        // )
+        // :
+        // label_(field.getLabel())
+        // {}
         
         Boolean
         operator==(
-            ElementDiscreteField const & other
+            DegreeOfFreedomBase const & other
         )
         const = default;
         
         Boolean
         operator!=(
-            ElementDiscreteField const & other
+            DegreeOfFreedomBase const & other
         )
         const = default;
 
-        utility::Label const &
-        getLabel()
-        const
-        {
-            return label_;
-        }
+        // Label const &
+        // getLabel()
+        // const
+        // {
+        //     return label_;
+        // }
 
-        std::basic_string_view<Character>
-        getLabelView()
-        const
-        {
-            return label_.view();
-        }
-
-        void
-        addLoad(
-            Integer row,
-            Integer col,
-            std::function<Real(Point const &, Real const &)> && function
-        )
-        {
-            if (loads_ == nullptr)
-            {
-                loads_ = std::make_unique<std::vector<ExternalLoad>>();
-            }
-            for (auto & load : * loads_)
-            {
-                if (load.getRow() == row && load.getCol() == col)
-                {
-                    load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-                    return;
-                }
-            }
-            loads_->push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
-        }
-
-        template<Field t_field, Basis t_basis, Strategy t_s>
-        void
-        addDegreeOfFreedom(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
-        )
-        {
-            dof_ = std::make_unique<HHH>(HHH::template make<t_field, t_basis>(linear_system));
-        }
-
-        template<Field t_field, Basis t_basis>
-        void
-        addDegreeOfFreedom()
-        {
-            dof_ = std::make_unique<HHH>(HHH::template make<t_field, t_basis>());
-        }
-
-        HHH const &
-        getDegreeOfFreedom()
-        const
-        {
-            if (dof_ == nullptr)
-            {
-                throw std::runtime_error("No such field data");
-            }
-            return * dof_;
-        }
-
-        HHH &
-        getDegreeOfFreedom()
-        {
-            if (dof_ == nullptr)
-            {
-                throw std::runtime_error("No such field data");
-            }
-            return * dof_;
-        }
+        // std::basic_string_view<Character>
+        // getLabelView()
+        // const
+        // {
+        //     return label_.view();
+        // }
 
         void
         addScalar(
-            utility::Label const & tag,
+            Label const & tag,
             auto &&... scalar
         )
         {
             if (scalar_items_ == nullptr)
             {
-                scalar_items_ = std::make_unique<std::vector<ElementaryOperator<utility::Label, Real>>>();
+                scalar_items_ = std::make_unique<std::vector<ElementaryOperator<Label, Real>>>();
             }
             for (auto & m : * scalar_items_)
             {
@@ -428,18 +445,18 @@ namespace lolita
                     return;
                 }
             }
-            scalar_items_->push_back(ElementaryOperator<utility::Label, Real>(tag, std::forward<decltype(scalar)>(scalar)...));
+            scalar_items_->push_back(ElementaryOperator<Label, Real>(tag, std::forward<decltype(scalar)>(scalar)...));
         }
 
         void
         addVector(
-            utility::Label const & tag,
+            Label const & tag,
             VectorConcept<Real> auto &&... vector
         )
         {
             if (vector_items_ == nullptr)
             {
-                vector_items_ = std::make_unique<std::vector<ElementaryOperator<utility::Label, Vector<Real>>>>();
+                vector_items_ = std::make_unique<std::vector<ElementaryOperator<Label, Vector<Real>>>>();
             }
             for (auto & m : * vector_items_)
             {
@@ -448,18 +465,18 @@ namespace lolita
                     return;
                 }
             }
-            vector_items_->push_back(ElementaryOperator<utility::Label, Vector<Real>>(tag, std::forward<decltype(vector)>(vector)...));
+            vector_items_->push_back(ElementaryOperator<Label, Vector<Real>>(tag, std::forward<decltype(vector)>(vector)...));
         }
 
         void
         addMatrix(
-            utility::Label const & tag,
+            Label const & tag,
             MatrixConcept<Real> auto &&... matrix
         )
         {
             if (matrix_items_ == nullptr)
             {
-                matrix_items_ = std::make_unique<std::vector<ElementaryOperator<utility::Label, Matrix<Real>>>>();
+                matrix_items_ = std::make_unique<std::vector<ElementaryOperator<Label, Matrix<Real>>>>();
             }
             for (auto & m : * matrix_items_)
             {
@@ -468,7 +485,7 @@ namespace lolita
                     return;
                 }
             }
-            matrix_items_->push_back(ElementaryOperator<utility::Label, Matrix<Real>>(tag, std::forward<decltype(matrix)>(matrix)...));
+            matrix_items_->push_back(ElementaryOperator<Label, Matrix<Real>>(tag, std::forward<decltype(matrix)>(matrix)...));
         }
 
         Real const &
@@ -606,19 +623,455 @@ namespace lolita
             }
         }
 
+    protected:
+
+        // Label const & label_;
+
+        std::unique_ptr<std::vector<ElementaryOperator<Label, Real>>> scalar_items_;
+
+        std::unique_ptr<std::vector<ElementaryOperator<Label, Vector<Real>>>> vector_items_;
+
+        std::unique_ptr<std::vector<ElementaryOperator<Label, Matrix<Real>>>> matrix_items_;
+
+    };
+
+    template<Integer t_i, Domain t_domain>
+    struct MeshDegreeOfFreedom : DegreeOfFreedomBase<t_domain>
+    {
+        
+        using t_ElementDegreeOfFreedom = ElementDegreeOfFreedom2<t_domain>;
+
+        explicit
+        MeshDegreeOfFreedom(
+            Field const & field
+        )
+        :
+        label_(field.getLabel())
+        {}
+        
+        Boolean
+        operator==(
+            MeshDegreeOfFreedom const & other
+        )
+        const = default;
+        
+        Boolean
+        operator!=(
+            MeshDegreeOfFreedom const & other
+        )
+        const = default;
+
+        Label const &
+        getLabel()
+        const
+        {
+            return label_;
+        }
+
+        std::basic_string_view<Character>
+        getLabelView()
+        const
+        {
+            return label_.view();
+        }
+
+        void
+        addLoad(
+            Integer row,
+            Integer col,
+            std::function<Real(Point const &, Real const &)> && function
+        )
+        {
+            if (loads_ == nullptr)
+            {
+                loads_ = std::make_unique<std::vector<ExternalLoad>>();
+            }
+            for (auto & load : * loads_)
+            {
+                if (load.getRow() == row && load.getCol() == col)
+                {
+                    load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+                    return;
+                }
+            }
+            loads_->push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
+        }
+
+        template<Field t_field, Integer t_size, Strategy t_s>
+        void
+        addDegreeOfFreedom(
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        )
+        {
+            dof_ = std::make_unique<t_ElementDegreeOfFreedom>(t_ElementDegreeOfFreedom::template make<t_field, t_size>(linear_system));
+        }
+
+        template<Field t_field, Integer t_size>
+        void
+        addDegreeOfFreedom()
+        {
+            dof_ = std::make_unique<t_ElementDegreeOfFreedom>(t_ElementDegreeOfFreedom::template make<t_field, t_size>());
+        }
+
+        t_ElementDegreeOfFreedom const &
+        getDegreeOfFreedom()
+        const
+        {
+            if (dof_ == nullptr)
+            {
+                throw std::runtime_error("No such field data");
+            }
+            return * dof_;
+        }
+
+        t_ElementDegreeOfFreedom &
+        getDegreeOfFreedom()
+        {
+            if (dof_ == nullptr)
+            {
+                throw std::runtime_error("No such field data");
+            }
+            return * dof_;
+        }
+
     private:
 
-        utility::Label const & label_;
+        Label const & label_;
 
-        std::unique_ptr<HHH> dof_;
+        // MeshDomain const & dom_;
+
+        std::unique_ptr<t_ElementDegreeOfFreedom> dof_;
 
         std::unique_ptr<std::vector<ExternalLoad>> loads_;
 
-        std::unique_ptr<std::vector<ElementaryOperator<utility::Label, Real>>> scalar_items_;
+    };
 
-        std::unique_ptr<std::vector<ElementaryOperator<utility::Label, Vector<Real>>>> vector_items_;
+    template<Element t_element, Domain t_domain>
+    struct ElementDiscreteField : DegreeOfFreedomBase<t_domain>
+    {
 
-        std::unique_ptr<std::vector<ElementaryOperator<utility::Label, Matrix<Real>>>> matrix_items_;
+        // using HHH = ElementDegreeOfFreedom<t_element, t_domain>;
+        using t_ElementDegreeOfFreedom = ElementDegreeOfFreedom<t_element, t_domain>;
+
+        explicit
+        ElementDiscreteField(
+            // Field const & field
+            MeshDegreeOfFreedom<t_element.getDim(), t_domain> const & m
+        )
+        :
+        // DegreeOfFreedomBase<t_domain>(field)
+        msh_(m)
+        {}
+        
+        Boolean
+        operator==(
+            ElementDiscreteField const & other
+        )
+        const = default;
+        
+        Boolean
+        operator!=(
+            ElementDiscreteField const & other
+        )
+        const = default;
+
+        MeshDegreeOfFreedom<t_element.getDim(), t_domain> const &
+        getMeshDegreeOfFreedom()
+        const
+        {
+            return msh_;
+        }
+
+        Label const &
+        getLabel()
+        const
+        {
+            return msh_.getLabel();
+        }
+
+        // Label const &
+        // getLabel()
+        // const
+        // {
+        //     return label_;
+        // }
+
+        // std::basic_string_view<Character>
+        // getLabelView()
+        // const
+        // {
+        //     return label_.view();
+        // }
+
+        // void
+        // addLoad(
+        //     Integer row,
+        //     Integer col,
+        //     std::function<Real(Point const &, Real const &)> && function
+        // )
+        // {
+        //     if (loads_ == nullptr)
+        //     {
+        //         loads_ = std::make_unique<std::vector<ExternalLoad>>();
+        //     }
+        //     for (auto & load : * loads_)
+        //     {
+        //         if (load.getRow() == row && load.getCol() == col)
+        //         {
+        //             load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+        //             return;
+        //         }
+        //     }
+        //     loads_->push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
+        // }
+
+        template<Field t_field, Basis t_basis, Strategy t_s>
+        void
+        addDegreeOfFreedom(
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        )
+        {
+            dof_ = std::make_unique<t_ElementDegreeOfFreedom>(t_ElementDegreeOfFreedom::template make<t_field, t_basis>(linear_system));
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        addDegreeOfFreedom()
+        {
+            dof_ = std::make_unique<t_ElementDegreeOfFreedom>(t_ElementDegreeOfFreedom::template make<t_field, t_basis>());
+        }
+
+        t_ElementDegreeOfFreedom const &
+        getDegreeOfFreedom()
+        const
+        {
+            if (dof_ == nullptr)
+            {
+                throw std::runtime_error("No such field data");
+            }
+            return * dof_;
+        }
+
+        t_ElementDegreeOfFreedom &
+        getDegreeOfFreedom()
+        {
+            if (dof_ == nullptr)
+            {
+                throw std::runtime_error("No such field data");
+            }
+            return * dof_;
+        }
+
+        // void
+        // addScalar(
+        //     Label const & tag,
+        //     auto &&... scalar
+        // )
+        // {
+        //     if (scalar_items_ == nullptr)
+        //     {
+        //         scalar_items_ = std::make_unique<std::vector<ElementaryOperator<Label, Real>>>();
+        //     }
+        //     for (auto & m : * scalar_items_)
+        //     {
+        //         if (m.getTag() == tag)
+        //         {
+        //             return;
+        //         }
+        //     }
+        //     scalar_items_->push_back(ElementaryOperator<Label, Real>(tag, std::forward<decltype(scalar)>(scalar)...));
+        // }
+
+        // void
+        // addVector(
+        //     Label const & tag,
+        //     VectorConcept<Real> auto &&... vector
+        // )
+        // {
+        //     if (vector_items_ == nullptr)
+        //     {
+        //         vector_items_ = std::make_unique<std::vector<ElementaryOperator<Label, Vector<Real>>>>();
+        //     }
+        //     for (auto & m : * vector_items_)
+        //     {
+        //         if (m.getTag() == tag)
+        //         {
+        //             return;
+        //         }
+        //     }
+        //     vector_items_->push_back(ElementaryOperator<Label, Vector<Real>>(tag, std::forward<decltype(vector)>(vector)...));
+        // }
+
+        // void
+        // addMatrix(
+        //     Label const & tag,
+        //     MatrixConcept<Real> auto &&... matrix
+        // )
+        // {
+        //     if (matrix_items_ == nullptr)
+        //     {
+        //         matrix_items_ = std::make_unique<std::vector<ElementaryOperator<Label, Matrix<Real>>>>();
+        //     }
+        //     for (auto & m : * matrix_items_)
+        //     {
+        //         if (m.getTag() == tag)
+        //         {
+        //             return;
+        //         }
+        //     }
+        //     matrix_items_->push_back(ElementaryOperator<Label, Matrix<Real>>(tag, std::forward<decltype(matrix)>(matrix)...));
+        // }
+
+        // Real const &
+        // getScalar(
+        //     std::basic_string_view<Character> && tag
+        // )
+        // const
+        // {
+        //     if (scalar_items_ == nullptr)
+        //     {
+        //         throw std::runtime_error("No scalar field data");
+        //     }
+        //     else
+        //     {
+        //         for (auto const & m : * scalar_items_)
+        //         {
+        //             if (m.getTag() == std::forward<std::basic_string_view<Character>>(tag))
+        //             {
+        //                 return m.getOperator();
+        //             }
+        //         }
+        //         throw std::runtime_error("No scalar with this tag");
+        //     }
+        // }
+
+        // Real &
+        // getScalar(
+        //     std::basic_string_view<Character> && tag
+        // )
+        // {
+        //     if (scalar_items_ == nullptr)
+        //     {
+        //         throw std::runtime_error("No scalar field data");
+        //     }
+        //     else
+        //     {
+        //         for (auto & m : * scalar_items_)
+        //         {
+        //             if (m.getTag() == std::forward<std::basic_string_view<Character>>(tag))
+        //             {
+        //                 return m.getOperator();
+        //             }
+        //         }
+        //         throw std::runtime_error("No scalar with this tag");
+        //     }
+        // }
+
+        // Vector<Real> const &
+        // getVector(
+        //     std::basic_string_view<Character> && tag
+        // )
+        // const
+        // {
+        //     if (vector_items_ == nullptr)
+        //     {
+        //         throw std::runtime_error("No vector field data");
+        //     }
+        //     else
+        //     {
+        //         for (auto const & m : * vector_items_)
+        //         {
+        //             if (m.getTag() == std::forward<std::basic_string_view<Character>>(tag))
+        //             {
+        //                 return m.getOperator();
+        //             }
+        //         }
+        //         throw std::runtime_error("No vector with this tag");
+        //     }
+        // }
+
+        // Vector<Real> &
+        // getVector(
+        //     std::basic_string_view<Character> && tag
+        // )
+        // {
+        //     if (vector_items_ == nullptr)
+        //     {
+        //         throw std::runtime_error("No vector field data");
+        //     }
+        //     else
+        //     {
+        //         for (auto & m : * vector_items_)
+        //         {
+        //             if (m.getTag() == std::forward<std::basic_string_view<Character>>(tag))
+        //             {
+        //                 return m.getOperator();
+        //             }
+        //         }
+        //         throw std::runtime_error("No vector with this tag");
+        //     }
+        // }
+
+        // Matrix<Real> const &
+        // getMatrix(
+        //     std::basic_string_view<Character> && tag
+        // )
+        // const
+        // {
+        //     if (matrix_items_ == nullptr)
+        //     {
+        //         throw std::runtime_error("No matrix field data");
+        //     }
+        //     else
+        //     {
+        //         for (auto const & m : * matrix_items_)
+        //         {
+        //             if (m.getTag() == std::forward<std::basic_string_view<Character>>(tag))
+        //             {
+        //                 return m.getOperator();
+        //             }
+        //         }
+        //         throw std::runtime_error("No matrix with this tag");
+        //     }
+        // }
+
+        // Matrix<Real> &
+        // getMatrix(
+        //     std::basic_string_view<Character> && tag
+        // )
+        // {
+        //     if (matrix_items_ == nullptr)
+        //     {
+        //         throw std::runtime_error("No matrix field data");
+        //     }
+        //     else
+        //     {
+        //         for (auto & m : * matrix_items_)
+        //         {
+        //             if (m.getTag() == std::forward<std::basic_string_view<Character>>(tag))
+        //             {
+        //                 return m.getOperator();
+        //             }
+        //         }
+        //         throw std::runtime_error("No matrix with this tag");
+        //     }
+        // }
+
+    private:
+
+        MeshDegreeOfFreedom<t_element.getDim(), t_domain> const & msh_;
+
+        // Label const & label_;
+
+        std::unique_ptr<t_ElementDegreeOfFreedom> dof_;
+
+        // std::unique_ptr<std::vector<ExternalLoad>> loads_;
+
+        // std::unique_ptr<std::vector<ElementaryOperator<Label, Real>>> scalar_items_;
+
+        // std::unique_ptr<std::vector<ElementaryOperator<Label, Vector<Real>>>> vector_items_;
+
+        // std::unique_ptr<std::vector<ElementaryOperator<Label, Matrix<Real>>>> matrix_items_;
 
     };
 

@@ -29,10 +29,10 @@ Physical Curve("RIGHT", 13) = {2};
 //+
 Physical Curve("LEFT", 14) = {4};
 //+
-Transfinite Curve {3, 2, 1, 4} = 10 Using Progression 1;
+Transfinite Curve {3, 2, 1, 4} = 2 Using Progression 1;
 //+
 // Recombine Surface {1};
 //+
 // Transfinite Surface {1};
 //+
-Physical Surface("SQUARE", 15) = {1};
+Physical Surface("ROD", 15) = {1};

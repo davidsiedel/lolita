@@ -209,6 +209,106 @@ namespace lolita
             return false;
         }
 
+        void
+        addDiscreteField(
+            Field const & field
+        )
+        {
+            if (ptr_data_ == nullptr)
+            {
+                ptr_data_ = std::make_unique<std::vector<ElementDiscreteField<t_element, t_domain>>>();
+            }
+            for (auto const & item : * ptr_data_)
+            {
+                if (item.getLabel() == field.getLabel())
+                {
+                    return;
+                }
+            }
+            ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(field));
+        }
+
+        ElementDiscreteField<t_element, t_domain> const &
+        getDiscreteField(
+            Field const & field
+        )
+        const
+        {
+            if (ptr_data_ == nullptr)
+            {
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto const & item : * ptr_data_)
+                {
+                    if (item.getLabel() == field.getLabel())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
+        }
+
+        ElementDiscreteField<t_element, t_domain> &
+        getDiscreteField(
+            Field const & field
+        )
+        {
+            if (ptr_data_ == nullptr)
+            {
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto & item : * ptr_data_)
+                {
+                    if (item.getLabel() == field.getLabel())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
+        }
+
+        template<Field t_field>
+        void
+        addDiscreteFieldLoad(
+            Integer row,
+            Integer col,
+            std::function<Real(Point const &, Real const &)> && function
+        )
+        {
+            getDiscreteField(t_field).addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        addDiscreteFieldDegreeOfFreedom(
+            auto const &... args
+        )
+        {
+            getDiscreteField(t_field).template addDegreeOfFreedom<t_field, t_basis>(args...);
+        }
+
+        // template<Field t_field, DiscretizationConcept auto t_discretization>
+        // void
+        // addDiscreteFieldDegreeOfFreedom(
+        //     auto const &... args
+        // )
+        // {
+        //     static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
+        // }
+
+        // template<Field t_field, DiscretizationConcept auto t_discretization, Label t_label>
+        // void
+        // addDiscreteFieldOperator()
+        // {
+        //     static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
+        // }
+
         algebra::View<Point const> reference_coordinates_;
     
         Point coordinates_;
@@ -218,6 +318,8 @@ namespace lolita
         std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
 
         std::unique_ptr<std::vector<ElementaryOperator<Mapping, Matrix<Real>>>> strain_matrix_list_;
+
+        std::unique_ptr<std::vector<ElementDiscreteField<t_element, t_domain>>> ptr_data_;
 
     };
     
@@ -306,14 +408,38 @@ namespace lolita
         }
 
         void
-        integrate(
+        setMaterialProperty(
+            std::basic_string<Character> && label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            for (auto & ip : * integration_points_)
+            {
+                ip.setMaterialProperty(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+            }
+        }
+
+        void
+        setExternalVariable(
+            std::basic_string<Character> && label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            for (auto & ip : * integration_points_)
+            {
+                ip.setExternalVariable(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+            }
+        }
+
+        void
+        integrateConstitutiveEquation(
             std::atomic<Boolean> & output_handler
         )
         {
             for (auto & ip : * integration_points_)
             {
-                ip.integrate(output_handler, behavior_);
-            }            
+                ip.integrate(behavior_, output_handler);
+            }
         }
 
         void

@@ -17,7 +17,7 @@ namespace lolita
 {
 
     template<Domain t_domain>
-    struct FiniteElementMap : ElementMap<FiniteElement, t_domain>
+    struct FiniteElementMap : ElementMap<FiniteElement, t_domain>, MeshStuffMap<MeshDomain1, t_domain>
     {
 
         std::unique_ptr<FiniteElementSet<t_domain>>

@@ -97,7 +97,8 @@
     },
     "cSpell.words": [
         "discretization",
-        "galerkin"
+        "galerkin",
+        "tparam"
     ]
     // "cmake.testEnvironment": {},
     // "cmake.configureEnvironment": {},

@@ -17,6 +17,8 @@
 
 namespace lolita
 {
+
+    using Label = utility::Label;
     
     using Point = Vector<Real, 3>;
 
@@ -28,23 +30,56 @@ namespace lolita
     struct Domain
     {
 
-        enum Frame
-        {
+        // std::array<Label, 2> static constexpr frame_labels_ = {
+        //     "Cartesian",
+        //     "AxiSymmetric",
+        // };
 
-            Cartesian,
-            AxiSymmetric
+        // static constexpr
+        // Label const &
+        // frame(
+        //     std::basic_string_view<Character> && frame_label
+        // )
+        // {
+        //     for (auto const & label : frame_labels_)
+        //     {
+        //         if (label == std::forward<std::basic_string_view<Character>>(frame_label))
+        //         {
+        //             return label;
+        //         }
+        //     }
+        //     throw std::logic_error("NO !!");
+        // }
 
-        };
+        // static constexpr
+        // std::basic_string_view<Character> const &
+        // check(
+        //     std::basic_string_view<Character> const & input
+        // )
+        // {
+        //     if constexpr (!utility::isAnyOf(input, "Cartesian", "AxiSymmetric"))
+        //     {
+        //         throw std::logic_error("NO !!!");
+        //     }
+        //     return input;
+        // }
 
         constexpr
         Domain(
-            Integer dim,
-            Frame frame
+            std::basic_string_view<Character> && frame_label,
+            Integer dim
         )
         :
-        dim_(dim),
-        frame_(frame)
-        {}
+        // frame_(frame(std::forward<std::basic_string_view<Character>>(frame_label))),
+        frame_(std::forward<std::basic_string_view<Character>>(frame_label)),
+        dim_(dim)
+        {
+            // if constexpr (!utility::isAnyOf(std::basic_string_view<Character>(frame_label), "Cartesian", "AxiSymmetric"))
+            // {
+            //     // throw std::logic_error("NO !!!");
+            //     int a = 2;
+            // }
+        }
 
         constexpr
         Boolean
@@ -60,14 +95,6 @@ namespace lolita
         )
         const = default;
 
-        // constexpr
-        // Domain
-        // getSubDomain()
-        // const
-        // {
-        //     return Domain(dim_ - 1, frame_);
-        // }
-
         constexpr
         Boolean
         hasDim(
@@ -77,39 +104,21 @@ namespace lolita
         {
             return dim_ == dim;
         }
-
-        // static constexpr
-        // Domain
-        // axiSymmetric(
-        //     Integer dim
-        // )
-        // {
-        //     return Domain(dim, Frame::AxiSymmetric);
-        // }
         
         constexpr
         Boolean
         isAxiSymmetric()
         const
         {
-            return frame_ == Frame::AxiSymmetric;
+            return frame_ == "AxiSymmetric";
         }
-
-        // static constexpr
-        // Domain
-        // cartesian(
-        //     Integer dim
-        // )
-        // {
-        //     return Domain(dim, Frame::Cartesian);
-        // }
         
         constexpr
         Boolean
         isCartesian()
         const
         {
-            return frame_ == Frame::Cartesian;
+            return frame_ == "Cartesian";
         }
 
         constexpr
@@ -120,40 +129,19 @@ namespace lolita
             return dim_;
         }
 
-        // constexpr
-        // Frame
-        // getFrame()
-        // const
-        // {
-        //     return frame_;
-        // }
+        constexpr
+        std::basic_string_view<Character>
+        getFrameView()
+        const
+        {
+            return frame_.view();
+        }
+
+        Label frame_;
 
         Integer dim_;
 
-        Frame frame_;
-
     };
-
-    static constexpr
-    Domain
-    domain(
-        std::basic_string_view<Character> label,
-        Integer dim
-    )
-    {
-        if (label == "Cartesian")
-        {
-            return Domain(dim, Domain::Cartesian);
-        }
-        else if (label == "AxiSymmetric")
-        {
-            return Domain(dim, Domain::AxiSymmetric);
-        }
-        else
-        {
-            throw std::logic_error("NO !!!");
-        }
-    }
     
     struct ElementType
     {
@@ -223,22 +211,36 @@ namespace lolita
 
     struct Quadrature
     {
-        
-        enum Rule
-        {
 
-            Gauss,
+        // std::array<Label, 1> static constexpr rule_labels_ = {
+        //     "Gauss",
+        // };
 
-        };
+        // static constexpr
+        // Label const &
+        // rule(
+        //     std::basic_string_view<Character> && rule_label
+        // )
+        // {
+        //     for (auto const & label : rule_labels_)
+        //     {
+        //         if (label == std::forward<std::basic_string_view<Character>>(rule_label))
+        //         {
+        //             return label;
+        //         }
+        //     }
+        //     throw std::logic_error("NO !!");
+        // }
         
         constexpr
         Quadrature(
-            Integer ord,
-            Rule rule
+            std::basic_string_view<Character> && rule_label,
+            Integer ord
         )
         :
-        ord_(ord),
-        rule_(rule)
+        // rule_(rule(std::forward<std::basic_string_view<Character>>(rule_label))),
+        rule_(std::forward<std::basic_string_view<Character>>(rule_label)),
+        ord_(ord)
         {}
 
         constexpr
@@ -254,22 +256,13 @@ namespace lolita
             Quadrature const & other
         )
         const = default;
-
-        static constexpr
-        Quadrature
-        gauss(
-            Integer ord
-        )
-        {
-            return Quadrature(ord, Gauss);
-        }
         
         constexpr
         Boolean
         isGauss()
         const
         {
-            return rule_ == Gauss;
+            return rule_ == "Gauss";
         }
         
         constexpr
@@ -279,7 +272,7 @@ namespace lolita
         )
         const
         {
-            return rule_ == Gauss && ord_ == ord;
+            return rule_ == "Gauss" && ord_ == ord;
         }
         
         constexpr
@@ -292,57 +285,23 @@ namespace lolita
             return ord_ == ord;
         }
         
-        Integer ord_;
+        Label rule_;
         
-        Rule rule_;
+        Integer ord_;
 
     };
 
-    static constexpr
-    Quadrature
-    quadrature(
-        std::basic_string_view<Character> label,
-        Integer order
-    )
-    {
-        if (label == "Gauss")
-        {
-            return Quadrature::gauss(order);
-        }
-        else
-        {
-            throw std::logic_error("NO !!!");
-        }
-    }
-
     struct Basis
     {
-
-        enum Polynomial
-        {
-
-            Lagrange,
-            Monomial,
-
-        };
-
-        static constexpr
-        Basis
-        monomial(
-            Integer order
-        )
-        {
-            return Basis(order, Basis::Monomial);
-        }
         
         constexpr
         Basis(
-            Integer ord,
-            Polynomial polynomial
+            std::basic_string_view<Character> && polynomial,
+            Integer ord
         )
         :
-        ord_(ord),
-        polynomial_(polynomial)
+        polynomial_(std::forward<std::basic_string_view<Character>>(polynomial)),
+        ord_(ord)
         {}
 
         constexpr
@@ -360,11 +319,19 @@ namespace lolita
         const = default;
 
         constexpr
-        Polynomial
+        Label const &
         getPolynomial()
         const
         {
             return polynomial_;
+        }
+
+        constexpr
+        std::basic_string_view<Character>
+        getPolynomialView()
+        const
+        {
+            return polynomial_.view();
         }
         
         constexpr
@@ -372,7 +339,7 @@ namespace lolita
         isMonomial()
         const
         {
-            return polynomial_ == Monomial;
+            return polynomial_ == "Monomial";
         }
         
         constexpr
@@ -382,7 +349,7 @@ namespace lolita
         )
         const
         {
-            return polynomial_ == Monomial && ord_ == order;
+            return polynomial_ == "Monomial" && ord_ == order;
         }
 
         constexpr
@@ -400,68 +367,17 @@ namespace lolita
         )
         const
         {
-            return Basis(order, polynomial_);
+            return Basis(polynomial_.view(), order);
         }
         
-        Integer ord_;
+        Label polynomial_;
         
-        Polynomial polynomial_;
+        Integer ord_;
 
     };
 
     struct Field
     {
-
-        static constexpr
-        Field
-        scalar()
-        {
-            return Field(0);
-        }
-
-        static constexpr
-        Field
-        scalar(
-            std::basic_string_view<Character> && label
-        )
-        {
-            return Field(std::forward<std::basic_string_view<Character>>(label), 0);
-        }
-
-        static constexpr
-        Field
-        vector()
-        {
-            return Field(1);
-        }
-
-        static constexpr
-        Field
-        vector(
-            std::basic_string_view<Character> && label
-        )
-        {
-            return Field(std::forward<std::basic_string_view<Character>>(label), 1);
-        }
-
-        static constexpr
-        Field
-        tensor(
-            Integer dim
-        )
-        {
-            return Field(dim);
-        }
-
-        static constexpr
-        Field
-        tensor(
-            std::basic_string_view<Character> && label,
-            Integer dim
-        )
-        {
-            return Field(std::forward<std::basic_string_view<Character>>(label), dim);
-        }
         
         constexpr explicit
         Field(
@@ -505,7 +421,7 @@ namespace lolita
         }
 
         constexpr
-        utility::Label const &
+        Label const &
         getLabel()
         const
         {
@@ -530,104 +446,39 @@ namespace lolita
             return dim_ == dim;
         }
 
-        utility::Label label_;
+        Label label_;
 
         Integer dim_;
 
     };
-
-    static constexpr
-    Field
-    field(
-        std::basic_string_view<Character> && label,
-        std::basic_string_view<Character> && label2
-    )
-    {
-        if (std::forward<std::basic_string_view<Character>>(label) == "Scalar")
-        {
-            return Field(std::forward<std::basic_string_view<Character>>(label2), 0);
-        }
-        else if (std::forward<std::basic_string_view<Character>>(label) == "Vector")
-        {
-            return Field(std::forward<std::basic_string_view<Character>>(label2), 1);
-        }
-        else if (std::forward<std::basic_string_view<Character>>(label) == "Tensor")
-        {
-            return Field(std::forward<std::basic_string_view<Character>>(label2), 2);
-        }
-        else
-        {
-            throw std::logic_error("NO !!!");
-        }
-    }
     
     struct Mapping
     {
 
-        enum Transformation
-        {
-
-            Gradient,
-            Identity,
-            Divergence,
-            SmallStrain,
-            LargeStrain,
-
-        };
-
-        static constexpr
-        Mapping
-        gradient(
+        constexpr
+        Mapping(
+            std::basic_string_view<Character> && transformation,
             Field const & field
         )
-        {
-            return Mapping(field, Gradient);
-        }
-
-        static constexpr
-        Mapping
-        identity(
-            Field const & field
-        )
-        {
-            return Mapping(field, Identity);
-        }
-
-        static constexpr
-        Mapping
-        divergence(
-            Field const & field
-        )
-        {
-            return Mapping(field, Divergence);
-        }
-
-        static constexpr
-        Mapping
-        smallStrain(
-            Field const & field
-        )
-        {
-            return Mapping(field, SmallStrain);
-        }
-
-        static constexpr
-        Mapping
-        largeStrain(
-            Field const & field
-        )
-        {
-            return Mapping(field, LargeStrain);
-        }
+        :
+        transformation_(std::forward<std::basic_string_view<Character>>(transformation)),
+        field_(field),
+        row_(-1),
+        col_(-1)
+        {}
 
         constexpr
         Mapping(
+            std::basic_string_view<Character> && transformation,
             Field const & field,
-            Transformation transformation
+            Integer row,
+            Integer col
         )
         :
+        transformation_(std::forward<std::basic_string_view<Character>>(transformation)),
         field_(field),
-        transformation_(transformation)
+        row_(row),
+        col_(col)
         {}
 
         constexpr
@@ -645,6 +496,22 @@ namespace lolita
         const = default;
 
         constexpr
+        Integer
+        getRow()
+        const
+        {
+            return row_;
+        }
+
+        constexpr
+        Integer
+        getCol()
+        const
+        {
+            return col_;
+        }
+
+        constexpr
         Field const &
         getField()
         const
@@ -657,7 +524,7 @@ namespace lolita
         isGradient()
         const
         {
-            return transformation_ == Gradient;
+            return transformation_ == "Gradient";
         }
 
         constexpr
@@ -665,7 +532,7 @@ namespace lolita
         isIdentity()
         const
         {
-            return transformation_ == Identity;
+            return transformation_ == "Identity";
         }
 
         constexpr
@@ -673,7 +540,7 @@ namespace lolita
         isDivergence()
         const
         {
-            return transformation_ == Divergence;
+            return transformation_ == "Divergence";
         }
 
         constexpr
@@ -681,7 +548,7 @@ namespace lolita
         isSmallStrain()
         const
         {
-            return transformation_ == SmallStrain;
+            return transformation_ == "SmallStrain";
         }
 
         constexpr
@@ -689,53 +556,24 @@ namespace lolita
         isLargeStrain()
         const
         {
-            return transformation_ == LargeStrain;
+            return transformation_ == "LargeStrain";
         }
+
+        Label transformation_;
 
         Field field_;
 
-        Transformation transformation_;
+        Integer row_;
+
+        Integer col_;
 
     };
-    
-    static constexpr
-    Mapping
-    mapping(
-        std::basic_string_view<Character> label,
-        Field const & field
-    )
-    {
-        if (label == "Gradient")
-        {
-            return Mapping(field, Mapping::Gradient);
-        }
-        else if (label == "Identity")
-        {
-            return Mapping(field, Mapping::Identity);
-        }
-        else if (label == "Divergence")
-        {
-            return Mapping(field, Mapping::Divergence);
-        }
-        else if (label == "SmallStrain")
-        {
-            return Mapping(field, Mapping::SmallStrain);
-        }
-        else if (label == "LargeStrain")
-        {
-            return Mapping(field, Mapping::LargeStrain);
-        }
-        else
-        {
-            throw std::logic_error("NO");
-        }
-    }
     
     template<typename... t_Strains>
     struct Potential
     {
 
-        using Strains = utility::Aggregate<t_Strains...>;
+        using Strains = std::array<Mapping, sizeof...(t_Strains)>;
         
         static constexpr
         Integer
@@ -751,7 +589,8 @@ namespace lolita
         )
         :
         label_(std::forward<std::basic_string_view<Character>>(label)),
-        strains_(strains...)
+        // strains_(strains...)
+        strains_({strains...})
         {}
 
         constexpr
@@ -761,7 +600,8 @@ namespace lolita
         )
         :
         label_(std::forward<std::basic_string_view<Character>>(label)),
-        strains_(std::move(strains)...)
+        // strains_(std::move(strains)...)
+        strains_({std::move(strains)...})
         {}
 
         constexpr
@@ -794,13 +634,24 @@ namespace lolita
             return label_.view();
         }
 
-        template<Integer t_i>
+        // template<Integer t_i>
+        // constexpr
+        // Mapping
+        // getStrain()
+        // const
+        // {
+        //     return utility::get<t_i>(strains_);
+        // }
+
+        // template<Integer t_i>
         constexpr
         Mapping
-        getStrain()
+        getStrain(
+            Integer i
+        )
         const
         {
-            return utility::get<t_i>(strains_);
+            return strains_[i];
         }
         
         // constexpr
@@ -852,25 +703,6 @@ namespace lolita
 
     };
 
-    // struct TestConst
-    // {
-
-    //     constexpr
-    //     TestConst(
-    //         std::basic_string_view<Character> && label
-    //     )
-    //     :
-    //     tag_(std::forward<std::basic_string_view<Character>>(label))
-    //     {}
-
-    //     utility::Label tag_;
-
-    // };
-
-    // template<TestConst value>
-    // struct TestStruct
-    // {};
-
     namespace detail
     {
 
@@ -884,17 +716,6 @@ namespace lolita
 
     template<typename t_T>
     concept PotentialConcept = detail::IsPotential<std::decay_t<t_T>>::value;
-
-    template<typename... t_Strains>
-    static constexpr
-    Potential<t_Strains...>
-    potential(
-        std::basic_string_view<Character> && label,
-        t_Strains const &... strains
-    )
-    {
-        return Potential<t_Strains...>(std::forward<std::basic_string_view<Character>>(label), strains...);
-    }
 
     struct ExternalLoad
     {
@@ -954,350 +775,62 @@ namespace lolita
         std::function<Real(Point const &, Real const &)> function_;
 
     };
-
-    // /**
-    //  * @brief Linked to a mesh set, and a field. can be one for faces, one for cells, one for nodes, etc.
-    //  * Not necessarily linked to a Dof, can be in a placeholder where no dofs are present.
-    //  * But the counterpart in the element contains the Dofs, which is done by the discretization part.
-    //  * 
-    //  */
-    // struct GeneralData
-    // {
-
-    //     explicit
-    //     GeneralData(
-    //         Field const & field
-    //     )
-    //     :
-    //     tag_(field.getTag())
-    //     {}
-
-    //     Character
-    //     getTag()
-    //     const
-    //     {
-    //         return tag_;
-    //     }
-
-    //     inline
-    //     void
-    //     addScalarField(
-    //         std::basic_string<Character> && label
-    //     )
-    //     {
-    //         for (auto const & scalar_field : scalar_fields_)
-    //         {
-    //             if (scalar_field == std::forward<std::basic_string<Character>>(label))
-    //             {
-    //                 return;
-    //             }
-    //         }
-    //         scalar_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-    //         // auto itr_field = std::find(scalar_fields_.begin(), scalar_fields_.end(), std::forward<std::basic_string<Character>>(label));
-    //         // if (itr_field == scalar_fields_.end())
-    //         // {
-    //         //     scalar_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-    //         // }
-    //     }
-
-    //     inline
-    //     void
-    //     addVectorField(
-    //         std::basic_string<Character> && label
-    //     )
-    //     {
-    //         for (auto const & vector_field : vector_fields_)
-    //         {
-    //             if (vector_field == std::forward<std::basic_string<Character>>(label))
-    //             {
-    //                 return;
-    //             }
-    //         }
-    //         vector_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-    //         // auto itr_field = std::find(vector_fields_.begin(), vector_fields_.end(), std::forward<std::basic_string<Character>>(label));
-    //         // if (itr_field == vector_fields_.end())
-    //         // {
-    //         //     vector_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-    //         // }
-    //     }
-
-    //     inline
-    //     void
-    //     addMatrixField(
-    //         std::basic_string<Character> && label
-    //     )
-    //     {
-    //         for (auto const & matrix_field : matrix_fields_)
-    //         {
-    //             if (matrix_field == std::forward<std::basic_string<Character>>(label))
-    //             {
-    //                 return;
-    //             }
-    //         }
-    //         matrix_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-    //         // auto itr_field = std::find(matrix_fields_.begin(), matrix_fields_.end(), std::forward<std::basic_string<Character>>(label));
-    //         // if (itr_field == matrix_fields_.end())
-    //         // {
-    //         //     matrix_fields_.push_back(std::forward<std::basic_string<Character>>(label));
-    //         // }
-    //     }
-
-    //     inline
-    //     Integer
-    //     getScalarTag(
-    //         std::basic_string<Character> && label
-    //     )
-    //     const
-    //     {
-    //         auto tag = Integer(0);
-    //         for (auto const & scalar_field : scalar_fields_)
-    //         {
-    //             if (scalar_field == std::forward<std::basic_string<Character>>(label))
-    //             {
-    //                 return tag;
-    //             }
-    //             tag ++;
-    //         }
-    //         throw std::runtime_error("NO!");
-    //         // auto itr_field = std::find(scalar_fields_.begin(), scalar_fields_.end(), std::forward<std::basic_string<Character>>(label));
-    //         // if (itr_field != scalar_fields_.end())
-    //         // {
-    //         //     return std::distance(scalar_fields_.begin(), itr_field);
-    //         // }
-    //         // else
-    //         // {
-    //         //     throw std::runtime_error("NO!");
-    //         // }
-    //     }
-
-    //     inline
-    //     Integer
-    //     getVectorTag(
-    //         std::basic_string<Character> && label
-    //     )
-    //     const
-    //     {
-    //         auto tag = Integer(0);
-    //         for (auto const & vector_field : vector_fields_)
-    //         {
-    //             if (vector_field == std::forward<std::basic_string<Character>>(label))
-    //             {
-    //                 return tag;
-    //             }
-    //             tag ++;
-    //         }
-    //         throw std::runtime_error("NO!");
-    //         // auto itr_field = std::find(vector_fields_.begin(), vector_fields_.end(), std::forward<std::basic_string<Character>>(label));
-    //         // if (itr_field != vector_fields_.end())
-    //         // {
-    //         //     return std::distance(vector_fields_.begin(), itr_field);
-    //         // }
-    //         // else
-    //         // {
-    //         //     throw std::runtime_error("NO!");
-    //         // }
-    //     }
-
-    //     inline
-    //     Integer
-    //     getMatrixTag(
-    //         std::basic_string<Character> && label
-    //     )
-    //     const
-    //     {
-    //         auto tag = Integer(0);
-    //         for (auto const & matrix_field : matrix_fields_)
-    //         {
-    //             if (matrix_field == std::forward<std::basic_string<Character>>(label))
-    //             {
-    //                 return tag;
-    //             }
-    //             tag ++;
-    //         }
-    //         throw std::runtime_error("NO!");
-    //         // auto itr_field = std::find(matrix_fields_.begin(), matrix_fields_.end(), std::forward<std::basic_string<Character>>(label));
-    //         // if (itr_field != matrix_fields_.end())
-    //         // {
-    //         //     return std::distance(matrix_fields_.begin(), itr_field);
-    //         // }
-    //         // else
-    //         // {
-    //         //     throw std::runtime_error("NO!");
-    //         // }
-    //     }
-
-    //     inline
-    //     Integer
-    //     getNumScalarFields()
-    //     const
-    //     {
-    //         return scalar_fields_.size();
-    //     }
-
-    //     inline
-    //     Integer
-    //     getNumVectorFields()
-    //     const
-    //     {
-    //         return vector_fields_.size();
-    //     }
-
-    //     inline
-    //     Integer
-    //     getNumMatrixFields()
-    //     const
-    //     {
-    //         return matrix_fields_.size();
-    //     }
-
-    //     inline
-    //     void
-    //     addLoadField(
-    //         Integer row,
-    //         Integer col,
-    //         std::function<Real(Point const &, Real const &)> && function
-    //     )
-    //     {
-    //         for (auto & load : loads_)
-    //         {
-    //             if (load.getRow() == row && load.getCol() == col)
-    //             {
-    //                 load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-    //                 return;
-    //             }
-    //         }
-    //         loads_.push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
-    //         // auto find_load = [&] (
-    //         //     ExternalLoad const & load
-    //         // )
-    //         // {
-    //         //     return load.getRow() == row && load.getCol() == col;
-    //         // };
-    //         // auto itr_load = std::find_if(loads_.begin(), loads_.end(), find_load);
-    //         // if (itr_load == loads_.end())
-    //         // {
-    //         //     loads_.push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
-    //         // }
-    //         // else
-    //         // {
-    //         //     * itr_load = ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-    //         // }
-    //     }
-
-    // private:
-
-    //     Character tag_;
-
-    //     std::vector<std::basic_string<Character>> scalar_fields_;
-
-    //     std::vector<std::basic_string<Character>> vector_fields_;
-
-    //     std::vector<std::basic_string<Character>> matrix_fields_;
-
-    //     std::vector<ExternalLoad> loads_;
-
-    // };
-
-    // static inline
-    // std::shared_ptr<GeneralData>
-    // data(
-    //     Field const & field
-    // )
-    // {
-    //     return std::make_shared<GeneralData>(field);
-    // }
-
-
-    // struct PotentialData
-    // {
-
-    //     explicit
-    //     PotentialData(
-    //         auto const & pot
-    //     )
-    //     :
-    //     tag_(pot.getTag())
-    //     {}
-
-    //     inline
-    //     void
-    //     addBehavior(
-    //         auto const &... args
-    //     )
-    //     {
-    //         bhv_ = mgis::behaviour::load(args...);
-    //     }
-
-    // private:
-
-    //     Character tag_;
-
-    //     mgis::behaviour::Behaviour bhv_;
-
-    // };
-
-    // struct Dummy
-    // {
-    //     Dummy(GeneralData const & data) : data_(data) {}
-    //     GeneralData const & data_;
-    // };
     
     struct HybridDiscontinuousGalerkin
     {
 
-        enum Stabilization
-        {
-
-            Hdg,
-            HybridHighOrder,
-
-        };
-
-        static constexpr
-        HybridDiscontinuousGalerkin
-        hybridDiscontinuousGalerkin(
-            Integer ord_cell,
-            Integer ord_face
-        )
-        {
-            return HybridDiscontinuousGalerkin(Basis::monomial(ord_cell), Basis::monomial(ord_face), Basis::monomial(ord_face), Hdg);
-        }
-
-        static constexpr
-        HybridDiscontinuousGalerkin
-        hybridHighOrder(
-            Integer ord_cell,
-            Integer ord_face
-        )
-        {
-            return HybridDiscontinuousGalerkin(Basis::monomial(ord_cell), Basis::monomial(ord_face), Basis::monomial(ord_face), HybridHighOrder);
-        }
-
         constexpr
         HybridDiscontinuousGalerkin(
+            std::basic_string_view<Character> && stabilization,
             Basis cell_basis,
             Basis face_basis,
-            Basis grad_basis,
-            Stabilization stabilization
+            Basis grad_basis
         )
         :
+        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
         cell_basis_(cell_basis),
         face_basis_(face_basis),
-        grad_basis_(grad_basis),
-        stabilization_(stabilization)
+        grad_basis_(grad_basis)
         {}
 
         constexpr
         HybridDiscontinuousGalerkin(
+            std::basic_string_view<Character> && stabilization,
             Basis cell_basis,
-            Basis face_basis,
-            Stabilization stabilization
+            Basis face_basis
         )
         :
+        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
         cell_basis_(cell_basis),
         face_basis_(face_basis),
-        grad_basis_(face_basis),
-        stabilization_(stabilization)
+        grad_basis_(face_basis)
+        {}
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            std::basic_string_view<Character> && stabilization,
+            Integer ord_cell_basis,
+            Integer ord_face_basis,
+            Integer ord_grad_basis
+        )
+        :
+        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
+        cell_basis_(Basis("Monomial", ord_cell_basis)),
+        face_basis_(Basis("Monomial", ord_face_basis)),
+        grad_basis_(Basis("Monomial", ord_grad_basis))
+        {}
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            std::basic_string_view<Character> && stabilization,
+            Integer ord_cell_basis,
+            Integer ord_face_basis
+        )
+        :
+        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
+        cell_basis_(Basis("Monomial", ord_cell_basis)),
+        face_basis_(Basis("Monomial", ord_face_basis)),
+        grad_basis_(Basis("Monomial", ord_face_basis))
         {}
 
         constexpr
@@ -1351,7 +884,7 @@ namespace lolita
         isHdg()
         const
         {
-            return stabilization_ == Stabilization::Hdg;
+            return stabilization_ == "HybridDiscontinuousGalerkin";
         }
 
         constexpr
@@ -1359,16 +892,16 @@ namespace lolita
         isHho()
         const
         {
-            return stabilization_ == Stabilization::HybridHighOrder;
+            return stabilization_ == "HybridHighOrder";
         }
+
+        Label stabilization_;
 
         Basis cell_basis_;
 
         Basis face_basis_;
 
         Basis grad_basis_;
-
-        Stabilization stabilization_;
 
     };
 

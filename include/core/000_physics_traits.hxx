@@ -361,7 +361,7 @@ namespace lolita
         Integer
         getRows()
         {
-            return FieldTraits<Field::tensor(t_field.getDim() + 1)>::template getRows<t_domain>();
+            return FieldTraits<Field(t_field.getDim() + 1)>::template getRows<t_domain>();
         }
 
         template<Domain t_domain, Field t_field = t_mapping.getField()>
@@ -369,7 +369,7 @@ namespace lolita
         Integer
         getCols()
         {
-            return FieldTraits<Field::tensor(t_field.getDim() + 1)>::template getCols<t_domain>();
+            return FieldTraits<Field(t_field.getDim() + 1)>::template getCols<t_domain>();
         }
 
         template<Domain t_domain, Field t_field = t_mapping.getField()>

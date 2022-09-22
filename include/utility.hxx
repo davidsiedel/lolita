@@ -378,13 +378,13 @@ namespace lolita::utility
     static constexpr
     Boolean
     areEqual(
-        t_T const & x,
-        t_U const & y
+        t_T && x,
+        t_U && y
     )
     {
-        if constexpr (std::is_same_v<t_T, t_U>)
+        if constexpr (std::convertible_to<t_T, t_U>)
         {
-            if (x == y)
+            if (std::forward<t_T>(x) == std::forward<t_U>(y))
             {
                 return true;
             }
@@ -397,6 +397,17 @@ namespace lolita::utility
         {
             return false;
         }
+    }
+    
+    template<typename t_T, typename... t_U>
+    static constexpr
+    Boolean
+    isAnyOf(
+        t_T && x,
+        t_U &&... y
+    )
+    {
+        return ((areEqual(std::forward<t_T>(x), std::forward<t_U>(y)) || ...));
     }
 
     // ------------------------------------------------------------------------------------------------------
@@ -737,13 +748,21 @@ namespace lolita::utility
         tag_()
         {}
 
-        constexpr
+        explicit constexpr
         Label(
             std::basic_string_view<Character> && str
         )
         :
         tag_(tag(std::forward<std::basic_string_view<Character>>(str)))
         {}
+
+        // constexpr
+        // Label(
+        //     Character const * str
+        // )
+        // :
+        // tag_(tag(std::basic_string_view<Character>(str)))
+        // {}
 
         constexpr
         Boolean
@@ -786,7 +805,7 @@ namespace lolita::utility
         )
         const
         {
-            return std::forward<decltype(str)>(str) == this->view();
+            return this->view() == std::forward<decltype(str)>(str);
         }
 
         constexpr

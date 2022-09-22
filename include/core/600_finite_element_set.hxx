@@ -17,7 +17,7 @@ namespace lolita
 {
 
     template<Domain t_domain>
-    struct FiniteElementSet : ElementSet<FiniteElement, t_domain>
+    struct FiniteElementSet : ElementSet<FiniteElement, t_domain>, MeshStuffSet<MeshDegreeOfFreedom, t_domain>
     {
 
         template<Integer t_i>
@@ -227,13 +227,95 @@ namespace lolita
 
         template<Integer t_i, Field t_field>
         void
+        addDiscreteField1()
+        {
+            // getMeshStuffs<t_i>()
+            // if (ptr_data_ == nullptr)
+            // {
+            //     ptr_data_ = std::make_unique<std::vector<MeshDegreeOfFreedom<t_i, t_domain>>>();
+            // }
+            for (auto const & item : this->template getMeshStuffs<t_i>())
+            {
+                if (item->getLabel() == t_field.getLabel())
+                {
+                    return;
+                }
+            }
+            // ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(field));
+            this->template getMeshStuffs<t_i>().push_back(std::make_unique<MeshDegreeOfFreedom<t_i, t_domain>>(t_field));
+        }
+
+        template<Integer t_i, Field t_field>
+        MeshDegreeOfFreedom<t_i, t_domain> const &
+        getDiscreteField()
+        const
+        {
+            for (auto const & item : this->template getMeshStuffs<t_i>())
+            {
+                if (item->getLabel() == t_field.getLabel())
+                {
+                    return * item;
+                }
+            }
+            throw std::runtime_error("No such field data");
+            // if (ptr_data_ == nullptr)
+            // {
+            //     throw std::runtime_error("Empty");
+            // }
+            // else
+            // {
+            //     for (auto const & item : * ptr_data_)
+            //     {
+            //         if (item.getLabel() == field.getLabel())
+            //         {
+            //             return item;
+            //         }
+            //     }
+            //     throw std::runtime_error("No such field data");
+            // }
+        }
+
+        template<Integer t_i, Field t_field>
+        MeshDegreeOfFreedom<t_i, t_domain> &
+        getDiscreteField()
+        {
+            for (auto & item : this->template getMeshStuffs<t_i>())
+            {
+                if (item->getLabel() == t_field.getLabel())
+                {
+                    return * item;
+                }
+            }
+            throw std::runtime_error("No such field data");
+            // if (ptr_data_ == nullptr)
+            // {
+            //     throw std::runtime_error("Empty");
+            // }
+            // else
+            // {
+            //     for (auto & item : * ptr_data_)
+            //     {
+            //         if (item.getLabel() == field.getLabel())
+            //         {
+            //             return item;
+            //         }
+            //     }
+            //     throw std::runtime_error("No such field data");
+            // }
+        }
+
+        template<Integer t_i, Field t_field>
+        void
         addDiscreteField(
             std::basic_string<Character> && domain_label
         )
         {
+            addDiscreteField1<t_i, t_field>();
+            auto const & m = getDiscreteField<t_i, t_field>();
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->addDiscreteField(t_field);
+                // finite_element->addDiscreteField(t_field);
+                finite_element->addDiscreteField(m);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -261,23 +343,23 @@ namespace lolita
             std::function<Real(Point const &, Real const &)> && function
         )
         {
-            auto fun = [&] (auto const & finite_element)
-            {
-                finite_element->template addDiscreteFieldLoad<t_field>(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-            };
-            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+            getDiscreteField<t_i, t_field>().addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+            // auto fun = [&] (auto const & finite_element)
+            // {
+            //     finite_element->template addDiscreteFieldLoad<t_field>(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+            // };
+            // caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, Field t_field, auto t_arg>
+        template<Integer t_i, Field t_field, auto t_arg, Label t_label>
         void
         addDiscreteFieldOperator(
-            std::basic_string<Character> && domain_label,
-            std::basic_string<Character> && operator_label
+            std::basic_string<Character> && domain_label
         )
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template addDiscreteFieldOperator<t_field, t_arg>(std::forward<std::basic_string<Character>>(operator_label));
+                finite_element->template addDiscreteFieldOperator<t_field, t_arg, t_label>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -365,18 +447,74 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        // template<Integer t_i, auto t_discretization, GeneralizedStrainConcept auto t_strain>
-        // void
-        // addElementOperators(
-        //     std::basic_string<Character> && domain_label
-        // )
-        // {
-        //     auto fun = [&] (auto const & element)
-        //     {
-        //         element->template addElementOperator<t_discretization, t_strain>();
-        //     };
-        //     caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
-        // }
+        /**
+         * @brief Set the Formulation Material Property object
+         * 
+         * @tparam t_i 
+         * @tparam t_behavior 
+         * @tparam t_label 
+         * @param domain_label 
+         * @param function 
+         */
+        template<Integer t_i, PotentialConcept auto t_behavior, Label t_label>
+        void
+        setFormulationMaterialProperty(
+            std::basic_string<Character> && domain_label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            auto label = std::basic_string<Character>(t_label.view());
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->getFormulation(t_behavior).setMaterialProperty(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        /**
+         * @brief Set the Formulation External Variable object
+         * 
+         * @tparam t_i 
+         * @tparam t_behavior 
+         * @tparam t_label 
+         * @param domain_label 
+         * @param function 
+         */
+        template<Integer t_i, PotentialConcept auto t_behavior, Label t_label>
+        void
+        setFormulationExternalVariable(
+            std::basic_string<Character> && domain_label,
+            std::function<Real(Point const &)> && function
+        )
+        {
+            auto label = std::basic_string<Character>(t_label.view());
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->getFormulation(t_behavior).setExternalVariable(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        /**
+         * @brief 
+         * 
+         * @tparam t_i 
+         * @tparam t_behavior 
+         * @param domain_label 
+         */
+        template<Integer t_i, PotentialConcept auto t_behavior>
+        void
+        integrateFormulationConstitutiveEquation(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto res = std::atomic<Boolean>(true);
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->getFormulation(t_behavior).integrateConstitutiveEquation(res);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
 

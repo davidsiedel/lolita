@@ -16,7 +16,8 @@ namespace lolita
     // requires(t_quadrature.isGauss(1))
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature::gauss(1)>
+    // struct QuadratureTraits<Quadrature::gauss(1)>
+    struct QuadratureTraits<Quadrature("Gauss", 1)>
     // struct QuadratureTraits<Quadrature(1, Quadrature::Gauss)>
     {
 
@@ -173,7 +174,8 @@ namespace lolita
     // requires(t_quadrature.isGauss(2))
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature::gauss(2)>
+    // struct QuadratureTraits<Quadrature::gauss(2)>
+    struct QuadratureTraits<Quadrature("Gauss", 2)>
     // struct QuadratureTraits<Quadrature(2, Quadrature::Gauss)>
     {
 
@@ -342,7 +344,8 @@ namespace lolita
     // requires(t_quadrature.isGauss(3))
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature::gauss(3)>
+    // struct QuadratureTraits<Quadrature::gauss(3)>
+    struct QuadratureTraits<Quadrature("Gauss", 3)>
     // struct QuadratureTraits<Quadrature(3, Quadrature::Gauss)>
     {
 
@@ -525,7 +528,8 @@ namespace lolita
     // requires(t_quadrature.isGauss(4))
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature::gauss(4)>
+    // struct QuadratureTraits<Quadrature::gauss(4)>
+    struct QuadratureTraits<Quadrature("Gauss", 4)>
     // struct QuadratureTraits<Quadrature(4, Quadrature::Gauss)>
     {
 
@@ -728,7 +732,8 @@ namespace lolita
     // requires(t_quadrature.isGauss(5))
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature::gauss(5)>
+    // struct QuadratureTraits<Quadrature::gauss(5)>
+    struct QuadratureTraits<Quadrature("Gauss", 5)>
     // struct QuadratureTraits<Quadrature(5, Quadrature::Gauss)>
     {
 
@@ -953,7 +958,8 @@ namespace lolita
     // requires(t_quadrature.isGauss(6))
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature::gauss(6)>
+    // struct QuadratureTraits<Quadrature::gauss(6)>
+    struct QuadratureTraits<Quadrature("Gauss", 6)>
     // struct QuadratureTraits<Quadrature(6, Quadrature::Gauss)>
     {
 
@@ -1212,7 +1218,8 @@ namespace lolita
     // requires(t_quadrature.isGauss(7))
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature::gauss(7)>
+    // struct QuadratureTraits<Quadrature::gauss(7)>
+    struct QuadratureTraits<Quadrature("Gauss", 7)>
     // struct QuadratureTraits<Quadrature(7, Quadrature::Gauss)>
     {
 
@@ -1501,7 +1508,8 @@ namespace lolita
     // requires(t_quadrature.isGauss(8))
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature::gauss(8)>
+    // struct QuadratureTraits<Quadrature::gauss(8)>
+    struct QuadratureTraits<Quadrature("Gauss", 8)>
     // struct QuadratureTraits<Quadrature(8, Quadrature::Gauss)>
     {
 

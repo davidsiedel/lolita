@@ -439,8 +439,19 @@ namespace lolita
         Solids<t_T, t_domain>
     >;
 
+    template<template<Integer, Domain> typename t_T, Domain t_domain>
+    using MeshStuffLibrary = std::tuple<
+        t_T<0, t_domain>,
+        t_T<1, t_domain>,
+        t_T<2, t_domain>,
+        t_T<3, t_domain>
+    >;
+
     template<template<Element, Domain> typename t_T, Domain t_domain>
     using Elements = lolita::utility::tuple_slice_t<ElementLibrary<t_T, t_domain>, 0, t_domain.getDim() + 1>;
+
+    template<template<Integer, Domain> typename t_T, Domain t_domain>
+    using MeshStuffs = lolita::utility::tuple_slice_t<MeshStuffLibrary<t_T, t_domain>, 0, t_domain.getDim() + 1>;
     
     template<Element t_element>
     struct ElementTraits;
@@ -1183,6 +1194,43 @@ namespace lolita
         std::basic_string<Character> tag_;
 
     };
+
+    template<Integer t_dim, Domain t_domain>
+    struct MeshDomain1
+    {
+
+        static constexpr
+        Integer
+        getDim()
+        {
+            return t_dim;
+        }
+
+        explicit
+        MeshDomain1(
+            std::basic_string<Character> const & tag
+        )
+        :
+        tag_(tag)
+        {}
+
+        explicit
+        MeshDomain1(
+            std::basic_string<Character> && tag
+        )
+        :
+        tag_(std::move(tag))
+        {}
+
+        std::basic_string<Character> const &
+        getLabel()
+        {
+            return tag_;
+        }
+
+        std::basic_string<Character> tag_;
+
+    };
     
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     struct ElementMap
@@ -1245,6 +1293,70 @@ namespace lolita
         }
         
         t_Elements elements_;
+
+    };
+    
+    template<template<Integer, Domain> typename t_T, Domain t_domain>
+    struct MeshStuffMap
+    {
+
+    private:
+
+        template<Integer t_dim, Domain t__domain>
+        using t__MeshStuffs = std::unordered_map<std::basic_string<Character>, std::unique_ptr<t_T<t_dim, t__domain>>>;
+
+        using t_MeshStuffs = MeshStuffs<t__MeshStuffs, t_domain>;
+
+    public:
+    
+        template<Integer t_i>
+        std::tuple_element_t<t_i, t_MeshStuffs> const &
+        getMeshStuffs()
+        const
+        {
+            return std::get<t_i>(elements_);
+        }
+        
+        template<Integer t_i>
+        std::tuple_element_t<t_i, t_MeshStuffs> &
+        getMeshStuffs()
+        {
+            return std::get<t_i>(elements_);
+        }
+        
+        t_MeshStuffs elements_;
+
+    };
+    
+    template<template<Integer, Domain> typename t_T, Domain t_domain>
+    struct MeshStuffSet
+    {
+
+    private:
+
+        template<Integer t_dim, Domain t__domain>
+        using t__MeshStuffs = std::vector<std::unique_ptr<t_T<t_dim, t__domain>>>;
+
+        using t_MeshStuffs = MeshStuffs<t__MeshStuffs, t_domain>;
+
+    public:
+    
+        template<Integer t_i>
+        std::tuple_element_t<t_i, t_MeshStuffs> const &
+        getMeshStuffs()
+        const
+        {
+            return std::get<t_i>(elements_);
+        }
+        
+        template<Integer t_i>
+        std::tuple_element_t<t_i, t_MeshStuffs> &
+        getMeshStuffs()
+        {
+            return std::get<t_i>(elements_);
+        }
+        
+        t_MeshStuffs elements_;
 
     };
 

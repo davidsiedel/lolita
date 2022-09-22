@@ -329,7 +329,8 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
+                // auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
+                auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto lhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>();
                 lhs.setZero();
                 for (auto i_component = 0; i_component < t_domain.getDim(); i_component++)
@@ -354,7 +355,8 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
+                // auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
+                auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto rhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
@@ -426,7 +428,8 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
+                // auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
+                auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 //
                 auto S_T_A_B_I_L_I_Z_A_T_I_O_N = Matrix<Real, getNumElementUnknowns<t_field>(), getNumElementUnknowns<t_field>()>();
@@ -535,7 +538,8 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
+                // auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
+                auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto lhs = Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
                 lhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
@@ -557,7 +561,8 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
+                // auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
+                auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
                 auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
@@ -625,7 +630,8 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
+                // auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
+                auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
                 auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
@@ -767,7 +773,7 @@ namespace lolita
                 auto unknown = Vector<Real, getNumElementUnknowns<t_field>()>();
                 auto const & cell_dof = this->getDiscreteField(t_field).getDegreeOfFreedom();
                 auto cell_block = unknown.template segment<cell_dof.template getSize<t_field, getCellBasis()>()>(offset);
-                cell_block = cell_dof.template get<t_field, getCellBasis()>();
+                cell_block = cell_dof.template getCoefficients<t_field, getCellBasis()>();
                 offset += cell_dof.template getSize<t_field, getCellBasis()>();
                 auto set_faces_unknowns = [&] <Integer t_i = 0> (
                     auto & self
@@ -779,7 +785,7 @@ namespace lolita
                     {
                         auto const & face_dof = face->getDiscreteField(t_field).getDegreeOfFreedom();
                         auto face_block = unknown.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(offset);
-                        face_block = face_dof.template get<t_field, getFaceBasis()>();
+                        face_block = face_dof.template getCoefficients<t_field, getFaceBasis()>();
                         offset += face_dof.template getSize<t_field, getFaceBasis()>();
                     }
                     if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
@@ -1445,7 +1451,8 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 1))
             {
-                auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
+                // auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
+                auto constexpr quadrature = Quadrature("Gauss", 2 * getFaceBasis().getOrd());
                 auto constexpr field = t_finite_element_method.getField();
                 auto const & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
@@ -1459,7 +1466,7 @@ namespace lolita
                 auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
                 auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
                 auto const unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
-                auto const binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
+                auto const binding_vector = face_binding.template getCoefficients<Field(0), getFaceBasis()>(0, 0);
                 // -> DEBUG
                 // matrix.setZero();
                 // <- DEBUG
@@ -1538,7 +1545,8 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 1))
             {
-                auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
+                // auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
+                auto constexpr quadrature = Quadrature("Gauss", 2 * getFaceBasis().getOrd());
                 auto constexpr field = t_finite_element_method.getField();
                 auto const & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
@@ -1776,8 +1784,9 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 1))
             {
-                auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
-                auto constexpr field = Field::scalar();
+                // auto constexpr quadrature = Quadrature::gauss(2 * getFaceBasis().getOrd());
+                auto constexpr quadrature = Quadrature("Gauss", 2 * getFaceBasis().getOrd());
+                auto constexpr field = Field(0);
                 auto coefficients = this->degrees_of_freedom_.at(std::string(binding_label)).template getCoefficients<field, getFaceBasis()>(row, col);
                 auto value = Real(0);
                 for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
@@ -1863,13 +1872,11 @@ namespace lolita
                 static_cast<FiniteElement<t_element, t_domain> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(linear_system);
             }
 
-            template<Field t_field>
+            template<Field t_field, Label t_label>
             void
-            addDiscreteFieldOperator(
-                std::basic_string<Character> && label
-            )
+            addDiscreteFieldOperator()
             {
-                this->getDiscreteField(t_field).addMatrix(getOperatorLabel(std::forward<std::basic_string<Character>>(label)), getStabilization<t_field>());
+                this->getDiscreteField(t_field).addMatrix(t_label, getStabilization<t_field>());
             }
 
             // template<Field t_field, Strategy t_s>
