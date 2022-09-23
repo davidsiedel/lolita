@@ -742,6 +742,7 @@ namespace lolita
         function_(std::move(function))
         {}
 
+        inline
         Integer
         getRow()
         const
@@ -749,6 +750,7 @@ namespace lolita
             return row_;
         }
 
+        inline
         Integer
         getCol()
         const
@@ -756,6 +758,7 @@ namespace lolita
             return col_;
         }
 
+        inline
         Real
         getValue(
             Point const & point,

@@ -59,64 +59,96 @@ namespace lolita
         Integer tag_;
 
     };
+
+    struct Dimension
+    {
+
+        constexpr explicit
+        Dimension(
+            std::basic_string_view<Character> && h
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(h))
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            Dimension const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Dimension const & other
+        )
+        const = default;
+
+        constexpr
+        Integer
+        getDim()
+        const
+        {
+           return label_ == "Solid" ? 3 : label_ == "Facet" ? 2 : label_ == "Curve" ? 1 : 0; 
+        }
+
+        constexpr
+        Boolean
+        isPoint()
+        const
+        {
+           return label_ == "Point"; 
+        }
+
+        constexpr
+        Boolean
+        isCurve()
+        const
+        {
+           return label_ == "Curve"; 
+        }
+
+        constexpr
+        Boolean
+        isFacet()
+        const
+        {
+           return label_ == "Facet"; 
+        }
+
+        constexpr
+        Boolean
+        isSolid()
+        const
+        {
+           return label_ == "Solid"; 
+        }
+
+        Label label_;
+
+    };
     
     struct Element
     {
-
-    private:
-
-        enum Shape
-        {
-            
-            Point,
-            Segment,
-            Triangle,
-            Quadrangle,
-            Polygon,
-            Tetrahedron,
-            Polyhedron,
-
-        };
-
-        static constexpr
-        std::basic_string_view<Character>
-        getShapeLabel(
-            Shape shape
-        )
-        noexcept
-        {
-            switch (shape)
-            {
-                case Shape::Point:          return "Point       ";
-                case Shape::Segment:        return "Segment     ";
-                case Shape::Triangle:       return "Triangle    ";
-                case Shape::Quadrangle:     return "Quadrangle  ";
-                case Shape::Polygon:        return "Polygon     ";
-                case Shape::Tetrahedron:    return "Tetrahedron ";
-                case Shape::Polyhedron:     return "Polyhedron  ";
-                default : return "";
-            }
-        }
         
         constexpr
         Element(
-                Shape shape,
-                Integer dim,
-                Integer ord,
-                Integer num_nodes,
-                Integer num_edges,
-                Integer num_faces
+            std::basic_string_view<Character> && shape,
+            Integer dim,
+            Integer ord,
+            Integer num_nodes,
+            Integer num_edges,
+            Integer num_faces
         )
         :
-        shape_(shape),
+        shape_(std::forward<std::basic_string_view<Character>>(shape)),
         dim_(dim),
         ord_(ord),
         num_nodes_(num_nodes),
         num_edges_(num_edges),
         num_faces_(num_faces)
         {}
-
-    public:
 
         constexpr
         Boolean
@@ -131,16 +163,6 @@ namespace lolita
             Element const & other
         )
         const = default;
-
-        constexpr
-        std::basic_string_view<Character>
-        getShapeLabel()
-        const noexcept
-        {
-            return getShapeLabel(shape_);
-        }
-
-        // ----
         
         constexpr
         Boolean
@@ -180,7 +202,7 @@ namespace lolita
         isPoint()
         const
         {
-            return shape_ == Point;
+            return shape_ == "Point";
         }
         
         constexpr
@@ -188,7 +210,7 @@ namespace lolita
         isSegment()
         const
         {
-            return shape_ == Segment;
+            return shape_ == "Segment";
         }
         
         constexpr
@@ -196,7 +218,7 @@ namespace lolita
         isTriangle()
         const
         {
-            return shape_ == Triangle;
+            return shape_ == "Triangle";
         }
         
         constexpr
@@ -204,7 +226,7 @@ namespace lolita
         isQuadrangle()
         const
         {
-            return shape_ == Quadrangle;
+            return shape_ == "Quadrangle";
         }
         
         constexpr
@@ -212,7 +234,7 @@ namespace lolita
         isPolygon()
         const
         {
-            return shape_ == Polygon;
+            return shape_ == "Polygon";
         }
         
         constexpr
@@ -220,7 +242,7 @@ namespace lolita
         isTetrahedron()
         const
         {
-            return shape_ == Tetrahedron;
+            return shape_ == "Tetrahedron";
         }
 
         // ----
@@ -229,7 +251,7 @@ namespace lolita
         Element
         node()
         {
-            return Element(Shape::Point, 0, 0, 1, 0, 0);
+            return Element("Point", 0, 0, 1, 0, 0);
         }
         
         constexpr
@@ -246,7 +268,7 @@ namespace lolita
             Integer ord
         )
         {
-            return Element(Shape::Segment, 1, ord, ord + 1, 0, 0);
+            return Element("Segment", 1, ord, ord + 1, 0, 0);
         }
         
         constexpr
@@ -265,7 +287,7 @@ namespace lolita
             Integer ord
         )
         {
-            return Element(Shape::Triangle, 2, ord, 3 * ord, 3, 0);
+            return Element("Triangle", 2, ord, 3 * ord, 3, 0);
         }
         
         constexpr
@@ -284,7 +306,7 @@ namespace lolita
             Integer ord
         )
         {
-            return Element(Shape::Quadrangle, 2, ord, 4 * ord, 4, 0);
+            return Element("Quadrangle", 2, ord, 4 * ord, 4, 0);
         }
         
         constexpr
@@ -304,7 +326,7 @@ namespace lolita
             Integer num_edges
         )
         {
-            return Element(Shape::Polygon, 1, ord, num_edges * ord, num_edges, 0);
+            return Element("Polygon", 1, ord, num_edges * ord, num_edges, 0);
         }
 
         static constexpr
@@ -313,7 +335,7 @@ namespace lolita
             Integer ord
         )
         {
-            return Element(Shape::Tetrahedron, 3, ord, 4, 6, 4);
+            return Element("Tetrahedron", 3, ord, 4, 6, 4);
         }
 
         constexpr
@@ -335,7 +357,7 @@ namespace lolita
             Integer num_nodes
         )
         {
-            return Element(Shape::Segment, 1, ord, num_edges * (ord - 1), num_edges, 0);
+            return Element("Segment", 1, ord, num_edges * (ord - 1), num_edges, 0);
         }
 
         // ---
@@ -347,7 +369,7 @@ namespace lolita
             Element const & element
         )
         {
-            os << "{ " << element.getShapeLabel() << " | ";
+            os << "{ " << element.shape_.view() << " | ";
             os << element.num_nodes_ << " nodes | ";
             os << element.num_edges_ << " edges | ";
             os << element.num_faces_ << " faces }";
@@ -396,7 +418,7 @@ namespace lolita
             return num_faces_;
         }
 
-        Shape shape_;
+        Label shape_;
 
         Integer dim_;
 
@@ -440,7 +462,7 @@ namespace lolita
     >;
 
     template<template<Integer, Domain> typename t_T, Domain t_domain>
-    using MeshStuffLibrary = std::tuple<
+    using DomainLibrary = std::tuple<
         t_T<0, t_domain>,
         t_T<1, t_domain>,
         t_T<2, t_domain>,
@@ -451,7 +473,10 @@ namespace lolita
     using Elements = lolita::utility::tuple_slice_t<ElementLibrary<t_T, t_domain>, 0, t_domain.getDim() + 1>;
 
     template<template<Integer, Domain> typename t_T, Domain t_domain>
-    using MeshStuffs = lolita::utility::tuple_slice_t<MeshStuffLibrary<t_T, t_domain>, 0, t_domain.getDim() + 1>;
+    using Domains = lolita::utility::tuple_slice_t<DomainLibrary<t_T, t_domain>, 0, t_domain.getDim() + 1>;
+
+    template<template<Integer, Domain> typename t_T, Element t_element, Domain t_domain>
+    using ElementDomains = lolita::utility::tuple_slice_t<DomainLibrary<t_T, t_domain>, t_element.getDim() + 1, t_domain.getDim() + 1>;
     
     template<Element t_element>
     struct ElementTraits;
@@ -900,6 +925,38 @@ namespace lolita
 
     };
 
+    template<Element t_element>
+    struct ElementDomainGeometryTraits
+    {
+
+    private:
+
+        template<template<Integer, Domain> typename t_T>
+        struct OuterDomainTraits
+        {
+
+        private:
+
+            template<Integer t__dim, Domain t__domain>
+            using NeighbourVector = std::vector<t_T<t__dim, t__domain>>;
+
+        public:
+
+            template<Domain t_domain>
+            using OuterDomain = lolita::utility::tuple_slice_t<Domains<NeighbourVector, t_domain>, t_element.getDim() + 1, t_domain.getDim() + 1>;
+
+        };
+
+    public:
+    
+        template<template<Integer, Domain> typename t_T, Domain t__domain>
+        using InnerDomain = t_T<t_element.getDim(), t__domain>;
+    
+        template<template<Integer, Domain> typename t_T, Domain t__domain>
+        using OuterDomain = typename OuterDomainTraits<t_T>::template OuterDomain<t__domain>;
+
+    };
+
     namespace detail
     {
         
@@ -919,7 +976,7 @@ namespace lolita
     }
     
     template<Element t_element>
-    struct ElementTraits : ElementOuterGeometryTraits<t_element>, ElementInnerGeometryTraits<t_element>
+    struct ElementTraits : ElementOuterGeometryTraits<t_element>, ElementInnerGeometryTraits<t_element>, ElementDomainGeometryTraits<t_element>
     {
 
     private:
@@ -1189,44 +1246,9 @@ namespace lolita
         tag_(std::forward<std::basic_string<Character>>(tag))
         {}
 
+        std::vector<ExternalLoad> loads_;
+
         Integer dim_;
-
-        std::basic_string<Character> tag_;
-
-    };
-
-    template<Integer t_dim, Domain t_domain>
-    struct MeshDomain1
-    {
-
-        static constexpr
-        Integer
-        getDim()
-        {
-            return t_dim;
-        }
-
-        explicit
-        MeshDomain1(
-            std::basic_string<Character> const & tag
-        )
-        :
-        tag_(tag)
-        {}
-
-        explicit
-        MeshDomain1(
-            std::basic_string<Character> && tag
-        )
-        :
-        tag_(std::move(tag))
-        {}
-
-        std::basic_string<Character> const &
-        getLabel()
-        {
-            return tag_;
-        }
 
         std::basic_string<Character> tag_;
 
@@ -1262,8 +1284,32 @@ namespace lolita
         
         t_Elements elements_;
 
+        std::vector<std::shared_ptr<MeshDomain>> domains_;
+
+        void
+        addDomain1(
+            std::shared_ptr<MeshDomain> const & m
+        )
+        {
+            for (auto const & dom : domains_)
+            {
+                if (dom == m)
+                {
+                    return;
+                }
+            }
+            domains_.push_back(m);
+        }
+
+        std::vector<std::shared_ptr<MeshDomain>> const &
+        getDomains()
+        const
+        {
+            return domains_;
+        }
+
     };
-    
+
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     struct ElementSet
     {
@@ -1271,9 +1317,9 @@ namespace lolita
     private:
 
         template<Element t_element, Domain t__domain, auto... t__args>
-        using t__Elements = std::vector<std::shared_ptr<t_T<t_element, t__domain, t__args...>>>;
+        using t_ElementSet = std::vector<std::shared_ptr<t_T<t_element, t__domain, t__args...>>>;
 
-        using t_Elements = Elements<t__Elements, t_domain, t_args...>;
+        using t_Elements = Elements<t_ElementSet, t_domain, t_args...>;
 
     public:
     
@@ -1294,70 +1340,94 @@ namespace lolita
         
         t_Elements elements_;
 
+        std::vector<std::shared_ptr<MeshDomain>> domains_;
+
+        void
+        addDomain1(
+            std::shared_ptr<MeshDomain> const & m
+        )
+        {
+            for (auto const & dom : domains_)
+            {
+                if (dom == m)
+                {
+                    return;
+                }
+            }
+            domains_.push_back(m);
+        }
+
+        std::vector<std::shared_ptr<MeshDomain>> const &
+        getDomains()
+        const
+        {
+            return domains_;
+        }
+
     };
-    
+
     template<template<Integer, Domain> typename t_T, Domain t_domain>
-    struct MeshStuffMap
+    struct DomainMap
     {
 
     private:
 
-        template<Integer t_dim, Domain t__domain>
-        using t__MeshStuffs = std::unordered_map<std::basic_string<Character>, std::unique_ptr<t_T<t_dim, t__domain>>>;
+        template<Integer t__dim, Domain t__domain>
+        using t__DomainMap = std::unordered_map<std::basic_string<Character>, std::shared_ptr<t_T<t__dim, t__domain>>>;
 
-        using t_MeshStuffs = MeshStuffs<t__MeshStuffs, t_domain>;
+        using t_DomainMap = Domains<t__DomainMap, t_domain>;
 
     public:
     
         template<Integer t_i>
-        std::tuple_element_t<t_i, t_MeshStuffs> const &
-        getMeshStuffs()
+        std::tuple_element_t<t_i, t_DomainMap> const &
+        getDomains1()
         const
         {
-            return std::get<t_i>(elements_);
+            return std::get<t_i>(domains_);
         }
         
         template<Integer t_i>
-        std::tuple_element_t<t_i, t_MeshStuffs> &
-        getMeshStuffs()
+        std::tuple_element_t<t_i, t_DomainMap> &
+        getDomains1()
         {
-            return std::get<t_i>(elements_);
+            return std::get<t_i>(domains_);
         }
         
-        t_MeshStuffs elements_;
-
+        t_DomainMap domains_;
+        
     };
-    
+
     template<template<Integer, Domain> typename t_T, Domain t_domain>
-    struct MeshStuffSet
+    struct DomainSet
     {
 
     private:
 
-        template<Integer t_dim, Domain t__domain>
-        using t__MeshStuffs = std::vector<std::unique_ptr<t_T<t_dim, t__domain>>>;
+        template<Integer t__dim, Domain t__domain>
+        using t__DomainSet = std::vector<std::shared_ptr<t_T<t__dim, t__domain>>>;
 
-        using t_MeshStuffs = MeshStuffs<t__MeshStuffs, t_domain>;
+        using t_DomainSet = Domains<t__DomainSet, t_domain>;
 
     public:
     
         template<Integer t_i>
-        std::tuple_element_t<t_i, t_MeshStuffs> const &
-        getMeshStuffs()
+        std::tuple_element_t<t_i, t_DomainSet> const &
+        getDomains1()
         const
         {
-            return std::get<t_i>(elements_);
+            return std::get<t_i>(domains_);
         }
         
         template<Integer t_i>
-        std::tuple_element_t<t_i, t_MeshStuffs> &
-        getMeshStuffs()
+        std::tuple_element_t<t_i, t_DomainSet> &
+        getDomains1()
         {
-            return std::get<t_i>(elements_);
+            return std::get<t_i>(domains_);
         }
         
-        t_MeshStuffs elements_;
-
+        t_DomainSet domains_;
+        
     };
 
 } // namespace lolita

@@ -17,7 +17,7 @@ namespace lolita
 {
 
     template<Domain t_domain>
-    struct FiniteElementSet : ElementSet<FiniteElement, t_domain>, MeshStuffSet<MeshDegreeOfFreedom, t_domain>
+    struct FiniteElementSet : ElementSet<FiniteElement, t_domain>, DomainSet<DomainElement, t_domain>
     {
 
         template<Integer t_i>
@@ -191,118 +191,118 @@ namespace lolita
             // caller<t_ii>(domain, fun);
         }
         
-        std::unique_ptr<FiniteElementSet>
-        makeFiniteElementSubSet(
-            std::basic_string_view<Character> domain
-        )
-        const
-        {
-            auto sub_set = std::make_unique<FiniteElementSet>();
-            auto activate_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
-                auto & self
-            )
-            mutable
-            {
-                for (auto const & element : this->template getElements<t_i, t_j>())
-                {
-                    if (element->isIn(domain))
-                    {
-                        sub_set->template getElements<t_i, t_j>().push_back(element);
-                    }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_i, t_j + 1>(self);
-                }
-                else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
-                {
-                    self.template operator()<t_i + 1, 0>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
-            return sub_set;
-        }
+        // std::unique_ptr<FiniteElementSet>
+        // makeFiniteElementSubSet(
+        //     std::basic_string_view<Character> domain
+        // )
+        // const
+        // {
+        //     auto sub_set = std::make_unique<FiniteElementSet>();
+        //     auto activate_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         for (auto const & element : this->template getElements<t_i, t_j>())
+        //         {
+        //             if (element->isIn(domain))
+        //             {
+        //                 sub_set->template getElements<t_i, t_j>().push_back(element);
+        //             }
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+        //         {
+        //             self.template operator()<t_i + 1, 0>(self);
+        //         }
+        //     }; 
+        //     activate_elements(activate_elements);
+        //     return sub_set;
+        // }
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-        template<Integer t_i, Field t_field>
-        void
-        addDiscreteField1()
-        {
-            // getMeshStuffs<t_i>()
-            // if (ptr_data_ == nullptr)
-            // {
-            //     ptr_data_ = std::make_unique<std::vector<MeshDegreeOfFreedom<t_i, t_domain>>>();
-            // }
-            for (auto const & item : this->template getMeshStuffs<t_i>())
-            {
-                if (item->getLabel() == t_field.getLabel())
-                {
-                    return;
-                }
-            }
-            // ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(field));
-            this->template getMeshStuffs<t_i>().push_back(std::make_unique<MeshDegreeOfFreedom<t_i, t_domain>>(t_field));
-        }
+        // template<Integer t_i, Field t_field>
+        // void
+        // addDiscreteField1()
+        // {
+        //     // getMeshStuffs<t_i>()
+        //     // if (ptr_data_ == nullptr)
+        //     // {
+        //     //     ptr_data_ = std::make_unique<std::vector<MeshDiscreteField<t_i, t_domain>>>();
+        //     // }
+        //     for (auto const & item : this->template getMeshStuffs<t_i>())
+        //     {
+        //         if (item->getLabel() == t_field.getLabel())
+        //         {
+        //             return;
+        //         }
+        //     }
+        //     // ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(field));
+        //     this->template getMeshStuffs<t_i>().push_back(std::make_unique<MeshDiscreteField<t_i, t_domain>>(t_field));
+        // }
 
-        template<Integer t_i, Field t_field>
-        MeshDegreeOfFreedom<t_i, t_domain> const &
-        getDiscreteField()
-        const
-        {
-            for (auto const & item : this->template getMeshStuffs<t_i>())
-            {
-                if (item->getLabel() == t_field.getLabel())
-                {
-                    return * item;
-                }
-            }
-            throw std::runtime_error("No such field data");
-            // if (ptr_data_ == nullptr)
-            // {
-            //     throw std::runtime_error("Empty");
-            // }
-            // else
-            // {
-            //     for (auto const & item : * ptr_data_)
-            //     {
-            //         if (item.getLabel() == field.getLabel())
-            //         {
-            //             return item;
-            //         }
-            //     }
-            //     throw std::runtime_error("No such field data");
-            // }
-        }
+        // template<Integer t_i, Field t_field>
+        // MeshDiscreteField<t_i, t_domain> const &
+        // getDiscreteField()
+        // const
+        // {
+        //     for (auto const & item : this->template getMeshStuffs<t_i>())
+        //     {
+        //         if (item->getLabel() == t_field.getLabel())
+        //         {
+        //             return * item;
+        //         }
+        //     }
+        //     throw std::runtime_error("No such field data");
+        //     // if (ptr_data_ == nullptr)
+        //     // {
+        //     //     throw std::runtime_error("Empty");
+        //     // }
+        //     // else
+        //     // {
+        //     //     for (auto const & item : * ptr_data_)
+        //     //     {
+        //     //         if (item.getLabel() == field.getLabel())
+        //     //         {
+        //     //             return item;
+        //     //         }
+        //     //     }
+        //     //     throw std::runtime_error("No such field data");
+        //     // }
+        // }
 
-        template<Integer t_i, Field t_field>
-        MeshDegreeOfFreedom<t_i, t_domain> &
-        getDiscreteField()
-        {
-            for (auto & item : this->template getMeshStuffs<t_i>())
-            {
-                if (item->getLabel() == t_field.getLabel())
-                {
-                    return * item;
-                }
-            }
-            throw std::runtime_error("No such field data");
-            // if (ptr_data_ == nullptr)
-            // {
-            //     throw std::runtime_error("Empty");
-            // }
-            // else
-            // {
-            //     for (auto & item : * ptr_data_)
-            //     {
-            //         if (item.getLabel() == field.getLabel())
-            //         {
-            //             return item;
-            //         }
-            //     }
-            //     throw std::runtime_error("No such field data");
-            // }
-        }
+        // template<Integer t_i, Field t_field>
+        // MeshDiscreteField<t_i, t_domain> &
+        // getDiscreteField()
+        // {
+        //     for (auto & item : this->template getMeshStuffs<t_i>())
+        //     {
+        //         if (item->getLabel() == t_field.getLabel())
+        //         {
+        //             return * item;
+        //         }
+        //     }
+        //     throw std::runtime_error("No such field data");
+        //     // if (ptr_data_ == nullptr)
+        //     // {
+        //     //     throw std::runtime_error("Empty");
+        //     // }
+        //     // else
+        //     // {
+        //     //     for (auto & item : * ptr_data_)
+        //     //     {
+        //     //         if (item.getLabel() == field.getLabel())
+        //     //         {
+        //     //             return item;
+        //     //         }
+        //     //     }
+        //     //     throw std::runtime_error("No such field data");
+        //     // }
+        // }
 
         template<Integer t_i, Field t_field>
         void
@@ -310,12 +310,9 @@ namespace lolita
             std::basic_string<Character> && domain_label
         )
         {
-            addDiscreteField1<t_i, t_field>();
-            auto const & m = getDiscreteField<t_i, t_field>();
             auto fun = [&] (auto const & finite_element)
             {
-                // finite_element->addDiscreteField(t_field);
-                finite_element->addDiscreteField(m);
+                finite_element->template addDiscreteField<t_field>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -343,12 +340,12 @@ namespace lolita
             std::function<Real(Point const &, Real const &)> && function
         )
         {
-            getDiscreteField<t_i, t_field>().addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-            // auto fun = [&] (auto const & finite_element)
-            // {
-            //     finite_element->template addDiscreteFieldLoad<t_field>(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-            // };
-            // caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+            // getDiscreteField<t_i, t_field>().addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+            // // auto fun = [&] (auto const & finite_element)
+            // // {
+            // //     finite_element->template addDiscreteFieldLoad<t_field>(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+            // // };
+            // // caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
         template<Integer t_i, Field t_field, auto t_arg, Label t_label>
@@ -357,11 +354,11 @@ namespace lolita
             std::basic_string<Character> && domain_label
         )
         {
-            auto fun = [&] (auto const & finite_element)
-            {
-                finite_element->template addDiscreteFieldOperator<t_field, t_arg, t_label>();
-            };
-            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+            // auto fun = [&] (auto const & finite_element)
+            // {
+            //     finite_element->template addDiscreteFieldOperator<t_field, t_arg, t_label>();
+            // };
+            // caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
         template<Integer t_i, PotentialConcept auto t_behavior>

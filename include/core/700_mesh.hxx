@@ -17,7 +17,7 @@ namespace lolita
 {
 
     template<Domain t_domain>
-    struct FiniteElementMap : ElementMap<FiniteElement, t_domain>, MeshStuffMap<MeshDomain1, t_domain>
+    struct FiniteElementMap : ElementMap<FiniteElement, t_domain>
     {
 
         std::unique_ptr<FiniteElementSet<t_domain>>
@@ -47,8 +47,41 @@ namespace lolita
                 }
             }; 
             make_elements(make_elements);
+            for (auto const & domain : this->getDomains())
+            {
+                finite_element_set->addDomain1(domain);
+            }
             return finite_element_set;
         }
+
+    };
+
+    template<Integer t_dim, Domain t_domain>
+    struct MeshDomainElement
+    {
+
+        MeshDomainElement()
+        :
+        tag_()
+        {}
+
+        explicit
+        MeshDomainElement(
+            std::basic_string<Character> const & tag
+        )
+        :
+        tag_(tag)
+        {}
+
+        explicit
+        MeshDomainElement(
+            std::basic_string<Character> && tag
+        )
+        :
+        tag_(std::forward<std::basic_string<Character>>(tag))
+        {}
+
+        std::basic_string<Character> tag_;
 
     };
     
@@ -59,6 +92,16 @@ namespace lolita
     requires(!t_element.isNode())
     struct MeshElement<t_element, t_domain>
     {
+    
+        using t_ElementTraits = ElementTraits<t_element>;
+    
+        using t_InnerDomain = typename t_ElementTraits::template InnerDomain<MeshDomainElement, t_domain>;
+        
+        using t_OuterDomain = typename t_ElementTraits::template OuterDomain<MeshDomainElement, t_domain>;
+
+        t_InnerDomain inner_dom_;
+
+        t_OuterDomain outer_dom_;
         
         template<Integer t_i, Integer t_j>
         static constexpr
@@ -86,10 +129,81 @@ namespace lolita
             return hash.str();
         }
 
+        template<Integer t_i>
+        static
+        void
+        setElementOuterNeighborhood(
+            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
+        )
+        {
+            auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
+            auto const constexpr t_node_coordinates = ElementTraits<t_element>::template getInnerNeighborCoordinates<Element::node()>();
+            auto const & element_nds = ptr_element->template getInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>();
+            for (auto i = 0; i < ElementTraits<t_element>::template getNumInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>(); ++i)
+            {
+                auto const & nde = element_nds[i];
+                auto const & ngs = nde->template getOuterNeighbors<t_element_coordinates.dim_ - 1, t_i>();
+                for (auto const & neighbour : ngs)
+                {
+                    if (((neighbour->tag_ != ptr_element->tag_) && t_i == t_element_coordinates.tag_) || (t_i != t_element_coordinates.tag_))
+                    {
+                        auto & element_ngs = ptr_element->template getOuterNeighbors<0, t_i>();
+                        auto found = false;
+                        for (auto const & ngb: element_ngs)
+                        {
+                            if (ngb->tag_ == neighbour->tag_)
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                        {
+                            element_ngs.push_back(neighbour);
+                        }
+                    }
+                }
+            }
+            if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<t_element_coordinates.dim_>() - 1)
+            {
+                setElementOuterNeighborhood<t_i + 1>(ptr_element);
+            }
+        }
+        
+        static
+        void
+        initialize(
+            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
+        )
+        {
+            setElementOuterNeighborhood<0>(ptr_element);
+        }
+
         MeshElement()
         :
         node_tags_()
         {}
+
+        std::array<Natural, t_element.getNumNodes()> const &
+        getNodeTags()
+        const
+        {
+            return node_tags_;
+        }
+
+        std::basic_string<Character>
+        getHash()
+        const
+        {
+            auto node_tags = node_tags_;
+            auto hash = std::basic_stringstream<Character>();
+            std::sort(std::execution::par_unseq, node_tags.begin(), node_tags.end());
+            for (auto node_tag : node_tags)
+            {
+                hash << std::setfill('0') << std::setw(10) << node_tag;
+            }
+            return hash.str();
+        }
 
         template<Integer t_i, Integer t_j>
         void
@@ -143,12 +257,12 @@ namespace lolita
             {
                 auto const & nodes = ptr_element->template getInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>();
                 auto & domains = ptr_element->domains_;
-                for (auto const & domain : nodes[0]->domains_)
+                for (auto const & domain : nodes.front()->domains_)
                 {
                     auto is_in_domain = true;
-                    for (Integer j = 1; j < t_element.num_nodes_; ++j)
+                    for (auto const & nds : std::span(nodes.begin() + 1, nodes.end()))
                     {
-                        if (std::find(nodes[j]->domains_.begin(), nodes[j]->domains_.end(), domain) == nodes[j]->domains_.end())
+                        if (std::find(nds->domains_.begin(), nds->domains_.end(), domain) == nds->domains_.end())
                         {
                             is_in_domain = false;
                         }
@@ -177,57 +291,9 @@ namespace lolita
             setElement<0, 0>(element_map, ptr_element);
         }
 
-        template<Integer t_i>
-        static
-        void
-        setElementOuterNeighborhood(
-            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
-        )
-        {
-            auto const constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
-            auto const constexpr t_node_coordinates = ElementTraits<t_element>::template getInnerNeighborCoordinates<Element::node()>();
-            auto const & element_nds = ptr_element->template getInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>();
-            for (auto i = 0; i < ElementTraits<t_element>::template getNumInnerNeighbors<t_node_coordinates.dim_, t_node_coordinates.tag_>(); ++i)
-            {
-                auto const & nde = element_nds[i];
-                auto const & ngs = nde->template getOuterNeighbors<t_element_coordinates.dim_ - 1, t_i>();
-                for (auto const & neighbour : ngs)
-                {
-                    if (((neighbour->tag_ != ptr_element->tag_) && t_i == t_element_coordinates.tag_) || (t_i != t_element_coordinates.tag_))
-                    {
-                        auto & element_ngs = ptr_element->template getOuterNeighbors<0, t_i>();
-                        auto found = false;
-                        for (auto const & ngb: element_ngs)
-                        {
-                            if (ngb->tag_ == neighbour->tag_)
-                            {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found)
-                        {
-                            element_ngs.push_back(neighbour);
-                        }
-                    }
-                }
-            }
-            if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<t_element_coordinates.dim_>() - 1)
-            {
-                setElementOuterNeighborhood<t_i + 1>(ptr_element);
-            }
-        }
-        
-        static inline
-        void
-        initialize(
-            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
-        )
-        {
-            setElementOuterNeighborhood<0>(ptr_element);
-        }
+        std::array<Natural, t_element.getNumNodes()> node_tags_;
 
-        std::array<Natural, t_element.num_nodes_> node_tags_;
+        std::shared_ptr<FiniteElement<t_element, t_domain>> finite_element_;
 
     };
 
@@ -235,6 +301,16 @@ namespace lolita
     requires(t_element.isNode())
     struct MeshElement<t_element, t_domain>
     {
+    
+        using t_ElementTraits = ElementTraits<t_element>;
+    
+        using t_InnerDomain = typename t_ElementTraits::template InnerDomain<MeshDomainElement, t_domain>;
+        
+        using t_OuterDomain = typename t_ElementTraits::template OuterDomain<MeshDomainElement, t_domain>;
+
+        t_InnerDomain inner_dom_;
+
+        t_OuterDomain outer_dom_;
 
         static
         std::basic_string<Character>
@@ -246,6 +322,13 @@ namespace lolita
             hash << std::setfill('0') << std::setw(10) << tag;
             return hash.str();
         }
+        
+        static
+        void
+        initialize(
+            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
+        )
+        {}
 
         MeshElement()
         :
@@ -253,6 +336,22 @@ namespace lolita
         coordinates_(std::make_shared<Point>(Point::Zero())),
         domains_()
         {}
+        
+        std::basic_string<Character>
+        getHash()
+        const
+        {
+            auto hash = std::basic_stringstream<Character>();
+            hash << std::setfill('0') << std::setw(10) << tag_;
+            return hash.str();
+        }
+
+        std::vector<std::shared_ptr<MeshDomain>> const &
+        getDomains()
+        const
+        {
+            return domains_;
+        }
         
         void
         setElement(
@@ -265,6 +364,10 @@ namespace lolita
             ptr_element->tag_ = tag_;
             ptr_element->domains_ = domains_;
             ptr_element->coordinates_ = coordinates_;
+            for (auto const & domain : ptr_element->getDomains())
+            {
+                element_set.addDomain1(domain);
+            }
             element_set.template getElements<t_element_coordinates.dim_, t_element_coordinates.tag_>()[getHash(tag_)] = ptr_element;
         }
         
@@ -278,23 +381,18 @@ namespace lolita
             setElement(element_set, ptr_element);
         }
         
-        static inline
-        void
-        initialize(
-            std::shared_ptr<FiniteElement<t_element, t_domain>> & ptr_element
-        )
-        {}
-        
         Natural tag_;
         
         std::shared_ptr<Point> coordinates_;
 
         std::vector<std::shared_ptr<MeshDomain>> domains_;
 
+        std::shared_ptr<FiniteElement<t_element, t_domain>> finite_element_;
+
     };
         
     template<Domain t_domain>
-    struct MeshElementSet : ElementSet<MeshElement, t_domain>
+    struct MeshElementSet : ElementSet<MeshElement, t_domain>, DomainSet<DomainElement, t_domain>
     {
 
         MeshElementSet()
@@ -310,6 +408,7 @@ namespace lolita
             )
             mutable
             {
+                auto constexpr t_element = DomainTraits<t_domain>::template getElement<t_i, t_j>();
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
                     element->template makeElement(* element_map);
@@ -622,6 +721,7 @@ namespace lolita
                         mesh_element->domains_.push_back(physical_entity->mesh_domain_);
                     }
                     elements.push_back(mesh_element);
+                    // elements[mesh_element->getHash()] = mesh_element;
                     offset += 1;
                 }
                 offset += num_nodes_in_block;
@@ -673,6 +773,7 @@ namespace lolita
                             mesh_element->node_tags_[k] = node_tag - 1;
                         }
                         elements.push_back(mesh_element);
+                        // elements[mesh_element->getHash()] = mesh_element;
                         offset += 1;
                     }
                 }

@@ -11,6 +11,7 @@
 #include <ostream>
 #include <iomanip>
 #include <filesystem>
+#include <span>
 
 #include "config.hxx"
 

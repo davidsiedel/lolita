@@ -11,6 +11,98 @@
 
 namespace lolita
 {
+
+    template<Integer t_dim, Domain t_domain>
+    struct DomainElement
+    {
+
+        DomainElement()
+        :
+        tag_()
+        {}
+
+        explicit
+        DomainElement(
+            std::basic_string<Character> const & tag
+        )
+        :
+        tag_(tag)
+        {}
+
+        explicit
+        DomainElement(
+            std::basic_string<Character> && tag
+        )
+        :
+        tag_(std::forward<std::basic_string<Character>>(tag))
+        {}
+
+        template<Field t_field>
+        void
+        addDiscreteField()
+        {
+            if (ptr_data_ == nullptr)
+            {
+                ptr_data_ = std::make_unique<std::vector<MeshDiscreteField<t_dim, t_domain>>>();
+            }
+            for (auto const & item : * ptr_data_)
+            {
+                if (item.getLabel() == t_field.getLabel())
+                {
+                    return;
+                }
+            }
+            ptr_data_->push_back(MeshDiscreteField<t_dim, t_domain>(t_field));
+        }
+
+        template<Field t_field>
+        MeshDiscreteField<t_dim, t_domain> const &
+        getDiscreteField()
+        const
+        {
+            if (ptr_data_ == nullptr)
+            {
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto const & item : * ptr_data_)
+                {
+                    if (item.getLabel() == t_field.getLabel())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
+        }
+
+        template<Field t_field>
+        MeshDiscreteField<t_dim, t_domain> &
+        getDiscreteField()
+        {
+            if (ptr_data_ == nullptr)
+            {
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto & item : * ptr_data_)
+                {
+                    if (item.getLabel() == t_field.getLabel())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
+        }
+
+        std::unique_ptr<std::vector<MeshDiscreteField<t_dim, t_domain>>> ptr_data_;
+
+        std::basic_string<Character> tag_;
+
+    };
     
     template<Element t_element, Domain t_domain>
     struct FiniteElement
@@ -25,6 +117,21 @@ namespace lolita
 
     public:
     
+        using t_InnerDomain = typename t_ElementTraits::template InnerDomain<DomainElement, t_domain>;
+        
+        using t_OuterDomain = typename t_ElementTraits::template OuterDomain<DomainElement, t_domain>;
+
+        t_InnerDomain inner_dom_;
+
+        t_OuterDomain outer_dom_;
+
+        std::vector<std::shared_ptr<MeshDomain>> const &
+        getDomains()
+        const
+        {
+            return domains_;
+        }
+    
         using t_InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer, t_domain>;
         
         using t_OuterNeighbors = typename t_ElementTraits::template OuterConnectivity<t_ElementPointer, t_domain>;
@@ -35,11 +142,9 @@ namespace lolita
         template<auto t_discretization>
         using t_Disc = typename DiscretizationTraits<t_discretization>::template Implementation<t_element, t_domain>;
 
+        template<Field t_field>
         void
-        addDiscreteField(
-            MeshDegreeOfFreedom<t_element.getDim(), t_domain> const & m
-            // Field const & field
-        )
+        addDiscreteField()
         {
             if (ptr_data_ == nullptr)
             {
@@ -47,19 +152,17 @@ namespace lolita
             }
             for (auto const & item : * ptr_data_)
             {
-                if (item.getLabel() == m.getLabel())
+                if (item.getLabel() == t_field.getLabel())
                 {
                     return;
                 }
             }
-            // ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(field));
-            ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(m));
+            ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(t_field));
         }
 
+        template<Field t_field>
         ElementDiscreteField<t_element, t_domain> const &
-        getDiscreteField(
-            Field const & field
-        )
+        getDiscreteField()
         const
         {
             if (ptr_data_ == nullptr)
@@ -70,7 +173,7 @@ namespace lolita
             {
                 for (auto const & item : * ptr_data_)
                 {
-                    if (item.getLabel() == field.getLabel())
+                    if (item.getLabel() == t_field.getLabel())
                     {
                         return item;
                     }
@@ -79,10 +182,9 @@ namespace lolita
             }
         }
 
+        template<Field t_field>
         ElementDiscreteField<t_element, t_domain> &
-        getDiscreteField(
-            Field const & field
-        )
+        getDiscreteField()
         {
             if (ptr_data_ == nullptr)
             {
@@ -92,7 +194,7 @@ namespace lolita
             {
                 for (auto & item : * ptr_data_)
                 {
-                    if (item.getLabel() == field.getLabel())
+                    if (item.getLabel() == t_field.getLabel())
                     {
                         return item;
                     }
@@ -101,24 +203,13 @@ namespace lolita
             }
         }
 
-        // template<Field t_field>
-        // void
-        // addDiscreteFieldLoad(
-        //     Integer row,
-        //     Integer col,
-        //     std::function<Real(Point const &, Real const &)> && function
-        // )
-        // {
-        //     getDiscreteField(t_field).addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-        // }
-
         template<Field t_field, Basis t_basis>
         void
         addDiscreteFieldDegreeOfFreedom(
             auto const &... args
         )
         {
-            getDiscreteField(t_field).template addDegreeOfFreedom<t_field, t_basis>(args...);
+            getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_basis>(args...);
         }
 
         template<Field t_field, DiscretizationConcept auto t_discretization>

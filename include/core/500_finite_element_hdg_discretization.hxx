@@ -771,7 +771,7 @@ namespace lolita
             {
                 auto offset = 0;
                 auto unknown = Vector<Real, getNumElementUnknowns<t_field>()>();
-                auto const & cell_dof = this->getDiscreteField(t_field).getDegreeOfFreedom();
+                auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
                 auto cell_block = unknown.template segment<cell_dof.template getSize<t_field, getCellBasis()>()>(offset);
                 cell_block = cell_dof.template getCoefficients<t_field, getCellBasis()>();
                 offset += cell_dof.template getSize<t_field, getCellBasis()>();
@@ -783,7 +783,7 @@ namespace lolita
                     auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
                     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                     {
-                        auto const & face_dof = face->getDiscreteField(t_field).getDegreeOfFreedom();
+                        auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
                         auto face_block = unknown.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(offset);
                         face_block = face_dof.template getCoefficients<t_field, getFaceBasis()>();
                         offset += face_dof.template getSize<t_field, getFaceBasis()>();

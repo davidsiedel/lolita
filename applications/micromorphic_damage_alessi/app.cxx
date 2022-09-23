@@ -60,6 +60,47 @@ int
 main(int argc, char** argv)
 {
 
+    // auto vec_t = std::vector<int>{1, 2, 3, 4};
+    // auto spn_t1 = std::span<int>(vec_t.begin(), vec_t.begin() + 2);
+    // auto spn_t2 = std::span<int>(vec_t.begin() + 2, vec_t.end());
+    // std::cout << "vec_t" << std::endl;
+    // for (auto const & val : vec_t)
+    // {
+    //     std::cout << val << " ";
+    // }
+    // std::cout << "spn_t1" << std::endl;
+    // for (auto const & val : spn_t1)
+    // {
+    //     std::cout << val << " ";
+    // }
+    // std::cout << std::endl;
+    // std::cout << "spn_t2" << std::endl;
+    // for (auto const & val : spn_t2)
+    // {
+    //     std::cout << val << " ";
+    // }
+    // std::cout << std::endl;
+    // vec_t.insert(vec_t.begin() + 1, 0);
+    // std::cout << "vec_t" << std::endl;
+    // for (auto const & val : vec_t)
+    // {
+    //     std::cout << val << " ";
+    // }
+    // std::cout << "spn_t1" << std::endl;
+    // for (auto const & val : spn_t1)
+    // {
+    //     std::cout << val << " ";
+    // }
+    // std::cout << std::endl;
+    // std::cout << "spn_t2" << std::endl;
+    // for (auto const & val : spn_t2)
+    // {
+    //     std::cout << val << " ";
+    // }
+    // std::cout << std::endl;
+    
+
+
     std::cout << sizeof(std::vector<int>) << std::endl;
     std::cout << sizeof(std::vector<double>) << std::endl;
     std::cout << sizeof(lolita::Vector<double>) << std::endl;
