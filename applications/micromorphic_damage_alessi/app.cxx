@@ -179,6 +179,7 @@ main(int argc, char** argv)
     auto constexpr cell_dim = lolita::Integer(2);
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<_domain>();
     auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make_unique();
+    std::cout << * elements << std::endl;
     elements->addDiscreteField<face_dim, _u>("ROD");
     elements->addDiscreteField<cell_dim, _u>("ROD");
     elements->addDiscreteFieldDegreeOfFreedom<face_dim, _u, _hdg>("ROD", linear_system);

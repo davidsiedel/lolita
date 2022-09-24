@@ -13,16 +13,11 @@ namespace lolita
 {
 
     template<Integer t_dim, Domain t_domain>
-    struct DomainElement
+    struct FiniteDomain
     {
 
-        DomainElement()
-        :
-        tag_()
-        {}
-
         explicit
-        DomainElement(
+        FiniteDomain(
             std::basic_string<Character> const & tag
         )
         :
@@ -30,12 +25,19 @@ namespace lolita
         {}
 
         explicit
-        DomainElement(
+        FiniteDomain(
             std::basic_string<Character> && tag
         )
         :
-        tag_(std::forward<std::basic_string<Character>>(tag))
+        tag_(std::move(tag))
         {}
+
+        std::basic_string<Character> const &
+        getLabel()
+        const
+        {
+            return tag_;
+        }
 
         template<Field t_field>
         void
@@ -114,23 +116,11 @@ namespace lolita
         
         template<Element t__element, Domain t__domain>
         using t_ElementPointer = std::shared_ptr<FiniteElement<t__element, t__domain>>;
-
-    public:
-    
-        using t_InnerDomain = typename t_ElementTraits::template InnerDomain<DomainElement, t_domain>;
         
-        using t_OuterDomain = typename t_ElementTraits::template OuterDomain<DomainElement, t_domain>;
+        template<Integer t__dim, Domain t__domain>
+        using t_DomainElement = std::shared_ptr<FiniteDomain<t__dim, t__domain>>;
 
-        t_InnerDomain inner_dom_;
-
-        t_OuterDomain outer_dom_;
-
-        std::vector<std::shared_ptr<MeshDomain>> const &
-        getDomains()
-        const
-        {
-            return domains_;
-        }
+        using t_Domains = typename t_ElementTraits::template Domains<FiniteDomain, t_domain>;
     
         using t_InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_ElementPointer, t_domain>;
         
@@ -141,6 +131,60 @@ namespace lolita
 
         template<auto t_discretization>
         using t_Disc = typename DiscretizationTraits<t_discretization>::template Implementation<t_element, t_domain>;
+
+        t_Domains domains_;
+        
+        Natural tag_;
+        
+        t_OuterNeighbors outer_neighbors_;
+        
+        t_InnerNeighbors inner_neighbors_;
+        
+        Point coordinates_;
+
+    public:
+
+        explicit
+        FiniteElement(
+            Natural const & tag
+        )
+        :
+        tag_(tag),
+        coordinates_(),
+        outer_neighbors_(),
+        inner_neighbors_(),
+        domains_()
+        {}
+
+        t_Domains const &
+        getDomains()
+        const
+        {
+            return domains_;
+        }
+
+        void
+        setCoordinates(
+            Point const & point
+        )
+        {
+            coordinates_ = point;
+        }
+
+        void
+        addDomain(
+            std::shared_ptr<FiniteDomain<t_element.getDim(), t_domain>> const & domain
+        )
+        {
+            for (auto const & finite_element_domain : domains_)
+            {
+                if (finite_element_domain == domain)
+                {
+                    return;
+                }
+            }
+            domains_.push_back(domain);
+        }
 
         template<Field t_field>
         void
@@ -559,19 +603,63 @@ namespace lolita
         )
         const = default;
 
+        template<Integer t_i>
         Boolean
         isIn(
             std::basic_string_view<Character> domain
         )
         const
+        requires(t_i == t_element.getDim())
         {
-            auto has_domain = [&] (
-                std::shared_ptr<MeshDomain> const & mesh_domain
-            )
+            for (auto const & dom : domains_)
             {
-                return mesh_domain->tag_ == domain;
+                if (dom->getLabel() == domain)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        template<Integer t_i>
+        Boolean
+        isIn(
+            std::basic_string_view<Character> domain
+        )
+        const
+        requires(t_i > t_element.getDim())
+        {
+            auto res = Boolean(false);
+            auto mmm = [&] <Integer t_j = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                for (auto const & neighbor : this->template getOuterNeighbors<t_j>())
+                {
+                    if (neighbor->template isIn<t_i>(domain))
+                    {
+                        res = true;
+                    }
+                }
+                if constexpr (t_j < t_ElementTraits::template getNumOuterNeighbors<t_i - t_element.getDim()>() - 1)
+                {
+                    self.template operator()<t_j + 1>(self);
+                }                
             };
-            return std::find_if(domains_.begin(), domains_.end(), has_domain) != domains_.end();
+            mmm(mmm);
+            return res;
+        }
+
+        template<Integer t_i>
+        Boolean
+        isIn(
+            std::basic_string_view<Character> domain
+        )
+        const
+        requires(t_i < t_element.getDim())
+        {
+            return false;
         }
         
         std::basic_string<Character>
@@ -751,7 +839,7 @@ namespace lolita
         getCurrentCoordinates()
         requires(t_element.isNode())
         {
-            return * this->coordinates_;
+            return this->coordinates_;
         }
         
         Point const &
@@ -759,7 +847,7 @@ namespace lolita
         const
         requires(t_element.isNode())
         {
-            return * this->coordinates_;
+            return this->coordinates_;
         }
     
         Point &
@@ -768,7 +856,7 @@ namespace lolita
         )
         requires(t_element.isNode())
         {
-            return * this->coordinates_;
+            return this->coordinates_;
         }
         
         Point const &
@@ -778,7 +866,7 @@ namespace lolita
         const
         requires(t_element.isNode())
         {
-            return * this->coordinates_;
+            return this->coordinates_;
         }
     
         Point &
@@ -2964,7 +3052,7 @@ namespace lolita
             std::function<Real(Point const &)> && function
         )
         {
-            parameters_[parameter_label] = std::forward<std::function<Real(Point const &)>>(function)(* coordinates_);
+            parameters_[parameter_label] = std::forward<std::function<Real(Point const &)>>(function)(coordinates_);
         }
 
         Integer
@@ -3017,16 +3105,6 @@ namespace lolita
         {
             return tag_;
         }
-        
-        t_OuterNeighbors outer_neighbors_;
-        
-        t_InnerNeighbors inner_neighbors_;
-        
-        Natural tag_;
-
-        std::vector<std::shared_ptr<MeshDomain>> domains_;
-        
-        std::shared_ptr<Point> coordinates_;
 
     };   
     

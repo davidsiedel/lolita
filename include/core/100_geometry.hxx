@@ -42,6 +42,22 @@ namespace lolita
         {
             return tag_;
         }
+        
+        constexpr
+        Integer
+        getDim()
+        const
+        {
+            return dim_;
+        }
+        
+        constexpr
+        Integer
+        getTag()
+        const
+        {
+            return tag_;
+        }
 
         friend
         std::ostream &
@@ -474,15 +490,12 @@ namespace lolita
 
     template<template<Integer, Domain> typename t_T, Domain t_domain>
     using Domains = lolita::utility::tuple_slice_t<DomainLibrary<t_T, t_domain>, 0, t_domain.getDim() + 1>;
-
-    template<template<Integer, Domain> typename t_T, Element t_element, Domain t_domain>
-    using ElementDomains = lolita::utility::tuple_slice_t<DomainLibrary<t_T, t_domain>, t_element.getDim() + 1, t_domain.getDim() + 1>;
     
     template<Element t_element>
     struct ElementTraits;
     
     template<Element t_element, auto...>
-    using ElementNodeConnectivity = std::array<Integer, t_element.getNumNodes()>;
+    using ElementNodeConnectivity = std::array<Natural, t_element.getNumNodes()>;
     
     template<Element t_element>
     struct ElementInnerGeometryTraits;
@@ -925,37 +938,37 @@ namespace lolita
 
     };
 
-    template<Element t_element>
-    struct ElementDomainGeometryTraits
-    {
+    // template<Element t_element>
+    // struct ElementDomainGeometryTraits
+    // {
 
-    private:
+    // private:
 
-        template<template<Integer, Domain> typename t_T>
-        struct OuterDomainTraits
-        {
+    //     template<template<Integer, Domain> typename t_T>
+    //     struct OuterDomainTraits
+    //     {
 
-        private:
+    //     private:
 
-            template<Integer t__dim, Domain t__domain>
-            using NeighbourVector = std::vector<t_T<t__dim, t__domain>>;
+    //         template<Integer t__dim, Domain t__domain>
+    //         using NeighbourVector = std::vector<t_T<t__dim, t__domain>>;
 
-        public:
+    //     public:
 
-            template<Domain t_domain>
-            using OuterDomain = lolita::utility::tuple_slice_t<Domains<NeighbourVector, t_domain>, t_element.getDim() + 1, t_domain.getDim() + 1>;
+    //         template<Domain t_domain>
+    //         using OuterDomain = lolita::utility::tuple_slice_t<Domains<NeighbourVector, t_domain>, t_element.getDim() + 1, t_domain.getDim() + 1>;
 
-        };
+    //     };
 
-    public:
+    // public:
     
-        template<template<Integer, Domain> typename t_T, Domain t__domain>
-        using InnerDomain = t_T<t_element.getDim(), t__domain>;
+    //     template<template<Integer, Domain> typename t_T, Domain t__domain>
+    //     using InnerDomain = t_T<t_element.getDim(), t__domain>;
     
-        template<template<Integer, Domain> typename t_T, Domain t__domain>
-        using OuterDomain = typename OuterDomainTraits<t_T>::template OuterDomain<t__domain>;
+    //     template<template<Integer, Domain> typename t_T, Domain t__domain>
+    //     using OuterDomain = typename OuterDomainTraits<t_T>::template OuterDomain<t__domain>;
 
-    };
+    // };
 
     namespace detail
     {
@@ -976,7 +989,7 @@ namespace lolita
     }
     
     template<Element t_element>
-    struct ElementTraits : ElementOuterGeometryTraits<t_element>, ElementInnerGeometryTraits<t_element>, ElementDomainGeometryTraits<t_element>
+    struct ElementTraits : ElementOuterGeometryTraits<t_element>, ElementInnerGeometryTraits<t_element>
     {
 
     private:
@@ -990,6 +1003,9 @@ namespace lolita
         using t_Elements = Elements<detail::ElementView, t_domain>;
 
     public:
+
+        template<template<Integer, Domain> typename t_T, Domain t__domain>
+        using Domains = std::vector<std::shared_ptr<t_T<t_element.getDim(), t__domain>>>;
     
         static constexpr
         Element const &
@@ -1225,34 +1241,38 @@ namespace lolita
 
     };
 
-    struct MeshDomain
-    {
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-        MeshDomain(
-            Integer dim,
-            std::basic_string<Character> const & tag
-        )
-        :
-        dim_(dim),
-        tag_(tag)
-        {}
+    // struct MeshDomain
+    // {
 
-        MeshDomain(
-            Integer dim,
-            std::basic_string<Character> && tag
-        )
-        :
-        dim_(dim),
-        tag_(std::forward<std::basic_string<Character>>(tag))
-        {}
+    //     MeshDomain(
+    //         Integer dim,
+    //         std::basic_string<Character> const & tag
+    //     )
+    //     :
+    //     dim_(dim),
+    //     tag_(tag)
+    //     {}
 
-        std::vector<ExternalLoad> loads_;
+    //     MeshDomain(
+    //         Integer dim,
+    //         std::basic_string<Character> && tag
+    //     )
+    //     :
+    //     dim_(dim),
+    //     tag_(std::forward<std::basic_string<Character>>(tag))
+    //     {}
 
-        Integer dim_;
+    //     std::vector<ExternalLoad> loads_;
 
-        std::basic_string<Character> tag_;
+    //     Integer dim_;
 
-    };
+    //     std::basic_string<Character> tag_;
+
+    // };
+
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     struct ElementMap
@@ -1283,30 +1303,6 @@ namespace lolita
         }
         
         t_Elements elements_;
-
-        std::vector<std::shared_ptr<MeshDomain>> domains_;
-
-        void
-        addDomain1(
-            std::shared_ptr<MeshDomain> const & m
-        )
-        {
-            for (auto const & dom : domains_)
-            {
-                if (dom == m)
-                {
-                    return;
-                }
-            }
-            domains_.push_back(m);
-        }
-
-        std::vector<std::shared_ptr<MeshDomain>> const &
-        getDomains()
-        const
-        {
-            return domains_;
-        }
 
     };
 
@@ -1340,30 +1336,6 @@ namespace lolita
         
         t_Elements elements_;
 
-        std::vector<std::shared_ptr<MeshDomain>> domains_;
-
-        void
-        addDomain1(
-            std::shared_ptr<MeshDomain> const & m
-        )
-        {
-            for (auto const & dom : domains_)
-            {
-                if (dom == m)
-                {
-                    return;
-                }
-            }
-            domains_.push_back(m);
-        }
-
-        std::vector<std::shared_ptr<MeshDomain>> const &
-        getDomains()
-        const
-        {
-            return domains_;
-        }
-
     };
 
     template<template<Integer, Domain> typename t_T, Domain t_domain>
@@ -1381,7 +1353,7 @@ namespace lolita
     
         template<Integer t_i>
         std::tuple_element_t<t_i, t_DomainMap> const &
-        getDomains1()
+        getDomains()
         const
         {
             return std::get<t_i>(domains_);
@@ -1389,7 +1361,7 @@ namespace lolita
         
         template<Integer t_i>
         std::tuple_element_t<t_i, t_DomainMap> &
-        getDomains1()
+        getDomains()
         {
             return std::get<t_i>(domains_);
         }
@@ -1413,7 +1385,7 @@ namespace lolita
     
         template<Integer t_i>
         std::tuple_element_t<t_i, t_DomainSet> const &
-        getDomains1()
+        getDomains()
         const
         {
             return std::get<t_i>(domains_);
@@ -1421,7 +1393,7 @@ namespace lolita
         
         template<Integer t_i>
         std::tuple_element_t<t_i, t_DomainSet> &
-        getDomains1()
+        getDomains()
         {
             return std::get<t_i>(domains_);
         }

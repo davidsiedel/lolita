@@ -17,7 +17,7 @@ namespace lolita
 {
 
     template<Domain t_domain>
-    struct FiniteElementSet : ElementSet<FiniteElement, t_domain>, DomainSet<DomainElement, t_domain>
+    struct FiniteElementSet : ElementSet<FiniteElement, t_domain>, DomainSet<FiniteDomain, t_domain>
     {
 
         template<Integer t_i>
@@ -35,7 +35,7 @@ namespace lolita
             {
                 for (auto const & element : this->template getElements<t_i, t_j>())
                 {
-                    if (element->isIn(domain))
+                    if (element->template isIn<t_i>(domain))
                     {
                         fun(element);
                     }
@@ -109,7 +109,7 @@ namespace lolita
                         for (auto i = start; i < stop; ++i)
                         {
                             auto const & finite_element = this->template getElements<t_i, t_j>()[i];
-                            if (finite_element->isIn(domain))
+                            if (finite_element->template isIn<t_i>(domain))
                             {
                                 fun(finite_element);
                             }
@@ -576,26 +576,26 @@ namespace lolita
         //     caller2<t_ii>(domain_label, fun);
         // }
 
-        template<ElementType t_ii>
-        void
-        addDomain(
-            std::basic_string_view<Character> domain_label,
-            std::basic_string<Character> && sub_domain_label,
-            Integer sub_domain_dim,
-            std::function<Boolean(Point const &)> const & function
-        )
-        const
-        {
-            auto sub_domain = std::make_shared<MeshDomain>(sub_domain_dim, std::forward<std::basic_string<Character>>(sub_domain_label));
-            auto fun = [&] (auto const & element)
-            {
-                if (function(element->getCurrentCentroid()))
-                {
-                    element->domains_.push_back(sub_domain);
-                }
-            };
-            caller<t_ii>(domain_label, fun);
-        }
+        // template<ElementType t_ii>
+        // void
+        // addDomain(
+        //     std::basic_string_view<Character> domain_label,
+        //     std::basic_string<Character> && sub_domain_label,
+        //     Integer sub_domain_dim,
+        //     std::function<Boolean(Point const &)> const & function
+        // )
+        // const
+        // {
+        //     auto sub_domain = std::make_shared<int>(sub_domain_dim, std::forward<std::basic_string<Character>>(sub_domain_label));
+        //     auto fun = [&] (auto const & element)
+        //     {
+        //         if (function(element->getCurrentCentroid()))
+        //         {
+        //             element->domains_.push_back(sub_domain);
+        //         }
+        //     };
+        //     caller<t_ii>(domain_label, fun);
+        // }
 
         template<ElementType t_ii>
         void
@@ -1161,9 +1161,9 @@ namespace lolita
                 {
                     os << "* Element : " << t_element << " " << element->getHash() << std::endl;
                     os << "* Domains : ";
-                    for (auto const & domain : element->domains_)
+                    for (auto const & domain : element->getDomains())
                     {
-                        os << domain->tag_ << " ";
+                        os << domain->getLabel() << " ";
                     }
                     os << std::endl;
                     print_element_inner_neighbors.template operator()<t_element>(element, print_element_inner_neighbors);
