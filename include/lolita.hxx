@@ -697,7 +697,7 @@ namespace lolita
         //     set(set);
         // }
 
-        utility::Label label_;
+        Label label_;
 
         Strains strains_;
 

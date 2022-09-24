@@ -232,7 +232,9 @@ namespace lolita
         {
             if (ptr_data_ == nullptr)
             {
-                throw std::runtime_error("Empty");
+                auto msg = std::basic_stringstream<Character>();
+                msg << "No DiscreteField in " << t_element << " " << getTag();
+                throw std::runtime_error(msg.str());
             }
             else
             {
@@ -272,12 +274,15 @@ namespace lolita
             static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
         }
 
+        //
+
         std::unique_ptr<std::vector<ElementDiscreteField<t_element, t_domain>>> ptr_data_;
 
+        //
+
+        template<PotentialConcept auto t_behavior>
         void
-        addFormulation(
-            PotentialConcept auto const & t_behavior
-        )
+        addFormulation()
         {
             if (ptr_formulations_ == nullptr)
             {
@@ -293,9 +298,9 @@ namespace lolita
             ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>(t_behavior));
         }
 
+        template<PotentialConcept auto t_behavior>
         void
         addFormulation(
-            PotentialConcept auto const & t_behavior,
             std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
         )
         {
@@ -313,10 +318,9 @@ namespace lolita
             ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>(t_behavior, behavior));
         }
 
-        template<Quadrature t_quadrature>
+        template<PotentialConcept auto t_behavior, Quadrature t_quadrature>
         void
         addFormulation(
-            PotentialConcept auto const & t_behavior,
             std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
         )
         {
@@ -341,10 +345,9 @@ namespace lolita
             }
         }
 
+        template<PotentialConcept auto t_behavior>
         ElementFormulation<t_element, t_domain> const &
-        getFormulation(
-            PotentialConcept auto const & t_behavior
-        )
+        getFormulation()
         const
         {
             if (ptr_formulations_ == nullptr)
@@ -364,11 +367,9 @@ namespace lolita
             }
         }
 
-        // template<PotentialConcept auto t_behavior>
+        template<PotentialConcept auto t_behavior>
         ElementFormulation<t_element, t_domain> &
-        getFormulation(
-            PotentialConcept auto const & t_behavior
-        )
+        getFormulation()
         {
             if (ptr_formulations_ == nullptr)
             {
@@ -387,14 +388,24 @@ namespace lolita
             }
         }
 
+        template<Mapping t_mapping, auto t_discretization>
+        auto
+        getMapping(
+            Point const & point
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping>(point);
+        }
+
         template<PotentialConcept auto t_behavior, Mapping t_strain, DiscretizationConcept auto t_discretization>
         void
         addFormulationStrainOperator()
         {
             auto quadrature_point_count = 0;
-            for (auto & ip : getFormulation(t_behavior).getIntegrationPoints())
+            for (auto & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
             {
-                auto strain_operator = this->template getMapping<t_strain.getField(), t_strain, t_discretization>(ip.getReferenceCoordinates());
+                auto strain_operator = this->template getMapping<t_strain, t_discretization>(ip.getReferenceCoordinates());
                 ip.template addStrainOperator<t_strain>(strain_operator);
                 quadrature_point_count ++;
             }
@@ -413,7 +424,7 @@ namespace lolita
         setFormulationStrain()
         {
             auto const unknown = this->template getUnknowns<t_strain.getField(), t_discretization>();
-            for (auto & ip : getFormulation(t_behavior).getIntegrationPoints())
+            for (auto & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
             {
                 auto rhs = Vector<Real>();
                 if (ip.template hasStrainOperator<t_strain>())
@@ -422,7 +433,7 @@ namespace lolita
                 }
                 else
                 {
-                    rhs = this->template getMapping<t_strain.getField(), t_strain, t_discretization>(ip.getReferenceCoordinates()) * unknown;
+                    rhs = this->template getMapping<t_strain, t_discretization>(ip.getReferenceCoordinates()) * unknown;
                 }
                 auto lhs = algebra::View<Vector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
                 lhs = rhs;
@@ -435,21 +446,21 @@ namespace lolita
             std::atomic<Boolean> & output_handler
         )
         {
-            getFormulation(t_behavior).integrate(output_handler);
+            this->template getFormulation<t_behavior>().integrate(output_handler);
         }
 
         template<PotentialConcept auto t_behavior>
         void
         reserveBehaviorData()
         {
-            getFormulation(t_behavior).reserve();
+            this->template getFormulation<t_behavior>().reserve();
         }
 
         template<PotentialConcept auto t_behavior>
         void
         recoverBehaviorData()
         {
-            getFormulation(t_behavior).recover();
+            this->template getFormulation<t_behavior>().recover();
         }
 
         template<PotentialConcept auto t_behavior>
@@ -459,7 +470,7 @@ namespace lolita
             std::function<Real(Point const &)> && function
         )
         {
-            for (auto & ip : getFormulation(t_behavior).getIntegrationPoints())
+            for (auto & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
             {
                 ip.setMaterialProperty(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
             }
@@ -472,7 +483,7 @@ namespace lolita
             std::function<Real(Point const &)> && function
         )
         {
-            for (auto & ip : getFormulation(t_behavior).getIntegrationPoints())
+            for (auto & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
             {
                 ip.setExternalVariable(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
             }
@@ -606,14 +617,14 @@ namespace lolita
         template<Integer t_i>
         Boolean
         isIn(
-            std::basic_string_view<Character> domain
+            std::basic_string<Character> && domain
         )
         const
         requires(t_i == t_element.getDim())
         {
             for (auto const & dom : domains_)
             {
-                if (dom->getLabel() == domain)
+                if (dom->getLabel() == std::forward<std::basic_string<Character>>(domain))
                 {
                     return true;
                 }
@@ -624,42 +635,67 @@ namespace lolita
         template<Integer t_i>
         Boolean
         isIn(
-            std::basic_string_view<Character> domain
+            std::basic_string<Character> && domain
         )
         const
         requires(t_i > t_element.getDim())
         {
-            auto res = Boolean(false);
-            auto mmm = [&] <Integer t_j = 0> (
+            auto is_in_domain = Boolean(false);
+            auto find_domain = [&] <Integer t_j = 0> (
                 auto & self
             )
             constexpr mutable
             {
-                for (auto const & neighbor : this->template getOuterNeighbors<t_j>())
+                for (auto const & neighbor : this->template getOuterNeighbors<t_i - t_element.getDim(), t_j>())
                 {
-                    if (neighbor->template isIn<t_i>(domain))
+                    if (neighbor->template isIn<t_i>(std::forward<std::basic_string<Character>>(domain)))
                     {
-                        res = true;
+                        is_in_domain = true;
                     }
                 }
-                if constexpr (t_j < t_ElementTraits::template getNumOuterNeighbors<t_i - t_element.getDim()>() - 1)
+                if constexpr (t_j < t_ElementTraits::template getNumOuterNeighbors<t_domain, t_i - t_element.getDim()>() - 1)
                 {
                     self.template operator()<t_j + 1>(self);
                 }                
             };
-            mmm(mmm);
-            return res;
+            find_domain(find_domain);
+            return is_in_domain;
         }
 
         template<Integer t_i>
         Boolean
         isIn(
-            std::basic_string_view<Character> domain
+            std::basic_string<Character> && domain
         )
         const
         requires(t_i < t_element.getDim())
         {
             return false;
+        }
+
+        Boolean
+        isIn(
+            std::basic_string<Character> && domain
+        )
+        const
+        {
+            auto is_in_domain = Boolean(false);
+            auto find_domain = [&] <Integer t_i = t_element.getDim()> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                if (this->template isIn<t_i>(std::forward<std::basic_string<Character>>(domain)))
+                {
+                    is_in_domain = true;
+                }
+                if constexpr (t_i < t_domain.getDim())
+                {
+                    self.template operator()<t_i + 1>(self);
+                }
+            };
+            find_domain(find_domain);
+            return is_in_domain;
         }
         
         std::basic_string<Character>
@@ -2018,16 +2054,6 @@ namespace lolita
         //     }
         //     return mass_matrix;
         // }
-
-        template<Field t_field, Mapping t_mapping, auto t_discretization>
-        Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain, t_field>(), t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>
-        getMapping(
-            Point const & point
-        )
-        const
-        {
-            return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping, t_field>(point);
-        }
 
         template<Field t_field, auto t_discretization>
         Matrix<Real, t_Disc<t_discretization>::template getNumElementUnknowns<t_field>(), t_Disc<t_discretization>::template getNumElementUnknowns<t_field>()>

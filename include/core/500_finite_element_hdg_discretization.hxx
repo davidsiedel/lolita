@@ -267,6 +267,14 @@ namespace lolita
                 return MappingTraits<t_mapping>::template getSize<t_domain, t_field>();
             }
 
+            template<Mapping t_mapping>
+            static constexpr
+            Integer
+            getMappingSize()
+            {
+                return MappingTraits<t_mapping>::template getSize<t_domain>();
+            }
+
         public:
 
             template<Field t_field>
@@ -703,58 +711,58 @@ namespace lolita
                 return rhs;
             }
 
-            template<Mapping t_mapping, Field t_field>
-            Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>
+            template<Mapping t_mapping>
+            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isGradient() || t_mapping.isLargeStrain())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>();
+                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
-                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain, t_field>())
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
                 {
-                    auto rhs = getGradientRhs<t_field>(mapping_value.row(), mapping_value.col());
-                    auto line = mapping.template block<1, getNumElementUnknowns<t_field>()>(mapping_value.rank(), 0);
+                    auto rhs = getGradientRhs<t_mapping.getField()>(mapping_value.row(), mapping_value.col());
+                    auto line = mapping.template block<1, getNumElementUnknowns<t_mapping.getField()>()>(mapping_value.rank(), 0);
                     line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
                 }
                 return mapping;
             }
 
-            template<Mapping t_mapping, Field t_field>
-            Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>
+            template<Mapping t_mapping>
+            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isSmallStrain())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>();
+                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
-                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain, t_field>())
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
                 {
-                    auto rhs = getSymmetricGradientRhs<t_field>(mapping_value.row(), mapping_value.col());
-                    auto line = mapping.template block<1, getNumElementUnknowns<t_field>()>(mapping_value.rank(), 0);
+                    auto rhs = getSymmetricGradientRhs<t_mapping.getField()>(mapping_value.row(), mapping_value.col());
+                    auto line = mapping.template block<1, getNumElementUnknowns<t_mapping.getField()>()>(mapping_value.rank(), 0);
                     line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
                 }
                 return mapping;
             }
 
-            template<Mapping t_mapping, Field t_field>
-            Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>
+            template<Mapping t_mapping>
+            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isIdentity())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping, t_field>(), getNumElementUnknowns<t_field>()>();
+                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
-                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain, t_field>())
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
                 {
                     auto left_vector = this->template getBasisEvaluation<getCellBasis()>(point);
                     auto col_offset = mapping_value.row() * getCellBasisSize<t_element>();
@@ -1876,7 +1884,7 @@ namespace lolita
             void
             addDiscreteFieldOperator()
             {
-                this->getDiscreteField(t_field).addMatrix(t_label, getStabilization<t_field>());
+                this->template getDiscreteField<t_field>().addMatrix(t_label, getStabilization<t_field>());
             }
 
             // template<Field t_field, Strategy t_s>

@@ -171,7 +171,7 @@ main(int argc, char** argv)
     auto constexpr _u = lolita::Field("Displacement", 1);
     auto constexpr _d = lolita::Field("Damage", 0);
     auto constexpr _top_force = lolita::Field("TopForce", 0);
-    auto constexpr id_ = lolita::Mapping("Identity", lolita::Field("Damage", 0), 0, 0);
+    auto constexpr id_ = lolita::Mapping("Identity", _d, 0, 0);
     auto constexpr _potential = lolita::Potential("Elasticity", lolita::Mapping("Gradient", _u), lolita::Mapping("Identity", _d));
     auto constexpr _quadrature = lolita::Quadrature("Gauss", 2);
     auto constexpr _hdg = lolita::HybridDiscontinuousGalerkin("HybridDiscontinuousGalerkin", 1, 1);
@@ -180,13 +180,13 @@ main(int argc, char** argv)
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<_domain>();
     auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make_unique();
     std::cout << * elements << std::endl;
-    elements->addDiscreteField<face_dim, _u>("ROD");
-    elements->addDiscreteField<cell_dim, _u>("ROD");
-    elements->addDiscreteFieldDegreeOfFreedom<face_dim, _u, _hdg>("ROD", linear_system);
-    elements->addDiscreteFieldDegreeOfFreedom<cell_dim, _u, _hdg>("ROD");
-    elements->addDiscreteFieldLoad<cell_dim, _u>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
+    elements->addElementDiscreteField<face_dim, _u>("ROD");
+    elements->addElementDiscreteField<cell_dim, _u>("ROD");
+    elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, _u, _hdg>("ROD", linear_system);
+    elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, _u, _hdg>("ROD");
+    elements->addDomainDiscreteFieldLoad<cell_dim, _u>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
     auto constexpr _stab = lolita::Label("Stabilization");
-    elements->addDiscreteFieldOperator<cell_dim, _u, _hdg, _stab>("ROD");
+    elements->addElementDiscreteFieldOperator<cell_dim, _u, _hdg, _stab>("ROD");
     //
     // std::basic_string_view<char> tag_test = lolita::Label("Hello");
     //

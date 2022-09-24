@@ -22,9 +22,10 @@ namespace lolita
 
         template<Integer t_i>
         void
-        caller(
-            std::basic_string_view<Character> domain,
-            auto & fun
+        caller2(
+            std::basic_string<Character> && domain,
+            auto && fun,
+            Integer num_threads = std::thread::hardware_concurrency()
         )
         const
         {
@@ -33,16 +34,38 @@ namespace lolita
             )
             mutable
             {
-                for (auto const & element : this->template getElements<t_i, t_j>())
+                auto evaluation_loop = [&] (
+                    Integer start,
+                    Integer stop
+                )
                 {
-                    if (element->template isIn<t_i>(domain))
+                    for (auto i = start; i < stop; ++i)
                     {
-                        fun(element);
+                        auto const & finite_element = this->template getElements<t_i, t_j>()[i];
+                        if (finite_element->isIn(std::forward<std::basic_string<Character>>(domain)))
+                        {
+                            std::forward<decltype(fun)>(fun)(finite_element);
+                        }
                     }
-                }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                };
+                if (num_threads < 2)
                 {
-                    self.template operator()<t_j + 1>(self);
+                    evaluation_loop(0, this->template getElements<t_i, t_j>().size() - 1);
+                }
+                else
+                {
+                    auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
+                    auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
+                    auto threads = std::vector<std::jthread>(num_threads);
+                    for(auto i = 0; i < num_threads; ++i)
+                    {
+                        threads[i] = std::jthread(evaluation_loop, i * batch_size, (i + 1) * batch_size);
+                    }
+                    evaluation_loop(num_threads * batch_size, num_threads * batch_size + batch_remainder);
+                    if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+                    {
+                        self.template operator()<t_j + 1>(self);
+                    }
                 }
             }; 
             activate_elements(activate_elements);
@@ -75,62 +98,7 @@ namespace lolita
                 }
             }; 
             activate_elements(activate_elements);
-        }
-
-        template<Integer t_i>
-        void
-        caller2(
-            std::basic_string_view<Character> domain,
-            auto & fun,
-            Integer num_threads = std::thread::hardware_concurrency()
-        )
-        const
-        {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
-            {
-                if (num_threads == 0)
-                {
-                    caller<t_i>(domain, fun);
-                }
-                else
-                {
-                    auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
-                    auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
-                    auto threads = std::vector<std::jthread>(num_threads);
-                    //
-                    auto doit = [&] (
-                        Integer start,
-                        Integer stop
-                    )
-                    {
-                        for (auto i = start; i < stop; ++i)
-                        {
-                            auto const & finite_element = this->template getElements<t_i, t_j>()[i];
-                            if (finite_element->template isIn<t_i>(domain))
-                            {
-                                fun(finite_element);
-                            }
-                        }
-                    };
-                    //
-                    for(auto i = 0; i < num_threads; ++i)
-                    {
-                        threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
-                    }
-                    doit(num_threads * batch_size, num_threads * batch_size + batch_remainder);
-                    //
-                    if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                    {
-                        self.template operator()<t_j + 1>(self);
-                    }
-                }
-            }; 
-            activate_elements(activate_elements);
-            // caller<t_ii>(domain, fun);
-        }
+        }        
 
         template<ElementType t_ii>
         void
@@ -225,88 +193,9 @@ namespace lolita
 
         // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-        // template<Integer t_i, Field t_field>
-        // void
-        // addDiscreteField1()
-        // {
-        //     // getMeshStuffs<t_i>()
-        //     // if (ptr_data_ == nullptr)
-        //     // {
-        //     //     ptr_data_ = std::make_unique<std::vector<MeshDiscreteField<t_i, t_domain>>>();
-        //     // }
-        //     for (auto const & item : this->template getMeshStuffs<t_i>())
-        //     {
-        //         if (item->getLabel() == t_field.getLabel())
-        //         {
-        //             return;
-        //         }
-        //     }
-        //     // ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(field));
-        //     this->template getMeshStuffs<t_i>().push_back(std::make_unique<MeshDiscreteField<t_i, t_domain>>(t_field));
-        // }
-
-        // template<Integer t_i, Field t_field>
-        // MeshDiscreteField<t_i, t_domain> const &
-        // getDiscreteField()
-        // const
-        // {
-        //     for (auto const & item : this->template getMeshStuffs<t_i>())
-        //     {
-        //         if (item->getLabel() == t_field.getLabel())
-        //         {
-        //             return * item;
-        //         }
-        //     }
-        //     throw std::runtime_error("No such field data");
-        //     // if (ptr_data_ == nullptr)
-        //     // {
-        //     //     throw std::runtime_error("Empty");
-        //     // }
-        //     // else
-        //     // {
-        //     //     for (auto const & item : * ptr_data_)
-        //     //     {
-        //     //         if (item.getLabel() == field.getLabel())
-        //     //         {
-        //     //             return item;
-        //     //         }
-        //     //     }
-        //     //     throw std::runtime_error("No such field data");
-        //     // }
-        // }
-
-        // template<Integer t_i, Field t_field>
-        // MeshDiscreteField<t_i, t_domain> &
-        // getDiscreteField()
-        // {
-        //     for (auto & item : this->template getMeshStuffs<t_i>())
-        //     {
-        //         if (item->getLabel() == t_field.getLabel())
-        //         {
-        //             return * item;
-        //         }
-        //     }
-        //     throw std::runtime_error("No such field data");
-        //     // if (ptr_data_ == nullptr)
-        //     // {
-        //     //     throw std::runtime_error("Empty");
-        //     // }
-        //     // else
-        //     // {
-        //     //     for (auto & item : * ptr_data_)
-        //     //     {
-        //     //         if (item.getLabel() == field.getLabel())
-        //     //         {
-        //     //             return item;
-        //     //         }
-        //     //     }
-        //     //     throw std::runtime_error("No such field data");
-        //     // }
-        // }
-
         template<Integer t_i, Field t_field>
         void
-        addDiscreteField(
+        addElementDiscreteField(
             std::basic_string<Character> && domain_label
         )
         {
@@ -319,7 +208,7 @@ namespace lolita
 
         template<Integer t_i, Field t_field, auto t_arg>
         void
-        addDiscreteFieldDegreeOfFreedom(
+        addElementDiscreteFieldDegreeOfFreedom(
             std::basic_string<Character> && domain_label,
             auto const &... args
         )
@@ -333,7 +222,7 @@ namespace lolita
 
         template<Integer t_i, Field t_field>
         void
-        addDiscreteFieldLoad(
+        addDomainDiscreteFieldLoad(
             std::basic_string<Character> && domain_label,
             Integer row,
             Integer col,
@@ -350,15 +239,15 @@ namespace lolita
 
         template<Integer t_i, Field t_field, auto t_arg, Label t_label>
         void
-        addDiscreteFieldOperator(
+        addElementDiscreteFieldOperator(
             std::basic_string<Character> && domain_label
         )
         {
-            // auto fun = [&] (auto const & finite_element)
-            // {
-            //     finite_element->template addDiscreteFieldOperator<t_field, t_arg, t_label>();
-            // };
-            // caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addDiscreteFieldOperator<t_field, t_arg, t_label>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
         template<Integer t_i, PotentialConcept auto t_behavior>
@@ -369,7 +258,7 @@ namespace lolita
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->addFormulation(t_behavior);
+                finite_element->template addFormulation<t_behavior>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -383,7 +272,7 @@ namespace lolita
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->addFormulation(t_behavior, behavior);
+                finite_element->template addFormulation<t_behavior>(behavior);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -398,7 +287,7 @@ namespace lolita
             auto behavior = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(args...));
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->addFormulation(t_behavior, behavior);
+                finite_element->template addFormulation<t_behavior>(behavior);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -413,7 +302,7 @@ namespace lolita
             auto behavior = std::make_shared<mgis::behaviour::Behaviour>(mgis::behaviour::load(args...));
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template addFormulation<t_quadrature>(t_behavior, behavior);
+                finite_element->template addFormulation<t_behavior, t_quadrature>(behavior);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -463,7 +352,7 @@ namespace lolita
             auto label = std::basic_string<Character>(t_label.view());
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->getFormulation(t_behavior).setMaterialProperty(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+                finite_element->template getFormulation<t_behavior>().setMaterialProperty(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -487,7 +376,7 @@ namespace lolita
             auto label = std::basic_string<Character>(t_label.view());
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->getFormulation(t_behavior).setExternalVariable(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+                finite_element->template getFormulation<t_behavior>().setExternalVariable(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -508,7 +397,7 @@ namespace lolita
             auto res = std::atomic<Boolean>(true);
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->getFormulation(t_behavior).integrateConstitutiveEquation(res);
+                finite_element->template getFormulation<t_behavior>().integrateConstitutiveEquation(res);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
