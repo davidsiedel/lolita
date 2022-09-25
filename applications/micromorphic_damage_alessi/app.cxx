@@ -173,6 +173,7 @@ main(int argc, char** argv)
     auto constexpr _top_force = lolita::Field("TopForce", 0);
     auto constexpr id_ = lolita::Mapping("Identity", _d, 0, 0);
     auto constexpr _potential = lolita::Potential("Elasticity", lolita::Mapping("Gradient", _u), lolita::Mapping("Identity", _d));
+    auto constexpr force_potential = lolita::Potential("Lagrangian", lolita::Mapping("Identity", _u, 0, 0), lolita::Mapping("Identity", _top_force));
     auto constexpr _quadrature = lolita::Quadrature("Gauss", 2);
     auto constexpr _hdg = lolita::HybridDiscontinuousGalerkin("HybridDiscontinuousGalerkin", 1, 1);
     auto constexpr face_dim = lolita::Integer(1);
@@ -184,6 +185,7 @@ main(int argc, char** argv)
     elements->addElementDiscreteField<cell_dim, _u>("ROD");
     elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, _u, _hdg>("ROD", linear_system);
     elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, _u, _hdg>("ROD");
+    elements->addDomainDiscreteField<cell_dim, _u>("ROD");
     elements->addDomainDiscreteFieldLoad<cell_dim, _u>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
     auto constexpr _stab = lolita::Label("Stabilization");
     elements->addElementDiscreteFieldOperator<cell_dim, _u, _hdg, _stab>("ROD");
@@ -200,41 +202,41 @@ main(int argc, char** argv)
     auto constexpr _dm = lolita::Label("Damage");
     elements->setFormulationMaterialProperty<cell_dim, _potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
     elements->setFormulationExternalVariable<cell_dim, _potential, _dm>("ROD", [](lolita::Point const & p) { return 200.0; });
-    // elements->integrateFormulationConstitutiveEquation<cell_dim, _potential>("ROD");
+    elements->integrateFormulationConstitutiveEquation<cell_dim, _potential>("ROD");
     // <- TEST -------------------------------------------------------------------------------------------------------------------------------------------------
 
-//     auto defect = [] (lolita::Point const & point)
-//     {
-//         auto offset = 0.0025;
-//         auto x_c = 0.5;
-//         auto y_c = 1.0;
-//         if (point(0) > x_c - offset && point(0) < x_c + offset && point(1) > y_c - offset && point(1) < y_c + offset)
-//         {
-//             return true;
-//         }
-//         else
-//         {
-//             return false;
-//         }
-//     };
+    auto defect = [] (lolita::Point const & point)
+    {
+        auto offset = 0.0025;
+        auto x_c = 0.5;
+        auto y_c = 1.0;
+        if (point(0) > x_c - offset && point(0) < x_c + offset && point(1) > y_c - offset && point(1) < y_c + offset)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    };
 
-//     auto sane = [] (lolita::Point const & point)
-//     {
-//         auto offset = 0.0025;
-//         auto x_c = 0.5;
-//         auto y_c = 1.0;
-//         if (point(0) > x_c - offset && point(0) < x_c + offset && point(1) > y_c - offset && point(1) < y_c + offset)
-//         {
-//             return false;
-//         }
-//         else
-//         {
-//             return true;
-//         }
-//     };
+    auto sane = [] (lolita::Point const & point)
+    {
+        auto offset = 0.0025;
+        auto x_c = 0.5;
+        auto y_c = 1.0;
+        if (point(0) > x_c - offset && point(0) < x_c + offset && point(1) > y_c - offset && point(1) < y_c + offset)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    };
 
-//     elements->addDomain<cells>("ROD", "DEFECT", 2, defect);
-//     elements->addDomain<cells>("ROD", "SANE", 2, sane);
+    elements->addDomain<cell_dim>("ROD", "DEFECT", defect);
+    elements->addDomain<cell_dim>("ROD", "SANE", sane);
 
 //     // dofs
 //     auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::field("Vector", "A"), hdg.getFaceBasis()>("ROD", "Displacement");

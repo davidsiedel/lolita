@@ -25,6 +25,21 @@ namespace lolita
         const
         {
             auto finite_element_set = std::make_unique<FiniteElementSet<t_domain>>();
+            auto make_sets = [&] <Integer t_i = 0> (
+                auto & self
+            )
+            mutable
+            {
+                for (auto const & dm : this->template getDomains<t_i>())
+                {
+                    finite_element_set->template getDomains<t_i>().push_back(dm.second);
+                }
+                if constexpr (t_i < t_domain.getDim())
+                {
+                    self.template operator()<t_i + 1>(self);
+                }
+            };
+            make_sets(make_sets);
             auto make_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & self
             )

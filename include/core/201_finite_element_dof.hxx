@@ -639,7 +639,7 @@ namespace lolita
             Field const & field
         )
         :
-        DiscreteFieldBase<t_domain>(field.getLabel())
+        DiscreteFieldBase<t_domain>(field)
         {}
         
         Boolean

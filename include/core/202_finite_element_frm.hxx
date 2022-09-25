@@ -11,15 +11,6 @@
 namespace lolita
 {
 
-    // struct StrainOperator
-    // {
-
-    //     utility::Label const & field_label_;
-
-    //     utility::Label const & transformation_label_;
-
-    // };
-
     template<Element t_element, Domain t_domain>
     struct IntegrationPoint
     {
@@ -139,11 +130,11 @@ namespace lolita
             return jacobian_matrix;
         }
 
-        Point &
-        getCurrentCoordinates()
-        {
-            return coordinates_;
-        }
+        // Point &
+        // getCurrentCoordinates()
+        // {
+        //     return coordinates_;
+        // }
         
         Point const &
         getCurrentCoordinates()
@@ -209,10 +200,9 @@ namespace lolita
             return false;
         }
 
+        template<Field t_field>
         void
-        addDiscreteField(
-            Field const & field
-        )
+        addDiscreteField()
         {
             if (ptr_data_ == nullptr)
             {
@@ -220,18 +210,17 @@ namespace lolita
             }
             for (auto const & item : * ptr_data_)
             {
-                if (item.getLabel() == field.getLabel())
+                if (item.getLabel() == t_field.getLabel())
                 {
                     return;
                 }
             }
-            ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(field));
+            ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(t_field));
         }
 
+        template<Field t_field>
         ElementDiscreteField<t_element, t_domain> const &
-        getDiscreteField(
-            Field const & field
-        )
+        getDiscreteField()
         const
         {
             if (ptr_data_ == nullptr)
@@ -242,29 +231,7 @@ namespace lolita
             {
                 for (auto const & item : * ptr_data_)
                 {
-                    if (item.getLabel() == field.getLabel())
-                    {
-                        return item;
-                    }
-                }
-                throw std::runtime_error("No such field data");
-            }
-        }
-
-        ElementDiscreteField<t_element, t_domain> &
-        getDiscreteField(
-            Field const & field
-        )
-        {
-            if (ptr_data_ == nullptr)
-            {
-                throw std::runtime_error("Empty");
-            }
-            else
-            {
-                for (auto & item : * ptr_data_)
-                {
-                    if (item.getLabel() == field.getLabel())
+                    if (item.getLabel() == t_field.getLabel())
                     {
                         return item;
                     }
@@ -274,14 +241,24 @@ namespace lolita
         }
 
         template<Field t_field>
-        void
-        addDiscreteFieldLoad(
-            Integer row,
-            Integer col,
-            std::function<Real(Point const &, Real const &)> && function
-        )
+        ElementDiscreteField<t_element, t_domain> &
+        getDiscreteField()
         {
-            getDiscreteField(t_field).addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+            if (ptr_data_ == nullptr)
+            {
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto & item : * ptr_data_)
+                {
+                    if (item.getLabel() == t_field.getLabel())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
         }
 
         template<Field t_field, Basis t_basis>
@@ -290,24 +267,8 @@ namespace lolita
             auto const &... args
         )
         {
-            getDiscreteField(t_field).template addDegreeOfFreedom<t_field, t_basis>(args...);
+            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_basis>(args...);
         }
-
-        // template<Field t_field, DiscretizationConcept auto t_discretization>
-        // void
-        // addDiscreteFieldDegreeOfFreedom(
-        //     auto const &... args
-        // )
-        // {
-        //     static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
-        // }
-
-        // template<Field t_field, DiscretizationConcept auto t_discretization, Label t_label>
-        // void
-        // addDiscreteFieldOperator()
-        // {
-        //     static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
-        // }
 
         algebra::View<Point const> reference_coordinates_;
     
@@ -398,13 +359,6 @@ namespace lolita
         const
         {
             return label_;
-        }
-
-        std::basic_string_view<Character>
-        getLabelView()
-        const
-        {
-            return label_.view();
         }
 
         void

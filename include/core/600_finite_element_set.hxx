@@ -19,6 +19,40 @@ namespace lolita
     template<Domain t_domain>
     struct FiniteElementSet : ElementSet<FiniteElement, t_domain>, DomainSet<FiniteDomain, t_domain>
     {
+        
+        // std::unique_ptr<FiniteElementSet>
+        // makeFiniteElementSubSet(
+        //     std::basic_string_view<Character> domain
+        // )
+        // const
+        // {
+        //     auto sub_set = std::make_unique<FiniteElementSet>();
+        //     auto activate_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
+        //         auto & self
+        //     )
+        //     mutable
+        //     {
+        //         for (auto const & element : this->template getElements<t_i, t_j>())
+        //         {
+        //             if (element->isIn(domain))
+        //             {
+        //                 sub_set->template getElements<t_i, t_j>().push_back(element);
+        //             }
+        //         }
+        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
+        //         {
+        //             self.template operator()<t_i, t_j + 1>(self);
+        //         }
+        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
+        //         {
+        //             self.template operator()<t_i + 1, 0>(self);
+        //         }
+        //     }; 
+        //     activate_elements(activate_elements);
+        //     return sub_set;
+        // }
+
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------
 
         template<Integer t_i>
         void
@@ -71,127 +105,99 @@ namespace lolita
             activate_elements(activate_elements);
         }
 
-        template<ElementType t_ii>
+        template<Integer t_i>
         void
-        caller(
-            std::basic_string_view<Character> domain,
-            auto & fun
+        addDomain(
+            std::basic_string<Character> && domain_label,
+            std::basic_string<Character> && sub_domain_label,
+            std::function<Boolean(Point const &)> && function
         )
         const
         {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            for (auto const & f : this->template getDomains<t_i>())
             {
-                auto constexpr t_i = t_ii.getDim();
-                for (auto const & element : this->template getElements<t_i, t_j>())
+                if (f->getLabel() == std::forward<std::basic_string<Character>>(sub_domain_label))
                 {
-                    if (element->isIn(domain))
-                    {
-                        fun(element);
-                    }
+                    return;
                 }
-                if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                {
-                    self.template operator()<t_j + 1>(self);
-                }
-            }; 
-            activate_elements(activate_elements);
-        }        
-
-        template<ElementType t_ii>
-        void
-        caller2(
-            std::basic_string_view<Character> domain,
-            auto & fun,
-            Integer num_threads = std::thread::hardware_concurrency()
-        )
-        const
-        {
-            auto activate_elements = [&] <Integer t_j = 0> (
-                auto & self
-            )
-            mutable
+            }
+            auto sub_domain = std::make_shared<FiniteDomain<t_i, t_domain>>(std::forward<std::basic_string<Character>>(sub_domain_label));
+            auto fun = [&] (auto const & finite_element)
             {
-                auto constexpr t_i = t_ii.getDim();
-                // auto num_threads = std::thread::hardware_concurrency() == 0 ? 1 : (std::thread::hardware_concurrency());
-                // auto num_threads = std::thread::hardware_concurrency();
-                // auto num_threads = 2;
-                if (num_threads == 0)
+                if (std::forward<std::function<Boolean(Point const &)>>(function)(finite_element->getCoordinates()))
                 {
-                    caller<t_ii>(domain, fun);
+                    finite_element->addDomain(sub_domain);
                 }
-                else
-                {
-                    auto batch_size = this->template getElements<t_i, t_j>().size() / num_threads;
-                    auto batch_remainder = this->template getElements<t_i, t_j>().size() % num_threads;
-                    auto threads = std::vector<std::jthread>(num_threads);
-                    //
-                    auto doit = [&] (
-                        Integer start,
-                        Integer stop
-                    )
-                    {
-                        for (auto i = start; i < stop; ++i)
-                        {
-                            auto const & finite_element = this->template getElements<t_i, t_j>()[i];
-                            if (finite_element->isIn(domain))
-                            {
-                                fun(finite_element);
-                            }
-                        }
-                    };
-                    //
-                    for(auto i = 0; i < num_threads; ++i)
-                    {
-                        threads[i] = std::jthread(doit, i * batch_size, (i + 1) * batch_size);
-                    }
-                    doit(num_threads * batch_size, num_threads * batch_size + batch_remainder);
-                    //
-                    if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-                    {
-                        self.template operator()<t_j + 1>(self);
-                    }
-                }
-            }; 
-            activate_elements(activate_elements);
-            // caller<t_ii>(domain, fun);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
-        
-        // std::unique_ptr<FiniteElementSet>
-        // makeFiniteElementSubSet(
-        //     std::basic_string_view<Character> domain
-        // )
-        // const
-        // {
-        //     auto sub_set = std::make_unique<FiniteElementSet>();
-        //     auto activate_elements = [&] <Integer t_i = 0, Integer t_j = 0> (
-        //         auto & self
-        //     )
-        //     mutable
-        //     {
-        //         for (auto const & element : this->template getElements<t_i, t_j>())
-        //         {
-        //             if (element->isIn(domain))
-        //             {
-        //                 sub_set->template getElements<t_i, t_j>().push_back(element);
-        //             }
-        //         }
-        //         if constexpr (t_j < DomainTraits<t_domain>::template getNumElements<t_i>() - 1)
-        //         {
-        //             self.template operator()<t_i, t_j + 1>(self);
-        //         }
-        //         else if constexpr (t_i < DomainTraits<t_domain>::template getNumElements<>() - 1)
-        //         {
-        //             self.template operator()<t_i + 1, 0>(self);
-        //         }
-        //     }; 
-        //     activate_elements(activate_elements);
-        //     return sub_set;
-        // }
 
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------
+        template<Integer t_i>
+        FiniteDomain<t_i, t_domain> const &
+        getFiniteDomain(
+            std::basic_string<Character> && domain_label
+        )
+        const
+        {
+            for (auto const & f : this->template getDomains<t_i>())
+            {
+                if (f->getLabel() == std::forward<std::basic_string<Character>>(domain_label))
+                {
+                    return * f;
+                }
+            }
+            throw std::runtime_error("No such domain in the mesh");
+        }
+
+        template<Integer t_i>
+        FiniteDomain<t_i, t_domain> &
+        getFiniteDomain(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            for (auto const & f : this->template getDomains<t_i>())
+            {
+                if (f->getLabel() == std::forward<std::basic_string<Character>>(domain_label))
+                {
+                    return * f;
+                }
+            }
+            throw std::runtime_error("No such domain in the mesh");
+        }
+
+        template<Integer t_i, Field t_field>
+        void
+        addDomainDiscreteField(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto & finite_domain = this->template getFiniteDomain<t_i>(std::forward<std::basic_string<Character>>(domain_label));
+            finite_domain.template addDiscreteField<t_field>();
+        }
+
+        template<Integer t_i, Field t_field, Integer t_size>
+        void
+        addDomainDiscreteFieldDegreeOfFreedom(
+            std::basic_string<Character> && domain_label,
+            auto const &... args
+        )
+        {
+            auto & finite_domain = this->template getFiniteDomain<t_i>(std::forward<std::basic_string<Character>>(domain_label));
+            finite_domain.template addDiscreteFieldDegreeOfFreedom<t_field, t_size>(args...);
+        }
+
+        template<Integer t_i, Field t_field>
+        void
+        addDomainDiscreteFieldLoad(
+            std::basic_string<Character> && domain_label,
+            Integer row,
+            Integer col,
+            std::function<Real(Point const &, Real const &)> && function
+        )
+        {
+            auto & finite_domain = this->template getFiniteDomain<t_i>(std::forward<std::basic_string<Character>>(domain_label));
+            finite_domain.template addDiscreteFieldLoad<t_field>(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
+        }
 
         template<Integer t_i, Field t_field>
         void
@@ -218,23 +224,6 @@ namespace lolita
                 finite_element->template addDiscreteFieldDegreeOfFreedom<t_field, t_arg>(args...);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
-        }
-
-        template<Integer t_i, Field t_field>
-        void
-        addDomainDiscreteFieldLoad(
-            std::basic_string<Character> && domain_label,
-            Integer row,
-            Integer col,
-            std::function<Real(Point const &, Real const &)> && function
-        )
-        {
-            // getDiscreteField<t_i, t_field>().addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-            // // auto fun = [&] (auto const & finite_element)
-            // // {
-            // //     finite_element->template addDiscreteFieldLoad<t_field>(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
-            // // };
-            // // caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
         template<Integer t_i, Field t_field, auto t_arg, Label t_label>
@@ -332,16 +321,7 @@ namespace lolita
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
-
-        /**
-         * @brief Set the Formulation Material Property object
-         * 
-         * @tparam t_i 
-         * @tparam t_behavior 
-         * @tparam t_label 
-         * @param domain_label 
-         * @param function 
-         */
+        
         template<Integer t_i, PotentialConcept auto t_behavior, Label t_label>
         void
         setFormulationMaterialProperty(
@@ -352,20 +332,11 @@ namespace lolita
             auto label = std::basic_string<Character>(t_label.view());
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template getFormulation<t_behavior>().setMaterialProperty(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+                finite_element->template setMaterialProperty<t_behavior>(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
-
-        /**
-         * @brief Set the Formulation External Variable object
-         * 
-         * @tparam t_i 
-         * @tparam t_behavior 
-         * @tparam t_label 
-         * @param domain_label 
-         * @param function 
-         */
+        
         template<Integer t_i, PotentialConcept auto t_behavior, Label t_label>
         void
         setFormulationExternalVariable(
@@ -376,18 +347,11 @@ namespace lolita
             auto label = std::basic_string<Character>(t_label.view());
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template getFormulation<t_behavior>().setExternalVariable(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
+                finite_element->template setExternalVariable<t_behavior>(std::forward<std::basic_string<Character>>(label), std::forward<std::function<Real(Point const &)>>(function));
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
-
-        /**
-         * @brief 
-         * 
-         * @tparam t_i 
-         * @tparam t_behavior 
-         * @param domain_label 
-         */
+        
         template<Integer t_i, PotentialConcept auto t_behavior>
         void
         integrateFormulationConstitutiveEquation(
@@ -397,7 +361,33 @@ namespace lolita
             auto res = std::atomic<Boolean>(true);
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template getFormulation<t_behavior>().integrateConstitutiveEquation(res);
+                finite_element->template integrateConstitutiveEquation<t_behavior>(res);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+        
+        template<Integer t_i, PotentialConcept auto t_behavior>
+        void
+        reserveFormulationBehaviorData(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template reserveBehaviorData<t_behavior>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+        
+        template<Integer t_i, PotentialConcept auto t_behavior>
+        void
+        recoverFormulationBehaviorData(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template recoverBehaviorData<t_behavior>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
