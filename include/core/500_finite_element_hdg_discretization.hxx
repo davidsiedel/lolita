@@ -17,106 +17,6 @@ namespace lolita
     template<auto t_discretization>
     struct DiscretizationTraits
     {
-        
-        std::array<std::pair<Integer, const Character *>, 6> static constexpr cell_operators_ = {
-            {
-                {0, "Stabilization"},
-                {1, "CellResidual"},
-                {2, "CellCellJacobian"},
-                {3, "CellFaceJacobian"},
-                {4, "FaceCellJacobian"},
-                {5, "FaceFaceJacobian"},
-            }
-        };
-
-        static constexpr
-        Integer
-        getNumCellOperators()
-        {
-            return 6;
-        }
-        
-        std::array<std::basic_string_view<Character>, getNumCellOperators()> static constexpr cell_operators2_ = {
-            "Stabilization",
-            "CellResidual",
-            "CellCellJacobian",
-            "CellFaceJacobian",
-            "FaceCellJacobian",
-            "FaceFaceJacobian",
-        };
-        
-        std::array<utility::Label, getNumCellOperators()> static constexpr cell_operators3_ = {
-            utility::Label("Stabilization"),
-            utility::Label("CellResidual"),
-            utility::Label("CellCellJacobian"),
-            utility::Label("CellFaceJacobian"),
-            utility::Label("FaceCellJacobian"),
-            utility::Label("FaceFaceJacobian"),
-        };
-
-        static constexpr
-        utility::Label const &
-        getOperatorLabel(
-            std::basic_string<Character> && label
-        )
-        {
-            for (auto const & l : cell_operators3_)
-            {
-                if (l == std::forward<std::basic_string<Character>>(label))
-                {
-                    return l;
-                }
-            }
-            throw std::logic_error("Hello, but no");
-        }
-
-        // static constexpr
-        // std::basic_string_view<Character> const &
-        // getOperatorLabel(
-        //     std::basic_string_view<Character> && label
-        // )
-        // {
-        //     for (auto const & l : cell_operators2_)
-        //     {
-        //         if (l == std::forward<std::basic_string_view<Character>>(label))
-        //         {
-        //             return l;
-        //         }
-        //     }
-        //     throw std::logic_error("Hello, but no");
-        // }
-
-        static constexpr
-        Integer
-        getOperatorIndex(
-            std::basic_string_view<Character> label
-        )
-        {
-            for (auto const & pair : cell_operators_)
-            {
-                if (pair.second == label)
-                {
-                    return pair.first;
-                }
-            }
-            throw std::logic_error("Hello, but no");
-        }
-
-        static
-        Integer
-        getOperatorIndex(
-            std::basic_string<Character> && label
-        )
-        {
-            for (auto const & pair : cell_operators_)
-            {
-                if (pair.second == std::forward<std::basic_string<Character>>(label))
-                {
-                    return pair.first;
-                }
-            }
-            throw std::logic_error("Hello, but no");
-        }
 
         static constexpr
         Basis
@@ -223,41 +123,14 @@ namespace lolita
             set_num_faces_unknowns(set_num_faces_unknowns);
             return num_element_unknowns;
         }
-        
-        // template<Domain t_domain, Integer t_i>
-        // static
-        // GeneralData
-        // makeDiscreteField(
-        //     Field const & field
-        // )
-        // requires(t_domain.hasDim(t_i))
-        // {
-        //     auto discrete_field = GeneralData(field);
-        //     discrete_field.addScalarField("Stabilization");
-        //     discrete_field.addMatrixField("Stabilization");
-        //     discrete_field.addVectorField("RT");
-        //     discrete_field.addMatrixField("KTT");
-        //     discrete_field.addMatrixField("KTF");
-        //     discrete_field.addMatrixField("KFT");
-        //     discrete_field.addMatrixField("KFF");
-        //     return discrete_field;
-        // }
-        
-        // template<Domain t_domain, Integer t_i>
-        // static
-        // GeneralData
-        // makeDiscreteField(
-        //     Field const & field
-        // )
-        // {
-        //     return GeneralData(field);
-        // }
 
         template<Element t_element, Domain t_domain>
         struct Implementation : FiniteElement<t_element, t_domain>
         {
 
         private:
+
+            using Base = FiniteElement<t_element, t_domain>;
 
             template<Mapping t_mapping, Field t_field>
             static constexpr
@@ -803,6 +676,126 @@ namespace lolita
                 };
                 set_faces_unknowns(set_faces_unknowns);
                 return unknown;
+            }
+
+            template<Field t_field>
+            void
+            addDiscreteFieldDegreeOfFreedom()
+            requires(t_element.isSub(t_domain, 0))
+            {
+                static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getCellBasis()>();
+            }
+
+            template<Field t_field, Strategy t_s>
+            void
+            addDiscreteFieldDegreeOfFreedom(
+                std::unique_ptr<LinearSystem<t_s>> const & linear_system
+            )
+            requires(t_element.isSub(t_domain, 1))
+            {
+                static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(linear_system);
+            }
+
+            template<Field t_field, Label t_label>
+            void
+            addDiscreteFieldOperator()
+            requires(t_label == "Stabilization")
+            {
+                this->template getDiscreteField<t_field>().addMatrix(t_label, getStabilization<t_field>());
+            }
+
+            template<Field t_field>
+            void
+            upgradeDiscreteFieldDegreeOfFreedom(
+                VectorConcept<Real> auto const & increment
+            )
+            {}
+
+            template<Field t_field>
+            void
+            upgradeDiscreteFieldDegreeOfFreedom(
+                VectorConcept<Real> auto const & increment
+            )
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr num_cell_unknowns = getNumCellUnknowns<t_field>();
+                auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_field>();
+                auto constexpr num_face_unknowns = getNumElementUnknowns<t_field>() - num_cell_unknowns;
+                auto faces_correction = Vector<Real, num_face_unknowns>();
+                faces_correction.setZero();
+                auto faces_correction_offset = 0;
+                auto set_faces_increment = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                        auto lhs = faces_correction.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(faces_correction_offset);
+                        auto rhs = increment.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(face_dof.getOffset());
+                        lhs = rhs;
+                        faces_correction_offset += face_dof.template getSize<t_field, getFaceBasis()>();
+                    }
+                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_increment(set_faces_increment);
+                auto k_tt_inv = this->template getDiscreteField<t_field>().getMatrix("KTT");
+                auto k_tf = this->template getDiscreteField<t_field>().getMatrix("KTF");
+                auto r_t = this->template getDiscreteField<t_field>().getVector("RT");
+                auto cell_corr = k_tt_inv * (r_t - k_tf * faces_correction);
+                this->template getDiscreteField<t_field>().getDegreeOfFreedom().addCoefficients(cell_corr);
+            }
+
+            template<Field t_field>
+            void
+            upgradeDiscreteFieldDegreeOfFreedom(
+                VectorConcept<Real> auto const & increment
+            )
+            requires(t_element.isSub(t_domain, 1))
+            {
+                static_cast<Base *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(increment);
+            }
+
+            template<Field t_field>
+            Real
+            getDiscreteFieldDegreeOfFreedomValue(
+                PointConcept auto const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            {
+                return 0.0;
+            }
+
+            template<Field t_field>
+            Real
+            getDiscreteFieldDegreeOfFreedomValue(
+                PointConcept auto const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getCellBasis()>(point, row, col);
+            }
+
+            template<Field t_field>
+            Real
+            getDiscreteFieldDegreeOfFreedomValue(
+                Point const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getFaceBasis()>(point, row, col);
             }
 
             // -------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1860,31 +1853,6 @@ namespace lolita
             hello()
             {
 
-            }
-
-            template<Field t_field>
-            void
-            addDiscreteFieldDegreeOfFreedom()
-            requires(t_element.isSub(t_domain, 0))
-            {
-                static_cast<FiniteElement<t_element, t_domain> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getCellBasis()>();
-            }
-
-            template<Field t_field, Strategy t_s>
-            void
-            addDiscreteFieldDegreeOfFreedom(
-                std::unique_ptr<LinearSystem<t_s>> const & linear_system
-            )
-            requires(t_element.isSub(t_domain, 1))
-            {
-                static_cast<FiniteElement<t_element, t_domain> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(linear_system);
-            }
-
-            template<Field t_field, Label t_label>
-            void
-            addDiscreteFieldOperator()
-            {
-                this->template getDiscreteField<t_field>().addMatrix(t_label, getStabilization<t_field>());
             }
 
             // template<Field t_field, Strategy t_s>

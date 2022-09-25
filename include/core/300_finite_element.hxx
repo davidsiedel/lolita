@@ -247,6 +247,11 @@ namespace lolita
             domains_.push_back(domain);
         }
 
+        /**
+         * @brief This part is dedicated to the Dof implementation
+         * *****************************************************************************************************************************************************
+         */
+        
         template<Field t_field>
         void
         addDiscreteField()
@@ -316,7 +321,7 @@ namespace lolita
             auto const &... args
         )
         {
-            getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_basis>(args...);
+            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_basis>(args...);
         }
 
         template<Field t_field, DiscretizationConcept auto t_discretization>
@@ -334,6 +339,69 @@ namespace lolita
         {
             static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
         }
+
+        template<Field t_field, DiscretizationConcept auto t_discretization>
+        void
+        upgradeDiscreteFieldDegreeOfFreedom(
+            auto const &... args
+        )
+        {
+            static_cast<t_Disc<t_discretization> *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field>(args...);
+        }
+
+        template<Field t_field, Basis t_basis>
+        void
+        upgradeDiscreteFieldDegreeOfFreedom(
+            VectorConcept<Real> auto && input
+        )
+        {
+            this->template getDiscreteField<t_field>().getDegreeOfFreedom().template addCoefficients<t_field, t_basis>(std::forward<decltype(input)>(input));
+        }
+
+        template<Field t_field>
+        void
+        recoverDiscreteFieldDegreeOfFreedom()
+        {
+            this->template getDiscreteField<t_field>().getDegreeOfFreedom().recover();
+        }
+
+        template<Field t_field>
+        void
+        reserveDiscreteFieldDegreeOfFreedom()
+        {
+            this->template getDiscreteField<t_field>().getDegreeOfFreedom().reserve();
+        }
+
+        template<Field t_field, DiscretizationConcept auto t_discretization>
+        Real
+        getDiscreteFieldDegreeOfFreedomValue(
+            PointConcept auto const & point,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return static_cast<t_Disc<t_discretization> *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
+        }
+
+        template<Field t_field, Basis t_basis>
+        Real
+        getDiscreteFieldDegreeOfFreedomValue(
+            PointConcept auto const & point,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            auto const coefficients = this->template getDiscreteField<t_field>().getDegreeOfFreedom().template getCoefficients<t_field, t_basis>(row, col);
+            auto const basis_vector = this->template getBasisEvaluation<t_basis>(point);
+            return coefficients.dot(basis_vector);
+        }
+
+        /**
+         * @brief Formulation
+         * *****************************************************************************************************************************************************
+         */
 
         template<PotentialConcept auto t_behavior>
         void

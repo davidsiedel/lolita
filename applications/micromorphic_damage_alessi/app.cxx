@@ -189,6 +189,9 @@ main(int argc, char** argv)
     elements->addDomainDiscreteFieldLoad<cell_dim, _u>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
     auto constexpr _stab = lolita::Label("Stabilization");
     elements->addElementDiscreteFieldOperator<cell_dim, _u, _hdg, _stab>("ROD");
+    elements->recoverElementDiscreteFieldDegreeOfFreedom<cell_dim, _u>("ROD");
+    elements->reserveElementDiscreteFieldDegreeOfFreedom<cell_dim, _u>("ROD");
+    std::cout << linear_system->getSize() << std::endl;
     //
     // std::basic_string_view<char> tag_test = lolita::Label("Hello");
     //

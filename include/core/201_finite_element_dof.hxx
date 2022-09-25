@@ -274,6 +274,24 @@ namespace lolita
         }
 
         template<Field t_field, Basis t_basis>
+        void
+        addCoefficients(
+            VectorConcept<Real> auto && input,
+            Integer offset
+        )
+        {
+            s1 += std::forward<decltype(input)>(input).template segment<getSize<t_field, t_basis>()>(offset);
+        }
+        
+        void
+        addCoefficients(
+            VectorConcept<Real> auto && input
+        )
+        {
+            s1 += std::forward<decltype(input)>(input);
+        }
+
+        template<Field t_field, Basis t_basis>
         algebra::View<Vector<Real, getSize<t_basis>()> const>
         getCoefficients(
             Integer row,
@@ -787,243 +805,6 @@ namespace lolita
     private:
 
         std::unique_ptr<t_ElementDegreeOfFreedom> dof_;
-
-    };
-
-    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
-
-    struct Output
-    {
-
-        enum Type
-        {
-            Success,
-            Failure,
-            Warning
-        };
-
-        static constexpr
-        Output
-        success()
-        {
-            return Output(Output::Success);
-        }
-
-        static constexpr
-        Output
-        failure()
-        {
-            return Output(Output::Failure);
-        }
-
-        static constexpr
-        Output
-        warning()
-        {
-            return Output(Output::Warning);
-        }
-
-        constexpr explicit
-        Output(
-            Type type
-        )
-        :
-        type_(type)
-        {}
-
-        constexpr
-        Boolean
-        isSuccess()
-        const
-        {
-            return type_ == Output::Success;
-        }
-
-        constexpr
-        Boolean
-        isFailure()
-        const
-        {
-            return type_ == Output::Failure;
-        }
-
-        constexpr
-        Boolean
-        isWarning()
-        const
-        {
-            return type_ == Output::Warning;
-        }
-
-        Type type_;
-
-    };
-
-    struct OutputHandler
-    {
-
-        OutputHandler()
-        :
-        output_(Output::success())
-        {}
-
-        inline
-        void
-        setSuccess()
-        {
-            auto lock = std::scoped_lock<std::mutex>(mutex_);
-            output_ = Output::success();
-        }
-
-        inline
-        void
-        setFailure()
-        {
-            auto lock = std::scoped_lock<std::mutex>(mutex_);
-            output_ = Output::failure();
-        }
-
-        inline
-        void
-        setWarning()
-        {
-            auto lock = std::scoped_lock<std::mutex>(mutex_);
-            output_ = Output::warning();
-        }
-
-        inline
-        Output
-        getOutput()
-        {
-            return output_;
-        }
-
-    private:
-
-        Output output_;
-
-        std::mutex mutex_;
-
-    };
-    
-    template<typename t_Tag, typename t_Value>
-    struct ElementaryDataHandler
-    {
-
-    private:
-
-        struct Item
-        {
-
-            Item(
-                t_Tag tag,
-                t_Value const & value
-            )
-            :
-            tag_(tag),
-            value_(value)
-            {}
-
-            Item(
-                t_Tag tag,
-                t_Value && value
-            )
-            :
-            tag_(tag),
-            value_(std::move(value))
-            {}
-        
-            Boolean
-            operator==(
-                Item const & other
-            )
-            const = default;
-            
-            Boolean
-            operator!=(
-                Item const & other
-            )
-            const = default;
-
-            t_Tag
-            getTag()
-            const
-            {
-                return tag_;
-            }
-
-            t_Value const &
-            getValue()
-            const
-            {
-                return value_;
-            }
-
-            t_Value &
-            getValue()
-            {
-                return value_;
-            }
-
-            t_Tag tag_;
-
-            t_Value value_;
-
-        };
-
-    public:
-
-        ElementaryDataHandler()
-        :
-        items_()
-        {}
-
-        void
-        add(
-            t_Tag tag,
-            t_Value && value
-        )
-        {
-            auto find_item = [&] (Item const & item)
-            {
-                return item.getTag() == tag;
-            };
-            if(std::find_if(items_.begin(), items_.end(), find_item) == items_.end())
-            {
-                items_.push_back(Item(tag, std::forward<t_Value>(value)));
-            }
-        }
-
-        t_Value const &
-        get(
-            t_Tag tag
-        )
-        const
-        {
-            auto find_item = [&] (Item const & item)
-            {
-                return item.getTag() == tag;
-            };
-            return std::find_if(items_.begin(), items_.end(), find_item)->getValue();
-        }
-
-        t_Value &
-        get(
-            t_Tag tag
-        )
-        {
-            auto find_item = [&] (Item const & item)
-            {
-                return item.getTag() == tag;
-            };
-            return std::find_if(items_.begin(), items_.end(), find_item)->getValue();
-        }
-
-    private:
-
-        std::vector<Item> items_;
 
     };
     

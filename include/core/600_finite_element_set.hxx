@@ -105,6 +105,11 @@ namespace lolita
             activate_elements(activate_elements);
         }
 
+        /**
+         * @brief Domain
+         * *****************************************************************************************************************************************************
+         */
+
         template<Integer t_i>
         void
         addDomain(
@@ -199,6 +204,11 @@ namespace lolita
             finite_domain.template addDiscreteFieldLoad<t_field>(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
         }
 
+        /**
+         * @brief Element DOF
+         * *****************************************************************************************************************************************************
+         */
+
         template<Integer t_i, Field t_field>
         void
         addElementDiscreteField(
@@ -238,6 +248,51 @@ namespace lolita
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
+
+        template<Integer t_i, Field t_field, auto t_arg>
+        void
+        upgradeElementDiscreteFieldDegreeOfFreedom(
+            std::basic_string<Character> && domain_label,
+            auto const &... args
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template upgradeDiscreteFieldDegreeOfFreedom<t_field, t_arg>(args...);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, Field t_field>
+        void
+        recoverElementDiscreteFieldDegreeOfFreedom(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template recoverDiscreteFieldDegreeOfFreedom<t_field>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, Field t_field>
+        void
+        reserveElementDiscreteFieldDegreeOfFreedom(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template reserveDiscreteFieldDegreeOfFreedom<t_field>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        /**
+         * @brief Formulation
+         * *****************************************************************************************************************************************************
+         */
 
         template<Integer t_i, PotentialConcept auto t_behavior>
         void
@@ -703,21 +758,21 @@ namespace lolita
             caller2<t_ii>(domain, fun);
         }
 
-        template<ElementType t_ii>
-        Output
-        integrate(
-            std::basic_string_view<Character> domain,
-            std::basic_string_view<Character> behavior_label
-        )
-        {
-            auto output_handler = OutputHandler();
-            auto fun = [&] (auto const & element)
-            {
-                element->integrate(behavior_label, output_handler);
-            };
-            caller2<t_ii>(domain, fun);
-            return output_handler.getOutput();
-        }
+        // template<ElementType t_ii>
+        // Output
+        // integrate(
+        //     std::basic_string_view<Character> domain,
+        //     std::basic_string_view<Character> behavior_label
+        // )
+        // {
+        //     auto output_handler = OutputHandler();
+        //     auto fun = [&] (auto const & element)
+        //     {
+        //         element->integrate(behavior_label, output_handler);
+        //     };
+        //     caller2<t_ii>(domain, fun);
+        //     return output_handler.getOutput();
+        // }
 
         template<ElementType t_ii>
         Real
