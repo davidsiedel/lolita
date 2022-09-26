@@ -427,7 +427,50 @@ namespace lolita
 
     };
 
-    struct HybridDiscontinuousGalerkin
+    struct Discretization
+    {
+
+        constexpr
+        Discretization()
+        :
+        label_()
+        {}
+
+        constexpr explicit
+        Discretization(
+            std::basic_string_view<Character> && label
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label))
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            Discretization const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Discretization const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        isNone()
+        const
+        {
+            return label_ == Label();
+        }
+
+        Label label_;
+
+    };
+    
+    struct HybridDiscontinuousGalerkin : Discretization
     {
 
         constexpr
@@ -438,6 +481,7 @@ namespace lolita
             Basis grad_basis
         )
         :
+        Discretization("HybridDiscontinuousGalerkin"),
         stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
         cell_basis_(cell_basis),
         face_basis_(face_basis),
@@ -451,6 +495,7 @@ namespace lolita
             Basis face_basis
         )
         :
+        Discretization("HybridDiscontinuousGalerkin"),
         stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
         cell_basis_(cell_basis),
         face_basis_(face_basis),
@@ -465,6 +510,7 @@ namespace lolita
             Integer ord_grad_basis
         )
         :
+        Discretization("HybridDiscontinuousGalerkin"),
         stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
         cell_basis_(Basis("Monomial", ord_cell_basis)),
         face_basis_(Basis("Monomial", ord_face_basis)),
@@ -478,6 +524,7 @@ namespace lolita
             Integer ord_face_basis
         )
         :
+        Discretization("HybridDiscontinuousGalerkin"),
         stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
         cell_basis_(Basis("Monomial", ord_cell_basis)),
         face_basis_(Basis("Monomial", ord_face_basis)),
@@ -556,25 +603,32 @@ namespace lolita
 
     };
 
-    namespace detail
-    {
+    // namespace detail
+    // {
 
-        template<typename t_T>
-        struct IsHybridDiscontinuousGalerkin : std::false_type {};
+    //     template<typename t_T>
+    //     struct IsHybridDiscontinuousGalerkin : std::false_type {};
         
-        template<>
-        struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin> : std::true_type {};
+    //     template<>
+    //     struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin> : std::true_type {};
 
-    }
+    // }
+
+    // template<typename t_T>
+    // concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<std::decay_t<t_T>>::value;
 
     template<typename t_T>
-    concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<std::decay_t<t_T>>::value;
+    concept DiscretizationConcept = std::derived_from<t_T, Discretization>;
 
     template<typename t_T>
-    concept DiscretizationConcept = HybridDiscontinuousGalerkinConcept<t_T>;
+    // concept FieldDiscretizationConcept = DiscretizationConcept<t_T> || std::convertible_to<t_T, Basis> || std::convertible_to<t_T, Integer>;
+    concept FieldDiscretizationConcept = std::convertible_to<t_T, Discretization> || std::convertible_to<t_T, Basis> || std::convertible_to<t_T, Integer>;
     
+    template<FieldDiscretizationConcept t_Discretization = Integer>
     struct Field
     {
+
+        using FieldDiscretization = t_Discretization;
         
         constexpr explicit
         Field(
@@ -582,7 +636,8 @@ namespace lolita
         )
         :
         label_(),
-        dim_(dim)
+        dim_(dim),
+        discretization_()
         {}
         
         constexpr
@@ -592,7 +647,32 @@ namespace lolita
         )
         :
         label_(std::forward<std::basic_string_view<Character>>(label)),
-        dim_(dim)
+        dim_(dim),
+        discretization_()
+        {}
+        
+        constexpr
+        Field(
+            std::basic_string_view<Character> && label,
+            Integer dim,
+            FieldDiscretization const & discretization
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        dim_(dim),
+        discretization_(discretization)
+        {}
+        
+        constexpr
+        Field(
+            std::basic_string_view<Character> && label,
+            Integer dim,
+            FieldDiscretization && discretization
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        dim_(dim),
+        discretization_(std::move(discretization))
         {}
 
         constexpr
@@ -626,11 +706,35 @@ namespace lolita
         }
 
         constexpr
-        std::basic_string_view<Character>
-        getLabelView()
+        FieldDiscretization const &
+        getDiscretization()
         const
         {
-            return label_.view();
+            return discretization_;
+        }
+
+        constexpr
+        Boolean
+        hasDiscretization()
+        const
+        {
+            return DiscretizationConcept<FieldDiscretization>;
+        }
+
+        constexpr
+        Boolean
+        hasBasis()
+        const
+        {
+            return std::convertible_to<FieldDiscretization, Basis>;
+        }
+
+        constexpr
+        Boolean
+        hasSize()
+        const
+        {
+            return std::convertible_to<FieldDiscretization, Integer>;
         }
 
         constexpr
@@ -647,17 +751,39 @@ namespace lolita
 
         Integer dim_;
 
+        FieldDiscretization discretization_;
+
     };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsField : std::false_type {};
+        
+        template<typename t_T>
+        struct IsField<Field<t_T>> : std::true_type {};
+
+    }
+
+    template<typename t_T>
+    concept FieldConcept = detail::IsField<std::decay_t<t_T>>::value;
     
+    template<FieldConcept t_Field>
     struct Mapping
     {
+
+        using MappingField = t_Field;
+
+        using MappingFieldDiscretization = typename t_Field::FieldDiscretization;
 
         constexpr
         Mapping(
             std::basic_string_view<Character> && transformation,
-            Field const & field
+            t_Field const & field
         )
         :
+        label_(field.getLabel().view(), std::forward<std::basic_string_view<Character>>(transformation)),
         transformation_(std::forward<std::basic_string_view<Character>>(transformation)),
         field_(field),
         row_(-1),
@@ -667,11 +793,12 @@ namespace lolita
         constexpr
         Mapping(
             std::basic_string_view<Character> && transformation,
-            Field const & field,
+            t_Field const & field,
             Integer row,
             Integer col
         )
         :
+        label_(field.getLabel().view(), std::forward<std::basic_string_view<Character>>(transformation)),
         transformation_(std::forward<std::basic_string_view<Character>>(transformation)),
         field_(field),
         row_(row),
@@ -693,6 +820,14 @@ namespace lolita
         const = default;
 
         constexpr
+        Label const &
+        getLabel()
+        const
+        {
+            return label_;
+        }
+
+        constexpr
         Integer
         getRow()
         const
@@ -709,7 +844,7 @@ namespace lolita
         }
 
         constexpr
-        Field const &
+        t_Field const &
         getField()
         const
         {
@@ -756,21 +891,41 @@ namespace lolita
             return transformation_ == "LargeStrain";
         }
 
+        Label label_;
+
         Label transformation_;
 
-        Field field_;
+        t_Field field_;
 
         Integer row_;
 
         Integer col_;
 
     };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsMapping : std::false_type {};
+        
+        template<typename t_T>
+        struct IsMapping<Mapping<t_T>> : std::true_type {};
+
+    }
+
+    template<typename t_T>
+    concept MappingConcept = detail::IsMapping<std::decay_t<t_T>>::value;
     
-    template<typename... t_Strains>
+    template<MappingConcept... t_Strains>
     struct Potential
     {
 
-        using Strains = std::array<Mapping, sizeof...(t_Strains)>;
+        using PotentialStrains = utility::Aggregate<t_Strains...>;
+
+        using PotentialFields = utility::tuple_unique_t<std::tuple<typename t_Strains::MappingField...>>;
+
+        using PotentialFieldDiscretizations = utility::tuple_unique_t<std::tuple<typename t_Strains::MappingFieldDiscretization...>>;
         
         static constexpr
         Integer
@@ -786,8 +941,7 @@ namespace lolita
         )
         :
         label_(std::forward<std::basic_string_view<Character>>(label)),
-        // strains_(strains...)
-        strains_({strains...})
+        strains_(strains...)
         {}
 
         constexpr
@@ -797,8 +951,7 @@ namespace lolita
         )
         :
         label_(std::forward<std::basic_string_view<Character>>(label)),
-        // strains_(std::move(strains)...)
-        strains_({std::move(strains)...})
+        strains_(std::move(strains)...)
         {}
 
         constexpr
@@ -816,35 +969,24 @@ namespace lolita
         const = default;
 
         constexpr
-        utility::Label const &
+        Label const &
         getLabel()
         const
         {
             return label_;
         }
 
-        // template<Integer t_i>
-        // constexpr
-        // Mapping
-        // getStrain()
-        // const
-        // {
-        //     return utility::get<t_i>(strains_);
-        // }
-
-        // template<Integer t_i>
+        template<Integer t_i>
         constexpr
-        Mapping
-        getStrain(
-            Integer i
-        )
+        utility::aggregate_element_t<t_i, PotentialStrains> const &
+        getStrain()
         const
         {
-            return strains_[i];
+            return utility::get<t_i>(strains_);
         }
 
         constexpr
-        Strains const &
+        PotentialStrains const &
         getStrains()
         const
         {
@@ -853,7 +995,7 @@ namespace lolita
 
         Label label_;
 
-        Strains strains_;
+        PotentialStrains strains_;
 
     };
 
@@ -932,693 +1074,6 @@ namespace lolita
         std::function<Real(Point const &, Real const &)> function_;
 
     };
-    
-    template<typename... t_Mappings>
-    struct GeneralizedStrain
-    {
-
-        using Mappings = lolita::utility::Aggregate<t_Mappings...>;
-        
-        static constexpr
-        Integer
-        getNumMappings()
-        {
-            return sizeof...(t_Mappings);
-        }
-
-        constexpr
-        GeneralizedStrain(
-            Integer tag,
-            Field field,
-            t_Mappings... mappings
-        )
-        :
-        tag_(tag),
-        field_(field),
-        mappings_(mappings...)
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            GeneralizedStrain const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            GeneralizedStrain const & other
-        )
-        const = default;
-
-        constexpr
-        Integer
-        getTag()
-        const
-        {
-            return tag_;
-        }
-
-        constexpr
-        Field
-        getField()
-        const
-        {
-            return field_;
-        }
-
-        template<Integer t_i>
-        constexpr
-        Mapping
-        getMapping()
-        const
-        {
-            return utility::get<t_i>(mappings_);
-        }
-
-        Integer tag_;
-
-        Field field_;
-
-        Mappings mappings_;
-
-    };
-
-    namespace detail
-    {
-
-        template<typename t_T>
-        struct IsGeneralizedStrain : std::false_type {};
-        
-        template<typename... t_T>
-        struct IsGeneralizedStrain<GeneralizedStrain<t_T...>> : std::true_type {};
-
-    }
-
-    template<typename t_T>
-    concept GeneralizedStrainConcept = detail::IsGeneralizedStrain<t_T>::value;
-
-    template<GeneralizedStrainConcept... t_GeneralizedStrains>
-    struct Behavior
-    {
-
-        using GeneralizedStrains = lolita::utility::Aggregate<t_GeneralizedStrains...>;
-
-        static constexpr
-        Integer
-        getNumGeneralizedStrains()
-        {
-            return sizeof...(t_GeneralizedStrains);
-        }
-
-        constexpr
-        Behavior(
-            Integer tag,
-            t_GeneralizedStrains... generalized_strains
-        )
-        :
-        tag_(tag),
-        generalized_strains_(generalized_strains...)
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            Behavior const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            Behavior const & other
-        )
-        const = default;
-
-        constexpr
-        Integer
-        getTag()
-        const
-        {
-            return tag_;
-        }
-
-        template<Integer t_i>
-        constexpr
-        std::tuple_element_t<t_i, std::tuple<t_GeneralizedStrains...>> const &
-        getGeneralizedStrain()
-        const
-        {
-            return utility::get<t_i>(generalized_strains_);
-        }
-
-        Integer tag_;
-
-        GeneralizedStrains generalized_strains_;
-
-    };
-
-    namespace detail
-    {
-
-        template<typename t_T>
-        struct IsBehavior : std::false_type {};
-        
-        template<typename... t_T>
-        struct IsBehavior<Behavior<t_T...>> : std::true_type {};
-
-    }
-
-    template<typename t_T>
-    concept BehaviorConcept = detail::IsBehavior<t_T>::value;
-
-    template<GeneralizedStrainConcept t_GeneralizedStrain, BehaviorConcept t_Behavior, typename t_Discretization>
-    struct FiniteElementMethod
-    {
-
-        constexpr
-        FiniteElementMethod(
-            t_GeneralizedStrain generalized_strain,
-            t_Behavior behavior,
-            t_Discretization discretization,
-            Quadrature quadrature
-        )
-        :
-        generalized_strain_(generalized_strain),
-        behavior_(behavior),
-        discretization_(discretization),
-        quadrature_(quadrature)
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            FiniteElementMethod const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            FiniteElementMethod const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        isHdg()
-        const
-        {
-            return HybridDiscontinuousGalerkinConcept<t_Discretization>;
-        }
-
-        constexpr
-        Field
-        getField()
-        const
-        {
-            return generalized_strain_.field_;
-        }
-
-        template<Integer t_i>
-        constexpr
-        Mapping
-        getMapping()
-        const
-        {
-            return utility::get<t_i>(generalized_strain_.mappings_);
-        }
-
-        constexpr
-        t_GeneralizedStrain const &
-        getGeneralizedStrain()
-        const
-        {
-            return generalized_strain_;
-        }
-
-        constexpr
-        t_Behavior const &
-        getBehavior()
-        const
-        {
-            return behavior_;
-        }
-
-        constexpr
-        t_Discretization const &
-        getDiscretization()
-        const
-        {
-            return discretization_;
-        }
-
-        constexpr
-        Quadrature const &
-        getQuadrature()
-        const
-        {
-            return quadrature_;
-        }
-
-        t_GeneralizedStrain generalized_strain_;
-
-        t_Behavior behavior_;
-
-        t_Discretization discretization_;
-
-        Quadrature quadrature_;
-
-    };
-
-    namespace detail
-    {
-
-        template<typename t_T>
-        struct IsFiniteElementMethod : std::false_type {};
-        
-        template<typename... t_T>
-        struct IsFiniteElementMethod<FiniteElementMethod<t_T...>> : std::true_type {};
-
-    }
-
-    struct ElementType
-    {
-
-        enum Type
-        {
-
-            // Points,
-            // Curves,
-            // Facets,
-            // Solids,
-            Cells,
-            Faces,
-            Edges,
-            Nodes,
-
-        };
-
-        static constexpr
-        ElementType
-        cells(
-            Domain domain
-        )
-        {
-            return ElementType(domain, Type::Cells);
-        }
-
-        static constexpr
-        ElementType
-        faces(
-            Domain domain
-        )
-        {
-            return ElementType(domain, Type::Faces);
-        }
-
-        constexpr
-        ElementType(
-            Domain domain,
-            Type type
-        )
-        :
-        domain_(domain),
-        type_(type)
-        {}
-        
-        constexpr
-        Integer
-        getDim()
-        const
-        {
-            switch (type_)
-            {
-                case Type::Cells: return domain_.getDim() - 0;
-                case Type::Faces: return domain_.getDim() - 1;
-                case Type::Edges: return 1;
-                case Type::Nodes: return 0;
-                default : return -1;
-            }
-        }
-
-        Domain domain_;
-
-        Type type_;
-
-    };
-    
-    template<typename t_T>
-    concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
-
-    
-    
-    // struct FieldDescription
-    // {
-
-    //     struct DataBase
-    //     {
-
-    //         DataBase()
-    //         {}
-        
-    //         inline
-    //         void
-    //         addReal(
-    //             std::basic_string<Character> && label
-    //         )
-    //         {
-    //             if (std::find(reals_.begin(), reals_.end(), std::forward<std::basic_string<Character>>(label)) == reals_.end())
-    //             {
-    //                 reals_.push_back(std::forward<std::basic_string<Character>>(label));
-    //             }
-    //         }
-            
-    //         inline
-    //         Integer
-    //         getRealIndex(
-    //             std::basic_string<Character> && label
-    //         )
-    //         const
-    //         {
-    //             return std::distance(reals_.begin(), std::find(reals_.begin(), reals_.end(), std::forward<std::basic_string<Character>>(label)));
-    //         }
-            
-    //         inline
-    //         Integer
-    //         getNumReals()
-    //         const
-    //         {
-    //             return reals_.size();
-    //         }
-            
-    //         inline
-    //         void
-    //         addMatrix(
-    //             std::basic_string<Character> && label
-    //         )
-    //         {
-    //             if (std::find(matrices_.begin(), matrices_.end(), std::forward<std::basic_string<Character>>(label)) == matrices_.end())
-    //             {
-    //                 matrices_.push_back(std::forward<std::basic_string<Character>>(label));
-    //             }
-    //         }
-            
-    //         inline
-    //         Integer
-    //         getMatrixIndex(
-    //             std::basic_string<Character> && label
-    //         )
-    //         const
-    //         {
-    //             return std::distance(matrices_.begin(), std::find(matrices_.begin(), matrices_.end(), std::forward<std::basic_string<Character>>(label)));
-    //         }
-            
-    //         inline
-    //         Integer
-    //         getNumMatrices()
-    //         const
-    //         {
-    //             return matrices_.size();
-    //         }
-            
-    //         inline
-    //         void
-    //         addVector(
-    //             std::basic_string<Character> && label
-    //         )
-    //         {
-    //             if (std::find(vectors_.begin(), vectors_.end(), std::forward<std::basic_string<Character>>(label)) == vectors_.end())
-    //             {
-    //                 vectors_.push_back(std::forward<std::basic_string<Character>>(label));
-    //             }
-    //         }
-            
-    //         inline
-    //         Integer
-    //         getVectorIndex(
-    //             std::basic_string<Character> && label
-    //         )
-    //         const
-    //         {
-    //             return std::distance(vectors_.begin(), std::find(vectors_.begin(), vectors_.end(), std::forward<std::basic_string<Character>>(label)));
-    //         }
-            
-    //         inline
-    //         Integer
-    //         getNumVectors()
-    //         const
-    //         {
-    //             return matrices_.size();
-    //         }
-
-    //     private:
-        
-    //         std::vector<std::basic_string<Character>> reals_;
-            
-    //         std::vector<std::basic_string<Character>> vectors_;
-            
-    //         std::vector<std::basic_string<Character>> matrices_;
-
-    //     };
-
-    //     struct IntegrationPointData : DataBase
-    //     {
-
-    //         inline
-    //         Boolean
-    //         operator==(
-    //             IntegrationPointData const & other
-    //         )
-    //         const = default;
-
-    //         inline
-    //         Boolean
-    //         operator!=(
-    //             IntegrationPointData const & other
-    //         )
-    //         const = default;
-        
-    //     };
-
-    //     struct ElementData : DataBase
-    //     {
-
-    //         template<auto t_discretization>
-    //         static
-    //         std::shared_ptr<ElementData>
-    //         make()
-    //         {
-    //             auto element_data = std::make_shared<ElementData>();
-    //             element_data->addReal("StabilizationParamater");
-    //             element_data->addMatrix("StabilizationOperator");
-    //             element_data->addMatrix("KTT");
-    //             element_data->addVector("RT");
-    //             return element_data;
-    //         }
-
-    //         inline
-    //         Boolean
-    //         operator==(
-    //             ElementData const & other
-    //         )
-    //         const = default;
-
-    //         inline
-    //         Boolean
-    //         operator!=(
-    //             ElementData const & other
-    //         )
-    //         const = default;
-        
-    //     };
-
-    //     struct MeshData : DataBase
-    //     {
-            
-    //         struct ExternalLoad
-    //         {
-                
-    //             ExternalLoad(
-    //                 std::function<Real(Point const &, Real const &)> const & function,
-    //                 Integer row,
-    //                 Integer col
-    //             )
-    //             :
-    //             function_(function),
-    //             row_(row),
-    //             col_(col)
-    //             {}
-                
-    //             ExternalLoad(
-    //                 std::function<Real(Point const &, Real const &)> && function,
-    //                 Integer row,
-    //                 Integer col
-    //             )
-    //             :
-    //             function_(std::move(function)),
-    //             row_(row),
-    //             col_(col)
-    //             {}
-
-    //             inline
-    //             Boolean
-    //             operator==(
-    //                 ExternalLoad const & other
-    //             )
-    //             const = default;
-
-    //             inline
-    //             Boolean
-    //             operator!=(
-    //                 ExternalLoad const & other
-    //             )
-    //             const = default;
-
-    //             inline
-    //             Integer
-    //             getRow()
-    //             const
-    //             {
-    //                 return row_;
-    //             }
-
-    //             inline
-    //             Integer
-    //             getCol()
-    //             const
-    //             {
-    //                 return row_;
-    //             }
-
-    //             inline
-    //             Real
-    //             getValue(
-    //                 Point const & point,
-    //                 Real const & time
-    //             )
-    //             const
-    //             {
-    //                 return function_(point, time);
-    //             }
-
-    //         private:
-
-    //             Integer row_;
-
-    //             Integer col_;
-
-    //             std::function<Real(Point const &, Real const &)> function_;
-            
-    //         };
-
-    //         inline
-    //         Boolean
-    //         operator==(
-    //             MeshData const & other
-    //         )
-    //         const = default;
-
-    //         inline
-    //         Boolean
-    //         operator!=(
-    //             MeshData const & other
-    //         )
-    //         const = default;
-
-    //         std::vector<ExternalLoad> loads_;
-
-    //     };
-        
-    //     explicit
-    //     FieldDescription(
-    //         std::basic_string<Character> const & label
-    //     )
-    //     :
-    //     label_(label)
-    //     {}
-        
-    //     explicit
-    //     FieldDescription(
-    //         std::basic_string<Character> && label
-    //     )
-    //     :
-    //     label_(std::move(label))
-    //     {}
-
-    //     inline
-    //     Boolean
-    //     operator==(
-    //         FieldDescription const & other
-    //     )
-    //     const = default;
-
-    //     inline
-    //     Boolean
-    //     operator!=(
-    //         FieldDescription const & other
-    //     )
-    //     const = default;
-        
-    //     inline
-    //     std::basic_string<Character> const &
-    //     getLabel()
-    //     const
-    //     {
-    //         return label_;
-    //     }
-
-    //     IntegrationPointData const &
-    //     getIntegrationPointData()
-    //     const
-    //     {
-    //         return integration_point_data_;
-    //     }
-
-    //     IntegrationPointData &
-    //     getIntegrationPointData()
-    //     {
-    //         return integration_point_data_;
-    //     }
-
-    //     ElementData const &
-    //     getElementData()
-    //     const
-    //     {
-    //         return element_data_;
-    //     }
-
-    //     ElementData &
-    //     getElementData()
-    //     {
-    //         return element_data_;
-    //     }
-
-    //     MeshData const &
-    //     getMeshData()
-    //     const
-    //     {
-    //         return mesh_data_;
-    //     }
-
-    //     MeshData &
-    //     getMeshData()
-    //     {
-    //         return mesh_data_;
-    //     }
-
-    // private:
-
-    //     MeshData mesh_data_;
-
-    //     ElementData element_data_;
-
-    //     IntegrationPointData integration_point_data_;
-    
-    //     std::basic_string<Character> label_;
-
-    // };
 
 } // namespace lolita
 

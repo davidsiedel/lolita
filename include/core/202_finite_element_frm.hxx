@@ -172,16 +172,16 @@ namespace lolita
         {
             if (strain_matrix_list_ == nullptr)
             {
-                strain_matrix_list_ = std::make_unique<std::vector<ElementaryOperator<Mapping, Matrix<Real>>>>();
+                strain_matrix_list_ = std::make_unique<std::vector<ElementaryOperator<Label, Matrix<Real>>>>();
             }
             for (auto const & m : * strain_matrix_list_)
             {
-                if (m.getTag() == t_strain)
+                if (m.getTag() == t_strain.getLabel())
                 {
                     return;
                 }
             }
-            strain_matrix_list_->push_back(ElementaryOperator<Mapping, Matrix<Real>>(t_strain, std::forward<decltype(input)>(input)));
+            strain_matrix_list_->push_back(ElementaryOperator<Label, Matrix<Real>>(t_strain.getLabel(), std::forward<decltype(input)>(input)));
         }
 
         template<Mapping t_strain>
@@ -191,7 +191,7 @@ namespace lolita
         {
             for (auto const & m : * strain_matrix_list_)
             {
-                if (m.getTag() == t_strain)
+                if (m.getTag() == t_strain.getLabel())
                 {
                     return m.getOperator();
                 }
@@ -206,7 +206,7 @@ namespace lolita
         {
             for (auto const & m : * strain_matrix_list_)
             {
-                if (m.getTag() == t_strain)
+                if (m.getTag() == t_strain.getLabel())
                 {
                     return true;
                 }
@@ -214,7 +214,7 @@ namespace lolita
             return false;
         }
 
-        template<Field t_field>
+        template<FieldConcept auto t_field>
         void
         addDiscreteField()
         {
@@ -232,7 +232,7 @@ namespace lolita
             ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(t_field));
         }
 
-        template<Field t_field>
+        template<FieldConcept auto t_field>
         ElementDiscreteField<t_element, t_domain> const &
         getDiscreteField()
         const
@@ -254,7 +254,7 @@ namespace lolita
             }
         }
 
-        template<Field t_field>
+        template<FieldConcept auto t_field>
         ElementDiscreteField<t_element, t_domain> &
         getDiscreteField()
         {
@@ -275,7 +275,7 @@ namespace lolita
             }
         }
 
-        template<Field t_field, Basis t_basis>
+        template<FieldConcept auto t_field, Basis t_basis>
         void
         addDiscreteFieldDegreeOfFreedom(
             auto const &... args
@@ -292,7 +292,7 @@ namespace lolita
 
         std::unique_ptr<mgis::behaviour::BehaviourData> behavior_data_;
 
-        std::unique_ptr<std::vector<ElementaryOperator<Mapping, Matrix<Real>>>> strain_matrix_list_;
+        std::unique_ptr<std::vector<ElementaryOperator<Label, Matrix<Real>>>> strain_matrix_list_;
 
         std::unique_ptr<std::vector<ElementDiscreteField<t_element, t_domain>>> ptr_data_;
 
@@ -428,7 +428,7 @@ namespace lolita
             }            
         }
 
-        utility::Label const & label_;
+        Label const & label_;
 
         std::unique_ptr<std::vector<t_IntegrationPoint>> integration_points_;
 

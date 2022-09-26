@@ -695,8 +695,8 @@ namespace lolita::utility
 
     };
 
-    template<Integer I, typename... T>
-    using aggregate_element_t = typename AggregateElementTraits<I, T...>::type;
+    template<Integer I, typename T>
+    using aggregate_element_t = typename AggregateElementTraits<I, T>::type;
 
     template<template<auto> typename t_T, auto t_aggregate, Integer t_i>
     struct aggregate_expansion_traits
@@ -784,45 +784,40 @@ namespace lolita::utility
 
     private:
 
-        Integer static constexpr size_ = 50;
+        Integer static constexpr size_ = 100;
 
         static constexpr
         std::array<Character, size_>
         tag(
-            std::basic_string_view<Character> && str
+            auto &&... str
         )
         {
             auto tag = std::array<Character, size_>();
-            for (auto i = 0; i < std::forward<std::basic_string_view<Character>>(str).size(); i++)
+            auto offset = Integer(0);
+            auto make_tag = [&] (
+                std::basic_string_view<Character> && str_arg
+            )
+            constexpr
             {
-                tag[i] = std::forward<std::basic_string_view<Character>>(str)[i];
-            }
+                for (auto i = 0; i < std::forward<std::basic_string_view<Character>>(str_arg).size(); i++)
+                {
+                    tag[offset + i] = std::forward<std::basic_string_view<Character>>(str_arg)[i];
+                }
+                offset += std::forward<std::basic_string_view<Character>>(str_arg).size();
+            };
+            ((make_tag(std::forward<std::basic_string_view<Character>>(str)), ...));
             return tag;
         }
 
     public:
 
         constexpr
-        Label()
-        :
-        tag_()
-        {}
-
-        explicit constexpr
         Label(
-            std::basic_string_view<Character> && str
+            auto &&... str
         )
         :
-        tag_(tag(std::forward<std::basic_string_view<Character>>(str)))
+        tag_(tag(std::forward<std::basic_string_view<Character>>(str)...))
         {}
-
-        // constexpr
-        // Label(
-        //     Character const * str
-        // )
-        // :
-        // tag_(tag(std::basic_string_view<Character>(str)))
-        // {}
 
         constexpr
         Boolean
@@ -837,26 +832,6 @@ namespace lolita::utility
             Label const & other
         )
         const = default;
-
-        // constexpr
-        // Boolean
-        // operator==(
-        //     auto const & str
-        // )
-        // const
-        // {
-        //     return str == this->view();
-        // }
-
-        // constexpr
-        // Boolean
-        // operator!=(
-        //     auto const & str
-        // )
-        // const
-        // {
-        //     return !(* this == str);
-        // }
 
         constexpr
         Boolean
@@ -875,7 +850,7 @@ namespace lolita::utility
         )
         const
         {
-            return !(* this == str);
+            return !(* this == std::forward<decltype(str)>(str));
         }
 
         constexpr

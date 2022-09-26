@@ -5,78 +5,9 @@
 
 namespace lolita
 {
-    
-    template<Field... t_field>
-    struct FieldTraits;
-    
-    template<>
-    struct FieldTraits<>
-    {
 
-        static
-        Integer
-        getCols(
-            Field field,
-            Domain domain
-        )
-        {
-            if (field.isTensor(0) || field.isTensor(1))
-            {
-                return lolita::numerics::pow(domain.getDim(), 0);
-            }
-            else if (field.isTensor(2) || field.isTensor(3))
-            {
-                return lolita::numerics::pow(domain.getDim(), 1);
-            }
-            else if (field.isTensor(4))
-            {
-                return lolita::numerics::pow(domain.getDim(), 2);
-            }
-            else
-            {
-                throw std::runtime_error("Field dim not implemented");
-            }
-        }
-
-        static
-        Integer
-        getRows(
-            Field field,
-            Domain domain
-        )
-        {
-            if (field.isTensor(0))
-            {
-                return lolita::numerics::pow(domain.getDim(), 0);
-            }
-            else if (field.isTensor(0) || field.isTensor(2))
-            {
-                return lolita::numerics::pow(domain.getDim(), 1);
-            }
-            else if (field.isTensor(3) || field.isTensor(4))
-            {
-                return lolita::numerics::pow(domain.getDim(), 2);
-            }
-            else
-            {
-                throw std::runtime_error("Field dim not implemented");
-            }
-        }
-
-        static
-        Integer
-        getSize(
-            Field field,
-            Domain domain
-        )
-        {
-            return getRows(field, domain) * getCols(field, domain);
-        }
-
-    };
-
-    template<Field t_field>
-    struct FieldTraits<t_field>
+    template<FieldConcept auto t_field>
+    struct FieldTraits
     {
 
         template<Domain t_domain>
@@ -242,15 +173,15 @@ namespace lolita
 
     };
 
-    template<Mapping t_mapping>
+    template<MappingConcept auto t_mapping>
     struct MappingTraits;
 
-    template<Mapping t_mapping>
+    template<MappingConcept auto t_mapping>
     requires(t_mapping.isIdentity())
     struct MappingTraits<t_mapping>
     {
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getRows()
@@ -258,7 +189,7 @@ namespace lolita
             return FieldTraits<t_field>::template getRows<t_domain>();
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getCols()
@@ -266,7 +197,7 @@ namespace lolita
             return FieldTraits<t_field>::template getCols<t_domain>();
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getSize()
@@ -274,7 +205,7 @@ namespace lolita
             return getRows<t_domain, t_field>() * getCols<t_domain, t_field>();
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -285,7 +216,7 @@ namespace lolita
             };
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -297,7 +228,7 @@ namespace lolita
             };
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -317,7 +248,7 @@ namespace lolita
         )
         {}
         
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static
         std::array<Real, getSize<t_domain, t_field>()>
         getStressValues(
@@ -333,7 +264,7 @@ namespace lolita
             return stress;
         }
         
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static
         std::array<Real, getSize<t_domain, t_field>()>
         getStrainValues(
@@ -351,12 +282,12 @@ namespace lolita
         
     };
 
-    template<Mapping t_mapping>
+    template<MappingConcept auto t_mapping>
     requires(t_mapping.isGradient())
     struct MappingTraits<t_mapping>
     {
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getRows()
@@ -364,7 +295,7 @@ namespace lolita
             return FieldTraits<Field(t_field.getDim() + 1)>::template getRows<t_domain>();
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getCols()
@@ -372,7 +303,7 @@ namespace lolita
             return FieldTraits<Field(t_field.getDim() + 1)>::template getCols<t_domain>();
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getSize()
@@ -380,7 +311,7 @@ namespace lolita
             return getRows<t_domain, t_field>() * getCols<t_domain, t_field>();
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -391,7 +322,7 @@ namespace lolita
             };
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -403,7 +334,7 @@ namespace lolita
             };
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -416,7 +347,7 @@ namespace lolita
             };
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -430,7 +361,7 @@ namespace lolita
             };
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -456,7 +387,7 @@ namespace lolita
         )
         {}
         
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static
         std::array<Real, getSize<t_domain, t_field>()>
         getStressValues(
@@ -472,7 +403,7 @@ namespace lolita
             return stress;
         }
         
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static
         std::array<Real, getSize<t_domain, t_field>()>
         getStrainValues(
@@ -490,12 +421,12 @@ namespace lolita
         
     };
 
-    template<Mapping t_mapping>
+    template<MappingConcept auto t_mapping>
     requires(t_mapping.isSmallStrain())
     struct MappingTraits<t_mapping>
     {
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getRows()
@@ -504,7 +435,7 @@ namespace lolita
             return 4;
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getRows()
@@ -513,7 +444,7 @@ namespace lolita
             return 6;
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getCols()
@@ -521,7 +452,7 @@ namespace lolita
             return 1;
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getSize()
@@ -529,7 +460,7 @@ namespace lolita
             return getRows<t_domain, t_field>() * getCols<t_domain, t_field>();
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>() - 1>
         getValues()
@@ -543,7 +474,7 @@ namespace lolita
             };
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -566,7 +497,7 @@ namespace lolita
         )
         {}
         
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static
         std::array<Real, 9>
         getStressValues(
@@ -588,7 +519,7 @@ namespace lolita
             return stress;
         }
         
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static
         std::array<Real, 9>
         getStrainValues(
@@ -612,12 +543,12 @@ namespace lolita
         
     };
 
-    template<Mapping t_mapping>
+    template<MappingConcept auto t_mapping>
     requires(t_mapping.isLargeStrain())
     struct MappingTraits<t_mapping>
     {
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getCols()
@@ -625,7 +556,7 @@ namespace lolita
             return 1;
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getRows()
@@ -634,7 +565,7 @@ namespace lolita
             return 5;
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getRows()
@@ -643,7 +574,7 @@ namespace lolita
             return 9;
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         Integer
         getSize()
@@ -651,7 +582,7 @@ namespace lolita
             return getRows<t_domain, t_field>() * getCols<t_domain, t_field>();
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>() - 1>
         getValues()
@@ -666,7 +597,7 @@ namespace lolita
             };
         }
 
-        template<Domain t_domain, Field t_field = t_mapping.getField()>
+        template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
         static constexpr
         std::array<MappingValues, getSize<t_domain, t_field>()>
         getValues()
@@ -723,7 +654,7 @@ namespace lolita
             return size;
         }
 
-        template<Domain t_domain, Mapping t_mapping>
+        template<Domain t_domain, MappingConcept auto t_mapping>
         static constexpr
         Integer
         getMappingSize()
@@ -731,7 +662,7 @@ namespace lolita
             return MappingTraits<t_mapping>::template getSize<t_domain>();
         }
 
-        template<Domain t_domain, Mapping t_mapping>
+        template<Domain t_domain, MappingConcept auto t_mapping>
         static constexpr
         Integer
         getMappingOffset()
@@ -764,237 +695,253 @@ namespace lolita
         Integer
         getNumFields()
         {
-            auto fields = std::array<Field, t_potential.getNumMappings()>();
+            auto fields = std::array<Label, t_potential.getNumMappings()>();
             auto num_fields = Integer(0);
-            for (auto const & m : t_potential.getStrains())
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
             {
                 auto found_field = Boolean(false);
                 for (auto const & f : fields)
                 {
-                    if (f == m.getField())
+                    if (f == t_potential.template getStrain<t_i>().getField().getLabel())
                     {
                         found_field = true;
                     }
                 }
                 if (!found_field)
                 {
-                    fields[num_fields] = m.getField();
+                    fields[num_fields] = t_potential.template getStrain<t_i>().getField().getLabel();
                     num_fields ++;
                 }
-            }
+                if constexpr (t_i < t_potential.getNumMappings() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_offset(set_offset);
             return num_fields;
         }
 
         static constexpr
-        std::array<Field, getNumFields()>
+        std::array<Label, getNumFields()>
         getFields()
         {
-            auto fields = std::array<Field, getNumFields()>();
+            auto fields = std::array<Label, t_potential.getNumMappings()>();
             auto num_fields = Integer(0);
-            for (auto const & m : t_potential.getStrains())
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
             {
                 auto found_field = Boolean(false);
                 for (auto const & f : fields)
                 {
-                    if (f == m.getField())
+                    if (f == t_potential.template getStrain<t_i>().getField().getLabel())
                     {
                         found_field = true;
                     }
                 }
                 if (!found_field)
                 {
-                    fields[num_fields] = m.getField();
+                    fields[num_fields] = t_potential.template getStrain<t_i>().getField().getLabel();
                     num_fields ++;
                 }
-            }
+                if constexpr (t_i < t_potential.getNumMappings() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_offset(set_offset);
             return fields;
         }
 
     };
 
-    template<GeneralizedStrainConcept auto t_generalized_strain>
-    struct GeneralizedStrainTraits
-    {
+    // template<GeneralizedStrainConcept auto t_generalized_strain>
+    // struct GeneralizedStrainTraits
+    // {
 
-        template<Domain t_domain>
-        static constexpr
-        Integer
-        getSize()
-        {
-            auto size = Integer(0);
-            auto set_size = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                size += MappingTraits<t_generalized_strain.template getMapping<t_i>()>::template getSize<t_domain, t_generalized_strain.getField()>();
-                if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            set_size(set_size);
-            return size;
-        }
+    //     template<Domain t_domain>
+    //     static constexpr
+    //     Integer
+    //     getSize()
+    //     {
+    //         auto size = Integer(0);
+    //         auto set_size = [&] <Integer t_i = 0> (
+    //             auto & self
+    //         )
+    //         constexpr mutable
+    //         {
+    //             size += MappingTraits<t_generalized_strain.template getMapping<t_i>()>::template getSize<t_domain, t_generalized_strain.getField()>();
+    //             if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
+    //             {
+    //                 self.template operator ()<t_i + 1>(self);
+    //             }
+    //         };
+    //         set_size(set_size);
+    //         return size;
+    //     }
 
-        template<Domain t_domain, Mapping t_mapping>
-        static constexpr
-        Integer
-        getMappingSize()
-        {
-            return MappingTraits<t_mapping>::template getSize<t_domain, t_generalized_strain.getField()>();
-        }
+    //     template<Domain t_domain, MappingConcept auto t_mapping>
+    //     static constexpr
+    //     Integer
+    //     getMappingSize()
+    //     {
+    //         return MappingTraits<t_mapping>::template getSize<t_domain, t_generalized_strain.getField()>();
+    //     }
 
-        template<Domain t_domain, Mapping t_mapping>
-        static constexpr
-        Integer
-        getMappingOffset()
-        {
-            auto offset = Integer(0);
-            auto is_set = false;
-            auto set_offset = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                if constexpr (utility::areEqual(t_generalized_strain.template getMapping<t_i>(), t_mapping))
-                {
-                    is_set = true;
-                }
-                if (!is_set)
-                {
-                    offset += MappingTraits<t_generalized_strain.template getMapping<t_i>()>::template getSize<t_domain, t_generalized_strain.getField()>();
-                }
-                if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            set_offset(set_offset);
-            return offset;
-        }
+    //     template<Domain t_domain, MappingConcept auto t_mapping>
+    //     static constexpr
+    //     Integer
+    //     getMappingOffset()
+    //     {
+    //         auto offset = Integer(0);
+    //         auto is_set = false;
+    //         auto set_offset = [&] <Integer t_i = 0> (
+    //             auto & self
+    //         )
+    //         constexpr mutable
+    //         {
+    //             if constexpr (utility::areEqual(t_generalized_strain.template getMapping<t_i>(), t_mapping))
+    //             {
+    //                 is_set = true;
+    //             }
+    //             if (!is_set)
+    //             {
+    //                 offset += MappingTraits<t_generalized_strain.template getMapping<t_i>()>::template getSize<t_domain, t_generalized_strain.getField()>();
+    //             }
+    //             if constexpr (t_i < t_generalized_strain.getNumMappings() - 1)
+    //             {
+    //                 self.template operator ()<t_i + 1>(self);
+    //             }
+    //         };
+    //         set_offset(set_offset);
+    //         return offset;
+    //     }
 
-    };
+    // };
 
-    template<BehaviorConcept auto t_behavior>
-    struct BehaviorTraits
-    {
+    // template<BehaviorConcept auto t_behavior>
+    // struct BehaviorTraits
+    // {
 
-        template<Domain t_domain>
-        static constexpr
-        Integer
-        getGeneralizedStrainSize()
-        {
-            auto p = Integer(0);
-            auto cnt = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                p += GeneralizedStrainTraits<t_behavior.template getGeneralizedStrain<t_i>()>::template getSize<t_domain>();
-                if constexpr (t_i < t_behavior.getNumGeneralizedStrains() - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            cnt(cnt);
-            return p;
-        }
+    //     template<Domain t_domain>
+    //     static constexpr
+    //     Integer
+    //     getGeneralizedStrainSize()
+    //     {
+    //         auto p = Integer(0);
+    //         auto cnt = [&] <Integer t_i = 0> (
+    //             auto & self
+    //         )
+    //         constexpr mutable
+    //         {
+    //             p += GeneralizedStrainTraits<t_behavior.template getGeneralizedStrain<t_i>()>::template getSize<t_domain>();
+    //             if constexpr (t_i < t_behavior.getNumGeneralizedStrains() - 1)
+    //             {
+    //                 self.template operator ()<t_i + 1>(self);
+    //             }
+    //         };
+    //         cnt(cnt);
+    //         return p;
+    //     }
 
-        template<Domain t_domain, GeneralizedStrainConcept auto t_generalized_strain>
-        static constexpr
-        Integer
-        getGeneralizedStrainOffset()
-        {
-            auto p = Integer(0);
-            auto set = false;
-            auto cnt = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                if (t_behavior.template getGeneralizedStrain<t_i>() == t_generalized_strain)
-                {
-                    set = true;
-                }
-                if (!set)
-                {
-                    p += GeneralizedStrainTraits<t_behavior.template getGeneralizedStrain<t_i>()>::template getSize<t_domain>();
-                }
-                if constexpr (t_i < t_behavior.getNumGeneralizedStrains() - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            cnt(cnt);
-            return p;
-        }
+    //     template<Domain t_domain, GeneralizedStrainConcept auto t_generalized_strain>
+    //     static constexpr
+    //     Integer
+    //     getGeneralizedStrainOffset()
+    //     {
+    //         auto p = Integer(0);
+    //         auto set = false;
+    //         auto cnt = [&] <Integer t_i = 0> (
+    //             auto & self
+    //         )
+    //         constexpr mutable
+    //         {
+    //             if (t_behavior.template getGeneralizedStrain<t_i>() == t_generalized_strain)
+    //             {
+    //                 set = true;
+    //             }
+    //             if (!set)
+    //             {
+    //                 p += GeneralizedStrainTraits<t_behavior.template getGeneralizedStrain<t_i>()>::template getSize<t_domain>();
+    //             }
+    //             if constexpr (t_i < t_behavior.getNumGeneralizedStrains() - 1)
+    //             {
+    //                 self.template operator ()<t_i + 1>(self);
+    //             }
+    //         };
+    //         cnt(cnt);
+    //         return p;
+    //     }
 
-    };
+    // };
 
-    template<FiniteElementMethodConcept auto t_finite_element_method>
-    struct FiniteElementMethodTraits
-    {
+    // template<FiniteElementMethodConcept auto t_finite_element_method>
+    // struct FiniteElementMethodTraits
+    // {
 
-        template<Domain t_domain>
-        static constexpr
-        Integer
-        getGeneralizedStrainSize()
-        {
-            return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template getSize<t_domain>();
-        }
+    //     template<Domain t_domain>
+    //     static constexpr
+    //     Integer
+    //     getGeneralizedStrainSize()
+    //     {
+    //         return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template getSize<t_domain>();
+    //     }
 
-        template<Domain t_domain>
-        static constexpr
-        Integer
-        getGeneralizedStrainOffset()
-        {
-            auto constexpr t_finite_element_generalized_strain = t_finite_element_method.getGeneralizedStrain();
-            auto offset = Integer(0);
-            auto is_set = false;
-            auto set_offset = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                auto constexpr t_generalized_strain = t_finite_element_method.getBehavior().template getGeneralizedStrain<t_i>();
-                if constexpr (std::is_same_v<std::decay_t<decltype(t_generalized_strain)>, std::decay_t<decltype(t_finite_element_generalized_strain)>>)
-                {
-                    if constexpr (t_generalized_strain == t_finite_element_generalized_strain)
-                    {
-                        is_set = true;
-                    }
-                }
-                if (!is_set)
-                {
-                    offset += GeneralizedStrainTraits<t_generalized_strain>::template getSize<t_domain>();
-                }
-                if constexpr (t_i < t_finite_element_method.getBehavior().getNumGeneralizedStrains() - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            set_offset(set_offset);
-            return offset;
-        }
+    //     template<Domain t_domain>
+    //     static constexpr
+    //     Integer
+    //     getGeneralizedStrainOffset()
+    //     {
+    //         auto constexpr t_finite_element_generalized_strain = t_finite_element_method.getGeneralizedStrain();
+    //         auto offset = Integer(0);
+    //         auto is_set = false;
+    //         auto set_offset = [&] <Integer t_i = 0> (
+    //             auto & self
+    //         )
+    //         constexpr mutable
+    //         {
+    //             auto constexpr t_generalized_strain = t_finite_element_method.getBehavior().template getGeneralizedStrain<t_i>();
+    //             if constexpr (std::is_same_v<std::decay_t<decltype(t_generalized_strain)>, std::decay_t<decltype(t_finite_element_generalized_strain)>>)
+    //             {
+    //                 if constexpr (t_generalized_strain == t_finite_element_generalized_strain)
+    //                 {
+    //                     is_set = true;
+    //                 }
+    //             }
+    //             if (!is_set)
+    //             {
+    //                 offset += GeneralizedStrainTraits<t_generalized_strain>::template getSize<t_domain>();
+    //             }
+    //             if constexpr (t_i < t_finite_element_method.getBehavior().getNumGeneralizedStrains() - 1)
+    //             {
+    //                 self.template operator ()<t_i + 1>(self);
+    //             }
+    //         };
+    //         set_offset(set_offset);
+    //         return offset;
+    //     }
 
-        template<Domain t_domain, Mapping t_mapping>
-        static constexpr
-        Integer
-        getMappingSize()
-        {
-            return MappingTraits<t_mapping>::template getSize<t_domain, t_finite_element_method.getField()>();
-        }
+    //     template<Domain t_domain, MappingConcept auto t_mapping>
+    //     static constexpr
+    //     Integer
+    //     getMappingSize()
+    //     {
+    //         return MappingTraits<t_mapping>::template getSize<t_domain, t_finite_element_method.getField()>();
+    //     }
 
-        template<Domain t_domain, Mapping t_mapping>
-        static constexpr
-        Integer
-        getMappingOffset()
-        {
-            return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template getMappingOffset<t_domain, t_mapping>();
-        }
+    //     template<Domain t_domain, MappingConcept auto t_mapping>
+    //     static constexpr
+    //     Integer
+    //     getMappingOffset()
+    //     {
+    //         return GeneralizedStrainTraits<t_finite_element_method.getGeneralizedStrain()>::template getMappingOffset<t_domain, t_mapping>();
+    //     }
 
-    };
+    // };
 
 } // namespace lolita
 

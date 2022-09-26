@@ -190,14 +190,15 @@ main(int argc, char** argv)
     // mesh build
     // -> TEST -------------------------------------------------------------------------------------------------------------------------------------------------
     auto constexpr _domain = lolita::Domain("Cartesian", 2);
-    auto constexpr _u = lolita::Field("Displacement", 1);
-    auto constexpr _d = lolita::Field("Damage", 0);
-    auto constexpr _top_force = lolita::Field("TopForce", 0);
+    auto constexpr _hdg = lolita::HybridDiscontinuousGalerkin("HybridDiscontinuousGalerkin", 1, 1);
+    auto constexpr _u1 = lolita::Field("Displacement", 1, lolita::Basis("Monomial", 2));
+    auto constexpr _u = lolita::Field("Displacement", 1, _hdg);
+    auto constexpr _d = lolita::Field("Damage", 0, _hdg);
+    auto constexpr _top_force = lolita::Field("TopForce", 0, _hdg);
     auto constexpr id_ = lolita::Mapping("Identity", _d, 0, 0);
     auto constexpr _potential = lolita::Potential("Elasticity", lolita::Mapping("Gradient", _u), lolita::Mapping("Identity", _d));
     auto constexpr force_potential = lolita::Potential("Lagrangian", lolita::Mapping("Identity", _u, 0, 0), lolita::Mapping("Identity", _top_force));
     auto constexpr _quadrature = lolita::Quadrature("Gauss", 2);
-    auto constexpr _hdg = lolita::HybridDiscontinuousGalerkin("HybridDiscontinuousGalerkin", 1, 1);
     auto constexpr face_dim = lolita::Integer(1);
     auto constexpr cell_dim = lolita::Integer(2);
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<_domain>();
@@ -214,15 +215,10 @@ main(int argc, char** argv)
     elements->recoverElementDiscreteFieldDegreeOfFreedom<cell_dim, _u>("ROD");
     elements->reserveElementDiscreteFieldDegreeOfFreedom<cell_dim, _u>("ROD");
     std::cout << linear_system->getSize() << std::endl;
-    //
-    // std::basic_string_view<char> tag_test = lolita::Label("Hello");
-    //
-    // elements->addDof<1, hdg, displacement_generalized_strain>("ROD", linear_system);
-    // elements->addDof<2, hdg, displacement_generalized_strain>("ROD");
     elements->addFormulation<cell_dim, _potential, _quadrature>("ROD", lib_displacement_path, lib_displacement_label, hyp);
     elements->addFormulation<face_dim, _potential>("TOP");
-    elements->addFormulationStrainOperator<cell_dim, _potential, _potential.getStrain(0), _hdg>("ROD");
-    elements->setFormulationStrain<cell_dim, _potential, _potential.getStrain(0), _hdg>("ROD");
+    elements->addFormulationStrainOperator<cell_dim, _potential, _potential.getStrain<0>(), _hdg>("ROD");
+    elements->setFormulationStrain<cell_dim, _potential, _potential.getStrain<0>(), _hdg>("ROD");
     auto constexpr _yg = lolita::Label("YoungModulus");
     auto constexpr _dm = lolita::Label("Damage");
     elements->setFormulationMaterialProperty<cell_dim, _potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
