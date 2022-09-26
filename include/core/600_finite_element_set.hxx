@@ -72,7 +72,7 @@ namespace lolita
         }
 
         /**
-         * @brief Domain
+         * Domain
          * *****************************************************************************************************************************************************
          */
 
@@ -171,7 +171,7 @@ namespace lolita
         }
 
         /**
-         * @brief Element DOF
+         * Element DOF
          * *****************************************************************************************************************************************************
          */
 
@@ -202,6 +202,20 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
+        template<Integer t_i, DiscreteFieldConcept auto t_field>
+        void
+        addElementDiscreteFieldDegreeOfFreedom(
+            std::basic_string<Character> && domain_label,
+            auto const &... args
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
         template<Integer t_i, FieldConcept auto t_field, auto t_arg, Label t_label>
         void
         addElementDiscreteFieldOperator(
@@ -211,6 +225,19 @@ namespace lolita
             auto fun = [&] (auto const & finite_element)
             {
                 finite_element->template addDiscreteFieldOperator<t_field, t_arg, t_label>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, DiscreteFieldConcept auto t_field, Label t_label>
+        void
+        addElementDiscreteFieldOperator(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addDiscreteFieldOperator<t_field, t_label>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -256,7 +283,7 @@ namespace lolita
         }
 
         /**
-         * @brief Formulation
+         * Formulation
          * *****************************************************************************************************************************************************
          */
 
@@ -385,6 +412,10 @@ namespace lolita
                 finite_element->template integrateConstitutiveEquation<t_behavior>(res);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+            if (!res)
+            {
+                std::cout << "Integration Failure" << std::endl;
+            }
         }
         
         template<Integer t_i, PotentialConcept auto t_behavior>

@@ -11,7 +11,7 @@
 namespace lolita
 {
 
-    template<Element t_element, Domain t_domain>
+    template<Domain t_domain>
     struct IntegrationPoint
     {
 
@@ -220,7 +220,7 @@ namespace lolita
         {
             if (ptr_data_ == nullptr)
             {
-                ptr_data_ = std::make_unique<std::vector<ElementDiscreteField<t_element, t_domain>>>();
+                ptr_data_ = std::make_unique<std::vector<ElementDiscreteField<t_domain>>>();
             }
             for (auto const & item : * ptr_data_)
             {
@@ -229,11 +229,11 @@ namespace lolita
                     return;
                 }
             }
-            ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(t_field));
+            ptr_data_->push_back(ElementDiscreteField<t_domain>(t_field));
         }
 
         template<FieldConcept auto t_field>
-        ElementDiscreteField<t_element, t_domain> const &
+        ElementDiscreteField<t_domain> const &
         getDiscreteField()
         const
         {
@@ -255,7 +255,7 @@ namespace lolita
         }
 
         template<FieldConcept auto t_field>
-        ElementDiscreteField<t_element, t_domain> &
+        ElementDiscreteField<t_domain> &
         getDiscreteField()
         {
             if (ptr_data_ == nullptr)
@@ -294,17 +294,17 @@ namespace lolita
 
         std::unique_ptr<std::vector<ElementaryOperator<Label, Matrix<Real>>>> strain_matrix_list_;
 
-        std::unique_ptr<std::vector<ElementDiscreteField<t_element, t_domain>>> ptr_data_;
+        std::unique_ptr<std::vector<ElementDiscreteField<t_domain>>> ptr_data_;
 
     };
     
-    template<Element t_element, Domain t_domain>
+    template<Domain t_domain>
     struct ElementFormulation
     {
 
     private:
 
-        using t_IntegrationPoint = IntegrationPoint<t_element, t_domain>;
+        using t_IntegrationPoint = IntegrationPoint<t_domain>;
 
     public:
 

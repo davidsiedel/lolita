@@ -189,41 +189,81 @@ main(int argc, char** argv)
     displacement_stored_energy_out_stream.open("/home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/.out_displacement_stored_energy.txt");
     // mesh build
     // -> TEST -------------------------------------------------------------------------------------------------------------------------------------------------
-    auto constexpr _domain = lolita::Domain("Cartesian", 2);
-    auto constexpr _hdg = lolita::HybridDiscontinuousGalerkin("HybridDiscontinuousGalerkin", 1, 1);
-    auto constexpr _u1 = lolita::Field("Displacement", 1, lolita::Basis("Monomial", 2));
-    auto constexpr _u = lolita::Field("Displacement", 1, _hdg);
-    auto constexpr _d = lolita::Field("Damage", 0, _hdg);
-    auto constexpr _top_force = lolita::Field("TopForce", 0, _hdg);
-    auto constexpr id_ = lolita::Mapping("Identity", _d, 0, 0);
-    auto constexpr _potential = lolita::Potential("Elasticity", lolita::Mapping("Gradient", _u), lolita::Mapping("Identity", _d));
-    auto constexpr force_potential = lolita::Potential("Lagrangian", lolita::Mapping("Identity", _u, 0, 0), lolita::Mapping("Identity", _top_force));
-    auto constexpr _quadrature = lolita::Quadrature("Gauss", 2);
+    /**
+     * Domain
+     * 
+     */
+    auto constexpr domain = lolita::Domain("Cartesian", 2);
     auto constexpr face_dim = lolita::Integer(1);
     auto constexpr cell_dim = lolita::Integer(2);
-    auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<_domain>();
-    auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make_unique();
-    std::cout << * elements << std::endl;
-    elements->addElementDiscreteField<face_dim, _u>("ROD");
-    elements->addElementDiscreteField<cell_dim, _u>("ROD");
-    elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, _u, _hdg>("ROD", linear_system);
-    elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, _u, _hdg>("ROD");
-    elements->addDomainDiscreteField<cell_dim, _u>("ROD");
-    elements->addDomainDiscreteFieldLoad<cell_dim, _u>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
-    auto constexpr _stab = lolita::Label("Stabilization");
-    elements->addElementDiscreteFieldOperator<cell_dim, _u, _hdg, _stab>("ROD");
-    elements->recoverElementDiscreteFieldDegreeOfFreedom<cell_dim, _u>("ROD");
-    elements->reserveElementDiscreteFieldDegreeOfFreedom<cell_dim, _u>("ROD");
-    std::cout << linear_system->getSize() << std::endl;
-    elements->addFormulation<cell_dim, _potential, _quadrature>("ROD", lib_displacement_path, lib_displacement_label, hyp);
-    elements->addFormulation<face_dim, _potential>("TOP");
-    elements->addFormulationStrainOperator<cell_dim, _potential, _potential.getStrain<0>(), _hdg>("ROD");
-    elements->setFormulationStrain<cell_dim, _potential, _potential.getStrain<0>(), _hdg>("ROD");
+    /**
+     * Labels
+     * 
+     */
     auto constexpr _yg = lolita::Label("YoungModulus");
     auto constexpr _dm = lolita::Label("Damage");
-    elements->setFormulationMaterialProperty<cell_dim, _potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
-    elements->setFormulationExternalVariable<cell_dim, _potential, _dm>("ROD", [](lolita::Point const & p) { return 200.0; });
-    elements->integrateFormulationConstitutiveEquation<cell_dim, _potential>("ROD");
+    /**
+     * Quadrature
+     * 
+     */
+    auto constexpr quadrature = lolita::Quadrature("Gauss", 2);
+    /**
+     * Discretizations
+     * 
+     */
+    auto constexpr hdg = lolita::HybridDiscontinuousGalerkin(1, 1);
+    /**
+     * Fields
+     * 
+     */
+    auto constexpr displacement = lolita::Field("Displacement", 1);
+    auto constexpr damage = lolita::Field("Damage", 0);
+    auto constexpr force = lolita::Field("Force", 0);
+    /**
+     * DiscreteFields
+     * 
+     */
+    auto constexpr hdg_displacement = lolita::DiscreteField(displacement, hdg);
+    auto constexpr hdg_damage = lolita::DiscreteField(damage, hdg);
+    auto constexpr hdg_force = lolita::DiscreteField(force, hdg);
+    /**
+     * Mappings
+     * 
+     */
+    auto constexpr hdg_displacement_gradient = lolita::Mapping("Gradient", hdg_displacement);
+    auto constexpr hdg_displacement_x = lolita::Mapping("Identity", hdg_displacement, 0, 0);
+    auto constexpr hdg_force_view = lolita::Mapping("Identity", hdg_force);
+    /**
+     * Potentials
+     * 
+     */
+    auto constexpr elastic_potential = lolita::Potential("Elasticity", hdg_displacement_gradient);
+    auto constexpr force_potential = lolita::Potential("Lagrangian", hdg_displacement_x, hdg_force_view);
+    /**
+     * Potentials
+     * 
+     */
+    auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
+    auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make_unique();
+    std::cout << * elements << std::endl;
+    elements->addElementDiscreteField<face_dim, hdg_displacement>("ROD");
+    elements->addElementDiscreteField<cell_dim, hdg_displacement>("ROD");
+    elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, hdg_displacement>("ROD", linear_system);
+    elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, hdg_displacement>("ROD");
+    elements->addDomainDiscreteField<cell_dim, displacement>("ROD");
+    elements->addDomainDiscreteFieldLoad<cell_dim, displacement>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
+    auto constexpr _stab = lolita::Label("Stabilization");
+    elements->addElementDiscreteFieldOperator<cell_dim, hdg_displacement, _stab>("ROD");
+    elements->recoverElementDiscreteFieldDegreeOfFreedom<cell_dim, hdg_displacement>("ROD");
+    elements->reserveElementDiscreteFieldDegreeOfFreedom<cell_dim, hdg_displacement>("ROD");
+    std::cout << linear_system->getSize() << std::endl;
+    elements->addFormulation<cell_dim, elastic_potential, quadrature>("ROD", lib_displacement_path, lib_displacement_label, hyp);
+    elements->addFormulation<face_dim, elastic_potential>("TOP");
+    elements->addFormulationStrainOperator<cell_dim, elastic_potential, elastic_potential.getStrain<0>(), hdg>("ROD");
+    elements->setFormulationStrain<cell_dim, elastic_potential, elastic_potential.getStrain<0>(), hdg>("ROD");
+    elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
+    elements->setFormulationExternalVariable<cell_dim, elastic_potential, _dm>("ROD", [](lolita::Point const & p) { return 200.0; });
+    elements->integrateFormulationConstitutiveEquation<cell_dim, elastic_potential>("ROD");
     // <- TEST -------------------------------------------------------------------------------------------------------------------------------------------------
 
     auto defect = [] (lolita::Point const & point)

@@ -667,9 +667,9 @@ namespace lolita
                 auto offset = 0;
                 auto unknown = Vector<Real, getNumElementUnknowns<t_field>()>();
                 auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
-                auto cell_block = unknown.template segment<cell_dof.template getSize<t_field, getCellBasis()>()>(offset);
-                cell_block = cell_dof.template getCoefficients<t_field, getCellBasis()>();
-                offset += cell_dof.template getSize<t_field, getCellBasis()>();
+                auto cell_block = unknown.template segment<cell_dof.template getSize<t_element, t_field, getCellBasis()>()>(offset);
+                cell_block = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>();
+                offset += cell_dof.template getSize<t_element, t_field, getCellBasis()>();
                 auto set_faces_unknowns = [&] <Integer t_i = 0> (
                     auto & self
                 )
@@ -679,9 +679,9 @@ namespace lolita
                     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                     {
                         auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
-                        auto face_block = unknown.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(offset);
-                        face_block = face_dof.template getCoefficients<t_field, getFaceBasis()>();
-                        offset += face_dof.template getSize<t_field, getFaceBasis()>();
+                        auto face_block = unknown.template segment<face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>()>(offset);
+                        face_block = face_dof.template getCoefficients<t_inner_neighbor, t_field, getFaceBasis()>();
+                        offset += face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>();
                     }
                     if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                     {

@@ -45,7 +45,7 @@ namespace lolita
         {
             if (ptr_data_ == nullptr)
             {
-                ptr_data_ = std::make_unique<std::vector<MeshDiscreteField<t_dim, t_domain>>>();
+                ptr_data_ = std::make_unique<std::vector<MeshDiscreteField<t_domain>>>();
             }
             for (auto const & item : * ptr_data_)
             {
@@ -54,11 +54,11 @@ namespace lolita
                     return;
                 }
             }
-            ptr_data_->push_back(MeshDiscreteField<t_dim, t_domain>(t_field));
+            ptr_data_->push_back(MeshDiscreteField<t_domain>(t_field));
         }
 
         template<FieldConcept auto t_field>
-        MeshDiscreteField<t_dim, t_domain> const &
+        MeshDiscreteField<t_domain> const &
         getDiscreteField()
         const
         {
@@ -80,7 +80,7 @@ namespace lolita
         }
 
         template<FieldConcept auto t_field>
-        MeshDiscreteField<t_dim, t_domain> &
+        MeshDiscreteField<t_domain> &
         getDiscreteField()
         {
             if (ptr_data_ == nullptr)
@@ -122,7 +122,7 @@ namespace lolita
 
     private:
 
-        std::unique_ptr<std::vector<MeshDiscreteField<t_dim, t_domain>>> ptr_data_;
+        std::unique_ptr<std::vector<MeshDiscreteField<t_domain>>> ptr_data_;
 
         std::basic_string<Character> tag_;
 
@@ -163,9 +163,9 @@ namespace lolita
 
         //
 
-        std::unique_ptr<std::vector<ElementDiscreteField<t_element, t_domain>>> ptr_data_;
+        std::unique_ptr<std::vector<ElementDiscreteField<t_domain>>> ptr_data_;
 
-        std::unique_ptr<std::vector<ElementFormulation<t_element, t_domain>>> ptr_formulations_;
+        std::unique_ptr<std::vector<ElementFormulation<t_domain>>> ptr_formulations_;
 
         //
 
@@ -258,7 +258,7 @@ namespace lolita
         {
             if (ptr_data_ == nullptr)
             {
-                ptr_data_ = std::make_unique<std::vector<ElementDiscreteField<t_element, t_domain>>>();
+                ptr_data_ = std::make_unique<std::vector<ElementDiscreteField<t_domain>>>();
             }
             for (auto const & item : * ptr_data_)
             {
@@ -267,11 +267,11 @@ namespace lolita
                     return;
                 }
             }
-            ptr_data_->push_back(ElementDiscreteField<t_element, t_domain>(t_field));
+            ptr_data_->push_back(ElementDiscreteField<t_domain>(t_field));
         }
 
         template<FieldConcept auto t_field>
-        ElementDiscreteField<t_element, t_domain> const &
+        ElementDiscreteField<t_domain> const &
         getDiscreteField()
         const
         {
@@ -293,7 +293,7 @@ namespace lolita
         }
 
         template<FieldConcept auto t_field>
-        ElementDiscreteField<t_element, t_domain> &
+        ElementDiscreteField<t_domain> &
         getDiscreteField()
         {
             if (ptr_data_ == nullptr)
@@ -315,13 +315,22 @@ namespace lolita
             }
         }
 
+        template<FieldConcept auto t_field, Integer t_size>
+        void
+        addDiscreteFieldDegreeOfFreedom(
+            auto const &... args
+        )
+        {
+            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_size>(args...);
+        }
+
         template<FieldConcept auto t_field, Basis t_basis>
         void
         addDiscreteFieldDegreeOfFreedom(
             auto const &... args
         )
         {
-            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_basis>(args...);
+            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>(args...);
         }
 
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
@@ -333,11 +342,27 @@ namespace lolita
             static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
         }
 
+        template<DiscreteFieldConcept auto t_field>
+        void
+        addDiscreteFieldDegreeOfFreedom(
+            auto const &... args
+        )
+        {
+            static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
+        }
+
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization, Label t_label>
         void
         addDiscreteFieldOperator()
         {
             static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
+        }
+
+        template<DiscreteFieldConcept auto t_field, Label t_label>
+        void
+        addDiscreteFieldOperator()
+        {
+            static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
         }
 
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
@@ -347,6 +372,15 @@ namespace lolita
         )
         {
             static_cast<t_Disc<t_discretization> *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field>(args...);
+        }
+
+        template<DiscreteFieldConcept auto t_field>
+        void
+        upgradeDiscreteFieldDegreeOfFreedom(
+            auto const &... args
+        )
+        {
+            static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field>(args...);
         }
 
         template<FieldConcept auto t_field, Basis t_basis>
@@ -384,6 +418,18 @@ namespace lolita
             return static_cast<t_Disc<t_discretization> *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
         }
 
+        template<DiscreteFieldConcept auto t_field>
+        Real
+        getDiscreteFieldDegreeOfFreedomValue(
+            PointConcept auto const & point,
+            Integer row,
+            Integer col
+        )
+        const
+        {
+            return static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
+        }
+
         template<FieldConcept auto t_field, Basis t_basis>
         Real
         getDiscreteFieldDegreeOfFreedomValue(
@@ -406,6 +452,14 @@ namespace lolita
             return t_Disc<t_discretization>::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>();
         }
 
+        template<DiscreteFieldConcept auto t_field>
+        static constexpr
+        Integer
+        getDiscreteFieldDegreeOfFreedomNumCoefficients()
+        {
+            return t_Disc<t_field.getDiscretization()>::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>();
+        }
+
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
         Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()>
         getDiscreteFieldDegreeOfFreedomCoefficients()
@@ -414,12 +468,28 @@ namespace lolita
             return static_cast<t_Disc<t_discretization> const *>(this)->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
         }
 
+        template<DiscreteFieldConcept auto t_field>
+        Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()>
+        getDiscreteFieldDegreeOfFreedomCoefficients()
+        const
+        {
+            return static_cast<t_Disc<t_field.getDiscretization()> const *>(this)->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
+        }
+
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
         Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()>
         getUnknowns()
         const
         {
             return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknowns<t_field>();
+        }
+
+        template<DiscreteFieldConcept auto t_field>
+        Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()>
+        getUnknowns()
+        const
+        {
+            return static_cast<t_Disc<t_field.getDiscretization()> const *>(this)->template getUnknowns<t_field>();
         }
 
         /**
@@ -433,7 +503,7 @@ namespace lolita
 
         private:
 
-            template<Field... t_field>
+            template<DiscreteField... t_field>
             using Rhs = Vector<Real, numerics::max(FiniteElement::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()...)>;
 
         public:
@@ -448,7 +518,7 @@ namespace lolita
         {
             if (ptr_formulations_ == nullptr)
             {
-                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
             }
             for (auto const & item : * ptr_formulations_)
             {
@@ -457,7 +527,7 @@ namespace lolita
                     return;
                 }
             }
-            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>(t_behavior));
+            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior));
         }
 
         template<PotentialConcept auto t_behavior>
@@ -468,7 +538,7 @@ namespace lolita
         {
             if (ptr_formulations_ == nullptr)
             {
-                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
             }
             for (auto const & item : * ptr_formulations_)
             {
@@ -477,7 +547,7 @@ namespace lolita
                     return;
                 }
             }
-            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>(t_behavior, behavior));
+            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior, behavior));
         }
 
         template<PotentialConcept auto t_behavior, Quadrature t_quadrature>
@@ -488,7 +558,7 @@ namespace lolita
         {
             if (ptr_formulations_ == nullptr)
             {
-                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_element, t_domain>>>();
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
             }
             for (auto const & item : * ptr_formulations_)
             {
@@ -497,7 +567,7 @@ namespace lolita
                     return;
                 }
             }
-            ptr_formulations_->push_back(ElementFormulation<t_element, t_domain>(t_behavior, behavior));
+            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior, behavior));
             for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
             {
                 auto point = getCurrentQuadraturePoint<t_quadrature>(i);
@@ -508,7 +578,7 @@ namespace lolita
         }
 
         template<PotentialConcept auto t_behavior>
-        ElementFormulation<t_element, t_domain> const &
+        ElementFormulation<t_domain> const &
         getFormulation()
         const
         {
@@ -530,7 +600,7 @@ namespace lolita
         }
 
         template<PotentialConcept auto t_behavior>
-        ElementFormulation<t_element, t_domain> &
+        ElementFormulation<t_domain> &
         getFormulation()
         {
             if (ptr_formulations_ == nullptr)
