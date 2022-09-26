@@ -310,22 +310,22 @@ namespace lolita
             return algebra::View<Vector<Real, getSize<t_field, t_basis>()> const>(s1.data());
         }
 
-        template<Field t_field, Basis t_basis>
-        algebra::View<Vector<Real, getSize<t_basis>()>>
-        getCoefficients(
-            Integer row,
-            Integer col
-        )
-        {
-            return algebra::View<Vector<Real, getSize<t_basis>()> const>(s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col);
-        }
+        // template<Field t_field, Basis t_basis>
+        // algebra::View<Vector<Real, getSize<t_basis>()>>
+        // getCoefficients(
+        //     Integer row,
+        //     Integer col
+        // )
+        // {
+        //     return algebra::View<Vector<Real, getSize<t_basis>()> const>(s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col);
+        // }
 
-        template<Field t_field, Basis t_basis>
-        algebra::View<Vector<Real, getSize<t_field, t_basis>()>>
-        getCoefficients()
-        {
-            return algebra::View<Vector<Real, getSize<t_field, t_basis>()> const>(s1.data());
-        }
+        // template<Field t_field, Basis t_basis>
+        // algebra::View<Vector<Real, getSize<t_field, t_basis>()>>
+        // getCoefficients()
+        // {
+        //     return algebra::View<Vector<Real, getSize<t_field, t_basis>()> const>(s1.data());
+        // }
 
         void
         reserve()

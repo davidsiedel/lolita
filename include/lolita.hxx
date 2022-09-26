@@ -27,6 +27,123 @@ namespace lolita
 
     using Loading = std::function<Real(Point const &, Real const &)>;
 
+    struct Strategy
+    {
+
+        enum Type
+        {
+            EigenLU,
+            EigenLDLT,
+        };
+
+        static constexpr
+        Strategy
+        eigenLU()
+        {
+            return Strategy(EigenLU);
+        }
+
+        static constexpr
+        Strategy
+        eigenLU(
+            Integer tag
+        )
+        {
+            return Strategy(EigenLU, tag);
+        }
+
+    private:
+
+        constexpr
+        Strategy(
+            Type type
+        )
+        :
+        type_(type),
+        tag_(-1)
+        {}
+
+        constexpr
+        Strategy(
+            Type type,
+            Integer tag
+        )
+        :
+        type_(type),
+        tag_(tag)
+        {}
+
+    public:
+
+        constexpr
+        Boolean
+        operator==(
+            Strategy const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Strategy const & other
+        )
+        const = default;
+
+        Type type_;
+
+        Integer tag_;
+
+    };
+
+    template<Strategy t_s>
+    struct LinearSystem
+    {
+
+        static
+        std::unique_ptr<LinearSystem>
+        make_unique()
+        {
+            return std::make_unique<LinearSystem>();
+        }
+
+        LinearSystem()
+        :
+        size_(0)
+        {}
+
+        inline
+        Boolean
+        operator==(
+            LinearSystem const & other
+        )
+        const = default;
+
+        inline
+        Boolean
+        operator!=(
+            LinearSystem const & other
+        )
+        const = default;
+
+        std::atomic<Natural> const &
+        getSize()
+        const
+        {
+            return size_;
+        }
+
+        std::atomic<Natural> &
+        getSize()
+        {
+            return size_;
+        }
+
+    private:
+
+        std::atomic<Natural> size_;
+
+    };
+
     struct Domain
     {
 
@@ -143,72 +260,6 @@ namespace lolita
 
     };
     
-    struct ElementType
-    {
-
-        enum Type
-        {
-
-            // Points,
-            // Curves,
-            // Facets,
-            // Solids,
-            Cells,
-            Faces,
-            Edges,
-            Nodes,
-
-        };
-
-        static constexpr
-        ElementType
-        cells(
-            Domain domain
-        )
-        {
-            return ElementType(domain, Type::Cells);
-        }
-
-        static constexpr
-        ElementType
-        faces(
-            Domain domain
-        )
-        {
-            return ElementType(domain, Type::Faces);
-        }
-
-        constexpr
-        ElementType(
-            Domain domain,
-            Type type
-        )
-        :
-        domain_(domain),
-        type_(type)
-        {}
-        
-        constexpr
-        Integer
-        getDim()
-        const
-        {
-            switch (type_)
-            {
-                case Type::Cells: return domain_.getDim() - 0;
-                case Type::Faces: return domain_.getDim() - 1;
-                case Type::Edges: return 1;
-                case Type::Nodes: return 0;
-                default : return -1;
-            }
-        }
-
-        Domain domain_;
-
-        Type type_;
-
-    };
-
     struct Quadrature
     {
 
@@ -376,6 +427,152 @@ namespace lolita
 
     };
 
+    struct HybridDiscontinuousGalerkin
+    {
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            std::basic_string_view<Character> && stabilization,
+            Basis cell_basis,
+            Basis face_basis,
+            Basis grad_basis
+        )
+        :
+        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
+        cell_basis_(cell_basis),
+        face_basis_(face_basis),
+        grad_basis_(grad_basis)
+        {}
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            std::basic_string_view<Character> && stabilization,
+            Basis cell_basis,
+            Basis face_basis
+        )
+        :
+        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
+        cell_basis_(cell_basis),
+        face_basis_(face_basis),
+        grad_basis_(face_basis)
+        {}
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            std::basic_string_view<Character> && stabilization,
+            Integer ord_cell_basis,
+            Integer ord_face_basis,
+            Integer ord_grad_basis
+        )
+        :
+        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
+        cell_basis_(Basis("Monomial", ord_cell_basis)),
+        face_basis_(Basis("Monomial", ord_face_basis)),
+        grad_basis_(Basis("Monomial", ord_grad_basis))
+        {}
+
+        constexpr
+        HybridDiscontinuousGalerkin(
+            std::basic_string_view<Character> && stabilization,
+            Integer ord_cell_basis,
+            Integer ord_face_basis
+        )
+        :
+        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
+        cell_basis_(Basis("Monomial", ord_cell_basis)),
+        face_basis_(Basis("Monomial", ord_face_basis)),
+        grad_basis_(Basis("Monomial", ord_face_basis))
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            HybridDiscontinuousGalerkin const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            HybridDiscontinuousGalerkin const & other
+        )
+        const = default;
+
+        constexpr
+        Basis
+        getCellBasis()
+        const
+        {
+            return cell_basis_;
+        }
+
+        constexpr
+        Basis
+        getFaceBasis()
+        const
+        {
+            return face_basis_;
+        }
+
+        constexpr
+        Basis
+        getGradBasis()
+        const
+        {
+            return grad_basis_;
+        }
+
+        constexpr
+        Boolean
+        isHybridDiscontinuousGalerkin()
+        const
+        {
+            return true;
+        }
+
+        constexpr
+        Boolean
+        isHdg()
+        const
+        {
+            return stabilization_ == "HybridDiscontinuousGalerkin";
+        }
+
+        constexpr
+        Boolean
+        isHho()
+        const
+        {
+            return stabilization_ == "HybridHighOrder";
+        }
+
+        Label stabilization_;
+
+        Basis cell_basis_;
+
+        Basis face_basis_;
+
+        Basis grad_basis_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsHybridDiscontinuousGalerkin : std::false_type {};
+        
+        template<>
+        struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin> : std::true_type {};
+
+    }
+
+    template<typename t_T>
+    concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<std::decay_t<t_T>>::value;
+
+    template<typename t_T>
+    concept DiscretizationConcept = HybridDiscontinuousGalerkinConcept<t_T>;
+    
     struct Field
     {
         
@@ -626,14 +823,6 @@ namespace lolita
             return label_;
         }
 
-        constexpr
-        std::basic_string_view<Character>
-        getLabelView()
-        const
-        {
-            return label_.view();
-        }
-
         // template<Integer t_i>
         // constexpr
         // Mapping
@@ -653,49 +842,14 @@ namespace lolita
         {
             return strains_[i];
         }
-        
-        // constexpr
-        // Integer
-        // getNumFields()
-        // const
-        // {
-        //     auto arr = std::array<Field, getNumMappings()>();
-                        
-        //     auto gnum = Integer(0);
-        //     auto set = [&] <Integer t_i = 0> (
-        //         auto & self
-        //     )
-        //     constexpr mutable
-        //     {
-        //         auto num = Integer(0);
-        //         auto hlr = Boolean(true);
-        //         auto const & field_i = getStrain<t_i>().getField();
-        //         auto set2 = [&] <Integer t_j = t_i> (
-        //             auto & self2
-        //         )
-        //         constexpr mutable
-        //         {
-        //             auto const & field_j = getStrain<t_j>().getField();
-        //             if (hlr)
-        //             {
-        //                 if (field_j != field_i)
-        //                 {
-        //                     num += 1;
-        //                     hlr = false;
-        //                 }
-        //             }
-        //             if constexpr (t_j < getNumMappings() - 1)
-        //             {
-        //                 self2.template operator()<t_j + 1>(self2);
-        //             }
-        //         };
-        //         if constexpr (t_i < getNumMappings() - 1)
-        //         {
-        //             self.template operator()<t_i + 1>(self);
-        //         }
-        //     };
-        //     set(set);
-        // }
+
+        constexpr
+        Strains const &
+        getStrains()
+        const
+        {
+            return strains_;
+        }
 
         Label label_;
 
@@ -779,152 +933,6 @@ namespace lolita
 
     };
     
-    struct HybridDiscontinuousGalerkin
-    {
-
-        constexpr
-        HybridDiscontinuousGalerkin(
-            std::basic_string_view<Character> && stabilization,
-            Basis cell_basis,
-            Basis face_basis,
-            Basis grad_basis
-        )
-        :
-        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
-        cell_basis_(cell_basis),
-        face_basis_(face_basis),
-        grad_basis_(grad_basis)
-        {}
-
-        constexpr
-        HybridDiscontinuousGalerkin(
-            std::basic_string_view<Character> && stabilization,
-            Basis cell_basis,
-            Basis face_basis
-        )
-        :
-        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
-        cell_basis_(cell_basis),
-        face_basis_(face_basis),
-        grad_basis_(face_basis)
-        {}
-
-        constexpr
-        HybridDiscontinuousGalerkin(
-            std::basic_string_view<Character> && stabilization,
-            Integer ord_cell_basis,
-            Integer ord_face_basis,
-            Integer ord_grad_basis
-        )
-        :
-        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
-        cell_basis_(Basis("Monomial", ord_cell_basis)),
-        face_basis_(Basis("Monomial", ord_face_basis)),
-        grad_basis_(Basis("Monomial", ord_grad_basis))
-        {}
-
-        constexpr
-        HybridDiscontinuousGalerkin(
-            std::basic_string_view<Character> && stabilization,
-            Integer ord_cell_basis,
-            Integer ord_face_basis
-        )
-        :
-        stabilization_(std::forward<std::basic_string_view<Character>>(stabilization)),
-        cell_basis_(Basis("Monomial", ord_cell_basis)),
-        face_basis_(Basis("Monomial", ord_face_basis)),
-        grad_basis_(Basis("Monomial", ord_face_basis))
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            HybridDiscontinuousGalerkin const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            HybridDiscontinuousGalerkin const & other
-        )
-        const = default;
-
-        constexpr
-        Basis
-        getCellBasis()
-        const
-        {
-            return cell_basis_;
-        }
-
-        constexpr
-        Basis
-        getFaceBasis()
-        const
-        {
-            return face_basis_;
-        }
-
-        constexpr
-        Basis
-        getGradBasis()
-        const
-        {
-            return grad_basis_;
-        }
-
-        constexpr
-        Boolean
-        isHybridDiscontinuousGalerkin()
-        const
-        {
-            return true;
-        }
-
-        constexpr
-        Boolean
-        isHdg()
-        const
-        {
-            return stabilization_ == "HybridDiscontinuousGalerkin";
-        }
-
-        constexpr
-        Boolean
-        isHho()
-        const
-        {
-            return stabilization_ == "HybridHighOrder";
-        }
-
-        Label stabilization_;
-
-        Basis cell_basis_;
-
-        Basis face_basis_;
-
-        Basis grad_basis_;
-
-    };
-
-    namespace detail
-    {
-
-        template<typename t_T>
-        struct IsHybridDiscontinuousGalerkin : std::false_type {};
-        
-        template<>
-        struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin> : std::true_type {};
-
-    }
-
-    template<typename t_T>
-    concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<std::decay_t<t_T>>::value;
-
-    template<typename t_T>
-    concept DiscretizationConcept = HybridDiscontinuousGalerkinConcept<t_T>;
-
     template<typename... t_Mappings>
     struct GeneralizedStrain
     {
@@ -1195,125 +1203,76 @@ namespace lolita
 
     }
 
-    template<typename t_T>
-    concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
-
-    struct Strategy
+    struct ElementType
     {
 
         enum Type
         {
-            EigenLU,
-            EigenLDLT,
+
+            // Points,
+            // Curves,
+            // Facets,
+            // Solids,
+            Cells,
+            Faces,
+            Edges,
+            Nodes,
+
         };
 
         static constexpr
-        Strategy
-        eigenLU()
+        ElementType
+        cells(
+            Domain domain
+        )
         {
-            return Strategy(EigenLU);
+            return ElementType(domain, Type::Cells);
         }
 
         static constexpr
-        Strategy
-        eigenLU(
-            Integer tag
+        ElementType
+        faces(
+            Domain domain
         )
         {
-            return Strategy(EigenLU, tag);
+            return ElementType(domain, Type::Faces);
         }
 
-    private:
-
         constexpr
-        Strategy(
+        ElementType(
+            Domain domain,
             Type type
         )
         :
-        type_(type),
-        tag_(-1)
+        domain_(domain),
+        type_(type)
         {}
-
+        
         constexpr
-        Strategy(
-            Type type,
-            Integer tag
-        )
-        :
-        type_(type),
-        tag_(tag)
-        {}
+        Integer
+        getDim()
+        const
+        {
+            switch (type_)
+            {
+                case Type::Cells: return domain_.getDim() - 0;
+                case Type::Faces: return domain_.getDim() - 1;
+                case Type::Edges: return 1;
+                case Type::Nodes: return 0;
+                default : return -1;
+            }
+        }
 
-    public:
-
-        constexpr
-        Boolean
-        operator==(
-            Strategy const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            Strategy const & other
-        )
-        const = default;
+        Domain domain_;
 
         Type type_;
 
-        Integer tag_;
-
     };
+    
+    template<typename t_T>
+    concept FiniteElementMethodConcept = detail::IsFiniteElementMethod<std::decay_t<t_T>>::value;
 
-    template<Strategy t_s>
-    struct LinearSystem
-    {
-
-        static
-        std::unique_ptr<LinearSystem>
-        make_unique()
-        {
-            return std::make_unique<LinearSystem>();
-        }
-
-        LinearSystem()
-        :
-        size_(0)
-        {}
-
-        inline
-        Boolean
-        operator==(
-            LinearSystem const & other
-        )
-        const = default;
-
-        inline
-        Boolean
-        operator!=(
-            LinearSystem const & other
-        )
-        const = default;
-
-        std::atomic<Natural> const &
-        getSize()
-        const
-        {
-            return size_;
-        }
-
-        std::atomic<Natural> &
-        getSize()
-        {
-            return size_;
-        }
-
-    private:
-
-        std::atomic<Natural> size_;
-
-    };
+    
     
     // struct FieldDescription
     // {

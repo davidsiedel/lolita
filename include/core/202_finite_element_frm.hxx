@@ -149,6 +149,20 @@ namespace lolita
         {
             return reference_coordinates_;
         }
+        
+        Real const &
+        getCurrentWeight()
+        const
+        {
+            return weight_;
+        }
+        
+        Real const &
+        getReferenceWeight()
+        const
+        {
+            return weight_;
+        }
 
         template<Mapping t_strain>
         void

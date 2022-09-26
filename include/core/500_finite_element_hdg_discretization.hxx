@@ -84,9 +84,7 @@ namespace lolita
         getNumCellUnknowns()
         requires(t_element.isSub(t_domain, 0))
         {
-            auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
-            auto constexpr basis_size = BasisTraits<t_discretization.cell_basis_>::template getSize<t_element>();
-            return field_size * basis_size;
+            return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_discretization.getCellBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element, Domain t_domain, Field t_field>
@@ -95,9 +93,7 @@ namespace lolita
         getNumFaceUnknowns()
         requires(t_element.isSub(t_domain, 1))
         {
-            auto constexpr field_size = FieldTraits<t_field>::template getSize<t_domain>();
-            auto constexpr basis_size = BasisTraits<t_discretization.face_basis_>::template getSize<t_element>();
-            return field_size * basis_size;
+            return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_discretization.getFaceBasis()>::template getSize<t_element>();
         }
 
         template<Element t_element, Domain t_domain, Field t_field>
@@ -148,8 +144,6 @@ namespace lolita
                 return MappingTraits<t_mapping>::template getSize<t_domain>();
             }
 
-        public:
-
             template<Field t_field>
             static constexpr
             Integer
@@ -175,6 +169,26 @@ namespace lolita
             requires(t_element.isSub(t_domain, 0))
             {
                 return DiscretizationTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
+            }
+
+        public:
+
+            template<Field t_field>
+            static constexpr
+            Integer
+            getDiscreteFieldDegreeOfFreedomNumCoefficients()
+            requires(t_element.isSub(t_domain, 0))
+            {
+                return DiscretizationTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
+            }
+
+            template<Field t_field>
+            static constexpr
+            Integer
+            getDiscreteFieldDegreeOfFreedomNumCoefficients()
+            requires(t_element.isSub(t_domain, 1))
+            {
+                return DiscretizationTraits::template getNumFaceUnknowns<t_element, t_domain, t_field>();
             }
 
             static constexpr
@@ -679,6 +693,14 @@ namespace lolita
             }
 
             template<Field t_field>
+            Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()>
+            getDiscreteFieldDegreeOfFreedomCoefficients()
+            const
+            {
+                return this->template getUnknowns<t_field>();
+            }
+
+            template<Field t_field>
             void
             addDiscreteFieldDegreeOfFreedom()
             requires(t_element.isSub(t_domain, 0))
@@ -796,6 +818,59 @@ namespace lolita
             requires(t_element.isSub(t_domain, 1))
             {
                 return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getFaceBasis()>(point, row, col);
+            }
+
+            template<Field t_field, Quadrature t_quadrature>
+            Real
+            getDiscreteFieldDegreeOfFreedomIntegrationValue(
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                this->template getDiscreteFieldDegreeOfFreedomValue<t_field>(row, col);
+                auto value = Real(0);
+                for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
+                {
+                    auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
+                    auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
+                    value += weight * this->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
+                }
+                return value;
+            }
+
+            template<PotentialConcept auto t_behavior>
+            void
+            hhh()
+            const
+            {
+
+            }
+
+            template<Mapping t_strain, PotentialConcept auto t_behavior>
+            Vector<Real, getNumElementUnknowns<t_strain.getField()>()>
+            getInternalForces()
+            const
+            {
+                auto constexpr t_field = t_strain.getField();
+                auto constexpr strain_operator_num_rows = MappingTraits<t_strain>::template getSize<t_domain>();
+                auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_field>();
+                // using StrainOperatorView = algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+                using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+                auto const unknown = this->template getUnknowns<t_field>();
+                auto internal_forces = Vector<Real, strain_operator_num_cols>();
+                internal_forces.setZero();
+                for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
+                {
+                    // auto strain_operator_view = StrainOperatorView(ip.template getStrainOperator<t_strain>().data());
+                    auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+                    internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<t_strain>().transpose() * stress_view;
+                }
+                auto const & s_o = this->template getDiscreteField<t_field>().getMatrix("Stabilization");
+                auto const & s_p = this->template getDiscreteField<t_field>().getScalar("Stabilization");
+                internal_forces += s_p * s_o * unknown;
+                return internal_forces;
             }
 
             // -------------------------------------------------------------------------------------------------------------------------------------------------

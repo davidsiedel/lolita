@@ -56,6 +56,18 @@ struct Ref2
     lolita::Label const & ref_ = a;
 };
 
+template<auto a>
+struct RefA
+{
+    auto static constexpr a_ = a;
+};
+
+template<int... a>
+struct RefB
+{
+    std::array<int, sizeof...(a)> static constexpr a_ = {a...};
+};
+
 int
 main(int argc, char** argv)
 {
@@ -98,7 +110,17 @@ main(int argc, char** argv)
     //     std::cout << val << " ";
     // }
     // std::cout << std::endl;
-    
+
+    // using LHS_ = lolita::utility::aggregate_expansion_t<RefA, lolita::utility::Aggregate<int, int, int>(1, 2, 3)>;
+    // using LHS_ = lolita::utility::array_expansion_t<RefA, std::array<int, 3>{1, 2, 3}>;
+    // using RHS_ = std::tuple<RefA<1>, RefA<2>, RefA<3>>;
+    // static_assert(std::is_same_v<LHS_, RHS_>);
+    using LHS_ = lolita::utility::variadic_type_array_expansion_t<RefB, std::array<int, 3>{1, 2, 3}>;
+    using RHS_ = RefB<1, 2, 3>;
+    static_assert(std::is_same_v<LHS_, RHS_>);
+    using LHS_1 = lolita::utility::variadic_type_array_expansion_t<RefB, std::array<int, 1>{1}>;
+    using RHS_1 = RefB<1>;
+    static_assert(std::is_same_v<LHS_1, RHS_1>);
 
 
     std::cout << sizeof(std::vector<int>) << std::endl;

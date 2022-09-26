@@ -718,6 +718,65 @@ namespace lolita::utility
     template<template<auto> typename t_T, auto t_aggregate>
     using aggregate_expansion_t = typename aggregate_expansion_traits<t_T, t_aggregate, 0>::type;
 
+    template<template<auto> typename t_T, auto t_array, Integer t_i>
+    struct array_expansion_traits
+    {
+
+        using type = tuple_cat_t<std::tuple<t_T<std::get<t_i>(t_array)>>, typename array_expansion_traits<t_T, t_array, t_i + 1>::type>;
+
+    };
+    
+    template<template<auto> typename t_T, auto t_array, Integer t_i>
+    requires(t_i == std::tuple_size_v<std::decay_t<decltype(t_array)>> - 1)
+    struct array_expansion_traits<t_T, t_array, t_i>
+    {
+
+        using type = std::tuple<t_T<std::get<t_i>(t_array)>>;
+
+    };
+
+    template<template<auto> typename t_T, auto t_array>
+    using array_expansion_t = typename array_expansion_traits<t_T, t_array, 0>::type;
+
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    template<typename... t_T>
+    struct variadic_type_concatenation_traits;
+
+    template<template<auto...> typename t_T, auto A, auto... B>
+    struct variadic_type_concatenation_traits<t_T<A>, t_T<B...>>
+    {
+
+        using type = t_T<A, B...>;
+
+    };
+
+    template<typename t_T, typename t_U>
+    using variadic_type_concatenation_t = typename variadic_type_concatenation_traits<t_T, t_U>::type;
+
+    template<template<auto...> typename t_T, auto t_array, Integer t_i>
+    struct variadic_type_array_expansion_traits
+    {
+
+        using type = variadic_type_concatenation_t<t_T<std::get<t_i>(t_array)>, typename variadic_type_array_expansion_traits<t_T, t_array, t_i + 1>::type>;
+
+    };
+
+    template<template<auto...> typename t_T, auto t_array, Integer t_i>
+    requires(t_i == std::tuple_size_v<std::decay_t<decltype(t_array)>> - 1)
+    struct variadic_type_array_expansion_traits<t_T, t_array, t_i>
+    {
+
+        using type = t_T<std::get<t_i>(t_array)>;
+
+    };
+
+    template<template<auto...> typename t_T, auto t_array>
+    using variadic_type_array_expansion_t = typename variadic_type_array_expansion_traits<t_T, t_array, 0>::type;
+
     // ------------------------------------------------------------------------------------------------------
 
     struct Label

@@ -248,7 +248,7 @@ namespace lolita
         }
 
         /**
-         * @brief This part is dedicated to the Dof implementation
+         * This part is dedicated to the Dof implementation
          * *****************************************************************************************************************************************************
          */
         
@@ -398,10 +398,49 @@ namespace lolita
             return coefficients.dot(basis_vector);
         }
 
+        template<Field t_field, DiscretizationConcept auto t_discretization>
+        static constexpr
+        Integer
+        getDiscreteFieldDegreeOfFreedomNumCoefficients()
+        {
+            return t_Disc<t_discretization>::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>();
+        }
+
+        template<Field t_field, DiscretizationConcept auto t_discretization>
+        Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()>
+        getDiscreteFieldDegreeOfFreedomCoefficients()
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
+        }
+
+        template<Field t_field, DiscretizationConcept auto t_discretization>
+        Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()>
+        getUnknowns()
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknowns<t_field>();
+        }
+
         /**
-         * @brief Formulation
+         * Formulation
          * *****************************************************************************************************************************************************
          */
+
+        template<PotentialConcept auto t_behavior, DiscretizationConcept auto t_discretization>
+        struct RhsTraits
+        {
+
+        private:
+
+            template<Field... t_field>
+            using Rhs = Vector<Real, numerics::max(FiniteElement::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()...)>;
+
+        public:
+
+            using type = utility::variadic_type_array_expansion_t<Rhs, PotentialTraits<t_behavior>::getFields()>;
+            
+        };
 
         template<PotentialConcept auto t_behavior>
         void
@@ -532,14 +571,6 @@ namespace lolita
                 ip.template addStrainOperator<t_strain>(strain_operator);
                 quadrature_point_count ++;
             }
-        }
-
-        template<Field t_field, auto t_discretization>
-        auto
-        getUnknowns()
-        const
-        {
-            return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknowns<t_field>();
         }
 
         template<PotentialConcept auto t_behavior, Mapping t_strain, DiscretizationConcept auto t_discretization>

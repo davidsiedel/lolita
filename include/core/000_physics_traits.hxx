@@ -759,6 +759,56 @@ namespace lolita
             set_offset(set_offset);
             return offset;
         }
+        
+        static constexpr
+        Integer
+        getNumFields()
+        {
+            auto fields = std::array<Field, t_potential.getNumMappings()>();
+            auto num_fields = Integer(0);
+            for (auto const & m : t_potential.getStrains())
+            {
+                auto found_field = Boolean(false);
+                for (auto const & f : fields)
+                {
+                    if (f == m.getField())
+                    {
+                        found_field = true;
+                    }
+                }
+                if (!found_field)
+                {
+                    fields[num_fields] = m.getField();
+                    num_fields ++;
+                }
+            }
+            return num_fields;
+        }
+
+        static constexpr
+        std::array<Field, getNumFields()>
+        getFields()
+        {
+            auto fields = std::array<Field, getNumFields()>();
+            auto num_fields = Integer(0);
+            for (auto const & m : t_potential.getStrains())
+            {
+                auto found_field = Boolean(false);
+                for (auto const & f : fields)
+                {
+                    if (f == m.getField())
+                    {
+                        found_field = true;
+                    }
+                }
+                if (!found_field)
+                {
+                    fields[num_fields] = m.getField();
+                    num_fields ++;
+                }
+            }
+            return fields;
+        }
 
     };
 
