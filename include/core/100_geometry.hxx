@@ -1240,39 +1240,6 @@ namespace lolita
         }
 
     };
-
-    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
-
-    // struct MeshDomain
-    // {
-
-    //     MeshDomain(
-    //         Integer dim,
-    //         std::basic_string<Character> const & tag
-    //     )
-    //     :
-    //     dim_(dim),
-    //     tag_(tag)
-    //     {}
-
-    //     MeshDomain(
-    //         Integer dim,
-    //         std::basic_string<Character> && tag
-    //     )
-    //     :
-    //     dim_(dim),
-    //     tag_(std::forward<std::basic_string<Character>>(tag))
-    //     {}
-
-    //     std::vector<ExternalLoad> loads_;
-
-    //     Integer dim_;
-
-    //     std::basic_string<Character> tag_;
-
-    // };
-
-    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     
     template<template<Element, Domain, auto...> typename t_T, Domain t_domain, auto... t_args>
     struct ElementMap

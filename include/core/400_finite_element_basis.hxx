@@ -181,29 +181,6 @@ namespace lolita
         };
 
     };
-
-    template<>
-    struct BasisTraits<>
-    {
-
-        static
-        Integer
-        getSize(
-            Basis basis,
-            Element element
-        )
-        {
-            if (basis.isMonomial())
-            {
-                return lolita::numerics::binomial(element.getDim() + basis.getOrd(), element.getDim());
-            }
-            else
-            {
-                throw std::runtime_error("Basis Not implemented");
-            }
-        }
-
-    };
     
 } // namespace lolita
 

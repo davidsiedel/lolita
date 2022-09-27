@@ -507,21 +507,50 @@ namespace lolita
          * Formulation
          * *****************************************************************************************************************************************************
          */
-
-        // template<PotentialConcept auto t_behavior>
-        // struct RhsTraits
-        // {
-
-        // private:
-
-        //     template<FieldConcept... t_field>
-        //     using Rhs = Vector<Real, numerics::sum(FiniteElement::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()...)>;
-
-        // public:
-
-        //     // using type = utility::variadic_type_array_expansion_t<Rhs, PotentialTraits<t_behavior>::getFields()>;
-            
-        // };
+        
+        template<PotentialConcept auto t_potential>
+        Matrix<Real, PotentialTraits<t_potential>::template getSize<t_domain>(), PotentialTraits<t_potential>::template getSize<t_domain>()>
+        getJacobian()
+        const
+        {
+            auto constexpr size = PotentialTraits<t_potential>::template getSize<t_domain>();
+            auto row_offset = 0;
+            auto col_offset = 0;
+            auto offset = 0;
+            auto jacobian_matrix = Matrix<Real, size, size>();
+            jacobian_matrix.setZero();
+            auto set_mapping_rows = [&] <Integer t_row = 0> (
+                auto & t_set_mapping_rows
+            )
+            constexpr mutable
+            {
+                auto constexpr row_mapping_size = MappingTraits<t_potential.template getStrain<t_row>()>::template getSize<t_domain>();
+                auto set_jacobian_cols = [&] <Integer t_col = 0> (
+                    auto & t_set_jacobian_cols
+                )
+                constexpr mutable
+                {
+                    auto constexpr col_mapping_size = MappingTraits<t_potential.template getStrain<t_col>()>::template getSize<t_domain>();
+                    // auto rhs = algebra::View<Matrix<Real, row_mapping_size, col_mapping_size> const>(behavior_data_->K.data() + offset);
+                    // auto lhs = jacobian_matrix.template block<row_mapping_size, col_mapping_size>(row_offset, col_offset);
+                    // lhs = rhs;
+                    offset += row_mapping_size * col_mapping_size;
+                    col_offset += col_mapping_size;
+                    if constexpr (t_col < t_potential.getNumMappings() - 1)
+                    {
+                        t_set_jacobian_cols.template operator ()<t_col + 1>(t_set_jacobian_cols);
+                    }
+                };
+                set_jacobian_cols(set_jacobian_cols);
+                row_offset += row_mapping_size;
+                if constexpr (t_row < t_potential.getNumMappings() - 1)
+                {
+                    t_set_mapping_rows.template operator ()<t_row + 1>(t_set_mapping_rows);
+                }
+            };
+            set_mapping_rows(set_mapping_rows);
+            return jacobian_matrix;
+        }
 
         template<PotentialConcept auto t_behavior>
         void

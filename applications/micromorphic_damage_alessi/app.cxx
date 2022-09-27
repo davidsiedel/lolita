@@ -88,6 +88,75 @@ struct RefTest
 
 };
 
+template<int...>
+struct Data;
+
+struct DataBase
+{
+
+    virtual
+    ~DataBase()
+    {}
+
+    // template<int size> // TEMPLATES AND VIRTUAL DONT WORK
+    // virtual
+    // lolita::algebra::View<lolita::Vector<lolita::Real, size> const>
+    // view()
+    // const=0;
+    
+    virtual
+    lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    get()
+    const=0;
+
+};
+
+template<>
+struct Data<> : DataBase
+{
+
+    Data(
+        auto &&... args
+    )
+    :
+    data_(std::move(args)...)
+    {}
+    
+    virtual
+    lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    get()
+    const
+    {
+        return lolita::algebra::View<lolita::Vector<lolita::Real> const>(data_.data(), data_.size());
+    };
+
+    lolita::Vector<lolita::Real> data_;
+
+};
+
+template<int a>
+struct Data<a> : DataBase
+{
+
+    Data(
+        auto &&... args
+    )
+    :
+    data_(std::move(args)...)
+    {}
+    
+    virtual
+    lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    get()
+    const
+    {
+        return lolita::algebra::View<lolita::Vector<lolita::Real> const>(data_.data(), data_.size());
+    };
+
+    lolita::Vector<lolita::Real, a> data_;
+
+};
+
 template<lolita::Label lab>
 static constexpr
 auto
@@ -106,6 +175,9 @@ makeIt()
 int
 main(int argc, char** argv)
 {
+
+    std::unique_ptr<DataBase> ptr_test = std::make_unique<Data<3>>(lolita::Vector<lolita::Real, 3>::Zero());
+    std::cout << ptr_test->get().template segment<2>(0) << std::endl;
 
     auto constexpr ici_1 = makeIt<lolita::Label("1")>();
     auto constexpr ici_2 = makeIt<lolita::Label("2")>();
@@ -172,9 +244,9 @@ main(int argc, char** argv)
     std::cout << sizeof(std::basic_string_view<char>) << std::endl;
     std::cout << sizeof(int) << std::endl;
     std::cout << sizeof(std::vector<lolita::Matrix<lolita::Real>>) << std::endl;
-    auto lab = lolita::utility::Label();
+    auto lab = lolita::Label();
     auto const & lab_ref = lab;
-    std::cout << sizeof(Ref<lolita::utility::Label>) << std::endl;
+    std::cout << sizeof(Ref<lolita::Label>) << std::endl;
     // std::cout << sizeof(Ref2<"Stabilization">) << std::endl;
     std::cout << sizeof(double const &) << std::endl;
 
@@ -282,13 +354,24 @@ main(int argc, char** argv)
     auto constexpr elastic_potential = lolita::Potential("Elasticity", hdg_displacement_gradient); // psi(I(u))
     auto constexpr stabilization_potential = lolita::Potential("Stabilization", hdg_displacement_stabilization); // psi(Z(u))
     auto constexpr force_potential = lolita::Potential("Lagrangian", hdg_displacement_x, hdg_force_view); // psi(I_x(u), I(f))
+    // auto constexpr pot_size = lolita::PotentialTraits<elastic_potential>::template getSize<lolita::Element::triangle(1), domain>();
+    // auto constexpr mat0 = lolita::Mapping("Gradient", displacement);
+    // auto constexpr mat1 = lolita::Mapping("Gradient", damage);
+    // auto constexpr mat2 = lolita::Mapping("Identity", damage);
+    auto constexpr pot0 = lolita::Potential("Elasticity", lolita::Mapping("Gradient", displacement));
+    auto constexpr pot1 = lolita::Potential("Fracture", lolita::Mapping("Gradient", damage), lolita::Mapping("Identity", damage));
+    auto constexpr pot2 = lolita::Potential("Stab", lolita::Mapping("Identity", displacement));
+    // auto constexpr pot_size = lolita::PotentialsTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>();
+    std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialsTraits<pot0>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
     /**
      * Potentials
      * 
      */
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make_unique();
-    std::cout << * elements << std::endl;
+    // std::cout << * elements << std::endl;
     /**
      * Domain stuff
      * 

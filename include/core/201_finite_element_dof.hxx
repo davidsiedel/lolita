@@ -9,15 +9,6 @@
 
 namespace lolita
 {
-        
-    template<Basis... t_basis>
-    struct BasisTraits;
-
-    template<auto t_discretization>
-    struct DiscretizationTraits;
-
-    template<auto t_discretization>
-    struct DiscretizationTraits2;
 
     template<Domain t_domain>
     struct DegreeOfFreedom
