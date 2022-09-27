@@ -120,6 +120,53 @@ namespace lolita
             return num_element_unknowns;
         }
 
+        /**
+         * @brief 
+         * 
+         * @tparam t_element 
+         * @tparam t_domain 
+         * @tparam t_field 
+         */
+        template<Element t_element, Domain t_domain, FieldConcept auto t_field>
+        static constexpr
+        Integer
+        getDiscreteFieldDegreeOfFreedomSize()
+        requires(t_element.isSub(t_domain, 0))
+        {
+            auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain, t_field>();
+            auto set_num_faces_unknowns = [&] <Integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
+                num_element_unknowns += getNumFaceUnknowns<inner_neighbor, t_domain, t_field>() * num_inner_neighbors;
+                if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                {
+                    self.template operator ()<t_i + 1>(self);
+                }
+            };
+            set_num_faces_unknowns(set_num_faces_unknowns);
+            return num_element_unknowns;
+        }
+
+        /**
+         * @brief 
+         * 
+         * @tparam t_element 
+         * @tparam t_domain 
+         * @tparam t_field 
+         */
+        template<Element t_element, Domain t_domain, FieldConcept auto t_field>
+        static constexpr
+        Integer
+        getDiscreteFieldDegreeOfFreedomSize()
+        requires(t_element.isSub(t_domain, 1))
+        {
+            return getNumFaceUnknowns<t_element, t_domain, t_field>();
+        }
+
         template<Element t_element, Domain t_domain>
         struct Implementation : FiniteElement<t_element, t_domain>
         {
@@ -174,18 +221,18 @@ namespace lolita
         public:
 
             template<FieldConcept auto t_field>
-            static constexpr
             Integer
             getDiscreteFieldDegreeOfFreedomNumCoefficients()
+            const
             requires(t_element.isSub(t_domain, 0))
             {
                 return DiscretizationTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
             }
 
             template<FieldConcept auto t_field>
-            static constexpr
             Integer
             getDiscreteFieldDegreeOfFreedomNumCoefficients()
+            const
             requires(t_element.isSub(t_domain, 1))
             {
                 return DiscretizationTraits::template getNumFaceUnknowns<t_element, t_domain, t_field>();
@@ -599,14 +646,14 @@ namespace lolita
             }
 
             template<MappingConcept auto t_mapping>
-            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
+            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isGradient() || t_mapping.isLargeStrain())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
+                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -619,14 +666,14 @@ namespace lolita
             }
 
             template<MappingConcept auto t_mapping>
-            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
+            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isSmallStrain())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
+                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -639,14 +686,14 @@ namespace lolita
             }
 
             template<MappingConcept auto t_mapping>
-            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
+            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isIdentity())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
+                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -693,7 +740,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()>
+            Vector<Real, Base::template getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
             getDiscreteFieldDegreeOfFreedomCoefficients()
             const
             {
@@ -848,7 +895,7 @@ namespace lolita
 
             }
 
-            template<Mapping t_strain, PotentialConcept auto t_behavior>
+            template<PotentialConcept auto t_behavior, Mapping t_strain>
             Vector<Real, getNumElementUnknowns<t_strain.getField()>()>
             getInternalForces()
             const
@@ -858,7 +905,7 @@ namespace lolita
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_field>();
                 // using StrainOperatorView = algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
                 using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
-                auto const unknown = this->template getUnknowns<t_field>();
+                auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
                 auto internal_forces = Vector<Real, strain_operator_num_cols>();
                 internal_forces.setZero();
                 for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())

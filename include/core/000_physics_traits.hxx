@@ -636,7 +636,7 @@ namespace lolita
         template<Domain t_domain>
         static constexpr
         Integer
-        getSize()
+        getJacobianSize()
         {
             auto size = Integer(0);
             auto set_size = [&] <Integer t_i = 0> (
@@ -725,10 +725,10 @@ namespace lolita
         }
 
         static constexpr
-        std::array<Label, getNumFields()>
+        std::array<Field, getNumFields()>
         getFields()
         {
-            auto fields = std::array<Label, t_potential.getNumMappings()>();
+            auto fields = std::array<Field, t_potential.getNumMappings()>();
             auto num_fields = Integer(0);
             auto set_offset = [&] <Integer t_i = 0> (
                 auto & self
@@ -738,14 +738,14 @@ namespace lolita
                 auto found_field = Boolean(false);
                 for (auto const & f : fields)
                 {
-                    if (f == t_potential.template getStrain<t_i>().getField().getLabel())
+                    if (f == t_potential.template getStrain<t_i>().getField())
                     {
                         found_field = true;
                     }
                 }
                 if (!found_field)
                 {
-                    fields[num_fields] = t_potential.template getStrain<t_i>().getField().getLabel();
+                    fields[num_fields] = t_potential.template getStrain<t_i>().getField();
                     num_fields ++;
                 }
                 if constexpr (t_i < t_potential.getNumMappings() - 1)

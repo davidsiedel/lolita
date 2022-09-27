@@ -147,56 +147,15 @@ namespace lolita
     struct Domain
     {
 
-        // std::array<Label, 2> static constexpr frame_labels_ = {
-        //     "Cartesian",
-        //     "AxiSymmetric",
-        // };
-
-        // static constexpr
-        // Label const &
-        // frame(
-        //     std::basic_string_view<Character> && frame_label
-        // )
-        // {
-        //     for (auto const & label : frame_labels_)
-        //     {
-        //         if (label == std::forward<std::basic_string_view<Character>>(frame_label))
-        //         {
-        //             return label;
-        //         }
-        //     }
-        //     throw std::logic_error("NO !!");
-        // }
-
-        // static constexpr
-        // std::basic_string_view<Character> const &
-        // check(
-        //     std::basic_string_view<Character> const & input
-        // )
-        // {
-        //     if constexpr (!utility::isAnyOf(input, "Cartesian", "AxiSymmetric"))
-        //     {
-        //         throw std::logic_error("NO !!!");
-        //     }
-        //     return input;
-        // }
-
         constexpr
         Domain(
             std::basic_string_view<Character> && frame_label,
             Integer dim
         )
         :
-        // frame_(frame(std::forward<std::basic_string_view<Character>>(frame_label))),
         frame_(std::forward<std::basic_string_view<Character>>(frame_label)),
         dim_(dim)
-        {
-            // if constexpr (!utility::isAnyOf(std::basic_string_view<Character>(frame_label), "Cartesian", "AxiSymmetric"))
-            // {
-            //     // throw std::logic_error("NO !!!");
-            //     int a = 2;
-            // }
-        }
+        {}
 
         constexpr
         Boolean
@@ -262,26 +221,6 @@ namespace lolita
     
     struct Quadrature
     {
-
-        // std::array<Label, 1> static constexpr rule_labels_ = {
-        //     "Gauss",
-        // };
-
-        // static constexpr
-        // Label const &
-        // rule(
-        //     std::basic_string_view<Character> && rule_label
-        // )
-        // {
-        //     for (auto const & label : rule_labels_)
-        //     {
-        //         if (label == std::forward<std::basic_string_view<Character>>(rule_label))
-        //         {
-        //             return label;
-        //         }
-        //     }
-        //     throw std::logic_error("NO !!");
-        // }
         
         constexpr
         Quadrature(
@@ -289,7 +228,6 @@ namespace lolita
             Integer ord
         )
         :
-        // rule_(rule(std::forward<std::basic_string_view<Character>>(rule_label))),
         rule_(std::forward<std::basic_string_view<Character>>(rule_label)),
         ord_(ord)
         {}
@@ -424,6 +362,74 @@ namespace lolita
         Label polynomial_;
         
         Integer ord_;
+
+    };
+
+    struct Field
+    {
+
+        constexpr explicit
+        Field(
+            Integer dim
+        )
+        :
+        label_(),
+        dim_(dim)
+        {}
+        
+        constexpr
+        Field(
+            std::basic_string_view<Character> && label,
+            Integer dim
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        dim_(dim)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            Field const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Field const & other
+        )
+        const = default;
+
+        constexpr
+        Integer
+        getDim()
+        const
+        {
+            return dim_;
+        }
+
+        constexpr
+        Label const &
+        getLabel()
+        const
+        {
+            return label_;
+        }
+
+        constexpr
+        Boolean
+        isTensor(
+            Integer dim
+        )
+        const
+        {
+            return dim_ == dim;
+        }
+
+        Label label_;
+
+        Integer dim_;
 
     };
 
@@ -578,166 +584,117 @@ namespace lolita
         Basis grad_basis_;
 
     };
-
-    struct Field
+    
+    struct Monomial : Discretization
     {
 
-        constexpr explicit
-        Field(
-            Integer dim
-        )
-        :
-        label_(),
-        dim_(dim)
-        {}
-        
         constexpr
-        Field(
-            std::basic_string_view<Character> && label,
-            Integer dim
+        Monomial(
+            Integer order
         )
         :
-        label_(std::forward<std::basic_string_view<Character>>(label)),
-        dim_(dim)
+        Discretization("HybridDiscontinuousGalerkin"),
+        basis_(Basis("Monomial", order))
         {}
 
         constexpr
         Boolean
         operator==(
-            Field const & other
+            Monomial const & other
         )
         const = default;
 
         constexpr
         Boolean
         operator!=(
-            Field const & other
+            Monomial const & other
         )
         const = default;
 
         constexpr
-        Integer
-        getDim()
+        Basis
+        getBasis()
         const
         {
-            return dim_;
+            return basis_;
         }
 
-        constexpr
-        Label const &
-        getLabel()
-        const
-        {
-            return label_;
-        }
-
-        constexpr
-        Boolean
-        isTensor(
-            Integer dim
-        )
-        const
-        {
-            return dim_ == dim;
-        }
-
-        Label label_;
-
-        Integer dim_;
+        Basis basis_;
 
     };
+
+    template<typename t_T>
+    concept DiscretizationConcept = std::derived_from<t_T, Discretization>;
+
+    // template<typename t_T>
+    // concept FieldDiscretizationConcept = std::convertible_to<t_T, Discretization> || std::convertible_to<t_T, Basis> || std::convertible_to<t_T, Integer>;
+    
+    // template<FieldDiscretizationConcept t_Discretization = Integer>
+    // struct DiscreteField : Field
+    // {
+
+    //     using FieldDiscretization = t_Discretization;
+        
+    //     constexpr explicit
+    //     DiscreteField(
+    //         Field const & field,
+    //         FieldDiscretization const & discretization
+    //     )
+    //     :
+    //     Field(field),
+    //     discretization_(discretization)
+    //     {}
+
+    //     constexpr
+    //     Boolean
+    //     operator==(
+    //         DiscreteField const & other
+    //     )
+    //     const = default;
+
+    //     constexpr
+    //     Boolean
+    //     operator!=(
+    //         DiscreteField const & other
+    //     )
+    //     const = default;
+
+    //     constexpr
+    //     FieldDiscretization const &
+    //     getDiscretization()
+    //     const
+    //     {
+    //         return discretization_;
+    //     }
+
+    //     FieldDiscretization discretization_;
+
+    // };
 
     // namespace detail
     // {
 
     //     template<typename t_T>
-    //     struct IsHybridDiscontinuousGalerkin : std::false_type {};
+    //     struct IsDiscreteField : std::false_type {};
         
-    //     template<>
-    //     struct IsHybridDiscontinuousGalerkin<HybridDiscontinuousGalerkin> : std::true_type {};
+    //     template<typename t_T>
+    //     struct IsDiscreteField<DiscreteField<t_T>> : std::true_type {};
 
     // }
 
     // template<typename t_T>
-    // concept HybridDiscontinuousGalerkinConcept = detail::IsHybridDiscontinuousGalerkin<std::decay_t<t_T>>::value;
-
-    template<typename t_T>
-    concept DiscretizationConcept = std::derived_from<t_T, Discretization>;
-
-    template<typename t_T>
-    concept FieldDiscretizationConcept = std::convertible_to<t_T, Discretization> || std::convertible_to<t_T, Basis> || std::convertible_to<t_T, Integer>;
-    
-    template<FieldDiscretizationConcept t_Discretization = Integer>
-    struct DiscreteField : Field
-    {
-
-        using FieldDiscretization = t_Discretization;
-        
-        constexpr explicit
-        DiscreteField(
-            Field const & field,
-            FieldDiscretization const & discretization
-        )
-        :
-        Field(field),
-        discretization_(discretization)
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            DiscreteField const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            DiscreteField const & other
-        )
-        const = default;
-
-        constexpr
-        FieldDiscretization const &
-        getDiscretization()
-        const
-        {
-            return discretization_;
-        }
-
-        FieldDiscretization discretization_;
-
-    };
-
-    namespace detail
-    {
-
-        template<typename t_T>
-        struct IsDiscreteField : std::false_type {};
-        
-        template<typename t_T>
-        struct IsDiscreteField<DiscreteField<t_T>> : std::true_type {};
-
-    }
+    // concept DiscreteFieldConcept = detail::IsDiscreteField<std::decay_t<t_T>>::value;
 
     template<typename t_T>
     concept FieldConcept = std::derived_from<t_T, Field>;
-
-    template<typename t_T>
-    concept DiscreteFieldConcept = detail::IsDiscreteField<std::decay_t<t_T>>::value;
     
-    template<DiscreteFieldConcept t_Field>
     struct Mapping
     {
-
-        using MappingField = t_Field;
-
-        using MappingFieldDiscretization = typename t_Field::FieldDiscretization;
 
         constexpr
         Mapping(
             std::basic_string_view<Character> && transformation,
-            t_Field const & field
+            Field const & field
         )
         :
         label_(field.getLabel().view(), std::forward<std::basic_string_view<Character>>(transformation)),
@@ -750,9 +707,9 @@ namespace lolita
         constexpr
         Mapping(
             std::basic_string_view<Character> && transformation,
-            t_Field const & field,
             Integer row,
-            Integer col
+            Integer col,
+            Field const & field
         )
         :
         label_(field.getLabel().view(), std::forward<std::basic_string_view<Character>>(transformation)),
@@ -801,7 +758,7 @@ namespace lolita
         }
 
         constexpr
-        t_Field const &
+        Field const &
         getField()
         const
         {
@@ -852,7 +809,7 @@ namespace lolita
 
         Label transformation_;
 
-        t_Field field_;
+        Field field_;
 
         Integer row_;
 
@@ -866,8 +823,8 @@ namespace lolita
         template<typename t_T>
         struct IsMapping : std::false_type {};
         
-        template<typename t_T>
-        struct IsMapping<Mapping<t_T>> : std::true_type {};
+        template<>
+        struct IsMapping<Mapping> : std::true_type {};
 
     }
 
@@ -879,10 +836,6 @@ namespace lolita
     {
 
         using PotentialStrains = utility::Aggregate<t_Strains...>;
-
-        using PotentialFields = utility::tuple_unique_t<std::tuple<typename t_Strains::MappingField...>>;
-
-        using PotentialFieldDiscretizations = utility::tuple_unique_t<std::tuple<typename t_Strains::MappingFieldDiscretization...>>;
         
         static constexpr
         Integer

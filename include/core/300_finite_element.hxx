@@ -342,14 +342,14 @@ namespace lolita
             static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
         }
 
-        template<DiscreteFieldConcept auto t_field>
-        void
-        addDiscreteFieldDegreeOfFreedom(
-            auto const &... args
-        )
-        {
-            static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
-        }
+        // template<DiscreteFieldConcept auto t_field>
+        // void
+        // addDiscreteFieldDegreeOfFreedom(
+        //     auto const &... args
+        // )
+        // {
+        //     static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
+        // }
 
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization, Label t_label>
         void
@@ -358,12 +358,12 @@ namespace lolita
             static_cast<t_Disc<t_discretization> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
         }
 
-        template<DiscreteFieldConcept auto t_field, Label t_label>
-        void
-        addDiscreteFieldOperator()
-        {
-            static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
-        }
+        // template<DiscreteFieldConcept auto t_field, Label t_label>
+        // void
+        // addDiscreteFieldOperator()
+        // {
+        //     static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template addDiscreteFieldOperator<t_field, t_label>();
+        // }
 
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
         void
@@ -374,14 +374,14 @@ namespace lolita
             static_cast<t_Disc<t_discretization> *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field>(args...);
         }
 
-        template<DiscreteFieldConcept auto t_field>
-        void
-        upgradeDiscreteFieldDegreeOfFreedom(
-            auto const &... args
-        )
-        {
-            static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field>(args...);
-        }
+        // template<DiscreteFieldConcept auto t_field>
+        // void
+        // upgradeDiscreteFieldDegreeOfFreedom(
+        //     auto const &... args
+        // )
+        // {
+        //     static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field>(args...);
+        // }
 
         template<FieldConcept auto t_field, Basis t_basis>
         void
@@ -418,17 +418,17 @@ namespace lolita
             return static_cast<t_Disc<t_discretization> *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
         }
 
-        template<DiscreteFieldConcept auto t_field>
-        Real
-        getDiscreteFieldDegreeOfFreedomValue(
-            PointConcept auto const & point,
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            return static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
-        }
+        // template<DiscreteFieldConcept auto t_field>
+        // Real
+        // getDiscreteFieldDegreeOfFreedomValue(
+        //     PointConcept auto const & point,
+        //     Integer row,
+        //     Integer col
+        // )
+        // const
+        // {
+        //     return static_cast<t_Disc<t_field.getDiscretization()> *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
+        // }
 
         template<FieldConcept auto t_field, Basis t_basis>
         Real
@@ -447,68 +447,84 @@ namespace lolita
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
         static constexpr
         Integer
-        getDiscreteFieldDegreeOfFreedomNumCoefficients()
+        getDiscreteFieldDegreeOfFreedomSize()
         {
-            return t_Disc<t_discretization>::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>();
+            return DiscretizationTraits<t_discretization>::template getDiscreteFieldDegreeOfFreedomSize<t_element, t_domain, t_field>();
         }
 
-        template<DiscreteFieldConcept auto t_field>
-        static constexpr
-        Integer
-        getDiscreteFieldDegreeOfFreedomNumCoefficients()
-        {
-            return t_Disc<t_field.getDiscretization()>::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>();
-        }
+        // template<FieldConcept auto t_field>
+        // static constexpr
+        // Integer
+        // getDiscreteFieldDegreeOfFreedomSize()
+        // {
+        //     return DiscretizationTraits<t_field.getDiscretization()>::template getDiscreteFieldDegreeOfFreedomSize<t_element, t_domain, t_field>();
+        // }
 
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
-        Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()>
+        Integer
+        getDiscreteFieldDegreeOfFreedomNumCoefficients()
+        const
+        {
+            return static_cast<t_Disc<t_discretization> const *>(this)->template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>();
+        }
+
+        // template<DiscreteFieldConcept auto t_field>
+        // Integer
+        // getDiscreteFieldDegreeOfFreedomNumCoefficients()
+        // const
+        // {
+        //     return static_cast<t_Disc<t_field.getDiscretization()> const *>(this)->template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>();
+        // }
+
+        template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
+        Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
         getDiscreteFieldDegreeOfFreedomCoefficients()
         const
         {
             return static_cast<t_Disc<t_discretization> const *>(this)->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
         }
 
-        template<DiscreteFieldConcept auto t_field>
-        Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()>
-        getDiscreteFieldDegreeOfFreedomCoefficients()
-        const
-        {
-            return static_cast<t_Disc<t_field.getDiscretization()> const *>(this)->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
-        }
+        // template<DiscreteFieldConcept auto t_field>
+        // Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+        // getDiscreteFieldDegreeOfFreedomCoefficients()
+        // const
+        // {
+        //     return static_cast<t_Disc<t_field.getDiscretization()> const *>(this)->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
+        // }
 
         template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
-        Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()>
+        Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
         getUnknowns()
         const
         {
             return static_cast<t_Disc<t_discretization> const *>(this)->template getUnknowns<t_field>();
         }
 
-        template<DiscreteFieldConcept auto t_field>
-        Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()>
-        getUnknowns()
-        const
-        {
-            return static_cast<t_Disc<t_field.getDiscretization()> const *>(this)->template getUnknowns<t_field>();
-        }
+        // template<DiscreteFieldConcept auto t_field>
+        // Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+        // getUnknowns()
+        // const
+        // {
+        //     return static_cast<t_Disc<t_field.getDiscretization()> const *>(this)->template getUnknowns<t_field>();
+        // }
 
         /**
          * Formulation
          * *****************************************************************************************************************************************************
          */
 
-        template<PotentialConcept auto t_behavior, DiscretizationConcept auto t_discretization>
+        template<PotentialConcept auto t_behavior>
         struct RhsTraits
         {
 
         private:
 
-            template<DiscreteField... t_field>
-            using Rhs = Vector<Real, numerics::max(FiniteElement::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field, t_discretization>()...)>;
+            template<FieldConcept... t_field>
+            using Rhs = Vector<Real, numerics::sum(FiniteElement::template getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()...)>;
 
         public:
 
-            using type = utility::variadic_type_array_expansion_t<Rhs, PotentialTraits<t_behavior>::getFields()>;
+            // using type = utility::variadic_type_array_expansion_t<Rhs, PotentialTraits<t_behavior>::getFields()>;
             
         };
 
@@ -620,7 +636,7 @@ namespace lolita
             }
         }
 
-        template<MappingConcept auto t_mapping, auto t_discretization>
+        template<MappingConcept auto t_mapping, DiscretizationConcept auto t_discretization>
         auto
         getMapping(
             Point const & point
@@ -629,6 +645,16 @@ namespace lolita
         {
             return static_cast<t_Disc<t_discretization> const *>(this)->template getMapping<t_mapping>(point);
         }
+
+        // template<MappingConcept auto t_mapping>
+        // auto
+        // getMapping(
+        //     Point const & point
+        // )
+        // const
+        // {
+        //     return this->template getMapping<t_mapping, t_mapping.getField().getDiscretization()>(point);
+        // }
 
         template<PotentialConcept auto t_behavior, Mapping t_strain, DiscretizationConcept auto t_discretization>
         void
@@ -643,11 +669,18 @@ namespace lolita
             }
         }
 
+        // template<PotentialConcept auto t_behavior, Mapping t_strain>
+        // void
+        // addFormulationStrainOperator()
+        // {
+        //     this->template addFormulationStrainOperator<t_behavior, t_strain, t_strain.getField().getDiscretization()>();
+        // }
+
         template<PotentialConcept auto t_behavior, Mapping t_strain, DiscretizationConcept auto t_discretization>
         void
         setFormulationStrain()
         {
-            auto const unknown = this->template getUnknowns<t_strain.getField(), t_discretization>();
+            auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_strain.getField(), t_discretization>();
             for (auto & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
             {
                 auto rhs = Vector<Real>();
@@ -663,6 +696,13 @@ namespace lolita
                 lhs = rhs;
             }
         }
+
+        // template<PotentialConcept auto t_behavior, Mapping t_strain>
+        // void
+        // setFormulationStrain()
+        // {
+        //     this->template setFormulationStrain<t_behavior, t_strain, t_strain.getField().getDiscretization()>();
+        // }
 
         template<PotentialConcept auto t_behavior>
         void

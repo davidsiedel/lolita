@@ -202,7 +202,7 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, DiscreteFieldConcept auto t_field>
+        template<Integer t_i, FieldConcept auto t_field>
         void
         addElementDiscreteFieldDegreeOfFreedom(
             std::basic_string<Character> && domain_label,
@@ -229,7 +229,7 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, DiscreteFieldConcept auto t_field, Label t_label>
+        template<Integer t_i, FieldConcept auto t_field, Label t_label>
         void
         addElementDiscreteFieldOperator(
             std::basic_string<Character> && domain_label
@@ -344,7 +344,7 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, PotentialConcept auto t_behavior, Mapping t_strain, auto t_discretization>
+        template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, DiscretizationConcept auto t_discretization>
         void
         addFormulationStrainOperator(
             std::basic_string<Character> && domain_label
@@ -357,7 +357,20 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, PotentialConcept auto t_behavior, Mapping t_strain, auto t_discretization>
+        template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain>
+        void
+        addFormulationStrainOperator(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addFormulationStrainOperator<t_behavior, t_strain>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, DiscretizationConcept auto t_discretization>
         void
         setFormulationStrain(
             std::basic_string<Character> && domain_label
@@ -366,6 +379,19 @@ namespace lolita
             auto fun = [&] (auto const & finite_element)
             {
                 finite_element->template setFormulationStrain<t_behavior, t_strain, t_discretization>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain>
+        void
+        setFormulationStrain(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template setFormulationStrain<t_behavior, t_strain>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
