@@ -164,7 +164,7 @@ namespace lolita
             return weight_;
         }
 
-        template<Mapping t_strain>
+        template<MappingConcept auto t_strain>
         void
         addStrainOperator(
             MatrixConcept<Real> auto && input
@@ -184,7 +184,7 @@ namespace lolita
             strain_matrix_list_->push_back(ElementaryOperator<Label, Matrix<Real>>(t_strain.getLabel(), std::forward<decltype(input)>(input)));
         }
 
-        template<Mapping t_strain>
+        template<MappingConcept auto t_strain>
         Matrix<Real> const &
         getStrainOperator()
         const
@@ -199,7 +199,7 @@ namespace lolita
             throw std::runtime_error("No usch thing");
         }
 
-        template<Mapping t_strain>
+        template<MappingConcept auto t_strain>
         Boolean
         hasStrainOperator()
         const

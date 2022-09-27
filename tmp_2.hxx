@@ -351,7 +351,7 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, PotentialConcept auto t_behavior, Mapping t_strain, auto t_discretization>
+        template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, auto t_discretization>
         void
         addFormulationStrainOperator(
             std::basic_string<Character> && domain_label
@@ -364,7 +364,7 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, PotentialConcept auto t_behavior, Mapping t_strain, auto t_discretization>
+        template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, auto t_discretization>
         void
         setFormulationStrain(
             std::basic_string<Character> && domain_label

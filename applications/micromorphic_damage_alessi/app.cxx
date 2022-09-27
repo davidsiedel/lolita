@@ -42,8 +42,8 @@ dummy2(
 template<typename T>
 struct Ref
 {
-
     Ref(T const & t) : ref_(t) {}
+    T const & get() const { return ref_;};
     T const & ref_;
 };
 
@@ -82,9 +82,35 @@ struct YoupiT
 
 };
 
+template<typename T>
+struct RefTest
+{
+
+};
+
+template<lolita::Label lab>
+static constexpr
+auto
+makeIt()
+{
+    if constexpr (lab == "1")
+    {
+        return int(1);
+    }
+    else
+    {
+        return double(3);
+    }
+}
+
 int
 main(int argc, char** argv)
 {
+
+    auto constexpr ici_1 = makeIt<lolita::Label("1")>();
+    auto constexpr ici_2 = makeIt<lolita::Label("2")>();
+    static_assert(std::is_same_v<std::decay_t<decltype(ici_1)>, int>);
+    // static_assert(std::is_same_v<decltype(ici_2), double>);
 
     YoupiT<Youpi(3)>();
     //YoupiT<3>();
@@ -234,24 +260,28 @@ main(int argc, char** argv)
      * Fields
      * 
      */
-    auto constexpr displacement = lolita::Field("Displacement", 1);
-    auto constexpr damage = lolita::Field("Damage", 0);
-    auto constexpr force = lolita::Field("Force", 0);
+    auto constexpr displacement = lolita::DiscreteField("Displacement", 1, lolita::HybridDiscontinuousGalerkin(1, 1));
+    auto constexpr displacement2 = lolita::DiscreteField("Displacement", 1, lolita::HybridDiscontinuousGalerkin(1, 2));
+    auto constexpr damage = lolita::DiscreteField("Damage", 0, lolita::HybridDiscontinuousGalerkin(1, 1));
+    auto constexpr force = lolita::DiscreteField("Force", 0, lolita::Monomial(1));
+    auto ref_f1 = Ref(displacement.getLabel());
+    auto ref_f2 = Ref(displacement2.getLabel());
+    if (ref_f1.get() != ref_f2.get()) throw std::runtime_error("HIII");
     /**
      * Mappings
      * 
      */
-    auto constexpr hdg_displacement_gradient = lolita::Mapping("Gradient", displacement);
-    auto constexpr hdg_displacement_stabilization = lolita::Mapping("Stabilization", displacement);
-    auto constexpr hdg_displacement_x = lolita::Mapping("Identity", 0, 0, displacement);
-    auto constexpr hdg_force_view = lolita::Mapping("Identity", force);
+    auto constexpr hdg_displacement_gradient = lolita::Mapping("Gradient", displacement); // G(u)
+    auto constexpr hdg_displacement_stabilization = lolita::Mapping("Stabilization", displacement); // Z(u)
+    auto constexpr hdg_displacement_x = lolita::Mapping("Identity", 0, 0, displacement); // I_x(u)
+    auto constexpr hdg_force_view = lolita::Mapping("Identity", force); // I(f)
     /**
      * Potentials
      * 
      */
-    auto constexpr elastic_potential = lolita::Potential("Elasticity", hdg_displacement_gradient);
-    auto constexpr stabilization_potential = lolita::Potential("Stabilization", hdg_displacement_stabilization);
-    auto constexpr force_potential = lolita::Potential("Lagrangian", hdg_displacement_x, hdg_force_view);
+    auto constexpr elastic_potential = lolita::Potential("Elasticity", hdg_displacement_gradient); // psi(I(u))
+    auto constexpr stabilization_potential = lolita::Potential("Stabilization", hdg_displacement_stabilization); // psi(Z(u))
+    auto constexpr force_potential = lolita::Potential("Lagrangian", hdg_displacement_x, hdg_force_view); // psi(I_x(u), I(f))
     /**
      * Potentials
      * 
@@ -271,13 +301,15 @@ main(int argc, char** argv)
      */
     elements->addElementDiscreteField<face_dim, displacement>("ROD");
     elements->addElementDiscreteField<cell_dim, displacement>("ROD");
-    elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, displacement, hdg_discretization>("ROD", linear_system);
-    elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, displacement, hdg_discretization>("ROD");
+    elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, displacement>("ROD", linear_system);
+    // elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, displacement, hdg_discretization>("ROD");
+    elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, displacement>("ROD");
     /**
      * Ops
      * 
      */
-    elements->addElementDiscreteFieldOperator<cell_dim, displacement, hdg_discretization, _stab>("ROD");
+    // elements->addElementDiscreteFieldOperator<cell_dim, displacement, hdg_discretization, _stab>("ROD");
+    elements->addElementDiscreteFieldOperator<cell_dim, displacement, _stab>("ROD");
     std::cout << linear_system->getSize() << std::endl;
     /**
      * Potentials
@@ -285,8 +317,8 @@ main(int argc, char** argv)
      */
     elements->addFormulation<cell_dim, elastic_potential, quadrature>("ROD", lib_displacement_path, lib_displacement_label, hyp);
     elements->addFormulation<face_dim, elastic_potential>("TOP");
-    elements->addFormulationStrainOperator<cell_dim, elastic_potential, elastic_potential.getStrain<0>(), hdg_discretization>("ROD");
-    elements->setFormulationStrain<cell_dim, elastic_potential, elastic_potential.getStrain<0>(), hdg_discretization>("ROD");
+    elements->addFormulationStrainOperator<cell_dim, elastic_potential, elastic_potential.getStrain<0>()>("ROD");
+    elements->setFormulationStrain<cell_dim, elastic_potential, elastic_potential.getStrain<0>()>("ROD"); // set G(u) in T
     elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
     elements->setFormulationExternalVariable<cell_dim, elastic_potential, _dm>("ROD", [](lolita::Point const & p) { return 200.0; });
     elements->integrateFormulationConstitutiveEquation<cell_dim, elastic_potential>("ROD");

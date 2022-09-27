@@ -16,6 +16,9 @@ namespace lolita
     template<auto t_discretization>
     struct DiscretizationTraits;
 
+    template<auto t_discretization>
+    struct DiscretizationTraits2;
+
     template<Domain t_domain>
     struct DegreeOfFreedom
     {
@@ -582,20 +585,40 @@ namespace lolita
             loads_->push_back(ExternalLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function)));
         }
 
+        Boolean
+        hasLoads()
+        const
+        {
+            return loads_ != nullptr;
+        }
+
+        std::vector<ExternalLoad> const &
+        getLoads()
+        const
+        {
+            return * loads_;
+        }
+
         template<FieldConcept auto t_field, Integer t_size, Strategy t_s>
         void
         addDegreeOfFreedom(
             std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>(linear_system));
+            if (dof_ == nullptr)
+            {
+                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>(linear_system));
+            }
         }
 
         template<FieldConcept auto t_field, Integer t_size>
         void
         addDegreeOfFreedom()
         {
-            dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>());
+            if (dof_ == nullptr)
+            {
+                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>());
+            }
         }
 
         DegreeOfFreedom<t_domain> const &
@@ -657,14 +680,20 @@ namespace lolita
             std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_element, t_field, t_basis>(linear_system));
+            if (dof_ == nullptr)
+            {
+                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_element, t_field, t_basis>(linear_system));
+            }
         }
 
         template<Element t_element, FieldConcept auto t_field, Basis t_basis>
         void
         addDegreeOfFreedom()
         {
-            dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_element, t_field, t_basis>());
+            if (dof_ == nullptr)
+            {
+                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_element, t_field, t_basis>());
+            }
         }
 
         DegreeOfFreedom<t_domain> const &

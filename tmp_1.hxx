@@ -848,7 +848,7 @@ namespace lolita
 
             }
 
-            template<Mapping t_strain, PotentialConcept auto t_behavior>
+            template<MappingConcept auto t_strain, PotentialConcept auto t_behavior>
             Vector<Real, getNumElementUnknowns<t_strain.getField()>()>
             getInternalForces()
             const

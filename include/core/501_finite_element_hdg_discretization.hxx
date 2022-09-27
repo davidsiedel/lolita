@@ -1,5 +1,5 @@
-#ifndef B536F722_1A61_4366_8C7E_4B005041A1BF
-#define B536F722_1A61_4366_8C7E_4B005041A1BF
+#ifndef FEB10822_D09A_4468_9437_2ADB758EE6F4
+#define FEB10822_D09A_4468_9437_2ADB758EE6F4
 
 #include "lolita.hxx"
 #include "core/000_physics_traits.hxx"
@@ -14,36 +14,39 @@
 namespace lolita
 {
 
-    template<auto t_discretization>
-    struct DiscretizationTraits
+    template<DiscreteFieldConcept auto t_field>
+    requires(t_field.getDiscretization().is("HybridDiscontinuousGalerkin"))
+    struct DiscretizationTraits2<t_field>
     {
+
+    private:
 
         static constexpr
         Basis
         getCellBasis()
         {
-            return t_discretization.getCellBasis();
+            return t_field.getDiscretization().getCellBasis();
         }
 
         static constexpr
         Basis
         getFaceBasis()
         {
-            return t_discretization.getFaceBasis();
+            return t_field.getDiscretization().getFaceBasis();
         }
 
         static constexpr
         Basis
         getGradBasis()
         {
-            return t_discretization.getGradBasis();
+            return t_field.getDiscretization().getGradBasis();
         }
 
         static constexpr
         Basis
         getPotentialBasis()
         {
-            return t_discretization.getFaceBasis().toOrder(t_discretization.getFaceBasis().getOrd() + 1);
+            return t_field.getDiscretization().getFaceBasis().toOrder(t_field.getDiscretization().getFaceBasis().getOrd() + 1);
         }
 
         template<Element t_element>
@@ -78,31 +81,33 @@ namespace lolita
             return BasisTraits<getPotentialBasis()>::template getSize<t_element>();
         }
 
-        template<Element t_element, Domain t_domain, FieldConcept auto t_field>
+        template<Element t_element, Domain t_domain>
         static constexpr
         Integer
         getNumCellUnknowns()
         requires(t_element.isSub(t_domain, 0))
         {
-            return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_discretization.getCellBasis()>::template getSize<t_element>();
+            return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_field.getDiscretization().getCellBasis()>::template getSize<t_element>();
         }
 
-        template<Element t_element, Domain t_domain, FieldConcept auto t_field>
+        template<Element t_element, Domain t_domain>
         static constexpr
         Integer
         getNumFaceUnknowns()
         requires(t_element.isSub(t_domain, 1))
         {
-            return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_discretization.getFaceBasis()>::template getSize<t_element>();
+            return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_field.getDiscretization().getFaceBasis()>::template getSize<t_element>();
         }
 
-        template<Element t_element, Domain t_domain, FieldConcept auto t_field>
+    public:
+
+        template<Element t_element, Domain t_domain>
         static constexpr
         Integer
-        getNumElementUnknowns()
+        getStaticSize()
         requires(t_element.isSub(t_domain, 0))
         {
-            auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain, t_field>();
+            auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain>();
             auto set_num_faces_unknowns = [&] <Integer t_i = 0> (
                 auto & self
             )
@@ -110,7 +115,7 @@ namespace lolita
             {
                 auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
                 auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
-                num_element_unknowns += getNumFaceUnknowns<inner_neighbor, t_domain, t_field>() * num_inner_neighbors;
+                num_element_unknowns += getNumFaceUnknowns<inner_neighbor, t_domain>() * num_inner_neighbors;
                 if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                 {
                     self.template operator ()<t_i + 1>(self);
@@ -119,52 +124,14 @@ namespace lolita
             set_num_faces_unknowns(set_num_faces_unknowns);
             return num_element_unknowns;
         }
-
-        /**
-         * @brief 
-         * 
-         * @tparam t_element 
-         * @tparam t_domain 
-         * @tparam t_field 
-         */
-        template<Element t_element, Domain t_domain, FieldConcept auto t_field>
+        
+        template<Element t_element, Domain t_domain>
         static constexpr
         Integer
-        getDiscreteFieldDegreeOfFreedomSize()
-        requires(t_element.isSub(t_domain, 0))
-        {
-            auto num_element_unknowns = getNumCellUnknowns<t_element, t_domain, t_field>();
-            auto set_num_faces_unknowns = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
-                num_element_unknowns += getNumFaceUnknowns<inner_neighbor, t_domain, t_field>() * num_inner_neighbors;
-                if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            set_num_faces_unknowns(set_num_faces_unknowns);
-            return num_element_unknowns;
-        }
-
-        /**
-         * @brief 
-         * 
-         * @tparam t_element 
-         * @tparam t_domain 
-         * @tparam t_field 
-         */
-        template<Element t_element, Domain t_domain, FieldConcept auto t_field>
-        static constexpr
-        Integer
-        getDiscreteFieldDegreeOfFreedomSize()
+        getStaticSize()
         requires(t_element.isSub(t_domain, 1))
         {
-            return getNumFaceUnknowns<t_element, t_domain, t_field>();
+            return getNumFaceUnknowns<t_element, t_domain>();
         }
 
         template<Element t_element, Domain t_domain>
@@ -175,78 +142,475 @@ namespace lolita
 
             using Base = FiniteElement<t_element, t_domain>;
 
-            template<MappingConcept auto t_mapping, FieldConcept auto t_field>
-            static constexpr
+        public:
+
             Integer
-            getMappingSize()
+            getDynamicSize()
+            const
             {
-                return MappingTraits<t_mapping>::template getSize<t_domain, t_field>();
+                return DiscretizationTraits2::template getStaticSize<t_element, t_domain>();
+            }
+            
+            template<MappingConcept auto t_mapping>
+            Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>
+            getMapping(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_mapping.getTransformation() == "Stabilization")
+            {
+                return getStabilization();
+            }
+            
+            template<MappingConcept auto t_mapping>
+            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getStaticSize<t_element, t_domain>()>
+            getMapping(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_mapping.getTransformation() == "Gradient" || t_mapping.getTransformation() == "LargeStrain")
+            {
+                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getStaticSize<t_element, t_domain>()>();
+                mapping.setZero();
+                auto lhs = getGradientLhs();
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
+                {
+                    auto rhs = getGradientRhs(mapping_value.row(), mapping_value.col());
+                    auto line = mapping.template block<1, getStaticSize<t_element, t_domain>()>(mapping_value.rank(), 0);
+                    line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
+                }
+                return mapping;
             }
 
             template<MappingConcept auto t_mapping>
-            static constexpr
-            Integer
-            getMappingSize()
+            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getStaticSize<t_element, t_domain>()>
+            getMapping(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_mapping.getTransformation() == "SmallStrain")
             {
-                return MappingTraits<t_mapping>::template getSize<t_domain>();
+                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getStaticSize<t_element, t_domain>()>();
+                mapping.setZero();
+                auto lhs = getGradientLhs();
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
+                {
+                    auto rhs = getSymmetricGradientRhs(mapping_value.row(), mapping_value.col());
+                    auto line = mapping.template block<1, getStaticSize<t_element, t_domain>()>(mapping_value.rank(), 0);
+                    line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
+                }
+                return mapping;
             }
 
-            template<FieldConcept auto t_field>
-            static constexpr
-            Integer
-            getNumCellUnknowns()
-            requires(t_element.isSub(t_domain, 0))
+            template<MappingConcept auto t_mapping>
+            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getStaticSize<t_element, t_domain>()>
+            getMapping(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_mapping.getTransformation() == "Identity")
             {
-                return DiscretizationTraits::template getNumCellUnknowns<t_element, t_domain, t_field>();
+                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getStaticSize<t_element, t_domain>()>();
+                mapping.setZero();
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
+                {
+                    auto left_vector = this->template getBasisEvaluation<getCellBasis()>(point);
+                    auto col_offset = mapping_value.row() * getCellBasisSize<t_element>();
+                    auto line = mapping.template block<1, getCellBasisSize<t_element>()>(mapping_value.rank(), col_offset);
+                    line = mapping_value.value() * this->template getBasisEvaluation<getCellBasis()>(point);
+                }
+                return mapping;
             }
 
-            template<FieldConcept auto t_field>
-            static constexpr
-            Integer
-            getNumFaceUnknowns()
-            requires(t_element.isSub(t_domain, 1))
+            template<MappingConcept auto t_mapping>
+            Matrix<Real, 1, getStaticSize<t_element, t_domain>()>
+            getMapping(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_mapping.getTransformation() == "Identity" && (t_mapping.getRow() >= 0 || t_mapping.getCol() >= 0))
             {
-                return DiscretizationTraits::template getNumFaceUnknowns<t_element, t_domain, t_field>();
+                auto mapping = Matrix<Real, 1, getStaticSize<t_element, t_domain>()>();
+                mapping.setZero();
+                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
+                {
+                    if (mapping_value.row() == t_mapping.getRow() && mapping_value.col() == t_mapping.getCol())
+                    {
+                        auto left_vector = this->template getBasisEvaluation<getCellBasis()>(point);
+                        auto col_offset = mapping_value.row() * getCellBasisSize<t_element>();
+                        auto line = mapping.template block<1, getCellBasisSize<t_element>()>(0, col_offset);
+                        line = mapping_value.value() * this->template getBasisEvaluation<getCellBasis()>(point);
+                    }
+                }
+                return mapping;
             }
 
-            template<FieldConcept auto t_field>
-            static constexpr
-            Integer
-            getNumElementUnknowns()
-            requires(t_element.isSub(t_domain, 0))
-            {
-                return DiscretizationTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
-            }
-
-        public:
-
-            template<FieldConcept auto t_field>
-            static constexpr
-            Integer
-            getDiscreteFieldDegreeOfFreedomSize()
-            {
-                return DiscretizationTraits::template getDiscreteFieldDegreeOfFreedomSize<t_element, t_domain, t_field>();
-            }
-
-            template<FieldConcept auto t_field>
-            constexpr
-            Integer
-            getDiscreteFieldDegreeOfFreedomNumCoefficients()
+            
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getDiscreteFieldDegreeOfFreedomCoefficients()
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                return DiscretizationTraits::template getNumElementUnknowns<t_element, t_domain, t_field>();
+                auto offset = 0;
+                auto unknown = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                auto cell_block = unknown.template segment<cell_dof.template getSize<t_element, t_field, getCellBasis()>()>(offset);
+                cell_block = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>();
+                offset += cell_dof.template getSize<t_element, t_field, getCellBasis()>();
+                auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                        auto face_block = unknown.template segment<face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>()>(offset);
+                        face_block = face_dof.template getCoefficients<t_inner_neighbor, t_field, getFaceBasis()>();
+                        offset += face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>();
+                    }
+                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_unknowns(set_faces_unknowns);
+                return unknown;
             }
-
-            template<FieldConcept auto t_field>
-            constexpr
-            Integer
-            getDiscreteFieldDegreeOfFreedomNumCoefficients()
+            
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getDiscreteFieldDegreeOfFreedomCoefficients()
             const
             requires(t_element.isSub(t_domain, 1))
             {
-                return DiscretizationTraits::template getNumFaceUnknowns<t_element, t_domain, t_field>();
+                return this->template getDiscreteField<t_field>().getDegreeOfFreedom().template getCoefficients<t_element, t_field, getFaceBasis()>();
             }
+            
+            void
+            addDiscreteFieldDegreeOfFreedom()
+            requires(t_element.isSub(t_domain, 0))
+            {
+                static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getCellBasis()>();
+            }
+
+            template<Strategy t_s>
+            void
+            addDiscreteFieldDegreeOfFreedom(
+                std::unique_ptr<LinearSystem<t_s>> const & linear_system
+            )
+            requires(t_element.isSub(t_domain, 1))
+            {
+                static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(linear_system);
+            }
+
+            template<Label t_label>
+            void
+            addDiscreteFieldOperator()
+            requires(t_label == "Stabilization")
+            {
+                this->template getDiscreteField<t_field>().addMatrix(t_label, getStabilization());
+            }
+            
+            void
+            upgradeDiscreteFieldDegreeOfFreedom(
+                VectorConcept<Real> auto const & increment
+            )
+            {}
+            
+            void
+            upgradeDiscreteFieldDegreeOfFreedom(
+                VectorConcept<Real> auto const & increment
+            )
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr num_cell_unknowns = getNumCellUnknowns<t_element, t_domain>();
+                auto constexpr strain_operator_num_cols = getStaticSize<t_element, t_domain>();
+                auto constexpr num_face_unknowns = getStaticSize<t_element, t_domain>() - num_cell_unknowns;
+                auto faces_correction = Vector<Real, num_face_unknowns>();
+                faces_correction.setZero();
+                auto faces_correction_offset = 0;
+                auto set_faces_increment = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
+                    {
+                        auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                        auto lhs = faces_correction.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(faces_correction_offset);
+                        auto rhs = increment.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(face_dof.getOffset());
+                        lhs = rhs;
+                        faces_correction_offset += face_dof.template getSize<t_field, getFaceBasis()>();
+                    }
+                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_increment(set_faces_increment);
+                auto k_tt_inv = this->template getDiscreteField<t_field>().getMatrix("KTT");
+                auto k_tf = this->template getDiscreteField<t_field>().getMatrix("KTF");
+                auto r_t = this->template getDiscreteField<t_field>().getVector("RT");
+                auto cell_corr = k_tt_inv * (r_t - k_tf * faces_correction);
+                this->template getDiscreteField<t_field>().getDegreeOfFreedom().addCoefficients(cell_corr);
+            }
+            
+            void
+            upgradeDiscreteFieldDegreeOfFreedom(
+                VectorConcept<Real> auto const & increment
+            )
+            requires(t_element.isSub(t_domain, 1))
+            {
+                static_cast<Base *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(increment);
+            }
+            
+            Real
+            getDiscreteFieldDegreeOfFreedomValue(
+                PointConcept auto const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            {
+                return 0.0;
+            }
+            
+            Real
+            getDiscreteFieldDegreeOfFreedomValue(
+                PointConcept auto const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getCellBasis()>(point, row, col);
+            }
+            
+            Real
+            getDiscreteFieldDegreeOfFreedomValue(
+                Point const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getFaceBasis()>(point, row, col);
+            }
+
+            template<Quadrature t_quadrature>
+            Real
+            getDiscreteFieldDegreeOfFreedomIntegrationValue(
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                this->template getDiscreteFieldDegreeOfFreedomValue<t_field>(row, col);
+                auto value = Real(0);
+                for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
+                {
+                    auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
+                    auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
+                    value += weight * this->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
+                }
+                return value;
+            }
+
+            template<PotentialConcept auto... t_behaviors>
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getInternalForces()
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto internal_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                internal_forces.setZero();
+                auto bb = [&] <PotentialConcept auto t_behavior> ()
+                {
+                    auto aaa = [&] <Integer t_i = 0> (
+                        auto & self
+                    )
+                    constexpr mutable
+                    {
+                        auto constexpr strain = t_behavior.template getStrain<t_i>();
+                        if (strain.getField() == t_field)
+                        {
+                            auto constexpr strain_operator_num_rows = MappingTraits<strain>::template getSize<t_domain>();
+                            using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+                            for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
+                            {
+                                auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+                                internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<strain>().transpose() * stress_view;
+                            }
+                            if constexpr (t_i < t_behavior.getNumMappings() - 1)
+                            {
+                                self.template operator()<t_i + 1>(self);
+                            }
+                        }
+                    };
+                    aaa(aaa);
+                };
+                bb.template operator()<t_behaviors...>();
+                return internal_forces;
+            }
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getExternalForces(
+                Real const & time
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto constexpr quadrature = Quadrature("Gauss", 4);
+                auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                external_forces.setZero();
+                for (auto const & domain : this->getDomains())
+                {
+                    if (domain->hasLoads())
+                    {
+                        for (auto const & load : domain->getLoads())
+                        {
+                            for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
+                            {
+                                auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
+                                auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
+                                auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
+                                auto vector = this->template getBasisEvaluation<getCellBasis()>(reference_point);
+                                auto offset = getCellBasisSize<t_element>() * FieldTraits<t_field>::getCols() * load.getRow() + load.getCol();
+                                auto lhs = external_forces.template segment<getCellBasisSize<t_element>()>(offset);
+                                lhs += weight * load.getValue(current_point, time) * vector;
+                            }
+                        }
+                    }
+                }
+                return external_forces;
+            }
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getExternalForces(
+                Real const & time
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto constexpr quadrature = Quadrature("Gauss", 4);
+                auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                external_forces.setZero();
+                for (auto const & domain : this->getDomains())
+                {
+                    if (domain->hasLoads())
+                    {
+                        for (auto const & load : domain->getLoads())
+                        {
+                            for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
+                            {
+                                auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
+                                auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
+                                auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
+                                auto vector = this->template getBasisEvaluation<getFaceBasis()>(reference_point);
+                                auto offset = getFaceBasisSize<t_element>() * FieldTraits<t_field>::getCols() * load.getRow() + load.getCol();
+                                auto lhs = external_forces.template segment<getFaceBasisSize<t_element>()>(offset);
+                                lhs += weight * load.getValue(current_point, time) * vector;
+                            }
+                        }
+                    }
+                }
+                return external_forces;
+            }
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getRhs(
+                Real const & time
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                return this->getExternalForces(time) - this->getInternalForces();
+            }
+
+            template<PotentialConcept auto... t_behaviors>
+            Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>
+            getLhs()
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto jacobian_matrix = Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>();
+                jacobian_matrix.setZero();
+                // auto bb = [&] <PotentialConcept auto t_behavior> ()
+                // {
+                //     auto aaa = [&] <Integer t_i = 0> (
+                //         auto & self
+                //     )
+                //     constexpr mutable
+                //     {
+                //         auto constexpr strain = t_behavior.template getStrain<t_i>();
+                //         auto constexpr strain_operator_num_rows = MappingTraits<strain>::template getSize<t_domain>();
+                //         using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+                //         for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
+                //         {
+                //             auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+                //             internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<strain>().transpose() * stress_view;
+                //         }
+                //         if constexpr (t_i < t_behavior.getNumMappings() - 1)
+                //         {
+                //             self.template operator()<t_i + 1>(self);
+                //         }
+                //     };
+                //     aaa(aaa);
+                // };
+                // bb.template operator()<t_behaviors...>();
+                return jacobian_matrix;
+            }
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getRhs(
+                Real const & time
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                    auto & self
+                )
+                constexpr mutable
+                {
+                    for (auto const & cell : this->template getOuterNeighbors<1, t_i>())
+                    {
+                        auto cell_rhs = cell->getExternalForces(time) - cell->getInternalForces();
+                        auto constexpr t_outer_neighbor = ElementTraits<t_element>::template getOuterNeighbor<t_domain, 1, t_i>();
+                        auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
+                            auto & self2
+                        )
+                        constexpr mutable
+                        {
+                            for (auto const & face : cell->template getInnerNeighbors<0, t_j>())
+                            {
+                                // auto face_unknown_size = face->degrees_of_freedom_.at(std::string(unknown_label)).template getSize<field, getFaceBasis()>();
+                                // band_width += face_unknown_size;
+                            }
+                            if constexpr (t_j < ElementTraits<t_outer_neighbor>::template getNumInnerNeighbors<0>() - 1)
+                            {
+                                self2.template operator ()<t_j + 1>(self2);
+                            }
+                        };
+                        set_faces_unknowns2(set_faces_unknowns2);
+                    }
+                    if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, 1>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                };
+                set_faces_unknowns(set_faces_unknowns);
+                return this->getExternalForces(time) - this->getInternalForces();
+            }
+
+            /**
+             * Implementation
+             * *************************************************************************************************************************************************
+             */
 
             static constexpr
             Integer
@@ -298,9 +662,8 @@ namespace lolita
                 }
                 return lhs.llt().solve(decltype(lhs)::Identity());
             }
-
-            template<FieldConcept auto t_field>
-            Matrix<Real, getPotentialBasisSize<t_element>() - 1, getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            
+            Matrix<Real, getPotentialBasisSize<t_element>() - 1, getStaticSize<t_element, t_domain>()>
             getPotentialRhs(
                 Integer row
             )
@@ -310,7 +673,7 @@ namespace lolita
                 // auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
-                auto rhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto rhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getStaticSize<t_element, t_domain>()>();
                 rhs.setZero();
                 for (auto i_component = 0; i_component < t_domain.getDim(); i_component++)
                 {
@@ -373,9 +736,8 @@ namespace lolita
                 }
                 return rhs;
             }
-
-            template<FieldConcept auto t_field>
-            Matrix<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            
+            Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>
             getStabilization()
             const
             requires(t_element.isSub(t_domain, 0))
@@ -384,8 +746,8 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 //
-                auto S_T_A_B_I_L_I_Z_A_T_I_O_N = Matrix<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
-                auto potential_operator = Matrix<Real, getPotentialBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto S_T_A_B_I_L_I_Z_A_T_I_O_N = Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>();
+                auto potential_operator = Matrix<Real, getPotentialBasisSize<t_element>(), getStaticSize<t_element, t_domain>()>();
                 auto potential_lhs = getPotentialLhs();
                 auto denom = 1.0 / QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize();
                 S_T_A_B_I_L_I_Z_A_T_I_O_N.setZero();
@@ -393,21 +755,21 @@ namespace lolita
                 {
                     auto face_offset = t_field_size * getCellBasisSize<t_element>();
                     potential_operator.setZero();
-                    auto oppp = potential_operator.template block<getPotentialBasisSize<t_element>() - 1, getDiscreteFieldDegreeOfFreedomSize<t_field>()>(1, 0);
-                    oppp = potential_lhs * getPotentialRhs<t_field>(i_component);
+                    auto oppp = potential_operator.template block<getPotentialBasisSize<t_element>() - 1, getStaticSize<t_element, t_domain>()>(1, 0);
+                    oppp = potential_lhs * getPotentialRhs(i_component);
                     for (auto i_quadrature = 0; i_quadrature < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i_quadrature++)
                     {
                         auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i_quadrature);
                         auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i_quadrature);
                         auto row_cell_vector = this->template getBasisEvaluation<getPotentialBasis()>(point);
                         auto row_cell_vector_j = row_cell_vector.template segment<getPotentialBasisSize<t_element>() - 1>(1);
-                        potential_operator.template block<1, getDiscreteFieldDegreeOfFreedomSize<t_field>()>(0, 0) -= denom * weight * row_cell_vector_j.transpose() * oppp;
+                        potential_operator.template block<1, getStaticSize<t_element, t_domain>()>(0, 0) -= denom * weight * row_cell_vector_j.transpose() * oppp;
                         potential_operator.template block<1, getCellBasisSize<t_element>()>(0, i_component * getCellBasisSize<t_element>()) +=
                         denom * weight * this->template getBasisEvaluation<getCellBasis()>(point).transpose();
                     }
                     //
                     auto cell_projection_lhs = Matrix<Real, getCellBasisSize<t_element>(), getCellBasisSize<t_element>()>();
-                    auto cell_projection_rhs = Matrix<Real, getCellBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                    auto cell_projection_rhs = Matrix<Real, getCellBasisSize<t_element>(), getStaticSize<t_element, t_domain>()>();
                     cell_projection_lhs.setZero();
                     cell_projection_rhs.setZero();
                     for (auto i_quadrature = 0; i_quadrature < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i_quadrature++)
@@ -434,7 +796,7 @@ namespace lolita
                             auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
                             auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
                             auto face_projection_lhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getFaceBasisSize<t_inner_neighbor>()>();
-                            auto face_projection_rhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                            auto face_projection_rhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getStaticSize<t_element, t_domain>()>();
                             face_projection_lhs.setZero();
                             face_projection_rhs.setZero();
                             for (auto i_quadrature = 0; i_quadrature < quadrature_size; i_quadrature++)
@@ -503,9 +865,8 @@ namespace lolita
                 }
                 return lhs.llt().solve(decltype(lhs)::Identity());
             }
-
-            template<FieldConcept auto t_field>
-            Matrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            
+            Matrix<Real, getGradBasisSize<t_element>(), getStaticSize<t_element, t_domain>()>
             getGradientRhs(
                 Integer row,
                 Integer col
@@ -517,7 +878,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getStaticSize<t_element, t_domain>()>();
                 rhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
@@ -572,9 +933,8 @@ namespace lolita
                 set_faces_blocks(set_faces_blocks);
                 return rhs;
             }
-
-            template<FieldConcept auto t_field>
-            Matrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            
+            Matrix<Real, getGradBasisSize<t_element>(), getStaticSize<t_element, t_domain>()>
             getSymmetricGradientRhs(
                 Integer row,
                 Integer col
@@ -586,7 +946,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getStaticSize<t_element, t_domain>()>();
                 rhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
@@ -654,274 +1014,6 @@ namespace lolita
                 set_faces_blocks(set_faces_blocks);
                 return rhs;
             }
-            
-            template<MappingConcept auto t_mapping>
-            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
-            getMapping(
-                PointConcept auto const & point
-            )
-            const
-            requires(t_mapping.isGradient() || t_mapping.isLargeStrain())
-            {
-                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
-                mapping.setZero();
-                auto lhs = getGradientLhs();
-                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
-                {
-                    auto rhs = getGradientRhs<t_mapping.getField()>(mapping_value.row(), mapping_value.col());
-                    auto line = mapping.template block<1, getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>(mapping_value.rank(), 0);
-                    line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
-                }
-                return mapping;
-            }
-
-            template<MappingConcept auto t_mapping>
-            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
-            getMapping(
-                PointConcept auto const & point
-            )
-            const
-            requires(t_mapping.isSmallStrain())
-            {
-                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
-                mapping.setZero();
-                auto lhs = getGradientLhs();
-                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
-                {
-                    auto rhs = getSymmetricGradientRhs<t_mapping.getField()>(mapping_value.row(), mapping_value.col());
-                    auto line = mapping.template block<1, getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>(mapping_value.rank(), 0);
-                    line = mapping_value.value() * this->template getBasisEvaluation<getGradBasis()>(point).transpose() * lhs * rhs;
-                }
-                return mapping;
-            }
-
-            template<MappingConcept auto t_mapping>
-            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
-            getMapping(
-                PointConcept auto const & point
-            )
-            const
-            requires(t_mapping.isIdentity())
-            {
-                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
-                mapping.setZero();
-                auto lhs = getGradientLhs();
-                for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
-                {
-                    auto left_vector = this->template getBasisEvaluation<getCellBasis()>(point);
-                    auto col_offset = mapping_value.row() * getCellBasisSize<t_element>();
-                    auto line = mapping.template block<1, getCellBasisSize<t_element>()>(mapping_value.rank(), col_offset);
-                    line = mapping_value.value() * this->template getBasisEvaluation<getCellBasis()>(point);
-                }
-                return mapping;
-            }
-
-            // template<FieldConcept auto t_field>
-            // Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>()>
-            // getUnknowns()
-            // const
-            // {
-            //     auto offset = 0;
-            //     auto unknown = Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
-            //     auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
-            //     auto cell_block = unknown.template segment<cell_dof.template getSize<t_element, t_field, getCellBasis()>()>(offset);
-            //     cell_block = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>();
-            //     offset += cell_dof.template getSize<t_element, t_field, getCellBasis()>();
-            //     auto set_faces_unknowns = [&] <Integer t_i = 0> (
-            //         auto & self
-            //     )
-            //     constexpr mutable
-            //     {
-            //         auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-            //         for (auto const & face : this->template getInnerNeighbors<0, t_i>())
-            //         {
-            //             auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
-            //             auto face_block = unknown.template segment<face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>()>(offset);
-            //             face_block = face_dof.template getCoefficients<t_inner_neighbor, t_field, getFaceBasis()>();
-            //             offset += face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>();
-            //         }
-            //         if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
-            //         {
-            //             self.template operator ()<t_i + 1>(self);
-            //         }
-            //     };
-            //     set_faces_unknowns(set_faces_unknowns);
-            //     return unknown;
-            // }
-
-            template<FieldConcept auto t_field>
-            Vector<Real, Base::template getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
-            getDiscreteFieldDegreeOfFreedomCoefficients()
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                auto offset = 0;
-                auto unknown = Vector<Real, Base::template getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>();
-                auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
-                auto cell_block = unknown.template segment<cell_dof.template getSize<t_element, t_field, getCellBasis()>()>(offset);
-                cell_block = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>();
-                offset += cell_dof.template getSize<t_element, t_field, getCellBasis()>();
-                auto set_faces_unknowns = [&] <Integer t_i = 0> (
-                    auto & self
-                )
-                constexpr mutable
-                {
-                    auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
-                    {
-                        auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
-                        auto face_block = unknown.template segment<face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>()>(offset);
-                        face_block = face_dof.template getCoefficients<t_inner_neighbor, t_field, getFaceBasis()>();
-                        offset += face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>();
-                    }
-                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
-                    {
-                        self.template operator ()<t_i + 1>(self);
-                    }
-                };
-                set_faces_unknowns(set_faces_unknowns);
-                return unknown;
-            }
-
-            template<FieldConcept auto t_field>
-            void
-            addDiscreteFieldDegreeOfFreedom()
-            requires(t_element.isSub(t_domain, 0))
-            {
-                static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getCellBasis()>();
-            }
-
-            template<FieldConcept auto t_field, Strategy t_s>
-            void
-            addDiscreteFieldDegreeOfFreedom(
-                std::unique_ptr<LinearSystem<t_s>> const & linear_system
-            )
-            requires(t_element.isSub(t_domain, 1))
-            {
-                static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(linear_system);
-            }
-
-            template<FieldConcept auto t_field, Label t_label>
-            void
-            addDiscreteFieldOperator()
-            requires(t_label == "Stabilization")
-            {
-                this->template getDiscreteField<t_field>().addMatrix(t_label, getStabilization<t_field>());
-            }
-
-            template<FieldConcept auto t_field>
-            void
-            upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
-            )
-            {}
-
-            template<FieldConcept auto t_field>
-            void
-            upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
-            )
-            requires(t_element.isSub(t_domain, 0))
-            {
-                auto constexpr num_cell_unknowns = getNumCellUnknowns<t_field>();
-                auto constexpr strain_operator_num_cols = getDiscreteFieldDegreeOfFreedomSize<t_field>();
-                auto constexpr num_face_unknowns = getDiscreteFieldDegreeOfFreedomSize<t_field>() - num_cell_unknowns;
-                auto faces_correction = Vector<Real, num_face_unknowns>();
-                faces_correction.setZero();
-                auto faces_correction_offset = 0;
-                auto set_faces_increment = [&] <Integer t_i = 0> (
-                    auto & self
-                )
-                constexpr mutable
-                {
-                    for (auto const & face : this->template getInnerNeighbors<0, t_i>())
-                    {
-                        auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
-                        auto lhs = faces_correction.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(faces_correction_offset);
-                        auto rhs = increment.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(face_dof.getOffset());
-                        lhs = rhs;
-                        faces_correction_offset += face_dof.template getSize<t_field, getFaceBasis()>();
-                    }
-                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
-                    {
-                        self.template operator ()<t_i + 1>(self);
-                    }
-                };
-                set_faces_increment(set_faces_increment);
-                auto k_tt_inv = this->template getDiscreteField<t_field>().getMatrix("KTT");
-                auto k_tf = this->template getDiscreteField<t_field>().getMatrix("KTF");
-                auto r_t = this->template getDiscreteField<t_field>().getVector("RT");
-                auto cell_corr = k_tt_inv * (r_t - k_tf * faces_correction);
-                this->template getDiscreteField<t_field>().getDegreeOfFreedom().addCoefficients(cell_corr);
-            }
-
-            template<FieldConcept auto t_field>
-            void
-            upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
-            )
-            requires(t_element.isSub(t_domain, 1))
-            {
-                static_cast<Base *>(this)->template upgradeDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(increment);
-            }
-
-            template<FieldConcept auto t_field>
-            Real
-            getDiscreteFieldDegreeOfFreedomValue(
-                PointConcept auto const & point,
-                Integer row,
-                Integer col
-            )
-            const
-            {
-                return 0.0;
-            }
-
-            template<FieldConcept auto t_field>
-            Real
-            getDiscreteFieldDegreeOfFreedomValue(
-                PointConcept auto const & point,
-                Integer row,
-                Integer col
-            )
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getCellBasis()>(point, row, col);
-            }
-
-            template<FieldConcept auto t_field>
-            Real
-            getDiscreteFieldDegreeOfFreedomValue(
-                Point const & point,
-                Integer row,
-                Integer col
-            )
-            const
-            requires(t_element.isSub(t_domain, 1))
-            {
-                return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getFaceBasis()>(point, row, col);
-            }
-
-            template<FieldConcept auto t_field, Quadrature t_quadrature>
-            Real
-            getDiscreteFieldDegreeOfFreedomIntegrationValue(
-                Integer row,
-                Integer col
-            )
-            const
-            requires(t_element.isSub(t_domain, 1))
-            {
-                this->template getDiscreteFieldDegreeOfFreedomValue<t_field>(row, col);
-                auto value = Real(0);
-                for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
-                {
-                    auto point = this->template getReferenceQuadraturePoint<t_quadrature>(i);
-                    auto weight = this->template getCurrentQuadratureWeight<t_quadrature>(i);
-                    value += weight * this->template getDiscreteFieldDegreeOfFreedomValue<t_field>(point, row, col);
-                }
-                return value;
-            }
 
             template<PotentialConcept auto t_behavior>
             void
@@ -931,78 +1023,76 @@ namespace lolita
 
             }
 
-            template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
-            Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_strain.getField()>()>
-            getInternalForces()
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                auto constexpr t_field = t_strain.getField();
-                auto constexpr strain_operator_num_rows = MappingTraits<t_strain>::template getSize<t_domain>();
-                auto constexpr strain_operator_num_cols = getDiscreteFieldDegreeOfFreedomSize<t_field>();
-                // using StrainOperatorView = algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
-                using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
-                auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
-                auto internal_forces = Vector<Real, strain_operator_num_cols>();
-                internal_forces.setZero();
-                for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
-                {
-                    // auto strain_operator_view = StrainOperatorView(ip.template getStrainOperator<t_strain>().data());
-                    auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
-                    internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<t_strain>().transpose() * stress_view;
-                }
-                auto const & s_o = this->template getDiscreteField<t_field>().getMatrix("Stabilization");
-                auto const & s_p = this->template getDiscreteField<t_field>().getScalar("Stabilization");
-                internal_forces += s_p * s_o * unknown;
-                return internal_forces;
-            }
+            // template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
+            // Vector<Real, getSize()>
+            // getInternalForces()
+            // const
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     auto constexpr strain_operator_num_rows = MappingTraits<t_strain>::template getSize<t_domain>();
+            //     auto constexpr strain_operator_num_cols = getSize();
+            //     // using StrainOperatorView = algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+            //     using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+            //     auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
+            //     auto internal_forces = Vector<Real, strain_operator_num_cols>();
+            //     internal_forces.setZero();
+            //     for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
+            //     {
+            //         // auto strain_operator_view = StrainOperatorView(ip.template getStrainOperator<t_strain>().data());
+            //         auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+            //         internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<t_strain>().transpose() * stress_view;
+            //     }
+            //     auto const & s_o = this->template getDiscreteField<t_field>().getMatrix("Stabilization");
+            //     auto const & s_p = this->template getDiscreteField<t_field>().getScalar("Stabilization");
+            //     internal_forces += s_p * s_o * unknown;
+            //     return internal_forces;
+            // }
 
-            template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
-            void
-            setInternalForces(
-                Vector<Real> & internal_forces,
-                Integer & offset
-            )
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                auto constexpr t_field = t_strain.getField();
-                auto constexpr strain_operator_num_rows = MappingTraits<t_strain>::template getSize<t_domain>();
-                auto constexpr strain_operator_num_cols = getDiscreteFieldDegreeOfFreedomSize<t_field>();
-                using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
-                auto internal_forces_block = internal_forces.template segment<getDiscreteFieldDegreeOfFreedomSize<t_field>()>(offset);
-                auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
-                for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
-                {
-                    auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
-                    internal_forces_block += ip.getCurrentWeight() * ip.template getStrainOperator<t_strain>().transpose() * stress_view;
-                }
-                offset += getDiscreteFieldDegreeOfFreedomSize<t_field>();
-            }
+            // template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
+            // void
+            // setInternalForces(
+            //     Vector<Real> & internal_forces,
+            //     Integer & offset
+            // )
+            // const
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     auto constexpr t_field = t_strain.getField();
+            //     auto constexpr strain_operator_num_rows = MappingTraits<t_strain>::template getSize<t_domain>();
+            //     auto constexpr strain_operator_num_cols = getSize();
+            //     using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+            //     auto internal_forces_block = internal_forces.template segment<getSize()>(offset);
+            //     auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
+            //     for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
+            //     {
+            //         auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+            //         internal_forces_block += ip.getCurrentWeight() * ip.template getStrainOperator<t_strain>().transpose() * stress_view;
+            //     }
+            //     offset += getSize();
+            // }
 
-            template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
-            void
-            setStabilizationForces(
-                Vector<Real> & internal_forces,
-                Integer & offset
-            )
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                auto constexpr t_field = t_strain.getField();
-                auto constexpr strain_operator_num_cols = getDiscreteFieldDegreeOfFreedomSize<t_field>();
-                auto internal_forces_block = internal_forces.template segment<strain_operator_num_cols>(offset);
-                auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
-                auto const & s_o = this->template getDiscreteField<t_field>().getMatrix("Stabilization");
-                auto const & s_p = this->template getDiscreteField<t_field>().getScalar("Stabilization");
-                internal_forces_block += s_p * s_o * unknown;
-            }
+            // template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
+            // void
+            // setStabilizationForces(
+            //     Vector<Real> & internal_forces,
+            //     Integer & offset
+            // )
+            // const
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     auto constexpr t_field = t_strain.getField();
+            //     auto constexpr strain_operator_num_cols = getSize();
+            //     auto internal_forces_block = internal_forces.template segment<strain_operator_num_cols>(offset);
+            //     auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
+            //     auto const & s_o = this->template getDiscreteField<t_field>().getMatrix("Stabilization");
+            //     auto const & s_p = this->template getDiscreteField<t_field>().getScalar("Stabilization");
+            //     internal_forces_block += s_p * s_o * unknown;
+            // }
 
         };
-
+        
     };
-    
+
 } // namespace lolita
 
-
-#endif /* B536F722_1A61_4366_8C7E_4B005041A1BF */
+#endif /* FEB10822_D09A_4468_9437_2ADB758EE6F4 */

@@ -11,6 +11,7 @@
 #include "core/300_finite_element.hxx"
 #include "core/400_finite_element_basis.hxx"
 #include "core/500_finite_element_hdg_discretization.hxx"
+#include "core/501_finite_element_hdg_discretization.hxx"
 // #include "core/lolita_core_n_4001.hxx"
 
 namespace lolita
@@ -188,19 +189,19 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, FieldConcept auto t_field, auto t_arg>
-        void
-        addElementDiscreteFieldDegreeOfFreedom(
-            std::basic_string<Character> && domain_label,
-            auto const &... args
-        )
-        {
-            auto fun = [&] (auto const & finite_element)
-            {
-                finite_element->template addDiscreteFieldDegreeOfFreedom<t_field, t_arg>(args...);
-            };
-            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
-        }
+        // template<Integer t_i, FieldConcept auto t_field, auto t_arg>
+        // void
+        // addElementDiscreteFieldDegreeOfFreedom(
+        //     std::basic_string<Character> && domain_label,
+        //     auto const &... args
+        // )
+        // {
+        //     auto fun = [&] (auto const & finite_element)
+        //     {
+        //         finite_element->template addDiscreteFieldDegreeOfFreedom<t_field, t_arg>(args...);
+        //     };
+        //     caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        // }
 
         template<Integer t_i, FieldConcept auto t_field>
         void
@@ -216,18 +217,18 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, FieldConcept auto t_field, auto t_arg, Label t_label>
-        void
-        addElementDiscreteFieldOperator(
-            std::basic_string<Character> && domain_label
-        )
-        {
-            auto fun = [&] (auto const & finite_element)
-            {
-                finite_element->template addDiscreteFieldOperator<t_field, t_arg, t_label>();
-            };
-            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
-        }
+        // template<Integer t_i, FieldConcept auto t_field, auto t_arg, Label t_label>
+        // void
+        // addElementDiscreteFieldOperator(
+        //     std::basic_string<Character> && domain_label
+        // )
+        // {
+        //     auto fun = [&] (auto const & finite_element)
+        //     {
+        //         finite_element->template addDiscreteFieldOperator<t_field, t_arg, t_label>();
+        //     };
+        //     caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        // }
 
         template<Integer t_i, FieldConcept auto t_field, Label t_label>
         void
@@ -242,7 +243,21 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, FieldConcept auto t_field, auto t_arg>
+        // template<Integer t_i, FieldConcept auto t_field, auto t_arg>
+        // void
+        // upgradeElementDiscreteFieldDegreeOfFreedom(
+        //     std::basic_string<Character> && domain_label,
+        //     auto const &... args
+        // )
+        // {
+        //     auto fun = [&] (auto const & finite_element)
+        //     {
+        //         finite_element->template upgradeDiscreteFieldDegreeOfFreedom<t_field, t_arg>(args...);
+        //     };
+        //     caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        // }
+
+        template<Integer t_i, FieldConcept auto t_field>
         void
         upgradeElementDiscreteFieldDegreeOfFreedom(
             std::basic_string<Character> && domain_label,
@@ -251,7 +266,7 @@ namespace lolita
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template upgradeDiscreteFieldDegreeOfFreedom<t_field, t_arg>(args...);
+                finite_element->template upgradeDiscreteFieldDegreeOfFreedom<t_field>(args...);
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -344,18 +359,18 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, DiscretizationConcept auto t_discretization>
-        void
-        addFormulationStrainOperator(
-            std::basic_string<Character> && domain_label
-        )
-        {
-            auto fun = [&] (auto const & finite_element)
-            {
-                finite_element->template addFormulationStrainOperator<t_behavior, t_strain, t_discretization>();
-            };
-            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
-        }
+        // template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, DiscretizationConcept auto t_discretization>
+        // void
+        // addFormulationStrainOperator(
+        //     std::basic_string<Character> && domain_label
+        // )
+        // {
+        //     auto fun = [&] (auto const & finite_element)
+        //     {
+        //         finite_element->template addFormulationStrainOperator<t_behavior, t_strain, t_discretization>();
+        //     };
+        //     caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        // }
 
         template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain>
         void
@@ -370,18 +385,18 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
-        template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, DiscretizationConcept auto t_discretization>
-        void
-        setFormulationStrain(
-            std::basic_string<Character> && domain_label
-        )
-        {
-            auto fun = [&] (auto const & finite_element)
-            {
-                finite_element->template setFormulationStrain<t_behavior, t_strain, t_discretization>();
-            };
-            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
-        }
+        // template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, DiscretizationConcept auto t_discretization>
+        // void
+        // setFormulationStrain(
+        //     std::basic_string<Character> && domain_label
+        // )
+        // {
+        //     auto fun = [&] (auto const & finite_element)
+        //     {
+        //         finite_element->template setFormulationStrain<t_behavior, t_strain, t_discretization>();
+        //     };
+        //     caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        // }
 
         template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain>
         void

@@ -365,74 +365,6 @@ namespace lolita
 
     };
 
-    struct Field
-    {
-
-        constexpr explicit
-        Field(
-            Integer dim
-        )
-        :
-        label_(),
-        dim_(dim)
-        {}
-        
-        constexpr
-        Field(
-            std::basic_string_view<Character> && label,
-            Integer dim
-        )
-        :
-        label_(std::forward<std::basic_string_view<Character>>(label)),
-        dim_(dim)
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            Field const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            Field const & other
-        )
-        const = default;
-
-        constexpr
-        Integer
-        getDim()
-        const
-        {
-            return dim_;
-        }
-
-        constexpr
-        Label const &
-        getLabel()
-        const
-        {
-            return label_;
-        }
-
-        constexpr
-        Boolean
-        isTensor(
-            Integer dim
-        )
-        const
-        {
-            return dim_ == dim;
-        }
-
-        Label label_;
-
-        Integer dim_;
-
-    };
-
     struct Discretization
     {
 
@@ -593,7 +525,7 @@ namespace lolita
             Integer order
         )
         :
-        Discretization("HybridDiscontinuousGalerkin"),
+        Discretization("Monomial"),
         basis_(Basis("Monomial", order))
         {}
 
@@ -626,75 +558,171 @@ namespace lolita
     template<typename t_T>
     concept DiscretizationConcept = std::derived_from<t_T, Discretization>;
 
-    // template<typename t_T>
-    // concept FieldDiscretizationConcept = std::convertible_to<t_T, Discretization> || std::convertible_to<t_T, Basis> || std::convertible_to<t_T, Integer>;
+    struct Field
+    {
+
+        constexpr explicit
+        Field(
+            Integer dim
+        )
+        :
+        label_(),
+        dim_(dim)
+        {}
+        
+        constexpr
+        Field(
+            std::basic_string_view<Character> && label,
+            Integer dim
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        dim_(dim)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            Field const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Field const & other
+        )
+        const = default;
+
+        constexpr
+        Integer
+        getDim()
+        const
+        {
+            return dim_;
+        }
+
+        constexpr
+        Label const &
+        getLabel()
+        const
+        {
+            return label_;
+        }
+
+        constexpr
+        Boolean
+        isTensor(
+            Integer dim
+        )
+        const
+        {
+            return dim_ == dim;
+        }
+
+        Label label_;
+
+        Integer dim_;
+
+    };
     
-    // template<FieldDiscretizationConcept t_Discretization = Integer>
-    // struct DiscreteField : Field
-    // {
+    template<DiscretizationConcept t_Discretization = Discretization>
+    struct DiscreteField : Field
+    {
 
-    //     using FieldDiscretization = t_Discretization;
+        using FieldDiscretization = t_Discretization;
+
+        constexpr explicit
+        DiscreteField(
+            Integer dim
+        )
+        :
+        Field(dim),
+        discretization_()
+        {}
         
-    //     constexpr explicit
-    //     DiscreteField(
-    //         Field const & field,
-    //         FieldDiscretization const & discretization
-    //     )
-    //     :
-    //     Field(field),
-    //     discretization_(discretization)
-    //     {}
-
-    //     constexpr
-    //     Boolean
-    //     operator==(
-    //         DiscreteField const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     Boolean
-    //     operator!=(
-    //         DiscreteField const & other
-    //     )
-    //     const = default;
-
-    //     constexpr
-    //     FieldDiscretization const &
-    //     getDiscretization()
-    //     const
-    //     {
-    //         return discretization_;
-    //     }
-
-    //     FieldDiscretization discretization_;
-
-    // };
-
-    // namespace detail
-    // {
-
-    //     template<typename t_T>
-    //     struct IsDiscreteField : std::false_type {};
+        constexpr
+        DiscreteField(
+            std::basic_string_view<Character> && label,
+            Integer dim
+        )
+        :
+        Field(std::forward<std::basic_string_view<Character>>(label), dim),
+        discretization_()
+        {}
         
-    //     template<typename t_T>
-    //     struct IsDiscreteField<DiscreteField<t_T>> : std::true_type {};
+        constexpr
+        DiscreteField(
+            std::basic_string_view<Character> && label,
+            Integer dim,
+            FieldDiscretization const & discretization
+        )
+        :
+        Field(std::forward<std::basic_string_view<Character>>(label), dim),
+        discretization_(discretization)
+        {}
+        
+        constexpr explicit
+        DiscreteField(
+            Field const & field,
+            FieldDiscretization const & discretization
+        )
+        :
+        Field(field),
+        discretization_(discretization)
+        {}
 
-    // }
+        constexpr
+        Boolean
+        operator==(
+            DiscreteField const & other
+        )
+        const = default;
 
-    // template<typename t_T>
-    // concept DiscreteFieldConcept = detail::IsDiscreteField<std::decay_t<t_T>>::value;
+        constexpr
+        Boolean
+        operator!=(
+            DiscreteField const & other
+        )
+        const = default;
+
+        constexpr
+        FieldDiscretization const &
+        getDiscretization()
+        const
+        {
+            return discretization_;
+        }
+
+        FieldDiscretization discretization_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsDiscreteField : std::false_type {};
+        
+        template<typename t_T>
+        struct IsDiscreteField<DiscreteField<t_T>> : std::true_type {};
+
+    }
+
+    template<typename t_T>
+    concept DiscreteFieldConcept = detail::IsDiscreteField<std::decay_t<t_T>>::value;
 
     template<typename t_T>
     concept FieldConcept = std::derived_from<t_T, Field>;
     
+    template<DiscreteFieldConcept t_Field>
     struct Mapping
     {
 
         constexpr
         Mapping(
             std::basic_string_view<Character> && transformation,
-            Field const & field
+            t_Field const & field
         )
         :
         label_(field.getLabel().view(), std::forward<std::basic_string_view<Character>>(transformation)),
@@ -709,7 +737,7 @@ namespace lolita
             std::basic_string_view<Character> && transformation,
             Integer row,
             Integer col,
-            Field const & field
+            t_Field const & field
         )
         :
         label_(field.getLabel().view(), std::forward<std::basic_string_view<Character>>(transformation)),
@@ -742,6 +770,14 @@ namespace lolita
         }
 
         constexpr
+        Label const &
+        getTransformation()
+        const
+        {
+            return transformation_;
+        }
+
+        constexpr
         Integer
         getRow()
         const
@@ -758,7 +794,7 @@ namespace lolita
         }
 
         constexpr
-        Field const &
+        t_Field const &
         getField()
         const
         {
@@ -809,7 +845,7 @@ namespace lolita
 
         Label transformation_;
 
-        Field field_;
+        t_Field field_;
 
         Integer row_;
 
@@ -823,8 +859,8 @@ namespace lolita
         template<typename t_T>
         struct IsMapping : std::false_type {};
         
-        template<>
-        struct IsMapping<Mapping> : std::true_type {};
+        template<typename t_T>
+        struct IsMapping<Mapping<t_T>> : std::true_type {};
 
     }
 
