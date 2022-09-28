@@ -62,6 +62,12 @@ struct RefA
     auto static constexpr a_ = a;
 };
 
+template<typename... T>
+struct RefC
+{
+    
+};
+
 template<int... a>
 struct RefB
 {
@@ -94,43 +100,79 @@ struct Data;
 struct DataBase
 {
 
+    DataBase()
+    :
+    offset_(-1)
+    {}
+
+    explicit
+    DataBase(
+        int offset
+    )
+    :
+    offset_(offset)
+    {}
+
     virtual
     ~DataBase()
     {}
 
-    // template<int size> // TEMPLATES AND VIRTUAL DONT WORK
+    virtual
+    lolita::Real *
+    data()
+    =0;
+
+    virtual
+    lolita::Real const *
+    data()
+    const
+    =0;
+
+    virtual
+    lolita::Integer
+    size()
+    const
+    =0;
+    
     // virtual
-    // lolita::algebra::View<lolita::Vector<lolita::Real, size> const>
-    // view()
-    // const=0;
-    
-    virtual
+    // lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    // get()
+    // const
+    // =0;
+
     lolita::algebra::View<lolita::Vector<lolita::Real> const>
-    get()
-    const=0;
-
-};
-
-template<>
-struct Data<> : DataBase
-{
-
-    Data(
-        auto &&... args
+    view(
+        int size
     )
-    :
-    data_(std::move(args)...)
-    {}
-    
-    virtual
+    const
+    {
+        return lolita::algebra::View<lolita::Vector<lolita::Real> const>(this->data(), size);
+    }
+
     lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    view()
+    const
+    {
+        return lolita::algebra::View<lolita::Vector<lolita::Real> const>(this->data(), this->size());
+    }
+
+    template<int size>
+    lolita::algebra::View<lolita::Vector<lolita::Real, size> const>
+    view()
+    const
+    {
+        return lolita::algebra::View<lolita::Vector<lolita::Real, size> const>(this->data());
+    }
+
+    template<int size>
+    auto
     get()
     const
     {
-        return lolita::algebra::View<lolita::Vector<lolita::Real> const>(data_.data(), data_.size());
-    };
+        return static_cast<Data<size> const *>(this)->get();
+    }
 
-    lolita::Vector<lolita::Real> data_;
+    int offset_;
 
 };
 
@@ -138,22 +180,110 @@ template<int a>
 struct Data<a> : DataBase
 {
 
+    int static constexpr size_ = a;
+
     Data(
         auto &&... args
     )
     :
+    DataBase(),
     data_(std::move(args)...)
     {}
-    
-    virtual
-    lolita::algebra::View<lolita::Vector<lolita::Real> const>
+
+    lolita::Vector<lolita::Real, a> const &
     get()
     const
     {
-        return lolita::algebra::View<lolita::Vector<lolita::Real> const>(data_.data(), data_.size());
-    };
+        return data_;
+    }
+
+private:
+
+    lolita::Real *
+    data()
+    override
+    {
+        return data_.data();
+    }
+
+    lolita::Real const *
+    data()
+    const override
+    {
+        return data_.data();
+    }
+
+    lolita::Integer
+    size()
+    const override
+    {
+        return data_.size();
+    }
+    
+    // lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    // get()
+    // const override
+    // {
+    //     return lolita::algebra::View<lolita::Vector<lolita::Real> const>(data_.data(), data_.size());
+    // };
+
+    // template<int size>
+    // auto
+    // view()
+    // const
+    // {
+    //     return lolita::algebra::View<lolita::Vector<lolita::Real, size> const>(data_.data());
+    // }
 
     lolita::Vector<lolita::Real, a> data_;
+
+};
+
+template<>
+struct Data<> : DataBase
+{
+
+    int static constexpr size_ = -1;
+
+    Data(
+        auto &&... args
+    )
+    :
+    DataBase(),
+    data_(std::move(args)...)
+    {}
+
+private:
+
+    lolita::Real *
+    data()
+    override
+    {
+        return data_.data();
+    }
+
+    lolita::Real const *
+    data()
+    const override
+    {
+        return data_.data();
+    }
+
+    lolita::Integer
+    size()
+    const override
+    {
+        return data_.size();
+    }
+    
+    // lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    // get()
+    // const override
+    // {
+    //     return lolita::algebra::View<lolita::Vector<lolita::Real> const>(data_.data(), data_.size());
+    // };
+
+    lolita::Vector<lolita::Real> data_;
 
 };
 
@@ -172,12 +302,17 @@ makeIt()
     }
 }
 
+template<typename... T>
+using AGG = lolita::utility::Aggregate<T...>;
+
 int
 main(int argc, char** argv)
 {
 
     std::unique_ptr<DataBase> ptr_test = std::make_unique<Data<3>>(lolita::Vector<lolita::Real, 3>::Zero());
-    std::cout << ptr_test->get().template segment<2>(0) << std::endl;
+    // std::cout << ptr_test->get().template segment<2>(0) << std::endl;
+    std::cout << ptr_test->view<2>() << std::endl;
+    std::cout << ptr_test->get<2>() << std::endl;
 
     auto constexpr ici_1 = makeIt<lolita::Label("1")>();
     auto constexpr ici_2 = makeIt<lolita::Label("2")>();
@@ -226,16 +361,23 @@ main(int argc, char** argv)
     // }
     // std::cout << std::endl;
 
-    // using LHS_ = lolita::utility::aggregate_expansion_t<RefA, lolita::utility::Aggregate<int, int, int>(1, 2, 3)>;
+
+    using LHS_0 = lolita::utility::tuple_expansion_t<lolita::utility::Aggregate, RefA, AGG<int, int, int>(1, 2, 3), AGG<char, int>('A', 1)>;
     // using LHS_ = lolita::utility::array_expansion_t<RefA, std::array<int, 3>{1, 2, 3}>;
-    // using RHS_ = std::tuple<RefA<1>, RefA<2>, RefA<3>>;
-    // static_assert(std::is_same_v<LHS_, RHS_>);
-    using LHS_ = lolita::utility::variadic_type_array_expansion_t<RefB, std::array<int, 3>{1, 2, 3}>;
-    using RHS_ = RefB<1, 2, 3>;
+    using RHS_0 = lolita::utility::Aggregate<RefA<1>, RefA<2>, RefA<3>, RefA<'A'>, RefA<1>>;
+    static_assert(std::is_same_v<LHS_0, RHS_0>);
+    using LHS_ = lolita::utility::variadic_type_array_expansion_t<RefB, std::array<int, 3>{1, 2, 3}, std::array<int, 1>{1}>;
+    using RHS_ = RefB<1, 2, 3, 1>;
     static_assert(std::is_same_v<LHS_, RHS_>);
     using LHS_1 = lolita::utility::variadic_type_array_expansion_t<RefB, std::array<int, 1>{1}>;
     using RHS_1 = RefB<1>;
     static_assert(std::is_same_v<LHS_1, RHS_1>);
+    using LHS_2 = lolita::utility::tuple_cat_t<RefB<1, 2, 3>, RefB<1, 2, 3>, RefB<1, 2, 3>, RefB<1, 2, 3>>;
+    using RHS_2 = RefB<1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3>;
+    static_assert(std::is_same_v<LHS_2, RHS_2>);
+    using LHS_3 = lolita::utility::tuple_cat_t<RefC<int, float, int>, RefC<int, int, int>, RefC<int, int, int>, RefC<float, double, char>>;
+    using RHS_3 = RefC<int, float, int, int, int, int, int, int, int, float, double, char>;
+    static_assert(std::is_same_v<LHS_3, RHS_3>);
 
 
     std::cout << sizeof(std::vector<int>) << std::endl;
@@ -361,10 +503,19 @@ main(int argc, char** argv)
     auto constexpr pot0 = lolita::Potential("Elasticity", lolita::Mapping("Gradient", displacement));
     auto constexpr pot1 = lolita::Potential("Fracture", lolita::Mapping("Gradient", damage), lolita::Mapping("Identity", damage));
     auto constexpr pot2 = lolita::Potential("Stab", lolita::Mapping("Identity", displacement));
+    auto constexpr pot3 = lolita::Potential("Penalization", lolita::Mapping("Identity", force));
     // auto constexpr pot_size = lolita::PotentialsTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>();
     std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
     std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
     std::cout << "pot size : " << lolita::PotentialsTraits<pot0>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
+    //
+    std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1, pot2>::template getSize<domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1>::template getSize<domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialsTraits<pot0>::template getSize<domain>() << std::endl;
+    //
+    std::cout << "field index : " << lolita::PotentialsTraits<pot0, pot1, pot2, pot3>::template getIndex<displacement>() << std::endl;
+    std::cout << "field index : " << lolita::PotentialsTraits<pot0, pot1, pot2, pot3>::template getIndex<damage>() << std::endl;
+    std::cout << "field index : " << lolita::PotentialsTraits<pot0, pot1, pot2, pot3>::template getIndex<force>() << std::endl;
     /**
      * Potentials
      * 
@@ -385,7 +536,6 @@ main(int argc, char** argv)
     elements->addElementDiscreteField<face_dim, displacement>("ROD");
     elements->addElementDiscreteField<cell_dim, displacement>("ROD");
     elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, displacement>("ROD", linear_system);
-    // elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, displacement, hdg_discretization>("ROD");
     elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, displacement>("ROD");
     /**
      * Ops

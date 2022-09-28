@@ -411,119 +411,6 @@ namespace lolita::utility
         return ((areEqual(std::forward<t_T>(x), std::forward<t_U>(y)) || ...));
     }
 
-    // ------------------------------------------------------------------------------------------------------
-
-    template<typename t_T, typename t_U>
-    struct tuple_concatenation_traits;
-
-    template<typename... t_T, typename... t_U>
-    struct tuple_concatenation_traits<std::tuple<t_T...>, std::tuple<t_U...>>
-    {
-
-        using type = std::tuple<t_T..., t_U...>;
-
-    };
-
-    template<typename t_T, typename t_U>
-    using tuple_cat_t = typename tuple_concatenation_traits<t_T, t_U>::type;
-
-    // ------------------------------------------------------------------------------------------------------
-
-    template<typename t_T, Integer t_a, Integer t_b>
-    struct TupleSliceTraits;
-
-    template<typename... t_T, Integer t_a, Integer t_b>
-    struct TupleSliceTraits<std::tuple<t_T...>, t_a, t_b>
-    {
-
-        using type = tuple_cat_t<std::tuple<std::tuple_element_t<t_a, std::tuple<t_T...>>>, typename TupleSliceTraits<std::tuple<t_T...>, t_a + 1, t_b>::type>;
-
-    };
-    
-    template<typename... t_T, Integer t_a, Integer t_b>
-    requires(t_a == t_b - 1)
-    struct TupleSliceTraits<std::tuple<t_T...>, t_a, t_b>
-    {
-
-        using type = std::tuple<std::tuple_element_t<t_b - 1, std::tuple<t_T...>>>;
-
-    };
-    
-    template<typename... t_T, Integer t_a, Integer t_b>
-    requires(t_a == t_b)
-    struct TupleSliceTraits<std::tuple<t_T...>, t_a, t_b>
-    {
-
-        using type = std::tuple<>;
-
-    };
-
-    template<typename t_T, Integer t_a, Integer t_b>
-    using tuple_slice_t = typename TupleSliceTraits<t_T, t_a, t_b>::type;
-
-    // ------------------------------------------------------------------------------------------------------
-
-    template<typename t_T, typename t_U>
-    struct TupleHasTraits;
-
-    template<typename... t_T, typename t_U>
-    struct TupleHasTraits<std::tuple<t_T...>, t_U>
-    {
-
-        Boolean static constexpr value = (std::is_same_v<t_U, t_T> || ...);
-
-    };
-
-    template<typename t_T, typename t_U>
-    static constexpr
-    Boolean tuple_has_v = TupleHasTraits<t_T, t_U>::value;
-
-    // ------------------------------------------------------------------------------------------------------
-
-    template<typename t_T, Integer t_a>
-    struct TupleUniqueTraits;
-
-    template<typename... t_T, Integer t_a>
-    requires(t_a < sizeof...(t_T) - 1 && !tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>>>)
-    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
-    {
-
-        using type = tuple_cat_t<std::tuple<std::tuple_element_t<t_a, std::tuple<t_T...>>>, typename TupleUniqueTraits<std::tuple<t_T...>, t_a + 1>::type>;
-
-    };
-
-    template<typename... t_T, Integer t_a>
-    requires(t_a < sizeof...(t_T) - 1 && tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>>>)
-    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
-    {
-
-        using type = tuple_cat_t<std::tuple<>, typename TupleUniqueTraits<std::tuple<t_T...>, t_a + 1>::type>;
-
-    };
-
-    template<typename... t_T, Integer t_a>
-    requires(t_a == sizeof...(t_T) - 1 && !tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>>>)
-    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
-    {
-
-        using type = std::tuple<std::tuple_element_t<t_a, std::tuple<t_T...>>>;
-
-    };
-
-    template<typename... t_T, Integer t_a>
-    requires(t_a == sizeof...(t_T) - 1 && tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>>>)
-    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
-    {
-
-        using type = std::tuple<>;
-
-    };
-
-    template<typename t_T>
-    using tuple_unique_t = typename TupleUniqueTraits<t_T, 0>::type;
-
-    // ------------------------------------------------------------------------------------------------------
-
     template<typename>
     void
     TD()
@@ -644,6 +531,9 @@ namespace lolita::utility
 
     };
 
+    template<typename... T>
+    using Aggregate = AggregateHead<0, T...>;
+
     template<Integer t_i, typename t_T, typename... t_U>
     static constexpr
     t_T &
@@ -664,19 +554,75 @@ namespace lolita::utility
         return aggregate.AggregateTail<t_i, t_T>::value_;
     }
 
-    template<typename... T>
-    using Aggregate = AggregateHead<0, T...>;
+    template<Integer t_i, typename... t_T>
+    static constexpr
+    std::tuple_element_t<t_i, std::tuple<t_T...>> &
+    get(
+        std::tuple<t_T...> & aggregate
+    )
+    {
+        return std::get<t_i>(aggregate);
+    }
 
-    // ------------------------------------------------------------------------------------------------------
+    template<Integer t_i, typename... t_T>
+    static constexpr
+    std::tuple_element_t<t_i, std::tuple<t_T...>> const &
+    get(
+        std::tuple<t_T...> const & aggregate
+    )
+    {
+        return std::get<t_i>(aggregate);
+    }
 
-    template<typename T>
+    template<Integer t_i, typename t_T, Integer t_size>
+    static constexpr
+    t_T &
+    get(
+        std::array<t_T, t_size> & aggregate
+    )
+    {
+        return std::get<t_i>(aggregate);
+    }
+
+    template<Integer t_i, typename t_T, Integer t_size>
+    static constexpr
+    t_T const &
+    get(
+        std::array<t_T, t_size> const & aggregate
+    )
+    {
+        return std::get<t_i>(aggregate);
+    }
+
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    template<typename t_T>
     struct AggregateSizeTraits;
 
-    template<typename... T>
-    struct AggregateSizeTraits<Aggregate<T...>>
+    template<typename... t_T>
+    struct AggregateSizeTraits<Aggregate<t_T...>>
     {
 
-        Integer static constexpr value = sizeof...(T);
+        Integer static constexpr value = sizeof...(t_T);
+
+    };
+
+    template<typename... t_T>
+    struct AggregateSizeTraits<std::tuple<t_T...>>
+    {
+
+        Integer static constexpr value = sizeof...(t_T);
+
+    };
+
+    template<typename t_T, Integer t_size>
+    struct AggregateSizeTraits<std::array<t_T, t_size>>
+    {
+
+        Integer static constexpr value = t_size;
 
     };
 
@@ -684,59 +630,40 @@ namespace lolita::utility
     static constexpr
     Integer aggregate_size_v = AggregateSizeTraits<T>::value;
 
-    template<Integer I, typename T>
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    template<Integer t_i, typename t_T>
     struct AggregateElementTraits;
 
-    template<Integer I, typename... T>
-    struct AggregateElementTraits<I, Aggregate<T...>>
+    template<Integer t_i, typename... t_T>
+    struct AggregateElementTraits<t_i, Aggregate<t_T...>>
     {
 
-        using type = std::tuple_element_t<I, std::tuple<T...>>;
+        using type = std::tuple_element_t<t_i, std::tuple<t_T...>>;
 
     };
 
-    template<Integer I, typename T>
-    using aggregate_element_t = typename AggregateElementTraits<I, T>::type;
-
-    template<template<auto> typename t_T, auto t_aggregate, Integer t_i>
-    struct aggregate_expansion_traits
+    template<Integer t_i, typename... t_T>
+    struct AggregateElementTraits<t_i, std::tuple<t_T...>>
     {
 
-        using type = tuple_cat_t<std::tuple<t_T<get<t_i>(t_aggregate)>>, typename aggregate_expansion_traits<t_T, t_aggregate, t_i + 1>::type>;
-
-    };
-    
-    template<template<auto> typename t_T, auto t_aggregate, Integer t_i>
-    requires(t_i == aggregate_size_v<std::decay_t<decltype(t_aggregate)>> - 1)
-    struct aggregate_expansion_traits<t_T, t_aggregate, t_i>
-    {
-
-        using type = std::tuple<t_T<get<t_i>(t_aggregate)>>;
+        using type = std::tuple_element_t<t_i, std::tuple<t_T...>>;
 
     };
 
-    template<template<auto> typename t_T, auto t_aggregate>
-    using aggregate_expansion_t = typename aggregate_expansion_traits<t_T, t_aggregate, 0>::type;
-
-    template<template<auto> typename t_T, auto t_array, Integer t_i>
-    struct array_expansion_traits
+    template<Integer t_i, typename t_T, Integer t_size>
+    struct AggregateElementTraits<t_i, std::array<t_T, t_size>>
     {
 
-        using type = tuple_cat_t<std::tuple<t_T<std::get<t_i>(t_array)>>, typename array_expansion_traits<t_T, t_array, t_i + 1>::type>;
-
-    };
-    
-    template<template<auto> typename t_T, auto t_array, Integer t_i>
-    requires(t_i == std::tuple_size_v<std::decay_t<decltype(t_array)>> - 1)
-    struct array_expansion_traits<t_T, t_array, t_i>
-    {
-
-        using type = std::tuple<t_T<std::get<t_i>(t_array)>>;
+        using type = std::tuple_element_t<t_i, std::array<t_T, t_size>>;
 
     };
 
-    template<template<auto> typename t_T, auto t_array>
-    using array_expansion_t = typename array_expansion_traits<t_T, t_array, 0>::type;
+    template<Integer t_i, typename t_T>
+    using aggregate_element_t = typename AggregateElementTraits<t_i, t_T>::type;
 
     /**
      * Hello
@@ -744,28 +671,378 @@ namespace lolita::utility
      */
 
     template<typename... t_T>
-    struct variadic_type_concatenation_traits;
+    struct tuple_concatenation_traits;
 
-    template<template<auto...> typename t_T, auto A, auto... B>
-    struct variadic_type_concatenation_traits<t_T<A>, t_T<B...>>
+    template<typename t_T, typename... t_U>
+    struct tuple_concatenation_traits<t_T, t_U...>
     {
 
-        using type = t_T<A, B...>;
+        using type = typename tuple_concatenation_traits<t_T, typename tuple_concatenation_traits<t_U...>::type>::type;
+
+    };
+
+    template<typename... t_T, typename... t_U>
+    struct tuple_concatenation_traits<std::tuple<t_T...>, std::tuple<t_U...>>
+    {
+
+        using type = std::tuple<t_T..., t_U...>;
+
+    };
+
+    template<typename... t_T>
+    struct tuple_concatenation_traits<std::tuple<t_T...>>
+    {
+
+        using type = std::tuple<t_T...>;
+
+    };
+
+    // --
+
+    template<typename... t_T, typename... t_U>
+    struct tuple_concatenation_traits<Aggregate<t_T...>, Aggregate<t_U...>>
+    {
+
+        using type = Aggregate<t_T..., t_U...>;
+
+    };
+
+    template<typename... t_T>
+    struct tuple_concatenation_traits<Aggregate<t_T...>>
+    {
+
+        using type = Aggregate<t_T...>;
+
+    };
+
+    // --
+
+    template<template<auto...> typename t_T, auto... A, auto... B>
+    struct tuple_concatenation_traits<t_T<A...>, t_T<B...>>
+    {
+
+        using type = t_T<A..., B...>;
+
+    };
+
+    template<template<auto...> typename t_T, auto... A>
+    struct tuple_concatenation_traits<t_T<A...>>
+    {
+
+        using type = t_T<A...>;
+
+    };
+
+    template<template<typename...> typename t_T, typename... A, typename... B>
+    struct tuple_concatenation_traits<t_T<A...>, t_T<B...>>
+    {
+
+        using type = t_T<A..., B...>;
+
+    };
+
+    template<template<typename...> typename t_T, typename... A>
+    struct tuple_concatenation_traits<t_T<A...>>
+    {
+
+        using type = t_T<A...>;
+
+    };
+
+    template<typename... t_T>
+    using tuple_cat_t = typename tuple_concatenation_traits<t_T...>::type;
+
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    template<typename t_T, Integer t_a, Integer t_b>
+    struct TupleSliceTraits;
+
+    template<typename... t_T, Integer t_a, Integer t_b>
+    struct TupleSliceTraits<std::tuple<t_T...>, t_a, t_b>
+    {
+
+        using type = tuple_cat_t<std::tuple<std::tuple_element_t<t_a, std::tuple<t_T...>>>, typename TupleSliceTraits<std::tuple<t_T...>, t_a + 1, t_b>::type>;
+
+    };
+    
+    template<typename... t_T, Integer t_a, Integer t_b>
+    requires(t_a == t_b - 1)
+    struct TupleSliceTraits<std::tuple<t_T...>, t_a, t_b>
+    {
+
+        using type = std::tuple<std::tuple_element_t<t_b - 1, std::tuple<t_T...>>>;
+
+    };
+    
+    template<typename... t_T, Integer t_a, Integer t_b>
+    requires(t_a == t_b)
+    struct TupleSliceTraits<std::tuple<t_T...>, t_a, t_b>
+    {
+
+        using type = std::tuple<>;
+
+    };
+
+    template<typename... t_T, Integer t_a, Integer t_b>
+    struct TupleSliceTraits<Aggregate<t_T...>, t_a, t_b>
+    {
+
+        using type = tuple_cat_t<Aggregate<aggregate_element_t<t_a, Aggregate<t_T...>>>, typename TupleSliceTraits<Aggregate<t_T...>, t_a + 1, t_b>::type>;
+
+    };
+    
+    template<typename... t_T, Integer t_a, Integer t_b>
+    requires(t_a == t_b - 1)
+    struct TupleSliceTraits<Aggregate<t_T...>, t_a, t_b>
+    {
+
+        using type = Aggregate<aggregate_element_t<t_b - 1, Aggregate<t_T...>>>;
+
+    };
+    
+    template<typename... t_T, Integer t_a, Integer t_b>
+    requires(t_a == t_b)
+    struct TupleSliceTraits<Aggregate<t_T...>, t_a, t_b>
+    {
+
+        using type = Aggregate<>;
+
+    };
+
+    template<typename t_T, Integer t_a, Integer t_b>
+    using tuple_slice_t = typename TupleSliceTraits<t_T, t_a, t_b>::type;
+
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    template<typename t_T, typename t_U>
+    struct TupleHasTraits;
+
+    template<typename... t_T, typename t_U>
+    struct TupleHasTraits<std::tuple<t_T...>, t_U>
+    {
+
+        Boolean static constexpr value = (std::is_same_v<t_U, t_T> || ...);
+
+    };
+
+    template<typename... t_T, typename t_U>
+    struct TupleHasTraits<Aggregate<t_T...>, t_U>
+    {
+
+        Boolean static constexpr value = (std::is_same_v<t_U, t_T> || ...);
 
     };
 
     template<typename t_T, typename t_U>
-    using variadic_type_concatenation_t = typename variadic_type_concatenation_traits<t_T, t_U>::type;
+    static constexpr
+    Boolean tuple_has_v = TupleHasTraits<t_T, t_U>::value;
 
-    template<template<auto...> typename t_T, auto t_array, Integer t_i>
-    struct variadic_type_array_expansion_traits
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    template<typename t_T, Integer t_a>
+    struct TupleUniqueTraits;
+
+    template<typename... t_T, Integer t_a>
+    requires(t_a < sizeof...(t_T) - 1 && !tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>>>)
+    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
     {
 
-        using type = variadic_type_concatenation_t<t_T<std::get<t_i>(t_array)>, typename variadic_type_array_expansion_traits<t_T, t_array, t_i + 1>::type>;
+        using type = tuple_cat_t<std::tuple<std::tuple_element_t<t_a, std::tuple<t_T...>>>, typename TupleUniqueTraits<std::tuple<t_T...>, t_a + 1>::type>;
 
     };
 
-    template<template<auto...> typename t_T, auto t_array, Integer t_i>
+    template<typename... t_T, Integer t_a>
+    requires(t_a < sizeof...(t_T) - 1 && tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>>>)
+    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
+    {
+
+        using type = tuple_cat_t<std::tuple<>, typename TupleUniqueTraits<std::tuple<t_T...>, t_a + 1>::type>;
+
+    };
+
+    template<typename... t_T, Integer t_a>
+    requires(t_a == sizeof...(t_T) - 1 && !tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>>>)
+    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
+    {
+
+        using type = std::tuple<std::tuple_element_t<t_a, std::tuple<t_T...>>>;
+
+    };
+
+    template<typename... t_T, Integer t_a>
+    requires(t_a == sizeof...(t_T) - 1 && tuple_has_v<tuple_slice_t<std::tuple<t_T...>, 0, t_a>, std::tuple_element_t<t_a, std::tuple<t_T...>>>)
+    struct TupleUniqueTraits<std::tuple<t_T...>, t_a>
+    {
+
+        using type = std::tuple<>;
+
+    };
+
+    // --
+
+    template<typename... t_T, Integer t_a>
+    requires(t_a < sizeof...(t_T) - 1 && !tuple_has_v<tuple_slice_t<Aggregate<t_T...>, 0, t_a>, aggregate_element_t<t_a, Aggregate<t_T...>>>)
+    struct TupleUniqueTraits<Aggregate<t_T...>, t_a>
+    {
+
+        using type = tuple_cat_t<Aggregate<aggregate_element_t<t_a, Aggregate<t_T...>>>, typename TupleUniqueTraits<Aggregate<t_T...>, t_a + 1>::type>;
+
+    };
+
+    template<typename... t_T, Integer t_a>
+    requires(t_a < sizeof...(t_T) - 1 && tuple_has_v<tuple_slice_t<Aggregate<t_T...>, 0, t_a>, aggregate_element_t<t_a, Aggregate<t_T...>>>)
+    struct TupleUniqueTraits<Aggregate<t_T...>, t_a>
+    {
+
+        using type = tuple_cat_t<Aggregate<>, typename TupleUniqueTraits<Aggregate<t_T...>, t_a + 1>::type>;
+
+    };
+
+    template<typename... t_T, Integer t_a>
+    requires(t_a == sizeof...(t_T) - 1 && !tuple_has_v<tuple_slice_t<Aggregate<t_T...>, 0, t_a>, aggregate_element_t<t_a, Aggregate<t_T...>>>)
+    struct TupleUniqueTraits<Aggregate<t_T...>, t_a>
+    {
+
+        using type = Aggregate<aggregate_element_t<t_a, Aggregate<t_T...>>>;
+
+    };
+
+    template<typename... t_T, Integer t_a>
+    requires(t_a == sizeof...(t_T) - 1 && tuple_has_v<tuple_slice_t<Aggregate<t_T...>, 0, t_a>, aggregate_element_t<t_a, Aggregate<t_T...>>>)
+    struct TupleUniqueTraits<Aggregate<t_T...>, t_a>
+    {
+
+        using type = Aggregate<>;
+
+    };
+
+    template<typename t_T>
+    using tuple_unique_t = typename TupleUniqueTraits<t_T, 0>::type;
+
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    template<template<typename...> typename C, template<auto> typename t_T, auto t_aggregate, Integer t_i>
+    struct tuple_expansion_traits;
+
+    template<template<auto> typename t_T, Aggregate t_aggregate, Integer t_i>
+    struct tuple_expansion_traits<std::tuple, t_T, t_aggregate, t_i>
+    {
+
+        using type = tuple_cat_t<std::tuple<t_T<get<t_i>(t_aggregate)>>, typename tuple_expansion_traits<std::tuple, t_T, t_aggregate, t_i + 1>::type>;
+
+    };
+    
+    template<template<auto> typename t_T, Aggregate t_aggregate, Integer t_i>
+    requires(t_i == aggregate_size_v<std::decay_t<decltype(t_aggregate)>> - 1)
+    struct tuple_expansion_traits<std::tuple, t_T, t_aggregate, t_i>
+    {
+
+        using type = std::tuple<t_T<get<t_i>(t_aggregate)>>;
+
+    };
+
+    template<template<auto> typename t_T, std::array t_array, Integer t_i>
+    struct tuple_expansion_traits<std::tuple, t_T, t_array, t_i>
+    {
+
+        using type = tuple_cat_t<std::tuple<t_T<std::get<t_i>(t_array)>>, typename tuple_expansion_traits<std::tuple, t_T, t_array, t_i + 1>::type>;
+
+    };
+    
+    template<template<auto> typename t_T, std::array t_array, Integer t_i>
+    requires(t_i == std::tuple_size_v<std::decay_t<decltype(t_array)>> - 1)
+    struct tuple_expansion_traits<std::tuple, t_T, t_array, t_i>
+    {
+
+        using type = std::tuple<t_T<std::get<t_i>(t_array)>>;
+
+    };
+
+    // --
+
+    template<template<auto> typename t_T, Aggregate t_aggregate, Integer t_i>
+    struct tuple_expansion_traits<Aggregate, t_T, t_aggregate, t_i>
+    {
+
+        using type = tuple_cat_t<Aggregate<t_T<get<t_i>(t_aggregate)>>, typename tuple_expansion_traits<Aggregate, t_T, t_aggregate, t_i + 1>::type>;
+
+    };
+    
+    template<template<auto> typename t_T, Aggregate t_aggregate, Integer t_i>
+    requires(t_i == aggregate_size_v<std::decay_t<decltype(t_aggregate)>> - 1)
+    struct tuple_expansion_traits<Aggregate, t_T, t_aggregate, t_i>
+    {
+
+        using type = Aggregate<t_T<get<t_i>(t_aggregate)>>;
+
+    };
+
+    template<template<auto> typename t_T, std::array t_array, Integer t_i>
+    struct tuple_expansion_traits<Aggregate, t_T, t_array, t_i>
+    {
+
+        using type = tuple_cat_t<Aggregate<t_T<std::get<t_i>(t_array)>>, typename tuple_expansion_traits<Aggregate, t_T, t_array, t_i + 1>::type>;
+
+    };
+    
+    template<template<auto> typename t_T, std::array t_array, Integer t_i>
+    requires(t_i == std::tuple_size_v<std::decay_t<decltype(t_array)>> - 1)
+    struct tuple_expansion_traits<Aggregate, t_T, t_array, t_i>
+    {
+
+        using type = Aggregate<t_T<std::get<t_i>(t_array)>>;
+
+    };
+
+    template<template<typename...> typename C, template<auto> typename t_T, auto... t_args>
+    using tuple_expansion_t = tuple_cat_t<typename tuple_expansion_traits<C, t_T, t_args, 0>::type...>;
+
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    template<template<auto...> typename t_T, auto t_arg, Integer t_i>
+    struct variadic_type_array_expansion_traits;
+
+    template<template<auto...> typename t_T, Aggregate t_aggregate, Integer t_i>
+    struct variadic_type_array_expansion_traits<t_T, t_aggregate, t_i>
+    {
+
+        using type = tuple_cat_t<t_T<get<t_i>(t_aggregate)>, typename variadic_type_array_expansion_traits<t_T, t_aggregate, t_i + 1>::type>;
+
+    };
+
+    template<template<auto...> typename t_T, Aggregate t_aggregate, Integer t_i>
+    requires(t_i == aggregate_size_v<std::decay_t<decltype(t_aggregate)>> - 1)
+    struct variadic_type_array_expansion_traits<t_T, t_aggregate, t_i>
+    {
+
+        using type = t_T<get<t_i>(t_aggregate)>;
+
+    };
+
+    template<template<auto...> typename t_T, std::array t_array, Integer t_i>
+    struct variadic_type_array_expansion_traits<t_T, t_array, t_i>
+    {
+
+        using type = tuple_cat_t<t_T<std::get<t_i>(t_array)>, typename variadic_type_array_expansion_traits<t_T, t_array, t_i + 1>::type>;
+
+    };
+
+    template<template<auto...> typename t_T, std::array t_array, Integer t_i>
     requires(t_i == std::tuple_size_v<std::decay_t<decltype(t_array)>> - 1)
     struct variadic_type_array_expansion_traits<t_T, t_array, t_i>
     {
@@ -774,8 +1051,8 @@ namespace lolita::utility
 
     };
 
-    template<template<auto...> typename t_T, auto t_array>
-    using variadic_type_array_expansion_t = typename variadic_type_array_expansion_traits<t_T, t_array, 0>::type;
+    template<template<auto...> typename t_T, auto... t_args>
+    using variadic_type_array_expansion_t = tuple_cat_t<typename variadic_type_array_expansion_traits<t_T, t_args, 0>::type...>;
 
     // ------------------------------------------------------------------------------------------------------
 
