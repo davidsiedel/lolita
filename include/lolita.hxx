@@ -824,10 +824,12 @@ namespace lolita
     struct Mapping
     {
 
+        using Field = t_Field;
+
         constexpr
         Mapping(
             std::basic_string_view<Character> && transformation,
-            t_Field const & field
+            Field const & field
         )
         :
         label_(field.getLabel().view(), std::forward<std::basic_string_view<Character>>(transformation)),
@@ -842,7 +844,7 @@ namespace lolita
             std::basic_string_view<Character> && transformation,
             Integer row,
             Integer col,
-            t_Field const & field
+            Field const & field
         )
         :
         label_(field.getLabel().view(), std::forward<std::basic_string_view<Character>>(transformation)),
@@ -899,7 +901,7 @@ namespace lolita
         }
 
         constexpr
-        t_Field const &
+        Field const &
         getField()
         const
         {
@@ -950,7 +952,7 @@ namespace lolita
 
         Label transformation_;
 
-        t_Field field_;
+        Field field_;
 
         Integer row_;
 
@@ -976,7 +978,9 @@ namespace lolita
     struct Potential
     {
 
-        using PotentialStrains = utility::Aggregate<t_Strains...>;
+        using Strains = utility::Aggregate<t_Strains...>;
+
+        using Fields = utility::Aggregate<typename t_Strains::Field...>;
         
         static constexpr
         Integer
@@ -992,17 +996,8 @@ namespace lolita
         )
         :
         label_(std::forward<std::basic_string_view<Character>>(label)),
+        fields_(strains.getField()...),
         strains_(strains...)
-        {}
-
-        constexpr
-        Potential(
-            std::basic_string_view<Character> && label,
-            t_Strains &&... strains
-        )
-        :
-        label_(std::forward<std::basic_string_view<Character>>(label)),
-        strains_(std::move(strains)...)
         {}
 
         constexpr
@@ -1029,7 +1024,7 @@ namespace lolita
 
         template<Integer t_i>
         constexpr
-        utility::aggregate_element_t<t_i, PotentialStrains> const &
+        utility::aggregate_element_t<t_i, Strains> const &
         getStrain()
         const
         {
@@ -1037,7 +1032,15 @@ namespace lolita
         }
 
         constexpr
-        PotentialStrains const &
+        Fields const &
+        getFields()
+        const
+        {
+            return fields_;
+        }
+
+        constexpr
+        Strains const &
         getStrains()
         const
         {
@@ -1046,7 +1049,9 @@ namespace lolita
 
         Label label_;
 
-        PotentialStrains strains_;
+        Fields fields_;
+
+        Strains strains_;
 
     };
 

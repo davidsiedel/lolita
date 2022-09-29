@@ -928,6 +928,10 @@ namespace lolita::utility
     template<typename t_T>
     using tuple_unique_t = typename TupleUniqueTraits<t_T, 0>::type;
 
+    template<typename t_T>
+    static constexpr
+    Boolean is_unique_v = aggregate_size_v<tuple_unique_t<t_T>> == aggregate_size_v<t_T>;
+
     /**
      * Hello
      * *********************************************************************************************************************************************************

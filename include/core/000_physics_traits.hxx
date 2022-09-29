@@ -638,232 +638,24 @@ namespace lolita
         
     };
 
-    template<PotentialConcept auto t_potential>
+    template<PotentialConcept auto... t_potentials>
     struct PotentialTraits
     {
 
-        template<Domain t_domain>
-        static constexpr
-        Integer
-        getSize()
-        {
-            auto size = Integer(0);
-            auto set_size = [&] <Integer t_i = 0> (
-                auto & t_set_size
-            )
-            constexpr mutable
-            {
-                size += MappingTraits<t_potential.template getStrain<t_i>()>::template getSize<t_domain>();
-                if constexpr (t_i < t_potential.getNumMappings() - 1)
-                {
-                    t_set_size.template operator ()<t_i + 1>(t_set_size);
-                }
-            };
-            set_size(set_size);
-            return size;
-        }
-
-        template<auto t_element, Domain t_domain>
-        static constexpr
-        Integer
-        getSize()
-        {
-            auto size = Integer(0);
-            auto set_size = [&] <Integer t_i = 0> (
-                auto & t_set_size
-            )
-            constexpr mutable
-            {
-                auto has_no_duplicate = Boolean(true);
-                auto find_duplicate_field = [&] <Integer t_j = 0> (
-                    auto & t_find_duplicate_field
-                )
-                constexpr mutable
-                {
-                    if (t_potential.template getStrain<t_j>().getField() == t_potential.template getStrain<t_i>().getField())
-                    {
-                        has_no_duplicate = false;
-                    }
-                    if constexpr (t_j < t_i - 1)
-                    {
-                        t_find_duplicate_field.template operator ()<t_j + 1>(t_find_duplicate_field);
-                    }
-                };
-                if constexpr (t_i > 0)
-                {
-                    find_duplicate_field(find_duplicate_field);
-                }
-                if (has_no_duplicate)
-                {
-                    size += DiscretizationTraits2<t_potential.template getStrain<t_i>().getField()>::template getStaticSize<t_element, t_domain>();
-                }
-                if constexpr (t_i < t_potential.getNumMappings() - 1)
-                {
-                    t_set_size.template operator ()<t_i + 1>(t_set_size);
-                }
-            };
-            set_size(set_size);
-            return size;
-        }
-
-        template<FieldConcept auto t_field>
-        static constexpr
-        Integer
-        getIndex()
-        {
-            auto index = Integer(-1);
-            auto hhh = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                if (utility::areEqual(t_field, t_potential.template getStrain<t_i>().getField()))
-                {
-                    index = t_i;
-                }
-                if constexpr (t_i < t_potential.template getNumMappings() - 1)
-                {
-                    self.template operator()<t_i + 1>(self);
-                }
-            };
-            hhh(hhh);
-            return index;
-        }
-
-        template<MappingConcept auto t_mapping>
-        static constexpr
-        Integer
-        getIndex()
-        {
-            auto index = Integer(-1);
-            auto hhh = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                if (utility::areEqual(t_mapping, t_potential.template getStrain<t_i>()))
-                {
-                    index = t_i;
-                }
-                if constexpr (t_i < t_potential.template getNumMappings() - 1)
-                {
-                    self.template operator()<t_i + 1>(self);
-                }
-            };
-            hhh(hhh);
-            return index;
-        }
-
-        template<Domain t_domain, MappingConcept auto t_mapping>
-        static constexpr
-        Integer
-        getMappingSize()
-        {
-            return MappingTraits<t_mapping>::template getSize<t_domain>();
-        }
-
-        template<Domain t_domain, MappingConcept auto t_mapping>
-        static constexpr
-        Integer
-        getMappingOffset()
-        {
-            auto offset = Integer(0);
-            auto is_set = false;
-            auto set_offset = [&] <Integer t_i = 0> (
-                auto & t_set_offset
-            )
-            constexpr mutable
-            {
-                if constexpr (t_i > 0)
-                {
-                    offset += MappingTraits<t_potential.template getStrain<t_i - 1>()>::template getSize<t_domain>();
-                }
-                if constexpr (utility::areEqual(t_potential.template getStrain<t_i>(), t_mapping))
-                {
-                    return;
-                }
-                else if constexpr (t_i < t_potential.getNumMappings() - 1)
-                {
-                    t_set_offset.template operator ()<t_i + 1>(t_set_offset);
-                }
-            };
-            set_offset(set_offset);
-            return offset;
-        }
-        
-        // static constexpr
-        // Integer
-        // getNumFields()
-        // {
-        //     auto fields = std::array<Label, t_potential.getNumMappings()>();
-        //     auto num_fields = Integer(0);
-        //     auto set_offset = [&] <Integer t_i = 0> (
-        //         auto & self
-        //     )
-        //     constexpr mutable
-        //     {
-        //         auto found_field = Boolean(false);
-        //         for (auto const & f : fields)
-        //         {
-        //             if (f == t_potential.template getStrain<t_i>().getField().getLabel())
-        //             {
-        //                 found_field = true;
-        //             }
-        //         }
-        //         if (!found_field)
-        //         {
-        //             fields[num_fields] = t_potential.template getStrain<t_i>().getField().getLabel();
-        //             num_fields ++;
-        //         }
-        //         if constexpr (t_i < t_potential.getNumMappings() - 1)
-        //         {
-        //             self.template operator ()<t_i + 1>(self);
-        //         }
-        //     };
-        //     set_offset(set_offset);
-        //     return num_fields;
-        // }
-
-        // static constexpr
-        // std::array<Field, getNumFields()>
-        // getFields()
-        // {
-        //     auto fields = std::array<Field, t_potential.getNumMappings()>();
-        //     auto num_fields = Integer(0);
-        //     auto set_offset = [&] <Integer t_i = 0> (
-        //         auto & self
-        //     )
-        //     constexpr mutable
-        //     {
-        //         auto found_field = Boolean(false);
-        //         for (auto const & f : fields)
-        //         {
-        //             if (f == t_potential.template getStrain<t_i>().getField())
-        //             {
-        //                 found_field = true;
-        //             }
-        //         }
-        //         if (!found_field)
-        //         {
-        //             fields[num_fields] = t_potential.template getStrain<t_i>().getField();
-        //             num_fields ++;
-        //         }
-        //         if constexpr (t_i < t_potential.getNumMappings() - 1)
-        //         {
-        //             self.template operator ()<t_i + 1>(self);
-        //         }
-        //     };
-        //     set_offset(set_offset);
-        //     return fields;
-        // }
-
-    };
-
-    template<auto... t_potentials>
-    struct PotentialsTraits
-    {
-
     private:
+
+        template<PotentialConcept auto t_potential>
+        struct PotentialView
+        {
+            
+            static constexpr
+            auto
+            getPotential()
+            {
+                return t_potential;
+            }
+        
+        };
 
         template<MappingConcept auto t_mapping>
         struct MappingView
@@ -877,12 +669,34 @@ namespace lolita
             }
         
         };
-        
-        static constexpr
-        Integer
-        getNumMappings()
+
+        template<FieldConcept auto t_field>
+        struct FieldView
         {
-            return std::tuple_size_v<utility::tuple_expansion_t<std::tuple, MappingView, t_potentials.getStrains()...>>;
+            
+            static constexpr
+            auto
+            getField()
+            {
+                return t_field;
+            }
+        
+        };
+
+        using Potentials = utility::tuple_unique_t<std::tuple<PotentialView<t_potentials>...>>;
+
+        using Strains = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, MappingView, t_potentials.getStrains()...>>;
+
+        using Fields = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, FieldView, t_potentials.getFields()...>>;
+
+    public:
+        
+        template<Integer t_i>
+        static constexpr
+        auto
+        getPotential()
+        {
+            return std::tuple_element_t<t_i, Potentials>::getPotential();
         }
         
         template<Integer t_i>
@@ -890,10 +704,37 @@ namespace lolita
         auto
         getStrain()
         {
-            return std::tuple_element_t<t_i, utility::tuple_expansion_t<std::tuple, MappingView, t_potentials.getStrains()...>>::getMapping();
+            return std::tuple_element_t<t_i, Strains>::getMapping();
         }
-
-    public:
+        
+        template<Integer t_i>
+        static constexpr
+        auto
+        getField()
+        {
+            return std::tuple_element_t<t_i, Fields>::getField();
+        }
+        
+        static constexpr
+        Integer
+        getNumPotentials()
+        {
+            return std::tuple_size_v<Potentials>;
+        }
+        
+        static constexpr
+        Integer
+        getNumMappings()
+        {
+            return std::tuple_size_v<Strains>;
+        }
+        
+        static constexpr
+        Integer
+        getNumFields()
+        {
+            return std::tuple_size_v<Fields>;
+        }
 
         template<Domain t_domain>
         static constexpr
@@ -927,30 +768,8 @@ namespace lolita
             )
             constexpr mutable
             {
-                auto has_no_duplicate = Boolean(true);
-                auto find_duplicate_field = [&] <Integer t_j = 0> (
-                    auto & t_find_duplicate_field
-                )
-                constexpr mutable
-                {
-                    if (getStrain<t_j>().getField() == getStrain<t_i>().getField())
-                    {
-                        has_no_duplicate = false;
-                    }
-                    if constexpr (t_j < t_i - 1)
-                    {
-                        t_find_duplicate_field.template operator ()<t_j + 1>(t_find_duplicate_field);
-                    }
-                };
-                if constexpr (t_i > 0)
-                {
-                    find_duplicate_field(find_duplicate_field);
-                }
-                if (has_no_duplicate)
-                {
-                    size += DiscretizationTraits2<getStrain<t_i>().getField()>::template getStaticSize<t_element, t_domain>();
-                }
-                if constexpr (t_i < getNumMappings() - 1)
+                size += DiscretizationTraits2<getField<t_i>()>::template getStaticSize<t_element, t_domain>();
+                if constexpr (t_i < getNumFields() - 1)
                 {
                     t_set_size.template operator ()<t_i + 1>(t_set_size);
                 }
@@ -965,53 +784,21 @@ namespace lolita
         getIndex()
         {
             auto index = Integer(-1);
-            auto hhh = [&] <Integer t_i = 0> (
-                auto & self
+            auto set_index = [&] <Integer t_i = 0> (
+                auto & t_set_index
             )
             constexpr mutable
             {
-                if (utility::areEqual(t_potential, utility::get<t_i>(utility::Aggregate(t_potentials...))))
+                if (utility::areEqual(t_potential, getPotential<t_i>()))
                 {
-                    if (index == -1)
-                    {
-                        auto count = Integer(0);
-                        if constexpr (t_i > 0)
-                        {
-                            auto labels = std::array<Label, t_i>();
-                            auto iii = [&] <Integer t_j = 0> (
-                                auto & self2
-                            )
-                            constexpr mutable
-                            {
-                                auto is_here = false;
-                                for (auto const & label : labels)
-                                {
-                                    if (label == utility::get<t_j>(utility::Aggregate(t_potentials...)).getLabel())
-                                    {
-                                        is_here = true;
-                                    }
-                                }
-                                if (!is_here)
-                                {
-                                    labels[count] = utility::get<t_j>(utility::Aggregate(t_potentials...)).getLabel();
-                                    count ++;
-                                }
-                                if constexpr (t_j < t_i - 1)
-                                {
-                                    self2.template operator()<t_j + 1>(self2);
-                                }
-                            };
-                            iii(iii);
-                        }
-                        index = count;
-                    }
+                    index = t_i;
                 }
-                if constexpr (t_i < getNumMappings() - 1)
+                if constexpr (t_i < getNumPotentials() - 1)
                 {
-                    self.template operator()<t_i + 1>(self);
+                    t_set_index.template operator ()<t_i + 1>(t_set_index);
                 }
             };
-            hhh(hhh);
+            set_index(set_index);
             return index;
         }
 
@@ -1021,53 +808,21 @@ namespace lolita
         getIndex()
         {
             auto index = Integer(-1);
-            auto hhh = [&] <Integer t_i = 0> (
-                auto & self
+            auto set_index = [&] <Integer t_i = 0> (
+                auto & t_set_index
             )
             constexpr mutable
             {
                 if (utility::areEqual(t_mapping, getStrain<t_i>()))
                 {
-                    if (index == -1)
-                    {
-                        auto count = Integer(0);
-                        if constexpr (t_i > 0)
-                        {
-                            auto labels = std::array<Label, t_i>();
-                            auto iii = [&] <Integer t_j = 0> (
-                                auto & self2
-                            )
-                            constexpr mutable
-                            {
-                                auto is_here = false;
-                                for (auto const & label : labels)
-                                {
-                                    if (label == getStrain<t_j>().getLabel())
-                                    {
-                                        is_here = true;
-                                    }
-                                }
-                                if (!is_here)
-                                {
-                                    labels[count] = getStrain<t_j>().getLabel();
-                                    count ++;
-                                }
-                                if constexpr (t_j < t_i - 1)
-                                {
-                                    self2.template operator()<t_j + 1>(self2);
-                                }
-                            };
-                            iii(iii);
-                        }
-                        index = count;
-                    }
+                    index = t_i;
                 }
                 if constexpr (t_i < getNumMappings() - 1)
                 {
-                    self.template operator()<t_i + 1>(self);
+                    t_set_index.template operator ()<t_i + 1>(t_set_index);
                 }
             };
-            hhh(hhh);
+            set_index(set_index);
             return index;
         }
 
@@ -1077,79 +832,79 @@ namespace lolita
         getIndex()
         {
             auto index = Integer(-1);
-            auto hhh = [&] <Integer t_i = 0> (
-                auto & self
+            auto set_index = [&] <Integer t_i = 0> (
+                auto & t_set_index
             )
             constexpr mutable
             {
-                if (utility::areEqual(t_field, getStrain<t_i>().getField()))
+                if (utility::areEqual(t_field, getField<t_i>()))
                 {
-                    if (index == -1)
-                    {
-                        auto count = Integer(0);
-                        if constexpr (t_i > 0)
-                        {
-                            auto labels = std::array<Label, t_i>();
-                            auto iii = [&] <Integer t_j = 0> (
-                                auto & self2
-                            )
-                            constexpr mutable
-                            {
-                                auto is_here = false;
-                                for (auto const & label : labels)
-                                {
-                                    if (label == getStrain<t_j>().getField().getLabel())
-                                    {
-                                        is_here = true;
-                                    }
-                                }
-                                if (!is_here)
-                                {
-                                    labels[count] = getStrain<t_j>().getField().getLabel();
-                                    count ++;
-                                }
-                                if constexpr (t_j < t_i - 1)
-                                {
-                                    self2.template operator()<t_j + 1>(self2);
-                                }
-                            };
-                            iii(iii);
-                        }
-                        index = count;
-                    }
+                    index = t_i;
                 }
-                if constexpr (t_i < getNumMappings() - 1)
+                if constexpr (t_i < getNumFields() - 1)
                 {
-                    self.template operator()<t_i + 1>(self);
+                    t_set_index.template operator ()<t_i + 1>(t_set_index);
                 }
             };
-            hhh(hhh);
+            set_index(set_index);
             return index;
         }
 
-        // template<FieldConcept auto t_field>
-        // static constexpr
-        // Integer
-        // getOffset()
-        // {
-        //     auto index = Integer(0);
-        //     auto hhh = [&] <Integer t_i = 0> (
-        //         auto & self
-        //     )
-        //     constexpr mutable
-        //     {
-        //         if (getIndex<t_field>() > getIndex<getStrain<t_i>().getField()>())
-        //         {
-        //             index += DiscretizationTraits2<getStrain<t_i>().getField()>::template getStaticSize<t_element, t_domain>();
-        //         }
-        //         if constexpr (t_i < getNumMappings() - 1)
-        //         {
-        //             self.template operator()<t_i + 1>(self);
-        //         }
-        //     };
-        //     hhh(hhh);
-        //     return index;
-        // }
+        template<Domain t_domain, MappingConcept auto t_mapping>
+        static constexpr
+        Integer
+        getOffset()
+        {
+            auto offset = Integer(0);
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & t_set_offset
+            )
+            constexpr mutable
+            {
+                if constexpr (t_i > 0)
+                {
+                    offset += MappingTraits<getStrain<t_i - 1>()>::template getSize<t_domain>();
+                }
+                if constexpr (utility::areEqual(getStrain<t_i>(), t_mapping))
+                {
+                    return;
+                }
+                else if constexpr (t_i < getNumMappings() - 1)
+                {
+                    t_set_offset.template operator ()<t_i + 1>(t_set_offset);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
+        }
+
+        template<auto t_element, Domain t_domain, FieldConcept auto t_field>
+        static constexpr
+        Integer
+        getOffset()
+        {
+            auto offset = Integer(0);
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & t_set_offset
+            )
+            constexpr mutable
+            {
+                if constexpr (t_i > 0)
+                {
+                    offset += DiscretizationTraits2<getField<t_i - 1>()>::template getStaticSize<t_element, t_domain>();
+                }
+                if constexpr (utility::areEqual(getField<t_i>(), t_field))
+                {
+                    return;
+                }
+                else if constexpr (t_i < getNumFields() - 1)
+                {
+                    t_set_offset.template operator ()<t_i + 1>(t_set_offset);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
+        }
 
     };
 

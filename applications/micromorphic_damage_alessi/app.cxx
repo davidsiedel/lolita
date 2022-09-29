@@ -504,18 +504,34 @@ main(int argc, char** argv)
     auto constexpr pot1 = lolita::Potential("Fracture", lolita::Mapping("Gradient", damage), lolita::Mapping("Identity", damage));
     auto constexpr pot2 = lolita::Potential("Stab", lolita::Mapping("Identity", displacement));
     auto constexpr pot3 = lolita::Potential("Penalization", lolita::Mapping("Identity", force));
-    // auto constexpr pot_size = lolita::PotentialsTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>();
-    std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
-    std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
-    std::cout << "pot size : " << lolita::PotentialsTraits<pot0>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
+    // auto constexpr pot_size = lolita::PotentialTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>();
+    std::cout << "num fields : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::getNumFields() << std::endl;
+    std::cout << "offset : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getOffset<domain, lolita::Mapping("Gradient", displacement)>() << std::endl;
+    std::cout << "offset : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getOffset<domain, lolita::Mapping("Identity", damage)>() << std::endl;
+    std::cout << "offset : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getOffset<domain, lolita::Mapping("Identity", force)>() << std::endl;
     //
-    std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1, pot2>::template getSize<domain>() << std::endl;
-    std::cout << "pot size : " << lolita::PotentialsTraits<pot0, pot1>::template getSize<domain>() << std::endl;
-    std::cout << "pot size : " << lolita::PotentialsTraits<pot0>::template getSize<domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialTraits<pot0, pot1>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialTraits<pot0>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
     //
-    std::cout << "field index : " << lolita::PotentialsTraits<pot0, pot1, pot2, pot3>::template getIndex<displacement>() << std::endl;
-    std::cout << "field index : " << lolita::PotentialsTraits<pot0, pot1, pot2, pot3>::template getIndex<damage>() << std::endl;
-    std::cout << "field index : " << lolita::PotentialsTraits<pot0, pot1, pot2, pot3>::template getIndex<force>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getSize<domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialTraits<pot0, pot1>::template getSize<domain>() << std::endl;
+    std::cout << "pot size : " << lolita::PotentialTraits<pot0>::template getSize<domain>() << std::endl;
+    //
+    std::cout << "field index : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getIndex<displacement>() << std::endl;
+    std::cout << "field index : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getIndex<damage>() << std::endl;
+    std::cout << "field index : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getIndex<force>() << std::endl;
+    //
+    std::cout << "pot size : " << lolita::PotentialTraits<pot1>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
+    //
+    std::cout << "pot size : " << lolita::PotentialTraits<pot1>::template getSize<domain>() << std::endl;
+    //
+
+    //
+    std::cout << "pot size element : " << lolita::PotentialTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
+    std::cout << "pot size point : " << lolita::PotentialTraits<pot0, pot1, pot2>::template getSize<domain>() << std::endl;
+    std::cout << "field offset : " << lolita::PotentialTraits<pot0, pot1, pot2>::template getOffset<lolita::Element::triangle(1), domain, displacement>() << std::endl;
+    std::cout << "field offset : " << lolita::PotentialTraits<pot0, pot1, pot2>::template getOffset<lolita::Element::triangle(1), domain, damage>() << std::endl;
     /**
      * Potentials
      * 
