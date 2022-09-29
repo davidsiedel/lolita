@@ -567,6 +567,14 @@ main(int argc, char** argv)
     elements->addFormulation<cell_dim, elastic_potential, quadrature>("ROD", lib_displacement_path, lib_displacement_label, hyp);
     elements->addFormulation<face_dim, elastic_potential>("TOP");
     elements->addFormulationStrainOperator<cell_dim, elastic_potential, elastic_potential.getStrain<0>()>("ROD");
+    //
+    elements->setStrainOperators<cell_dim, elastic_potential>("ROD");
+    elements->setStrains<cell_dim, elastic_potential>("ROD");
+    auto internal_energy = elements->getInternalEnergy<cell_dim, elastic_potential>("ROD");
+    std::cout << "internal_energy : " << internal_energy << std::endl;
+    auto external_energy = elements->getExternalEnergy<cell_dim, displacement>("ROD", 0.1);
+    std::cout << "external_energy : " << external_energy << std::endl;
+    //
     elements->setFormulationStrain<cell_dim, elastic_potential, elastic_potential.getStrain<0>()>("ROD"); // set G(u) in T
     elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
     elements->setFormulationExternalVariable<cell_dim, elastic_potential, _dm>("ROD", [](lolita::Point const & p) { return 200.0; });

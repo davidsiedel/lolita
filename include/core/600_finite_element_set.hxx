@@ -385,6 +385,99 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
+        template<Integer t_i, PotentialConcept auto... t_potential>
+        void
+        setStrainOperators(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template setElementStrainOperators<t_potential...>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, PotentialConcept auto... t_potential>
+        void
+        setStrains(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template setElementStrains<t_potential...>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+        
+        template<Integer t_i, PotentialConcept auto... t_potential>
+        Real
+        getInternalEnergy(
+            std::basic_string<Character> && domain_label
+        )
+        const
+        {
+            auto energy = Real(0);
+            auto fun = [&] (auto const & finite_element)
+            {
+                energy += finite_element->template getElementInternalEnergy<t_potential...>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun, 0);
+            return energy;
+        }
+        
+        template<Integer t_i, PotentialConcept auto... t_potential>
+        Real
+        getExternalEnergy(
+            std::basic_string<Character> && domain_label,
+            Real const & time
+        )
+        const
+        {
+            auto energy = Real(0);
+            auto fun = [&] (auto const & finite_element)
+            {
+                energy += finite_element->template getElementExternalEnergy<t_potential...>(time);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun, 0);
+            return energy;
+        }
+        
+        template<Integer t_i, FieldConcept auto... t_fields>
+        Real
+        getExternalEnergy(
+            std::basic_string<Character> && domain_label,
+            Real const & time
+        )
+        const
+        {
+            auto energy = Real(0);
+            auto fun = [&] (auto const & finite_element)
+            {
+                energy += finite_element->template getElementExternalEnergy<t_fields...>(time);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun, 0);
+            return energy;
+        }
+        
+        template<Integer t_i, PotentialConcept auto... t_potential>
+        Real
+        getResidualEnergy(
+            std::basic_string<Character> && domain_label,
+            Real const & time
+        )
+        const
+        {
+            auto energy = Real(0);
+            auto fun = [&] (auto const & finite_element)
+            {
+                energy += finite_element->template getElementResidualEnergy<t_potential...>(time);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun, 0);
+            return energy;
+        }
+
         // template<Integer t_i, PotentialConcept auto t_behavior, MappingConcept auto t_strain, DiscretizationConcept auto t_discretization>
         // void
         // setFormulationStrain(

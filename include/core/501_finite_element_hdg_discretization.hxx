@@ -385,7 +385,7 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getCellBasis()>(point, row, col);
+                return static_cast<Base const *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getCellBasis()>(point, row, col);
             }
             
             Real
@@ -397,7 +397,7 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 1))
             {
-                return static_cast<Base *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getFaceBasis()>(point, row, col);
+                return static_cast<Base const *>(this)->template getDiscreteFieldDegreeOfFreedomValue<t_field, getFaceBasis()>(point, row, col);
             }
 
             template<Quadrature t_quadrature>
@@ -420,192 +420,383 @@ namespace lolita
                 return value;
             }
 
-            template<PotentialConcept auto... t_behaviors>
             Vector<Real, getStaticSize<t_element, t_domain>()>
-            getInternalForces()
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                auto internal_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
-                internal_forces.setZero();
-                auto bb = [&] <PotentialConcept auto t_behavior> ()
-                {
-                    auto aaa = [&] <Integer t_i = 0> (
-                        auto & self
-                    )
-                    constexpr mutable
-                    {
-                        auto constexpr strain = t_behavior.template getStrain<t_i>();
-                        if (strain.getField() == t_field)
-                        {
-                            auto constexpr strain_operator_num_rows = MappingTraits<strain>::template getSize<t_domain>();
-                            using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
-                            for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
-                            {
-                                auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
-                                internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<strain>().transpose() * stress_view;
-                            }
-                            if constexpr (t_i < t_behavior.getNumMappings() - 1)
-                            {
-                                self.template operator()<t_i + 1>(self);
-                            }
-                        }
-                    };
-                    aaa(aaa);
-                };
-                bb.template operator()<t_behaviors...>();
-                return internal_forces;
-            }
-
-            Vector<Real, getStaticSize<t_element, t_domain>()>
-            getExternalForces(
-                Real const & time
+            getFieldDualVector(
+                PointConcept auto const & point,
+                Integer row,
+                Integer col
             )
             const
             requires(t_element.isSub(t_domain, 0))
             {
-                auto constexpr quadrature = Quadrature("Gauss", 4);
                 auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto vector = this->template getBasisEvaluation<getCellBasis()>(point);
+                auto offset = getCellBasisSize<t_element>() * (FieldTraits<t_field>::getCols() * row + col);
                 external_forces.setZero();
-                for (auto const & domain : this->getDomains())
+                external_forces.template segment<getCellBasisSize<t_element>()>(offset) = vector;
+                return external_forces;
+            }
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getFieldDualVector(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto vector = this->template getBasisEvaluation<getCellBasis()>(point);
+                external_forces.setZero();
+                for (auto row = 0; row < FieldTraits<t_field>::getRows(); row++)
                 {
-                    if (domain->hasLoads())
+                    for (auto col = 0; col < FieldTraits<t_field>::getCols(); col++)
                     {
-                        for (auto const & load : domain->getLoads())
-                        {
-                            for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
-                            {
-                                auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
-                                auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
-                                auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
-                                auto vector = this->template getBasisEvaluation<getCellBasis()>(reference_point);
-                                auto offset = getCellBasisSize<t_element>() * FieldTraits<t_field>::getCols() * load.getRow() + load.getCol();
-                                auto lhs = external_forces.template segment<getCellBasisSize<t_element>()>(offset);
-                                lhs += weight * load.getValue(current_point, time) * vector;
-                            }
-                        }
+                        auto offset = getCellBasisSize<t_element>() * (FieldTraits<t_field>::getCols() * row + col);
+                        external_forces.template segment<getCellBasisSize<t_element>()>(offset) = vector;
                     }
                 }
                 return external_forces;
             }
 
             Vector<Real, getStaticSize<t_element, t_domain>()>
-            getExternalForces(
-                Real const & time
+            getFieldDualVector(
+                PointConcept auto const & point,
+                Integer row,
+                Integer col
             )
             const
             requires(t_element.isSub(t_domain, 1))
             {
-                auto constexpr quadrature = Quadrature("Gauss", 4);
                 auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto vector = this->template getBasisEvaluation<getFaceBasis()>(point);
+                auto offset = getFaceBasisSize<t_element>() * (FieldTraits<t_field>::getCols() * row + col);
                 external_forces.setZero();
-                for (auto const & domain : this->getDomains())
+                external_forces.template segment<getFaceBasisSize<t_element>()>(offset) = vector;
+                return external_forces;
+            }
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getFieldDualVector(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto vector = this->template getBasisEvaluation<getFaceBasis()>(point);
+                external_forces.setZero();
+                for (auto row = 0; row < FieldTraits<t_field>::getRows(); row++)
                 {
-                    if (domain->hasLoads())
+                    for (auto col = 0; col < FieldTraits<t_field>::getCols(); col++)
                     {
-                        for (auto const & load : domain->getLoads())
-                        {
-                            for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
-                            {
-                                auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
-                                auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
-                                auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
-                                auto vector = this->template getBasisEvaluation<getFaceBasis()>(reference_point);
-                                auto offset = getFaceBasisSize<t_element>() * FieldTraits<t_field>::getCols() * load.getRow() + load.getCol();
-                                auto lhs = external_forces.template segment<getFaceBasisSize<t_element>()>(offset);
-                                lhs += weight * load.getValue(current_point, time) * vector;
-                            }
-                        }
+                        auto offset = getFaceBasisSize<t_element>() * (FieldTraits<t_field>::getCols() * row + col);
+                        external_forces.template segment<getFaceBasisSize<t_element>()>(offset) = vector;
+                    }
+                }
+                return external_forces;
+            }
+
+            //
+            //
+            //
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getFieldPrimalVector(
+                PointConcept auto const & point,
+                Integer row,
+                Integer col
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                auto field_coefficients = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>(row, col);
+                auto offset = getCellBasisSize<t_element>() * (FieldTraits<t_field>::getCols() * row + col);
+                external_forces.setZero();
+                external_forces.template segment<getCellBasisSize<t_element>()>(offset) = field_coefficients;
+                return external_forces;
+            }
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getFieldPrimalVector(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_element.isSub(t_domain, 0))
+            {
+                auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                external_forces.setZero();
+                for (auto row = 0; row < FieldTraits<t_field>::getRows(); row++)
+                {
+                    for (auto col = 0; col < FieldTraits<t_field>::getCols(); col++)
+                    {
+                        auto field_coefficients = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>(row, col);
+                        auto offset = getCellBasisSize<t_element>() * (FieldTraits<t_field>::getCols() * row + col);
+                        external_forces.template segment<getCellBasisSize<t_element>()>(offset) = field_coefficients;
                     }
                 }
                 return external_forces;
             }
 
             Vector<Real, getStaticSize<t_element, t_domain>()>
-            getRhs(
-                Real const & time
-            )
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                return this->getExternalForces(time) - this->getInternalForces();
-            }
-
-            template<PotentialConcept auto... t_behaviors>
-            Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>
-            getLhs()
-            const
-            requires(t_element.isSub(t_domain, 0))
-            {
-                auto jacobian_matrix = Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>();
-                jacobian_matrix.setZero();
-                // auto bb = [&] <PotentialConcept auto t_behavior> ()
-                // {
-                //     auto aaa = [&] <Integer t_i = 0> (
-                //         auto & self
-                //     )
-                //     constexpr mutable
-                //     {
-                //         auto constexpr strain = t_behavior.template getStrain<t_i>();
-                //         auto constexpr strain_operator_num_rows = MappingTraits<strain>::template getSize<t_domain>();
-                //         using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
-                //         for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
-                //         {
-                //             auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
-                //             internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<strain>().transpose() * stress_view;
-                //         }
-                //         if constexpr (t_i < t_behavior.getNumMappings() - 1)
-                //         {
-                //             self.template operator()<t_i + 1>(self);
-                //         }
-                //     };
-                //     aaa(aaa);
-                // };
-                // bb.template operator()<t_behaviors...>();
-                return jacobian_matrix;
-            }
-
-            Vector<Real, getStaticSize<t_element, t_domain>()>
-            getRhs(
-                Real const & time
+            getFieldPrimalVector(
+                PointConcept auto const & point,
+                Integer row,
+                Integer col
             )
             const
             requires(t_element.isSub(t_domain, 1))
             {
-                auto set_faces_unknowns = [&] <Integer t_i = 0> (
-                    auto & self
-                )
-                constexpr mutable
-                {
-                    for (auto const & cell : this->template getOuterNeighbors<1, t_i>())
-                    {
-                        auto cell_rhs = cell->getExternalForces(time) - cell->getInternalForces();
-                        auto constexpr t_outer_neighbor = ElementTraits<t_element>::template getOuterNeighbor<t_domain, 1, t_i>();
-                        auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
-                            auto & self2
-                        )
-                        constexpr mutable
-                        {
-                            for (auto const & face : cell->template getInnerNeighbors<0, t_j>())
-                            {
-                                // auto face_unknown_size = face->degrees_of_freedom_.at(std::string(unknown_label)).template getSize<field, getFaceBasis()>();
-                                // band_width += face_unknown_size;
-                            }
-                            if constexpr (t_j < ElementTraits<t_outer_neighbor>::template getNumInnerNeighbors<0>() - 1)
-                            {
-                                self2.template operator ()<t_j + 1>(self2);
-                            }
-                        };
-                        set_faces_unknowns2(set_faces_unknowns2);
-                    }
-                    if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, 1>() - 1)
-                    {
-                        self.template operator ()<t_i + 1>(self);
-                    }
-                };
-                set_faces_unknowns(set_faces_unknowns);
-                return this->getExternalForces(time) - this->getInternalForces();
+                auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                auto field_coefficients = cell_dof.template getCoefficients<t_element, t_field, getFaceBasis()>(row, col);
+                auto offset = getFaceBasisSize<t_element>() * (FieldTraits<t_field>::getCols() * row + col);
+                external_forces.setZero();
+                external_forces.template segment<getFaceBasisSize<t_element>()>(offset) = field_coefficients;
+                return external_forces;
             }
+
+            Vector<Real, getStaticSize<t_element, t_domain>()>
+            getFieldPrimalVector(
+                PointConcept auto const & point
+            )
+            const
+            requires(t_element.isSub(t_domain, 1))
+            {
+                auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+                auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                external_forces.setZero();
+                for (auto row = 0; row < FieldTraits<t_field>::getRows(); row++)
+                {
+                    for (auto col = 0; col < FieldTraits<t_field>::getCols(); col++)
+                    {
+                        auto field_coefficients = cell_dof.template getCoefficients<t_element, t_field, getFaceBasis()>(row, col);
+                        auto offset = getFaceBasisSize<t_element>() * (FieldTraits<t_field>::getCols() * row + col);
+                        external_forces.template segment<getFaceBasisSize<t_element>()>(offset) = field_coefficients;
+                    }
+                }
+                return external_forces;
+            }
+
+            // auto offset = 0;
+            // auto unknown = Vector<Real, getStaticSize<t_element, t_domain>()>();
+            // auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
+            // auto cell_block = unknown.template segment<cell_dof.template getSize<t_element, t_field, getCellBasis()>()>(offset);
+            // cell_block = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>();
+            // offset += cell_dof.template getSize<t_element, t_field, getCellBasis()>();
+            // auto set_faces_unknowns = [&] <Integer t_i = 0> (
+            //     auto & self
+            // )
+            // constexpr mutable
+            // {
+            //     auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
+            //     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
+            //     {
+            //         auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
+            //         auto face_block = unknown.template segment<face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>()>(offset);
+            //         face_block = face_dof.template getCoefficients<t_inner_neighbor, t_field, getFaceBasis()>();
+            //         offset += face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>();
+            //     }
+            //     if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+            //     {
+            //         self.template operator ()<t_i + 1>(self);
+            //     }
+            // };
+            // set_faces_unknowns(set_faces_unknowns);
+            // return unknown;
+
+            //
+            //
+            //
+
+            // Vector<Real, getStaticSize<t_element, t_domain>()>
+            // getElementExternalForces(
+            //     Real const & time
+            // )
+            // const
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     auto constexpr quadrature = Quadrature("Gauss", 4);
+            //     auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+            //     external_forces.setZero();
+            //     for (auto const & domain : this->getDomains())
+            //     {
+            //         if (domain->hasLoads())
+            //         {
+            //             for (auto const & load : domain->getLoads())
+            //             {
+            //                 for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
+            //                 {
+            //                     auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
+            //                     auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
+            //                     auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
+            //                     auto vector = this->template getBasisEvaluation<getCellBasis()>(reference_point);
+            //                     auto offset = getCellBasisSize<t_element>() * FieldTraits<t_field>::getCols() * load.getRow() + load.getCol();
+            //                     auto lhs = external_forces.template segment<getCellBasisSize<t_element>()>(offset);
+            //                     lhs += weight * load.getValue(current_point, time) * vector;
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     return external_forces;
+            // }
+
+            // Vector<Real, getStaticSize<t_element, t_domain>()>
+            // getElementExternalForces(
+            //     Real const & time
+            // )
+            // const
+            // requires(t_element.isSub(t_domain, 1))
+            // {
+            //     auto constexpr quadrature = Quadrature("Gauss", 4);
+            //     auto external_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+            //     external_forces.setZero();
+            //     for (auto const & domain : this->getDomains())
+            //     {
+            //         if (domain->hasLoads())
+            //         {
+            //             for (auto const & load : domain->getLoads())
+            //             {
+            //                 for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
+            //                 {
+            //                     auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
+            //                     auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
+            //                     auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
+            //                     auto vector = this->template getBasisEvaluation<getFaceBasis()>(reference_point);
+            //                     auto offset = getFaceBasisSize<t_element>() * FieldTraits<t_field>::getCols() * load.getRow() + load.getCol();
+            //                     auto lhs = external_forces.template segment<getFaceBasisSize<t_element>()>(offset);
+            //                     lhs += weight * load.getValue(current_point, time) * vector;
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     return external_forces;
+            // }
+
+            // template<PotentialConcept auto... t_behaviors>
+            // Vector<Real, getStaticSize<t_element, t_domain>()>
+            // getInternalForces()
+            // const
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     auto internal_forces = Vector<Real, getStaticSize<t_element, t_domain>()>();
+            //     internal_forces.setZero();
+            //     auto bb = [&] <PotentialConcept auto t_behavior> ()
+            //     {
+            //         auto aaa = [&] <Integer t_i = 0> (
+            //             auto & self
+            //         )
+            //         constexpr mutable
+            //         {
+            //             auto constexpr strain = t_behavior.template getStrain<t_i>();
+            //             if (strain.getField() == t_field)
+            //             {
+            //                 auto constexpr strain_operator_num_rows = MappingTraits<strain>::template getSize<t_domain>();
+            //                 using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+            //                 for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
+            //                 {
+            //                     auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+            //                     internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<strain>().transpose() * stress_view;
+            //                 }
+            //                 if constexpr (t_i < t_behavior.getNumMappings() - 1)
+            //                 {
+            //                     self.template operator()<t_i + 1>(self);
+            //                 }
+            //             }
+            //         };
+            //         aaa(aaa);
+            //     };
+            //     bb.template operator()<t_behaviors...>();
+            //     return internal_forces;
+            // }
+
+            // Vector<Real, getStaticSize<t_element, t_domain>()>
+            // getRhs(
+            //     Real const & time
+            // )
+            // const
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     return this->getExternalForces(time) - this->getInternalForces();
+            // }
+
+            // template<PotentialConcept auto... t_behaviors>
+            // Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>
+            // getLhs()
+            // const
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     auto jacobian_matrix = Matrix<Real, getStaticSize<t_element, t_domain>(), getStaticSize<t_element, t_domain>()>();
+            //     jacobian_matrix.setZero();
+            //     // auto bb = [&] <PotentialConcept auto t_behavior> ()
+            //     // {
+            //     //     auto aaa = [&] <Integer t_i = 0> (
+            //     //         auto & self
+            //     //     )
+            //     //     constexpr mutable
+            //     //     {
+            //     //         auto constexpr strain = t_behavior.template getStrain<t_i>();
+            //     //         auto constexpr strain_operator_num_rows = MappingTraits<strain>::template getSize<t_domain>();
+            //     //         using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+            //     //         for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
+            //     //         {
+            //     //             auto stress_view = StrainView(ip.behavior_data_->s1.thermodynamic_forces.data());
+            //     //             internal_forces += ip.getCurrentWeight() * ip.template getStrainOperator<strain>().transpose() * stress_view;
+            //     //         }
+            //     //         if constexpr (t_i < t_behavior.getNumMappings() - 1)
+            //     //         {
+            //     //             self.template operator()<t_i + 1>(self);
+            //     //         }
+            //     //     };
+            //     //     aaa(aaa);
+            //     // };
+            //     // bb.template operator()<t_behaviors...>();
+            //     return jacobian_matrix;
+            // }
+
+            // Vector<Real, getStaticSize<t_element, t_domain>()>
+            // getRhs(
+            //     Real const & time
+            // )
+            // const
+            // requires(t_element.isSub(t_domain, 1))
+            // {
+            //     auto set_faces_unknowns = [&] <Integer t_i = 0> (
+            //         auto & self
+            //     )
+            //     constexpr mutable
+            //     {
+            //         for (auto const & cell : this->template getOuterNeighbors<1, t_i>())
+            //         {
+            //             auto cell_rhs = cell->getExternalForces(time) - cell->getInternalForces();
+            //             auto constexpr t_outer_neighbor = ElementTraits<t_element>::template getOuterNeighbor<t_domain, 1, t_i>();
+            //             auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
+            //                 auto & self2
+            //             )
+            //             constexpr mutable
+            //             {
+            //                 for (auto const & face : cell->template getInnerNeighbors<0, t_j>())
+            //                 {
+            //                     // auto face_unknown_size = face->degrees_of_freedom_.at(std::string(unknown_label)).template getSize<field, getFaceBasis()>();
+            //                     // band_width += face_unknown_size;
+            //                 }
+            //                 if constexpr (t_j < ElementTraits<t_outer_neighbor>::template getNumInnerNeighbors<0>() - 1)
+            //                 {
+            //                     self2.template operator ()<t_j + 1>(self2);
+            //                 }
+            //             };
+            //             set_faces_unknowns2(set_faces_unknowns2);
+            //         }
+            //         if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, 1>() - 1)
+            //         {
+            //             self.template operator ()<t_i + 1>(self);
+            //         }
+            //     };
+            //     set_faces_unknowns(set_faces_unknowns);
+            //     return this->getExternalForces(time) - this->getInternalForces();
+            // }
 
             /**
              * Implementation

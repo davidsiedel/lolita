@@ -778,6 +778,21 @@ namespace lolita
             return size;
         }
 
+        template<auto t_element, Domain t_domain>
+        using ElementJacobianMatrix = Matrix<Real, getSize<t_element, t_domain>(), getSize<t_element, t_domain>()>;
+
+        template<auto t_element, Domain t_domain>
+        using ElementResidualVector = Vector<Real, getSize<t_element, t_domain>()>;
+
+        // template<Domain t_domain>
+        // using JacobianMatrix = Matrix<Real, getSize<t_domain>(), getSize<t_domain>()>;
+
+        template<Domain t_domain>
+        using StrainVector = Vector<Real, getSize<t_domain>()>;
+
+        template<Domain t_domain>
+        using StressVector = Vector<Real, getSize<t_domain>()>;
+
         template<PotentialConcept auto t_potential>
         static constexpr
         Integer

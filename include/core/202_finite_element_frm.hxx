@@ -102,77 +102,146 @@ namespace lolita
             mgis::behaviour::setExternalStateVariable(behavior_data_->s1, std::forward<std::basic_string<Character>>(material_property_label), value);
         }
 
-        template<PotentialConcept auto t_potential>
-        Matrix<Real>
-        getJacobian()
+        // template<PotentialConcept auto t_potential>
+        // algebra::View<typename PotentialTraits<t_potential>::template JacobianMatrix<t_domain> const>
+        // getJacobianMatrixView()
+        // const
+        // {
+        //     return algebra::View<typename PotentialTraits<t_potential>::template JacobianMatrix<t_domain> const>(behavior_data_->K.data());
+        // }
+
+        template<PotentialConcept auto t_potential, MappingConcept auto t_strain1, MappingConcept auto t_strain2>
+        algebra::View<Matrix<Real, MappingTraits<t_strain1>::template getSize<t_domain>(), MappingTraits<t_strain2>::template getSize<t_domain>()> const>
+        getJacobianMatrixBlock()
         const
         {
-            auto size = PotentialTraits<t_potential>::template getSize<t_domain>();
-            auto jacobian_matrix = Matrix<Real>(size, size);
-            jacobian_matrix.setZero();
-            auto set_mapping_block = [&] <Integer t_i = 0> (
-                auto & self
-            )
-            constexpr mutable
-            {
-                auto constexpr mapping = t_potential.template getStrain<t_i>();
-                auto constexpr mapping_size = PotentialTraits<t_potential>::template getMappingSize<t_domain, mapping>();
-                auto constexpr offset = PotentialTraits<t_potential>::template getMappingOffset<t_domain, mapping>();
-                auto rhs = algebra::View<Matrix<Real, mapping_size, mapping_size> const>(behavior_data_->K.data() + offset * offset);
-                auto lhs = jacobian_matrix.template block<mapping_size, mapping_size>(offset, offset);
-                lhs = rhs;
-                if constexpr (t_i < t_potential.getNumMappings() - 1)
-                {
-                    self.template operator ()<t_i + 1>(self);
-                }
-            };
-            set_mapping_block(set_mapping_block);
-            return jacobian_matrix;
+            auto constexpr jacobian_size = PotentialTraits<t_potential>::template getSize<t_domain>();
+            auto constexpr jacobian_block_num_rows = MappingTraits<t_strain1>::template getSize<t_domain>();
+            auto constexpr jacobian_block_num_cols = MappingTraits<t_strain2>::template getSize<t_domain>();
+            auto jacobian_block_row_offset = PotentialTraits<t_potential>::template getOffset<t_domain, t_strain1>();
+            auto jacobian_block_col_offset = PotentialTraits<t_potential>::template getOffset<t_domain, t_strain2>();
+            auto block_offset = jacobian_size * jacobian_block_row_offset + jacobian_block_col_offset;
+            return algebra::View<Matrix<Real, jacobian_block_num_rows, jacobian_block_num_cols> const>(behavior_data_->K.data() + block_offset);
         }
 
-        template<PotentialConcept auto t_potential>
-        Matrix<Real, PotentialTraits<t_potential>::template getSize<t_domain>(), PotentialTraits<t_potential>::template getSize<t_domain>()>
-        getJacobian()
+        template<PotentialConcept auto t_potential, MappingConcept auto t_strain>
+        algebra::View<Vector<Real, MappingTraits<t_strain>::template getSize<t_domain>()> const>
+        getStressVectorBlock()
         const
         {
-            auto constexpr size = PotentialTraits<t_potential>::template getSize<t_domain>();
-            auto row_offset = 0;
-            auto col_offset = 0;
-            auto offset = 0;
-            auto jacobian_matrix = Matrix<Real, size, size>();
-            jacobian_matrix.setZero();
-            auto set_mapping_rows = [&] <Integer t_row = 0> (
-                auto & t_set_mapping_rows
-            )
-            constexpr mutable
-            {
-                auto constexpr row_mapping_size = MappingTraits<t_potential.template getStrain<t_row>()>::template getSize<t_domain>();
-                auto set_jacobian_cols = [&] <Integer t_col = 0> (
-                    auto & t_set_jacobian_cols
-                )
-                constexpr mutable
-                {
-                    auto constexpr col_mapping_size = MappingTraits<t_potential.template getStrain<t_col>()>::template getSize<t_domain>();
-                    auto rhs = algebra::View<Matrix<Real, row_mapping_size, col_mapping_size> const>(behavior_data_->K.data() + offset);
-                    auto lhs = jacobian_matrix.template block<row_mapping_size, col_mapping_size>(row_offset, col_offset);
-                    lhs = rhs;
-                    offset += row_mapping_size * col_mapping_size;
-                    col_offset += col_mapping_size;
-                    if constexpr (t_col < t_potential.getNumMappings() - 1)
-                    {
-                        t_set_jacobian_cols.template operator ()<t_col + 1>(t_set_jacobian_cols);
-                    }
-                };
-                set_jacobian_cols(set_jacobian_cols);
-                row_offset += row_mapping_size;
-                if constexpr (t_row < t_potential.getNumMappings() - 1)
-                {
-                    t_set_mapping_rows.template operator ()<t_row + 1>(t_set_mapping_rows);
-                }
-            };
-            set_mapping_rows(set_mapping_rows);
-            return jacobian_matrix;
+            auto constexpr jacobian_block_num_cols = MappingTraits<t_strain>::template getSize<t_domain>();
+            auto jacobian_block_col_offset = PotentialTraits<t_potential>::template getOffset<t_domain, t_strain>();
+            return algebra::View<Vector<Real, jacobian_block_num_cols> const>(behavior_data_->s1.thermodynamic_forces.data() + jacobian_block_col_offset);
         }
+
+        template<PotentialConcept auto t_potential, MappingConcept auto t_strain>
+        algebra::View<Vector<Real, MappingTraits<t_strain>::template getSize<t_domain>()> const>
+        getStrainVectorBlock()
+        const
+        {
+            auto constexpr jacobian_block_num_cols = MappingTraits<t_strain>::template getSize<t_domain>();
+            auto jacobian_block_col_offset = PotentialTraits<t_potential>::template getOffset<t_domain, t_strain>();
+            return algebra::View<Vector<Real, jacobian_block_num_cols> const>(behavior_data_->s1.gradients.data() + jacobian_block_col_offset);
+        }
+
+        template<PotentialConcept auto t_potential, MappingConcept auto t_strain>
+        void
+        setStrainVectorBlock(
+            VectorConcept<Real> auto && strain
+        )
+        {
+            auto constexpr jacobian_block_num_cols = MappingTraits<t_strain>::template getSize<t_domain>();
+            auto jacobian_block_col_offset = PotentialTraits<t_potential>::template getOffset<t_domain, t_strain>();
+            auto strain_block = algebra::View<Vector<Real, jacobian_block_num_cols>>(behavior_data_->s1.gradients.data() + jacobian_block_col_offset);
+            strain_block = std::forward<decltype(strain)>(strain);
+        }
+
+        template<PotentialConcept auto t_potential, MappingConcept auto t_strain>
+        algebra::View<Vector<Real, MappingTraits<t_strain>::template getSize<t_domain>()> const>
+        getResidualVectorBlock()
+        const
+        {
+            return this->getStressVectorBlock<t_potential, t_strain>();
+        }
+
+        // template<PotentialConcept auto t_potential>
+        // Matrix<Real>
+        // getJacobian()
+        // const
+        // {
+        //     // auto size = PotentialTraits<t_potential>::template getSize<t_domain>();
+        //     // auto jacobian_matrix = Matrix<Real>(size, size);
+        //     // jacobian_matrix.setZero();
+        //     // auto set_mapping_block = [&] <Integer t_i = 0> (
+        //     //     auto & self
+        //     // )
+        //     // constexpr mutable
+        //     // {
+        //     //     auto constexpr mapping = PotentialTraits<t_potential>::template getStrain<t_i>();
+        //     //     auto constexpr mapping_size = MappingTraits<mapping>::template getSize<t_domain>();
+        //     //     auto constexpr offset = PotentialTraits<t_potential>::template getOffset<t_domain, mapping>();
+        //     //     auto set_mapping_block = [&] <Integer t_i = 0> (
+        //     //         auto & self
+        //     //     )
+        //     //     constexpr mutable
+        //     //     {
+
+        //     //     };
+        //     //     auto rhs = algebra::View<Matrix<Real, mapping_size, mapping_size> const>(behavior_data_->K.data() + offset * offset);
+        //     //     auto lhs = jacobian_matrix.template block<mapping_size, mapping_size>(offset, offset);
+        //     //     lhs = rhs;
+        //     //     if constexpr (t_i < t_potential.getNumMappings() - 1)
+        //     //     {
+        //     //         self.template operator ()<t_i + 1>(self);
+        //     //     }
+        //     // };
+        //     // set_mapping_block(set_mapping_block);
+        //     // return jacobian_matrix;
+        // }
+
+        // template<PotentialConcept auto t_potential>
+        // Matrix<Real, PotentialTraits<t_potential>::template getSize<t_domain>(), PotentialTraits<t_potential>::template getSize<t_domain>()>
+        // getJacobian()
+        // const
+        // {
+        //     auto constexpr size = PotentialTraits<t_potential>::template getSize<t_domain>();
+        //     auto row_offset = 0;
+        //     auto col_offset = 0;
+        //     auto offset = 0;
+        //     auto jacobian_matrix = Matrix<Real, size, size>();
+        //     jacobian_matrix.setZero();
+        //     auto set_mapping_rows = [&] <Integer t_row = 0> (
+        //         auto & t_set_mapping_rows
+        //     )
+        //     constexpr mutable
+        //     {
+        //         auto constexpr row_mapping_size = MappingTraits<t_potential.template getStrain<t_row>()>::template getSize<t_domain>();
+        //         auto set_jacobian_cols = [&] <Integer t_col = 0> (
+        //             auto & t_set_jacobian_cols
+        //         )
+        //         constexpr mutable
+        //         {
+        //             auto constexpr col_mapping_size = MappingTraits<t_potential.template getStrain<t_col>()>::template getSize<t_domain>();
+        //             auto rhs = algebra::View<Matrix<Real, row_mapping_size, col_mapping_size> const>(behavior_data_->K.data() + offset);
+        //             auto lhs = jacobian_matrix.template block<row_mapping_size, col_mapping_size>(row_offset, col_offset);
+        //             lhs = rhs;
+        //             offset += row_mapping_size * col_mapping_size;
+        //             col_offset += col_mapping_size;
+        //             if constexpr (t_col < t_potential.getNumMappings() - 1)
+        //             {
+        //                 t_set_jacobian_cols.template operator ()<t_col + 1>(t_set_jacobian_cols);
+        //             }
+        //         };
+        //         set_jacobian_cols(set_jacobian_cols);
+        //         row_offset += row_mapping_size;
+        //         if constexpr (t_row < t_potential.getNumMappings() - 1)
+        //         {
+        //             t_set_mapping_rows.template operator ()<t_row + 1>(t_set_mapping_rows);
+        //         }
+        //     };
+        //     set_mapping_rows(set_mapping_rows);
+        //     return jacobian_matrix;
+        // }
 
         // Point &
         // getCurrentCoordinates()
