@@ -51,7 +51,7 @@ namespace lolita
                 };
                 if (num_threads < 2)
                 {
-                    evaluation_loop(0, this->template getElements<t_i, t_j>().size() - 1);
+                    evaluation_loop(0, this->template getElements<t_i, t_j>().size());
                 }
                 else
                 {
@@ -576,6 +576,21 @@ namespace lolita
                 finite_element->template recoverBehaviorData<t_behavior>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+        
+        template<Integer t_i, auto... t_args>
+        void
+        CALL(
+            std::basic_string<Character> && domain_label
+        )
+        const
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                std::cout << "finite_element->template getBandWidth<t_args...>();" << std::endl;
+                std::cout << finite_element->template getBandWidth<t_args...>() << std::endl;
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun, 0);
         }
         
         friend

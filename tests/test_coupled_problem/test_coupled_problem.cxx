@@ -122,7 +122,7 @@ TEST(tcoupled, tcoupled)
                 elements->assembleBindingVector<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system, time);
                 std::cout << "res eval : " << displacement_system->getResidualEvaluation() << std::endl;
                 auto res = displacement_system->getResidualEvaluation();
-                // std::cout << "res : " << lolita::Matrix<lolita::Real, 1, -1>(displacement_system->rhs_values_) << std::endl;
+                // std::cout << "res : " << lolita::DenseMatrix<lolita::Real, 1, -1>(displacement_system->rhs_values_) << std::endl;
                 if (res < 1.e-6)
                 {
                     std::cout << "convergence" << std::endl;

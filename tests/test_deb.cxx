@@ -9,7 +9,7 @@ TEST(t_deb, t_deb)
     auto tock = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration<double>(tock - tick);
 
-    auto mat_ = lolita::Matrix<lolita::Real, 2, 2>();
+    auto mat_ = lolita::DenseMatrix<lolita::Real, 2, 2>();
     auto vec_ = lolita::Vector<lolita::Real, 2>();
 
     static_assert(lolita::RealVectorConcept<decltype(mat_ * lolita::Vector<lolita::Real, 2>::Zero())>);
@@ -94,12 +94,12 @@ TEST(t_deb, t_deb)
             auto constexpr cell_cols_ = lolita::ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize();
             auto constexpr cell_rows_ = lolita::BasisTraits<t_cell_basis>::template getSize<t_element>();
             auto constexpr grad_rows_ = lolita::BasisTraits<t_grad_basis>::template getSize<t_element>();
-            // auto mat = lolita::Matrix<lolita::Real, rows_, cols_>();
-            auto cell_row_vectors = lolita::Matrix<lolita::Real, grad_rows_, cell_cols_>();
-            auto cell_colI_vectors = lolita::Matrix<lolita::Real, cell_rows_, cell_cols_>();
-            auto cell_colJ_vectors = lolita::Matrix<lolita::Real, cell_rows_, cell_cols_>();
-            // auto matips2 = lolita::Matrix<lolita::Real, 3, cols_>();
-            auto wts = lolita::Matrix<lolita::Real, 1, cell_cols_>();
+            // auto mat = lolita::DenseMatrix<lolita::Real, rows_, cols_>();
+            auto cell_row_vectors = lolita::DenseMatrix<lolita::Real, grad_rows_, cell_cols_>();
+            auto cell_colI_vectors = lolita::DenseMatrix<lolita::Real, cell_rows_, cell_cols_>();
+            auto cell_colJ_vectors = lolita::DenseMatrix<lolita::Real, cell_rows_, cell_cols_>();
+            // auto matips2 = lolita::DenseMatrix<lolita::Real, 3, cols_>();
+            auto wts = lolita::DenseMatrix<lolita::Real, 1, cell_cols_>();
             for (auto ipc = 0; ipc < lolita::ElementQuadratureRuleTraits<t_element, t_quadrature>::getSize(); ipc++)
             {
                 auto weight = finite_element->template getCurrentQuadratureWeight<t_quadrature>(ipc);
@@ -159,10 +159,10 @@ TEST(t_deb, t_deb)
                 std::cout << face->getNormalVector(face->getReferenceCentroid()) << std::endl;
                 auto constexpr cols_ = lolita::ElementQuadratureRuleTraits<t_face, t_quadrature>::getSize();
                 auto constexpr rows_ = lolita::BasisTraits<t_face_basis>::template getSize<t_face>();
-                auto mat = lolita::Matrix<lolita::Real, rows_, cols_>();
-                auto matips = lolita::Matrix<lolita::Real, 3, cols_>();
-                auto matips2 = lolita::Matrix<lolita::Real, 3, cols_>();
-                auto wts = lolita::Matrix<lolita::Real, 1, cols_>();
+                auto mat = lolita::DenseMatrix<lolita::Real, rows_, cols_>();
+                auto matips = lolita::DenseMatrix<lolita::Real, 3, cols_>();
+                auto matips2 = lolita::DenseMatrix<lolita::Real, 3, cols_>();
+                auto wts = lolita::DenseMatrix<lolita::Real, 1, cols_>();
                 for (auto ipf = 0; ipf < lolita::ElementQuadratureRuleTraits<t_face, t_quadrature>::getSize(); ipf++)
                 {
                     auto weight = face->template getCurrentQuadratureWeight<t_quadrature>(ipf);

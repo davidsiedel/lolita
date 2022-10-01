@@ -25,7 +25,7 @@
 
 static void
 dummy(
-    lolita::MatrixConcept<lolita::Real, 2, 2> auto matrix
+    lolita::DenseMatrixConcept<lolita::Real, 2, 2> auto matrix
 )
 {
     std::cout << matrix << std::endl;
@@ -33,7 +33,7 @@ dummy(
 
 static void
 dummy2(
-    lolita::MatrixConcept<lolita::Real> auto matrix
+    lolita::DenseMatrixConcept<lolita::Real> auto matrix
 )
 {
     std::cout << matrix << std::endl;
@@ -135,33 +135,33 @@ struct DataBase
     =0;
     
     // virtual
-    // lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    // lolita::algebra::View<lolita::DenseVector<lolita::Real> const>
     // get()
     // const
     // =0;
 
-    lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    lolita::algebra::View<lolita::DenseVector<lolita::Real> const>
     view(
         int size
     )
     const
     {
-        return lolita::algebra::View<lolita::Vector<lolita::Real> const>(this->data(), size);
+        return lolita::algebra::View<lolita::DenseVector<lolita::Real> const>(this->data(), size);
     }
 
-    lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    lolita::algebra::View<lolita::DenseVector<lolita::Real> const>
     view()
     const
     {
-        return lolita::algebra::View<lolita::Vector<lolita::Real> const>(this->data(), this->size());
+        return lolita::algebra::View<lolita::DenseVector<lolita::Real> const>(this->data(), this->size());
     }
 
     template<int size>
-    lolita::algebra::View<lolita::Vector<lolita::Real, size> const>
+    lolita::algebra::View<lolita::DenseVector<lolita::Real, size> const>
     view()
     const
     {
-        return lolita::algebra::View<lolita::Vector<lolita::Real, size> const>(this->data());
+        return lolita::algebra::View<lolita::DenseVector<lolita::Real, size> const>(this->data());
     }
 
     template<int size>
@@ -190,7 +190,7 @@ struct Data<a> : DataBase
     data_(std::move(args)...)
     {}
 
-    lolita::Vector<lolita::Real, a> const &
+    lolita::DenseVector<lolita::Real, a> const &
     get()
     const
     {
@@ -220,11 +220,11 @@ private:
         return data_.size();
     }
     
-    // lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    // lolita::algebra::View<lolita::DenseVector<lolita::Real> const>
     // get()
     // const override
     // {
-    //     return lolita::algebra::View<lolita::Vector<lolita::Real> const>(data_.data(), data_.size());
+    //     return lolita::algebra::View<lolita::DenseVector<lolita::Real> const>(data_.data(), data_.size());
     // };
 
     // template<int size>
@@ -232,10 +232,10 @@ private:
     // view()
     // const
     // {
-    //     return lolita::algebra::View<lolita::Vector<lolita::Real, size> const>(data_.data());
+    //     return lolita::algebra::View<lolita::DenseVector<lolita::Real, size> const>(data_.data());
     // }
 
-    lolita::Vector<lolita::Real, a> data_;
+    lolita::DenseVector<lolita::Real, a> data_;
 
 };
 
@@ -276,14 +276,14 @@ private:
         return data_.size();
     }
     
-    // lolita::algebra::View<lolita::Vector<lolita::Real> const>
+    // lolita::algebra::View<lolita::DenseVector<lolita::Real> const>
     // get()
     // const override
     // {
-    //     return lolita::algebra::View<lolita::Vector<lolita::Real> const>(data_.data(), data_.size());
+    //     return lolita::algebra::View<lolita::DenseVector<lolita::Real> const>(data_.data(), data_.size());
     // };
 
-    lolita::Vector<lolita::Real> data_;
+    lolita::DenseVector<lolita::Real> data_;
 
 };
 
@@ -309,7 +309,7 @@ int
 main(int argc, char** argv)
 {
 
-    std::unique_ptr<DataBase> ptr_test = std::make_unique<Data<3>>(lolita::Vector<lolita::Real, 3>::Zero());
+    std::unique_ptr<DataBase> ptr_test = std::make_unique<Data<3>>(lolita::DenseVector<lolita::Real, 3>::Zero());
     // std::cout << ptr_test->get().template segment<2>(0) << std::endl;
     std::cout << ptr_test->view<2>() << std::endl;
     std::cout << ptr_test->get<2>() << std::endl;
@@ -382,10 +382,10 @@ main(int argc, char** argv)
 
     std::cout << sizeof(std::vector<int>) << std::endl;
     std::cout << sizeof(std::vector<double>) << std::endl;
-    std::cout << sizeof(lolita::Vector<double>) << std::endl;
+    std::cout << sizeof(lolita::DenseVector<double>) << std::endl;
     std::cout << sizeof(std::basic_string_view<char>) << std::endl;
     std::cout << sizeof(int) << std::endl;
-    std::cout << sizeof(std::vector<lolita::Matrix<lolita::Real>>) << std::endl;
+    std::cout << sizeof(std::vector<lolita::DenseMatrix<lolita::Real>>) << std::endl;
     auto lab = lolita::Label();
     auto const & lab_ref = lab;
     std::cout << sizeof(Ref<lolita::Label>) << std::endl;
@@ -394,7 +394,7 @@ main(int argc, char** argv)
 
     // auto constexpr ref2 = Ref2<"Stabilization">();
 
-    static_assert(lolita::MatrixConcept<lolita::Matrix<lolita::Real, 2, 2>, lolita::Real, 2, 2>);
+    static_assert(lolita::DenseMatrixConcept<lolita::DenseMatrix<lolita::Real, 2, 2>, lolita::Real, 2, 2>);
     // std::cout << std::fixed << std::setprecision(3);
     // ---------------------------------------------------------------------------------------------------------------------------------------------------------
     // declaring behavior
@@ -420,7 +420,7 @@ main(int argc, char** argv)
     // // discretization
     // auto constexpr hdg = lolita::HybridDiscontinuousGalerkin::hybridDiscontinuousGalerkin(1, 1);
     // // generalized strains
-    // auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(0, lolita::field("Vector", "U"), lolita::mapping("SmallStrain", lolita::field("Vector", "U")));
+    // auto constexpr displacement_generalized_strain = lolita::GeneralizedStrain(0, lolita::field("DenseVector", "U"), lolita::mapping("SmallStrain", lolita::field("DenseVector", "U")));
     // auto constexpr damage_generalized_strain = lolita::GeneralizedStrain(1, lolita::field("Scalar", "D"), lolita::mapping("Gradient", lolita::field("Scalar", "D")), lolita::mapping("Identity", lolita::field("Scalar", "D")));
     // auto constexpr lag_generalized_strain = lolita::GeneralizedStrain(2, lolita::field("Scalar", "F"), lolita::mapping("Identity", lolita::field("Scalar", "F")));
     // // behaviors
@@ -458,6 +458,7 @@ main(int argc, char** argv)
      * 
      */
     auto constexpr _yg = lolita::Label("YoungModulus");
+    auto constexpr _nu = lolita::Label("PoissonRatio");
     auto constexpr _dm = lolita::Label("Damage");
     auto constexpr _stab = lolita::Label("Stabilization");
     /**
@@ -474,10 +475,10 @@ main(int argc, char** argv)
      * Fields
      * 
      */
-    auto constexpr displacement = lolita::DiscreteField("Displacement", 1, lolita::HybridDiscontinuousGalerkin(1, 1));
-    auto constexpr displacement2 = lolita::DiscreteField("Displacement", 1, lolita::HybridDiscontinuousGalerkin(1, 2));
-    auto constexpr damage = lolita::DiscreteField("Damage", 0, lolita::HybridDiscontinuousGalerkin(1, 1));
-    auto constexpr force = lolita::DiscreteField("Force", 0, lolita::Monomial(1));
+    auto constexpr displacement = lolita::DiscreteField("Displacement", 2, 1, lolita::HybridDiscontinuousGalerkin(1, 1));
+    auto constexpr displacement2 = lolita::DiscreteField("Displacement", 2, 1, lolita::HybridDiscontinuousGalerkin(1, 2));
+    auto constexpr damage = lolita::DiscreteField("Damage", 2, 0, lolita::HybridDiscontinuousGalerkin(1, 1));
+    auto constexpr force = lolita::DiscreteField("Force", 1, 0, lolita::Monomial(1));
     auto ref_f1 = Ref(displacement.getLabel());
     auto ref_f2 = Ref(displacement2.getLabel());
     if (ref_f1.get() != ref_f2.get()) throw std::runtime_error("HIII");
@@ -568,16 +569,21 @@ main(int argc, char** argv)
     elements->addFormulation<face_dim, elastic_potential>("TOP");
     elements->addFormulationStrainOperator<cell_dim, elastic_potential, elastic_potential.getStrain<0>()>("ROD");
     //
+    elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
+    elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _nu>("ROD", [](lolita::Point const & p) { return 0.2; });
+    elements->setFormulationExternalVariable<cell_dim, elastic_potential, _dm>("ROD", [](lolita::Point const & p) { return 0.0; });
     elements->setStrainOperators<cell_dim, elastic_potential>("ROD");
     elements->setStrains<cell_dim, elastic_potential>("ROD");
+    elements->integrateFormulationConstitutiveEquation<cell_dim, elastic_potential>("ROD");
     auto internal_energy = elements->getInternalEnergy<cell_dim, elastic_potential>("ROD");
     std::cout << "internal_energy : " << internal_energy << std::endl;
     auto external_energy = elements->getExternalEnergy<cell_dim, displacement>("ROD", 0.1);
     std::cout << "external_energy : " << external_energy << std::endl;
+    elements->CALL<face_dim, displacement>("ROD");
     //
     elements->setFormulationStrain<cell_dim, elastic_potential, elastic_potential.getStrain<0>()>("ROD"); // set G(u) in T
-    elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
-    elements->setFormulationExternalVariable<cell_dim, elastic_potential, _dm>("ROD", [](lolita::Point const & p) { return 200.0; });
+    // elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
+    // elements->setFormulationExternalVariable<cell_dim, elastic_potential, _dm>("ROD", [](lolita::Point const & p) { return 200.0; });
     elements->integrateFormulationConstitutiveEquation<cell_dim, elastic_potential>("ROD");
     /**
      * Potentials
@@ -621,8 +627,8 @@ main(int argc, char** argv)
     elements->addDomain<cell_dim>("ROD", "SANE", sane);
 
 //     // dofs
-//     auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::field("Vector", "A"), hdg.getFaceBasis()>("ROD", "Displacement");
-//     auto cell_displacement = elements->setDegreeOfFreedom<cells, lolita::field("Vector", "A"), hdg.getCellBasis()>("ROD", "Displacement");
+//     auto face_displacement = elements->setDegreeOfFreedom<faces, lolita::field("DenseVector", "A"), hdg.getFaceBasis()>("ROD", "Displacement");
+//     auto cell_displacement = elements->setDegreeOfFreedom<cells, lolita::field("DenseVector", "A"), hdg.getCellBasis()>("ROD", "Displacement");
 //     auto face_damage = elements->setDegreeOfFreedom<faces, lolita::field("Scalar", "A"), hdg.getFaceBasis()>("ROD", "Damage");
 //     auto cell_damage = elements->setDegreeOfFreedom<cells, lolita::field("Scalar", "A"), hdg.getCellBasis()>("ROD", "Damage");
 //     //
@@ -814,7 +820,7 @@ main(int argc, char** argv)
 //             elements->assembleBindingVector<faces, displacement_element, hdg>("BOTTOM", "BottomForce", "Displacement", "FixedB", displacement_system, time);
 //             // std::cout << "displacement res eval : " << displacement_system->getResidualEvaluation() << std::endl;
 //             auto res = displacement_system->getResidualEvaluation();
-//             // std::cout << "res : " << lolita::Matrix<lolita::Real, 1, -1>(displacement_system->rhs_values_) << std::endl;
+//             // std::cout << "res : " << lolita::DenseMatrix<lolita::Real, 1, -1>(displacement_system->rhs_values_) << std::endl;
 //             if (res < 1.e-6)
 //             {
 //                 // std::cout << "step convergence" << std::endl;
@@ -912,8 +918,8 @@ main(int argc, char** argv)
 // displacement_stored_energy_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << displacement_stored_energy_value << "\n";
 // displacement_dissipated_energy_out_stream << step << ", "<< time << ", " << std::setprecision(10) << std::scientific << displacement_dissipated_energy_value << "\n";
 //             elements->reserveBehaviorData<cells>("ROD", "MicromorphicDisplacement");
-//             elements->reserveUnknownCoefficients<cells, lolita::field("Vector", "A"), hdg.getCellBasis()>("ROD", "Displacement");
-//             elements->reserveUnknownCoefficients<faces, lolita::field("Vector", "A"), hdg.getFaceBasis()>("ROD", "Displacement");
+//             elements->reserveUnknownCoefficients<cells, lolita::field("DenseVector", "A"), hdg.getCellBasis()>("ROD", "Displacement");
+//             elements->reserveUnknownCoefficients<faces, lolita::field("DenseVector", "A"), hdg.getFaceBasis()>("ROD", "Displacement");
 //             elements->reserveUnknownCoefficients<faces, lolita::field("Scalar", "A"), hdg.getFaceBasis()>("TOP", "TopForce");
 //             elements->reserveUnknownCoefficients<faces, lolita::field("Scalar", "A"), hdg.getFaceBasis()>("LEFT", "LeftForce");
 //             elements->reserveUnknownCoefficients<faces, lolita::field("Scalar", "A"), hdg.getFaceBasis()>("BOTTOM", "BottomForce");
@@ -950,8 +956,8 @@ main(int argc, char** argv)
 //         {
 //             std::cout << "-- time step split" << std::endl;
 //             elements->recoverBehaviorData<cells>("ROD", "MicromorphicDisplacement");
-//             elements->recoverUnknownCoefficients<cells, lolita::field("Vector", "A"), hdg.getCellBasis()>("ROD", "Displacement");
-//             elements->recoverUnknownCoefficients<faces, lolita::field("Vector", "A"), hdg.getFaceBasis()>("ROD", "Displacement");
+//             elements->recoverUnknownCoefficients<cells, lolita::field("DenseVector", "A"), hdg.getCellBasis()>("ROD", "Displacement");
+//             elements->recoverUnknownCoefficients<faces, lolita::field("DenseVector", "A"), hdg.getFaceBasis()>("ROD", "Displacement");
 //             elements->recoverUnknownCoefficients<faces, lolita::field("Scalar", "A"), hdg.getFaceBasis()>("TOP", "TopForce");
 //             elements->recoverUnknownCoefficients<faces, lolita::field("Scalar", "A"), hdg.getFaceBasis()>("LEFT", "LeftForce");
 //             elements->recoverUnknownCoefficients<faces, lolita::field("Scalar", "A"), hdg.getFaceBasis()>("BOTTOM", "BottomForce");

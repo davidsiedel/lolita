@@ -548,13 +548,13 @@ namespace lolita
         }
 
         template<ElementType t_ii, auto... t_args>
-        std::shared_ptr<Vector<Real>>
+        std::shared_ptr<DenseVector<Real>>
         setDegreeOfFreedom(
             std::basic_string_view<Character> domain,
             std::basic_string_view<Character> label
         )
         {
-            auto dof = std::make_shared<Vector<Real>>();
+            auto dof = std::make_shared<DenseVector<Real>>();
             auto lab = std::basic_string<Character>(label);
             auto fun = [&] (auto const & element)
             {

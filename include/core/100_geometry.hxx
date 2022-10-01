@@ -517,7 +517,7 @@ namespace lolita
         static
         Real
         getShapeMappingEvaluation(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point
         )
         {
@@ -527,7 +527,7 @@ namespace lolita
         static
         Real
         getShapeMappingDerivative(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point,
             Integer derivative_direction
         )
@@ -564,7 +564,7 @@ namespace lolita
         static
         Real
         getShapeMappingEvaluation(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point
         )
         {
@@ -577,7 +577,7 @@ namespace lolita
         static
         Real
         getShapeMappingDerivative(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point,
             Integer derivative_direction
         )
@@ -629,7 +629,7 @@ namespace lolita
         static
         Real
         getShapeMappingEvaluation(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point
         )
         {
@@ -643,7 +643,7 @@ namespace lolita
         static
         Real
         getShapeMappingDerivative(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point,
             Integer derivative_direction
         )
@@ -714,7 +714,7 @@ namespace lolita
         static
         Real
         getShapeMappingEvaluation(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point
         )
         {
@@ -729,7 +729,7 @@ namespace lolita
         static
         Real
         getShapeMappingDerivative(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point,
             Integer derivative_direction
         )
@@ -808,7 +808,7 @@ namespace lolita
         static
         Real
         getShapeMappingEvaluation(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point
         )
         {
@@ -819,7 +819,7 @@ namespace lolita
         static
         Real
         getShapeMappingDerivative(
-            VectorConcept<Real> auto const & nodal_field_values,
+            DenseVectorConcept<Real> auto const & nodal_field_values,
             PointConcept auto const & reference_point,
             Integer derivative_direction
         )

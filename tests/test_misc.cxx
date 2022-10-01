@@ -112,9 +112,9 @@ TEST(tm, tm)
 
     auto constexpr size = 5;
 
-    auto mat = lolita::algebra::Matrix<lolita::Real>(size, size);
+    auto mat = lolita::algebra::DenseMatrix<lolita::Real>(size, size);
     auto vec = lolita::algebra::Vector<lolita::Real>(size);
-    auto mat_view = lolita::algebra::Span<lolita::algebra::Matrix<lolita::Real, size, size> const>(mat.data());
+    auto mat_view = lolita::algebra::Span<lolita::algebra::DenseMatrix<lolita::Real, size, size> const>(mat.data());
     auto vec_view = lolita::algebra::Span<lolita::algebra::Vector<lolita::Real, size> const>(vec.data());
     auto tick = std::chrono::high_resolution_clock::now();
     auto res = mat_view * vec_view;
@@ -122,7 +122,7 @@ TEST(tm, tm)
     auto time = std::chrono::duration<double>(tock - tick);
     std::cout << "time : " << time.count() << std::endl;
 
-    auto mat2 = std::make_unique<lolita::algebra::Matrix<lolita::Real, size, size>>(lolita::algebra::Matrix<lolita::Real, size, size>());
+    auto mat2 = std::make_unique<lolita::algebra::DenseMatrix<lolita::Real, size, size>>(lolita::algebra::DenseMatrix<lolita::Real, size, size>());
     auto vec2 = std::make_unique<lolita::algebra::Vector<lolita::Real, size>>(lolita::algebra::Vector<lolita::Real, size>());
     auto tick2 = std::chrono::high_resolution_clock::now();
     auto res2 = (* mat2) * (* vec2);
@@ -130,7 +130,7 @@ TEST(tm, tm)
     auto time2 = std::chrono::duration<double>(tock2 - tick2);
     std::cout << "time : " << time2.count() << std::endl;
 
-    auto mat3 = lolita::algebra::Matrix<lolita::Real>(size, size);
+    auto mat3 = lolita::algebra::DenseMatrix<lolita::Real>(size, size);
     auto vec3 = lolita::algebra::Vector<lolita::Real>(size);
     auto tick3 = std::chrono::high_resolution_clock::now();
     auto res3 = mat3 * vec3;
@@ -138,7 +138,7 @@ TEST(tm, tm)
     auto time3 = std::chrono::duration<double>(tock3 - tick3);
     std::cout << "time : " << time3.count() << std::endl;
 
-    auto mat4 = lolita::algebra::Matrix<lolita::Real>(size, size);
+    auto mat4 = lolita::algebra::DenseMatrix<lolita::Real>(size, size);
     auto vec4 = lolita::algebra::Vector<lolita::Real>(size);
     auto tick4 = std::chrono::high_resolution_clock::now();
     auto res4 = mat4 * vec4;

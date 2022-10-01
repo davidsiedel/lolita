@@ -79,7 +79,7 @@ TEST(test_quadrangle, test_quadrangle)
     // auto count_seg = 0;
     // for (auto const & seg : {segment_0, segment_1, segment_2})
     // {
-    //     auto mass = lolita::Matrix<lolita::Real, 2, 2>();
+    //     auto mass = lolita::DenseMatrix<lolita::Real, 2, 2>();
     //     mass.setZero();
     //     std::cout << "--- seg " << count_seg << "\n\n";
     //     for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<segment, quadrature>::getSize(); ++q)
@@ -132,7 +132,7 @@ TEST(test_quadrangle, test_quadrangle)
     // auto count_seg = 0;
     // for (auto const & seg : {segment_0, segment_1, segment_2})
     // {
-    //     auto mass = lolita::Matrix<lolita::Real, 2, 2>();
+    //     auto mass = lolita::DenseMatrix<lolita::Real, 2, 2>();
     //     mass.setZero();
     //     std::cout << "--- seg " << count_seg << "\n\n";
     //     for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<segment, lolita::Quadrature::gauss(4)>::getSize(); ++q)

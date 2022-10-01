@@ -10,6 +10,68 @@
 namespace lolita
 {
 
+    struct ExternalLoad
+    {
+
+        ExternalLoad(
+            Integer row,
+            Integer col,
+            std::function<Real(Point const &, Real const &)> const & function
+        )
+        :
+        row_(row),
+        col_(col),
+        function_(function)
+        {}
+
+        ExternalLoad(
+            Integer row,
+            Integer col,
+            std::function<Real(Point const &, Real const &)> && function
+        )
+        :
+        row_(row),
+        col_(col),
+        function_(std::move(function))
+        {}
+
+        inline
+        Integer
+        getRow()
+        const
+        {
+            return row_;
+        }
+
+        inline
+        Integer
+        getCol()
+        const
+        {
+            return col_;
+        }
+
+        inline
+        Real
+        getValue(
+            Point const & point,
+            Real const & time
+        )
+        const
+        {
+            return function_(point, time);
+        }
+
+    private:
+
+        Integer row_;
+
+        Integer col_;
+
+        std::function<Real(Point const &, Real const &)> function_;
+
+    };
+
     template<Domain t_domain>
     struct DegreeOfFreedom
     {
@@ -96,8 +158,8 @@ namespace lolita
         )
         :
         offset_(-1),
-        s0(Vector<Real>::Zero(size)),
-        s1(Vector<Real>::Zero(size))
+        s0(DenseVector<Real>::Zero(size)),
+        s1(DenseVector<Real>::Zero(size))
         {}
         
         DegreeOfFreedom(
@@ -106,8 +168,8 @@ namespace lolita
         )
         :
         offset_(offset),
-        s0(Vector<Real>::Zero(size)),
-        s1(Vector<Real>::Zero(size))
+        s0(DenseVector<Real>::Zero(size)),
+        s1(DenseVector<Real>::Zero(size))
         {}
 
     public:
@@ -136,10 +198,17 @@ namespace lolita
         {
             return offset_;
         }
+
+        Integer
+        getSize()
+        const
+        {
+            return s1.size();
+        }
         
         void
         addCoefficients(
-            VectorConcept<Real> auto && input
+            DenseVectorConcept<Real> auto && input
         )
         {
             s1 += std::forward<decltype(input)>(input);
@@ -148,67 +217,93 @@ namespace lolita
         template<FieldConcept auto t_field, Integer t_size>
         void
         addCoefficients(
-            VectorConcept<Real> auto && input
+            DenseVectorConcept<Real> auto && input
         )
         {
-            s1 += std::forward<decltype(input)>(input).template segment<getSize<t_field, t_size>()>(offset_);
+            s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_field, t_size>()>(offset_);
         }
 
         template<Element t_element, FieldConcept auto t_field, Basis t_basis>
         void
         addCoefficients(
-            VectorConcept<Real> auto && input
+            DenseVectorConcept<Real> auto && input
         )
         {
-            s1 += std::forward<decltype(input)>(input).template segment<getSize<t_element, t_field, t_basis>()>(offset_);
+            s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(offset_);
         }
 
         template<Element t_element, FieldConcept auto t_field, Basis t_basis>
         void
         addCoefficients(
-            VectorConcept<Real> auto && input,
+            DenseVectorConcept<Real> auto && input,
             Integer offset
         )
         {
-            s1 += std::forward<decltype(input)>(input).template segment<getSize<t_element, t_field, t_basis>()>(offset);
+            s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(offset);
         }
 
         template<FieldConcept auto t_field, Integer t_size>
-        algebra::View<Vector<Real, getSize<t_size>()> const>
+        algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_size>()> const>
         getCoefficients(
             Integer row,
             Integer col
         )
         const
         {
-            return algebra::View<Vector<Real, getSize<t_size>()> const>(s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col);
+            auto const & data = s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col;
+            return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_size>()> const>(data);
         }
 
         template<FieldConcept auto t_field, Integer t_size>
-        algebra::View<Vector<Real, getSize<t_field, t_size>()> const>
+        algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_field, t_size>()> const>
         getCoefficients()
         const
         {
-            return algebra::View<Vector<Real, getSize<t_field, t_size>()> const>(s1.data());
+            auto const & data = s1.data();
+            return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_field, t_size>()> const>(data);
         }
 
         template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        algebra::View<Vector<Real, getSize<t_element, t_basis>()> const>
+        algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_element, t_basis>()> const>
         getCoefficients(
             Integer row,
             Integer col
         )
         const
         {
-            return algebra::View<Vector<Real, getSize<t_element, t_basis>()> const>(s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col);
+            auto const & data = s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col;
+            return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_element, t_basis>()> const>(data);
         }
 
         template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        algebra::View<Vector<Real, getSize<t_element, t_field, t_basis>()> const>
+        algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()> const>
         getCoefficients()
         const
         {
-            return algebra::View<Vector<Real, getSize<t_element, t_field, t_basis>()> const>(s1.data());
+            auto const & data = s1.data();
+            return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()> const>(data);
+        }
+
+        template<Element t_element, FieldConcept auto t_field, Basis t_basis, Integer t_size>
+        auto
+        packUp(
+            DenseSystem<Real, t_size> const & system
+        )
+        {
+            condensation_ = StaticCondensation::template make<Real, t_size, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(system);
+            auto j = condensation_->template packUp<Real, t_size, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(system);
+            return j;
+        }
+
+        template<Element t_element, FieldConcept auto t_field, Basis t_basis, Integer t_size>
+        auto
+        unPack(
+            DenseVectorConcept<Real, t_size> auto && vector
+        )
+        {
+            auto j = condensation_->template unPack<Real, t_size, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(std::forward<decltype(vector)>(vector));
+            condensation_ = nullptr;
+            return j;
         }
 
         void
@@ -223,13 +318,22 @@ namespace lolita
             s1 = s0;
         }
 
+        Boolean
+        isCondensed()
+        const
+        {
+            return condensation_ != nullptr;
+        }
+
     private:
+
+        std::unique_ptr<StaticCondensation> condensation_;
 
         Natural offset_;
 
-        Vector<Real> s0;
+        DenseVector<Real> s0;
 
-        Vector<Real> s1;
+        DenseVector<Real> s1;
 
     };
 
@@ -346,12 +450,12 @@ namespace lolita
         void
         addVector(
             Label const & tag,
-            VectorConcept<Real> auto &&... vector
+            DenseVectorConcept<Real> auto &&... vector
         )
         {
             if (vector_items_ == nullptr)
             {
-                vector_items_ = std::make_unique<std::vector<ElementaryOperator<Label, Vector<Real>>>>();
+                vector_items_ = std::make_unique<std::vector<ElementaryOperator<Label, DenseVector<Real>>>>();
             }
             for (auto & m : * vector_items_)
             {
@@ -360,18 +464,18 @@ namespace lolita
                     return;
                 }
             }
-            vector_items_->push_back(ElementaryOperator<Label, Vector<Real>>(tag, std::forward<decltype(vector)>(vector)...));
+            vector_items_->push_back(ElementaryOperator<Label, DenseVector<Real>>(tag, std::forward<decltype(vector)>(vector)...));
         }
 
         void
         addMatrix(
             Label const & tag,
-            MatrixConcept<Real> auto &&... matrix
+            DenseMatrixConcept<Real> auto &&... matrix
         )
         {
             if (matrix_items_ == nullptr)
             {
-                matrix_items_ = std::make_unique<std::vector<ElementaryOperator<Label, Matrix<Real>>>>();
+                matrix_items_ = std::make_unique<std::vector<ElementaryOperator<Label, DenseMatrix<Real>>>>();
             }
             for (auto & m : * matrix_items_)
             {
@@ -380,7 +484,7 @@ namespace lolita
                     return;
                 }
             }
-            matrix_items_->push_back(ElementaryOperator<Label, Matrix<Real>>(tag, std::forward<decltype(matrix)>(matrix)...));
+            matrix_items_->push_back(ElementaryOperator<Label, DenseMatrix<Real>>(tag, std::forward<decltype(matrix)>(matrix)...));
         }
 
         Real const &
@@ -428,7 +532,7 @@ namespace lolita
             }
         }
 
-        Vector<Real> const &
+        DenseVector<Real> const &
         getVector(
             std::basic_string_view<Character> && tag
         )
@@ -451,7 +555,7 @@ namespace lolita
             }
         }
 
-        Vector<Real> &
+        DenseVector<Real> &
         getVector(
             std::basic_string_view<Character> && tag
         )
@@ -473,7 +577,7 @@ namespace lolita
             }
         }
 
-        Matrix<Real> const &
+        DenseMatrix<Real> const &
         getMatrix(
             std::basic_string_view<Character> && tag
         )
@@ -496,7 +600,7 @@ namespace lolita
             }
         }
 
-        Matrix<Real> &
+        DenseMatrix<Real> &
         getMatrix(
             std::basic_string_view<Character> && tag
         )
@@ -524,9 +628,9 @@ namespace lolita
 
         std::unique_ptr<std::vector<ElementaryOperator<Label, Real>>> scalar_items_;
 
-        std::unique_ptr<std::vector<ElementaryOperator<Label, Vector<Real>>>> vector_items_;
+        std::unique_ptr<std::vector<ElementaryOperator<Label, DenseVector<Real>>>> vector_items_;
 
-        std::unique_ptr<std::vector<ElementaryOperator<Label, Matrix<Real>>>> matrix_items_;
+        std::unique_ptr<std::vector<ElementaryOperator<Label, DenseMatrix<Real>>>> matrix_items_;
 
     };
 
@@ -664,6 +768,13 @@ namespace lolita
             ElementDiscreteField const & other
         )
         const = default;
+
+        Boolean
+        hasDegreeOfFreedom()
+        const
+        {
+            return dof_ != nullptr;
+        }
 
         template<Element t_element, FieldConcept auto t_field, Basis t_basis, Strategy t_s>
         void

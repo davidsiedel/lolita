@@ -71,7 +71,7 @@ TEST(test_triangle, test_triangle)
     // , segment_1, segment_2
     })
     {
-        auto mass = lolita::Matrix<lolita::Real, 2, 2>();
+        auto mass = lolita::DenseMatrix<lolita::Real, 2, 2>();
         mass.setZero();
         std::cout << "--- seg " << seg->getTag() << "\n\n";
         auto diams = seg->getLocalFrameDiameters();
@@ -128,7 +128,7 @@ TEST(test_triangle, test_triangle)
     // auto count_seg = 0;
     // for (auto const & seg : {segment_0, segment_1, segment_2})
     // {
-    //     auto mass = lolita::Matrix<lolita::Real, 2, 2>();
+    //     auto mass = lolita::DenseMatrix<lolita::Real, 2, 2>();
     //     mass.setZero();
     //     std::cout << "--- seg " << count_seg << "\n\n";
     //     for (auto q = 0; q < lolita::ElementQuadratureRuleTraits<segment, lolita::Quadrature::gauss(4)>::getSize(); ++q)

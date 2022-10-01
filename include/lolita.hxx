@@ -125,10 +125,10 @@ namespace lolita
 
     };
     
-    using Point = Vector<Real, 3>;
+    using Point = DenseVector<Real, 3>;
 
     template<typename t_T>
-    concept PointConcept = VectorConcept<t_T, Real, 3>;
+    concept PointConcept = DenseVectorConcept<t_T, Real, 3>;
 
     using Loading = std::function<Real(Point const &, Real const &)>;
 
@@ -213,7 +213,8 @@ namespace lolita
 
         LinearSystem()
         :
-        size_(0)
+        size_(0),
+        lhs_size_(0)
         {}
 
         inline
@@ -243,9 +244,25 @@ namespace lolita
             return size_;
         }
 
+        std::atomic<Natural> &
+        getLhsSize()
+        {
+            return lhs_size_;
+        }
+
+        void
+        addLhsSize(
+            Natural size
+        )
+        {
+            lhs_size_ += size;
+        }
+
     private:
 
         std::atomic<Natural> size_;
+
+        std::atomic<Natural> lhs_size_;
 
     };
 
@@ -668,21 +685,25 @@ namespace lolita
 
         constexpr explicit
         Field(
-            Integer dim
+            Integer dim_domain,
+            Integer dim_tensor
         )
         :
         label_(),
-        dim_(dim)
+        dim_domain_(dim_domain),
+        dim_tensor_(dim_tensor)
         {}
         
         constexpr
         Field(
             std::basic_string_view<Character> && label,
-            Integer dim
+            Integer dim_domain,
+            Integer dim_tensor
         )
         :
         label_(std::forward<std::basic_string_view<Character>>(label)),
-        dim_(dim)
+        dim_domain_(dim_domain),
+        dim_tensor_(dim_tensor)
         {}
 
         constexpr
@@ -701,10 +722,18 @@ namespace lolita
 
         constexpr
         Integer
-        getDim()
+        getDomainDim()
         const
         {
-            return dim_;
+            return dim_domain_;
+        }
+
+        constexpr
+        Integer
+        getTensorDim()
+        const
+        {
+            return dim_tensor_;
         }
 
         constexpr
@@ -722,12 +751,14 @@ namespace lolita
         )
         const
         {
-            return dim_ == dim;
+            return dim_tensor_ == dim;
         }
 
         Label label_;
 
-        Integer dim_;
+        Integer dim_domain_;
+
+        Integer dim_tensor_;
 
     };
     
@@ -739,31 +770,34 @@ namespace lolita
 
         constexpr explicit
         DiscreteField(
-            Integer dim
+            Integer dim_domain,
+            Integer dim_tensor
         )
         :
-        Field(dim),
+        Field(dim_domain, dim_tensor),
         discretization_()
         {}
         
         constexpr
         DiscreteField(
             std::basic_string_view<Character> && label,
-            Integer dim
+            Integer dim_domain,
+            Integer dim_tensor
         )
         :
-        Field(std::forward<std::basic_string_view<Character>>(label), dim),
+        Field(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor),
         discretization_()
         {}
         
         constexpr
         DiscreteField(
             std::basic_string_view<Character> && label,
-            Integer dim,
+            Integer dim_domain,
+            Integer dim_tensor,
             FieldDiscretization const & discretization
         )
         :
-        Field(std::forward<std::basic_string_view<Character>>(label), dim),
+        Field(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor),
         discretization_(discretization)
         {}
         
@@ -1068,68 +1102,6 @@ namespace lolita
 
     template<typename t_T>
     concept PotentialConcept = detail::IsPotential<std::decay_t<t_T>>::value;
-
-    struct ExternalLoad
-    {
-
-        ExternalLoad(
-            Integer row,
-            Integer col,
-            std::function<Real(Point const &, Real const &)> const & function
-        )
-        :
-        row_(row),
-        col_(col),
-        function_(function)
-        {}
-
-        ExternalLoad(
-            Integer row,
-            Integer col,
-            std::function<Real(Point const &, Real const &)> && function
-        )
-        :
-        row_(row),
-        col_(col),
-        function_(std::move(function))
-        {}
-
-        inline
-        Integer
-        getRow()
-        const
-        {
-            return row_;
-        }
-
-        inline
-        Integer
-        getCol()
-        const
-        {
-            return col_;
-        }
-
-        inline
-        Real
-        getValue(
-            Point const & point,
-            Real const & time
-        )
-        const
-        {
-            return function_(point, time);
-        }
-
-    private:
-
-        Integer row_;
-
-        Integer col_;
-
-        std::function<Real(Point const &, Real const &)> function_;
-
-    };
 
 } // namespace lolita
 

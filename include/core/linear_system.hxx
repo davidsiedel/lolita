@@ -240,7 +240,7 @@ namespace lolita
 
         System()
         :
-        rhs_values_(Vector<Real>(0)),
+        rhs_values_(DenseVector<Real>(0)),
         normalization_(1.e-14),
         band_width_(0)
         {}
@@ -361,7 +361,7 @@ namespace lolita
         }
 
         inline
-        algebra::View<Vector<Real> const>
+        algebra::View<DenseVector<Real> const>
         getUnknownCorrection(
             std::basic_string_view<Character> label
         )
@@ -369,11 +369,11 @@ namespace lolita
         {
             auto offset = getUnknownOffset(label);
             auto size = unknowns_.at(std::string(label));
-            return algebra::View<Vector<Real> const>(correction_values_.data() + offset, size);
+            return algebra::View<DenseVector<Real> const>(correction_values_.data() + offset, size);
         }
 
         inline
-        algebra::View<Vector<Real> const>
+        algebra::View<DenseVector<Real> const>
         getBindingCorrection(
             std::basic_string_view<Character> label
         )
@@ -381,7 +381,7 @@ namespace lolita
         {
             auto offset = getBindingOffset(label);
             auto size = bindings_.at(std::string(label));
-            return algebra::View<Vector<Real> const>(correction_values_.data() + offset, size);
+            return algebra::View<DenseVector<Real> const>(correction_values_.data() + offset, size);
         }
 
         inline
@@ -391,7 +391,7 @@ namespace lolita
             lhs_values_.clear();
             if (rhs_values_.size() == 0)
             {
-                rhs_values_ = Vector<Real>::Zero(getSize());
+                rhs_values_ = DenseVector<Real>::Zero(getSize());
             }
             else
             {
@@ -406,7 +406,7 @@ namespace lolita
         {
             if (rhs_values_.size() == 0)
             {
-                rhs_values_ = Vector<Real>::Zero(getSize());
+                rhs_values_ = DenseVector<Real>::Zero(getSize());
             }
             else
             {
@@ -419,7 +419,7 @@ namespace lolita
         initializeLhs()
         {
             lhs_ = Eigen::SparseMatrix<Real>(getSize(), getSize());
-            // lhs_.reserve(Vector<Real>::Constant(getSize(), band_width_));
+            // lhs_.reserve(DenseVector<Real>::Constant(getSize(), band_width_));
             lhs_values_.clear();
             // lhs_values_.reserve(40'000 * 18 * 18);
         }
@@ -515,7 +515,7 @@ namespace lolita
         // addLhsValues(
         //     Integer i,
         //     Integer j,
-        //     Matrix<Real, t_rows, t_cols> const & values
+        //     DenseMatrix<Real, t_rows, t_cols> const & values
         // )
         // {
         //     auto lock = std::scoped_lock<std::mutex>(mutex);
@@ -532,7 +532,7 @@ namespace lolita
         // void
         // addRhsValues(
         //     Integer i,
-        //     Vector<Real, t_rows> const & values
+        //     DenseVector<Real, t_rows> const & values
         // )
         // {
         //     auto lock = std::scoped_lock<std::mutex>(mutex);
@@ -559,7 +559,7 @@ namespace lolita
             // OPT 2
             // lhs_.makeCompressed();
             // std::cout << "lhs : " << "\n";
-            // std::cout << mat2str(Matrix<Real>(lhs)) << "\n";
+            // std::cout << mat2str(DenseMatrix<Real>(lhs)) << "\n";
             // std::cout << "rhs : " << "\n";
             // std::cout << mat2str(rhs_values_) << "\n";
             //
@@ -568,7 +568,7 @@ namespace lolita
             // outfile << std::fixed << std::setprecision(3);
             // outfile.open("/home/dsiedel/projetcs/lolita/lolita/tests/t0/mat.txt");
             // outfile << "lhs : " << "\n";
-            // outfile << Matrix<Real>(lhs).format(print_format) << "\n";
+            // outfile << DenseMatrix<Real>(lhs).format(print_format) << "\n";
             // outfile << "rhs : " << "\n";
             // outfile << rhs_values_ << "\n";
             //
@@ -584,7 +584,7 @@ namespace lolita
                 std::cerr << "ERROR: Could not factorize the matrix" << std::endl;
             }
             // x = solver.solve(b);
-            // auto RHS = Vector<Real>(- rhs_values_);
+            // auto RHS = DenseVector<Real>(- rhs_values_);
             correction_values_ = solver.solve(rhs_values_);
             if (solver.info() != Eigen::Success)
             {
@@ -593,7 +593,7 @@ namespace lolita
             // std::cout << "correction : " << "\n";
             // std::cout << correction_values_ << "\n";
             // lhs_values_ = std::vector<MatrixEntry>();
-            // rhs_values_ = Vector<Real>::Zero(getSize());
+            // rhs_values_ = DenseVector<Real>::Zero(getSize());
             // rhs_values_.setZero();
             // for(auto i = 0; i < getSize(); i++)
             // {
@@ -627,7 +627,7 @@ namespace lolita
             //     std::cout << "[PARDISO] Factorization Mflops: " << mflops << std::endl;
             // }
             // auto chol = Eigen::SparseLU<Eigen::SparseMatrix<Real>>(lhs);  // performs a Cholesky factorization of A
-            // auto x = Vector<Real>(chol.solve(rhs_values_));         // use the factorization to solve for the given right hand side
+            // auto x = DenseVector<Real>(chol.solve(rhs_values_));         // use the factorization to solve for the given right hand side
         }
 
         inline
@@ -694,9 +694,9 @@ namespace lolita
 
         std::vector<MatrixEntry> lhs_values_;
 
-        Vector<Real> rhs_values_;
+        DenseVector<Real> rhs_values_;
 
-        Vector<Real> correction_values_;
+        DenseVector<Real> correction_values_;
 
     };
 
@@ -706,7 +706,7 @@ namespace lolita
     //     Dof()
     //     :
     //     tag_(0),
-    //     coefficients_(Vector<Real>(0))
+    //     coefficients_(DenseVector<Real>(0))
     //     {}
         
     //     inline
@@ -741,7 +741,7 @@ namespace lolita
     //     }
 
     //     inline
-    //     Vector<Real> const &
+    //     DenseVector<Real> const &
     //     getCoefficients()
     //     const
     //     {
@@ -749,7 +749,7 @@ namespace lolita
     //     }
 
     //     inline
-    //     Vector<Real> &
+    //     DenseVector<Real> &
     //     getCoefficients()
     //     {
     //         return coefficients_;
@@ -757,7 +757,7 @@ namespace lolita
 
     //     Natural tag_;
 
-    //     Vector<Real> coefficients_;
+    //     DenseVector<Real> coefficients_;
 
     // };
     
@@ -781,7 +781,7 @@ namespace lolita
 
     //     std::shared_ptr<std::basic_string<Character>> label_;
 
-    //     std::shared_ptr<Vector<Real>> coefficients_;
+    //     std::shared_ptr<DenseVector<Real>> coefficients_;
         
     //     inline
     //     Boolean
@@ -800,7 +800,7 @@ namespace lolita
     //     inline
     //     Boolean
     //     operator==(
-    //         std::shared_ptr<Vector<Real>> const & coefficients
+    //         std::shared_ptr<DenseVector<Real>> const & coefficients
     //     )
     //     const
     //     {
@@ -810,7 +810,7 @@ namespace lolita
     //     inline
     //     Boolean
     //     operator!=(
-    //         std::shared_ptr<Vector<Real>> const & coefficients
+    //         std::shared_ptr<DenseVector<Real>> const & coefficients
     //     )
     //     const
     //     {
@@ -826,7 +826,7 @@ namespace lolita
     //     }
 
     //     inline
-    //     Vector<Real> const &
+    //     DenseVector<Real> const &
     //     getCoefficients()
     //     const
     //     {
@@ -834,7 +834,7 @@ namespace lolita
     //     }
 
     //     inline
-    //     Vector<Real> &
+    //     DenseVector<Real> &
     //     getCoefficients()
     //     {
     //         return * coefficients_;
@@ -877,7 +877,7 @@ namespace lolita
     //     }
         
     //     inline
-    //     lolita::algebra::Vector<Real> const &
+    //     lolita::algebra::DenseVector<Real> const &
     //     getCoefficients()
     //     const
     //     {
@@ -885,7 +885,7 @@ namespace lolita
     //     }
         
     //     inline
-    //     lolita::algebra::Vector<Real> &
+    //     lolita::algebra::DenseVector<Real> &
     //     getCoefficients()
     //     {
     //         return coefficients_;
@@ -895,7 +895,7 @@ namespace lolita
 
     //     ElementType element_type_;
 
-    //     Vector<Real> coefficients_;
+    //     DenseVector<Real> coefficients_;
 
     // };
 

@@ -61,7 +61,22 @@ namespace lolita
         Boolean
         hasDiscreteField()
         {
-            return ptr_data_ != nullptr;
+            if (ptr_data_ == nullptr)
+            {
+                return false;
+            }
+            else
+            {
+                for (auto const & item : * ptr_data_)
+                {
+                    if (item.getLabel() == t_field.getLabel())
+                    {
+                        return true;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
+            return false;
         }
 
         template<FieldConcept auto t_field>
@@ -201,7 +216,7 @@ namespace lolita
         }
         
         template<Basis t_basis>
-        Vector<Real, t_Basis<t_basis>::getSize()>
+        DenseVector<Real, t_Basis<t_basis>::getSize()>
         getBasisEvaluation(
             auto const &... args
         )
@@ -211,7 +226,7 @@ namespace lolita
         }
         
         template<Basis t_basis>
-        Vector<Real, t_Basis<t_basis>::getSize()>
+        DenseVector<Real, t_Basis<t_basis>::getSize()>
         getBasisDerivative(
             auto const &... args
         )
@@ -279,6 +294,25 @@ namespace lolita
             }
             ptr_data_->push_back(ElementDiscreteField<t_domain>(t_field));
         }
+        
+        template<FieldConcept auto t_field>
+        Boolean
+        hasDiscreteField()
+        const
+        {
+            if (ptr_data_ == nullptr)
+            {
+                return false;
+            }
+            for (auto const & item : * ptr_data_)
+            {
+                if (item.getLabel() == t_field.getLabel())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         template<FieldConcept auto t_field>
         ElementDiscreteField<t_domain> const &
@@ -326,21 +360,51 @@ namespace lolita
         }
 
         template<FieldConcept auto t_field, Integer t_size>
+        Boolean
+        hasDiscreteFieldDegreeOfFreedom()
+        const
+        {
+            if (this->template hasDiscreteField<t_field>())
+            {
+                return this->template getDiscreteField<t_field>().hasDegreeOfFreedom();
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        template<FieldConcept auto t_field, Integer t_size>
+        void
+        addDiscreteFieldDegreeOfFreedom()
+        {
+            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_size>();
+        }
+
+        template<FieldConcept auto t_field, Integer t_size, Strategy t_s>
         void
         addDiscreteFieldDegreeOfFreedom(
-            auto const &... args
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_size>(args...);
+            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_size>(linear_system);
         }
 
         template<FieldConcept auto t_field, Basis t_basis>
         void
+        addDiscreteFieldDegreeOfFreedom()
+        {
+            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>();
+        }
+
+        template<FieldConcept auto t_field, Basis t_basis, Strategy t_s>
+        void
         addDiscreteFieldDegreeOfFreedom(
-            auto const &... args
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system
         )
         {
-            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>(args...);
+            this->template getBandWidth<t_field>();
+            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>(linear_system);
         }
 
         // template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
@@ -358,7 +422,19 @@ namespace lolita
             auto const &... args
         )
         {
+            // this->template getBandWidth<t_field>();
             static_cast<t_Disc2<t_field> *>(this)->addDiscreteFieldDegreeOfFreedom(args...);
+        }
+
+        template<FieldConcept auto t_field, Strategy t_s>
+        void
+        addDiscreteFieldDegreeOfFreedom(
+            std::unique_ptr<LinearSystem<t_s>> const & linear_system,
+            auto const &... args
+        )
+        {
+            
+            static_cast<t_Disc2<t_field> *>(this)->addDiscreteFieldDegreeOfFreedom(linear_system, args...);
         }
 
         // template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization, Label t_label>
@@ -387,7 +463,7 @@ namespace lolita
         template<FieldConcept auto t_field, Basis t_basis>
         void
         upgradeDiscreteFieldDegreeOfFreedom(
-            VectorConcept<Real> auto && input
+            DenseVectorConcept<Real> auto && input
         )
         {
             this->template getDiscreteField<t_field>().getDegreeOfFreedom().template addCoefficients<t_field, t_basis>(std::forward<decltype(input)>(input));
@@ -472,7 +548,7 @@ namespace lolita
         // }
 
         // template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
-        // Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
+        // DenseVector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
         // getDiscreteFieldDegreeOfFreedomCoefficients()
         // const
         // {
@@ -480,7 +556,7 @@ namespace lolita
         // }
 
         // template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
-        // Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
+        // DenseVector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
         // getUnknowns()
         // const
         // {
@@ -504,11 +580,68 @@ namespace lolita
         }
 
         template<FieldConcept auto t_field>
-        Vector<Real, getStaticSize<t_field>()>
+        DenseVector<Real, getStaticSize<t_field>()>
         getDiscreteFieldDegreeOfFreedomCoefficients()
         const
         {
             return static_cast<t_Disc2<t_field> const *>(this)->getDiscreteFieldDegreeOfFreedomCoefficients();
+        }
+        
+        template<FieldConcept auto t_field>
+        Integer
+        getBandWidth()
+        const
+        {
+            auto band_width = DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>();
+            auto set_faces_unknowns = [&] <Integer t_i = 0> (
+                auto & self
+            )
+            constexpr mutable
+            {
+                auto constexpr t_cell = ElementTraits<t_element>::template getOuterNeighbor<t_domain, t_field.getDomainDim() - t_element.getDim(), t_i>();
+                if constexpr (t_element.getDim() <  t_field.getDomainDim())
+                {
+                    for (auto const & cell : this->template getOuterNeighbors<t_field.getDomainDim() - t_element.getDim(), t_i>())
+                    {
+                        auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
+                            auto & self2
+                        )
+                        constexpr mutable
+                        {
+                            auto set_faces_unknowns3 = [&] <Integer t_k = 0> (
+                                auto & self3
+                            )
+                            constexpr mutable
+                            {
+                                auto constexpr t_cell_neighbor = ElementTraits<t_cell>::template getInnerNeighbor<t_j, t_k>();
+                                for (auto const & cell_neighbor : cell->template getInnerNeighbors<t_j, t_k>())
+                                {
+                                    if (!utility::areEqual(* cell_neighbor, * this) && cell_neighbor->template hasDiscreteField<t_field>())
+                                    {
+                                        band_width += DiscretizationTraits2<t_field>::template getStaticSize<t_cell_neighbor, t_domain>();
+                                    }
+                                }
+                                if constexpr (t_k < ElementTraits<t_cell>::template getNumInnerNeighbors<t_j>() - 1)
+                                {
+                                    self3.template operator ()<t_k + 1>(self3);
+                                }
+                            };
+                            set_faces_unknowns3(set_faces_unknowns3);
+                            if constexpr (t_j < t_field.getDomainDim() - t_element.getDim() - 1)
+                            {
+                                self2.template operator ()<t_j + 1>(self2);
+                            }
+                        };
+                        set_faces_unknowns2(set_faces_unknowns2);
+                    }
+                    if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, t_field.getDomainDim() - t_element.getDim()>() - 1)
+                    {
+                        self.template operator ()<t_i + 1>(self);
+                    }
+                }
+            };
+            set_faces_unknowns(set_faces_unknowns);
+            return band_width;
         }
 
         /**
@@ -523,7 +656,7 @@ namespace lolita
         using ElementResidualVector = typename PotentialTraits<t_potential...>::template ElementResidualVector<t_element, t_domain>;
 
         template<FieldConcept auto t_field>
-        Vector<Real, DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>()>
+        DenseVector<Real, DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>()>
         getFieldDualVector(
             PointConcept auto const & point
         )
@@ -533,7 +666,7 @@ namespace lolita
         };
 
         template<FieldConcept auto t_field>
-        Vector<Real, DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>()>
+        DenseVector<Real, DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>()>
         getFieldDualVector(
             PointConcept auto const & point,
             Integer row,
@@ -545,7 +678,7 @@ namespace lolita
         };
 
         template<FieldConcept auto t_field>
-        Vector<Real, DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>()>
+        DenseVector<Real, DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>()>
         getFieldPrimalVector(
             PointConcept auto const & point
         )
@@ -555,7 +688,7 @@ namespace lolita
         };
 
         template<FieldConcept auto t_field>
-        Vector<Real, DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>()>
+        DenseVector<Real, DiscretizationTraits2<t_field>::template getStaticSize<t_element, t_domain>()>
         getFieldPrimalVector(
             PointConcept auto const & point,
             Integer row,
@@ -903,6 +1036,41 @@ namespace lolita
         }
         
         template<PotentialConcept auto... t_potential>
+        ElementResidualVector<t_potential...>
+        getElementResidualForces(
+            Real const & time
+        )
+        const
+        {
+            return this->template getElementExternalForces<t_potential...>(time) - this->template getElementInternalForces<t_potential...>();
+        }
+        
+        template<PotentialConcept auto... t_potential>
+        void
+        getElementResidualForces(
+            Real const & time,
+            std::atomic<Real> & i,
+            std::atomic<Real> & o
+        )
+        const
+        {
+            auto internal_forces = this->template getElementInternalForces<t_potential...>();
+            auto external_forces = this->template getElementExternalForces<t_potential...>(time);
+            auto residual_forces = external_forces - internal_forces;
+            auto residual_forces_max = residual_forces.cwiseAbs().maxCoeff();
+            auto external_forces_max = external_forces.cwiseAbs().maxCoeff();
+            if (residual_forces_max > i)
+            {
+                i = residual_forces_max;
+            }
+            if (external_forces_max > o)
+            {
+                o = external_forces_max;
+            }
+            return this->template getElementExternalForces<t_potential...>(time) - this->template getElementInternalForces<t_potential...>();
+        }
+        
+        template<PotentialConcept auto... t_potential>
         ElementJacobianMatrix<t_potential...>
         getElementJacobianMatrix()
         const
@@ -1113,7 +1281,7 @@ namespace lolita
         //     auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_strain.getField(), t_discretization>();
         //     for (auto & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
         //     {
-        //         auto rhs = Vector<Real>();
+        //         auto rhs = DenseVector<Real>();
         //         if (ip.template hasStrainOperator<t_strain>())
         //         {
         //             rhs = ip.template getStrainOperator<t_strain>() * unknown;
@@ -1122,7 +1290,7 @@ namespace lolita
         //         {
         //             rhs = this->template getMapping<t_strain, t_discretization>(ip.getReferenceCoordinates()) * unknown;
         //         }
-        //         auto lhs = algebra::View<Vector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
+        //         auto lhs = algebra::View<DenseVector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
         //         lhs = rhs;
         //     }
         // }
@@ -1147,7 +1315,7 @@ namespace lolita
             auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_strain.getField()>();
             for (auto & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
             {
-                auto rhs = Vector<Real>();
+                auto rhs = DenseVector<Real>();
                 if (ip.template hasStrainOperator<t_strain>())
                 {
                     rhs = ip.template getStrainOperator<t_strain>() * unknown;
@@ -1156,7 +1324,7 @@ namespace lolita
                 {
                     rhs = this->template getMapping<t_strain>(ip.getReferenceCoordinates()) * unknown;
                 }
-                auto lhs = algebra::View<Vector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
+                auto lhs = algebra::View<DenseVector<Real>>(ip.behavior_data_->s1.gradients.data(), ip.behavior_data_->s1.gradients.size());
                 lhs = rhs;
             }
         }
@@ -1213,7 +1381,7 @@ namespace lolita
         //     auto quadrature_point_count = 0;
         //     for (auto & ip : getFormulation<t_behavior>().getIntegrationPoints())
         //     {
-        //         auto strain_operator = Matrix<Real>(strain_operator_num_rows, strain_operator_num_cols);
+        //         auto strain_operator = DenseMatrix<Real>(strain_operator_num_rows, strain_operator_num_cols);
         //         strain_operator.setZero();
         //         auto set_mapping_block = [&] <Integer t_i = 0> (
         //             auto & self
@@ -1621,12 +1789,12 @@ namespace lolita
             return algebra::View<Point const>(ElementTraits<t_element>::reference_nodes_[node_tag].data());
         }
         
-        Matrix<Real, 3, t_element.getNumNodes()>
+        DenseMatrix<Real, 3, t_element.getNumNodes()>
         getCurrentCoordinates()
         const
         requires(!t_element.isNode())
         {
-            auto current_nodes_coordinates = Matrix<Real, 3, t_element.getNumNodes()>();
+            auto current_nodes_coordinates = DenseMatrix<Real, 3, t_element.getNumNodes()>();
             auto count = 0;
             for (auto const & node : this->template getInnerNeighbors<t_element.getDim() - 1, 0>())
             {
@@ -1637,17 +1805,17 @@ namespace lolita
         }
         
         static
-        lolita::algebra::Span<Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>
+        lolita::algebra::Span<DenseMatrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>
         getReferenceCoordinates()
         {
-            using t_ReferenceCoordinates = lolita::algebra::Span<Matrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>;
+            using t_ReferenceCoordinates = lolita::algebra::Span<DenseMatrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>;
             return t_ReferenceCoordinates(ElementTraits<t_element>::reference_nodes_.begin()->begin());
         }
         
         static
         Real
         getShapeMappingEvaluation(
-            Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
+            DenseVector<Real, t_element.getNumNodes()> const & nodal_field_values,
             Point const & reference_point
         )
         {
@@ -1657,7 +1825,7 @@ namespace lolita
         static
         Real
         getShapeMappingDerivative(
-            Vector<Real, t_element.getNumNodes()> const & nodal_field_values,
+            DenseVector<Real, t_element.getNumNodes()> const & nodal_field_values,
             Point const & reference_point,
             Integer derivative_direction
         )
@@ -1673,7 +1841,7 @@ namespace lolita
         requires(t_element.hasDim(3))
         {
             auto const current_coordinates = this->getCurrentCoordinates();
-            auto ru = Matrix<Real, 3, 3>();
+            auto ru = DenseMatrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
             for (auto i = 0; i < t_domain.getDim(); ++i)
@@ -1695,7 +1863,7 @@ namespace lolita
         requires(t_element.hasDim(2))
         {
             auto const current_coordinates = this->getCurrentCoordinates();
-            auto ru = Matrix<Real, 3, 3>();
+            auto ru = DenseMatrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
             for (auto i = 0; i < t_domain.getDim(); ++i)
@@ -1726,7 +1894,7 @@ namespace lolita
         requires(t_element.hasDim(1))
         {
             auto const current_coordinates = this->getCurrentCoordinates();
-            auto ru = Matrix<Real, 3, 3>();
+            auto ru = DenseMatrix<Real, 3, 3>();
             auto du = Real(0);
             ru.setZero();
             for (auto i = 0; i < t_domain.getDim(); ++i)
@@ -1766,7 +1934,7 @@ namespace lolita
         // const
         // {
         //     auto const current_coordinates = this->getCurrentCoordinates();
-        //     auto ru = Matrix<Real, 3, 3>();
+        //     auto ru = DenseMatrix<Real, 3, 3>();
         //     auto du = Real(0);
         //     ru.setZero();
         //     for (auto i = 0; i < t_domain.dim_; ++i)
@@ -1860,7 +2028,7 @@ namespace lolita
             {
                 auto pq = SegmentQuadrature::reference_points_[q][0];
                 auto wq = SegmentQuadrature::reference_weights_[q];
-                auto ru = Matrix<Real, 3, 3>();
+                auto ru = DenseMatrix<Real, 3, 3>();
                 auto difference = second_point - first_point;
                 auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
                 ru.setZero();
@@ -1882,7 +2050,7 @@ namespace lolita
             return distance;
         }
         
-        // Matrix<Real, 2, 2>
+        // DenseMatrix<Real, 2, 2>
         // getMetricTensor(
         //     Point const & first_point,
         //     Point const & second_point,
@@ -1897,7 +2065,7 @@ namespace lolita
         //     {
         //         auto pq = SegmentQuadrature::reference_points_[q][0];
         //         auto wq = SegmentQuadrature::reference_weights_[q];
-        //         auto ru = Matrix<Real, 3, 3>();
+        //         auto ru = DenseMatrix<Real, 3, 3>();
         //         auto difference = second_point - first_point;
         //         auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
         //         ru.setZero();
@@ -1944,7 +2112,7 @@ namespace lolita
             {
                 auto pq = SegmentQuadrature::reference_points_[q][0];
                 auto wq = SegmentQuadrature::reference_weights_[q];
-                auto ru = Matrix<Real, 3, 3>();
+                auto ru = DenseMatrix<Real, 3, 3>();
                 auto difference = second_point - first_point;
                 auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
                 ru.setZero();
@@ -1987,7 +2155,7 @@ namespace lolita
             {
                 auto pq = SegmentQuadrature::reference_points_[q][0];
                 auto wq = SegmentQuadrature::reference_weights_[q];
-                auto ru = Matrix<Real, 3, 3>();
+                auto ru = DenseMatrix<Real, 3, 3>();
                 auto difference = second_point - first_point;
                 auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
                 ru.setZero();
@@ -2029,7 +2197,7 @@ namespace lolita
             {
                 auto pq = SegmentQuadrature::reference_points_[q][0];
                 auto wq = SegmentQuadrature::reference_weights_[q];
-                auto ru = Matrix<Real, 3, 3>();
+                auto ru = DenseMatrix<Real, 3, 3>();
                 auto difference = second_point - first_point;
                 auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
                 ru.setZero();
@@ -2109,7 +2277,7 @@ namespace lolita
         //         {
         //             auto pq = SegmentQuadrature::reference_points_[q][0];
         //             auto wq = SegmentQuadrature::reference_weights_[q];
-        //             auto ru = Matrix<Real, 3, 3>();
+        //             auto ru = DenseMatrix<Real, 3, 3>();
         //             auto difference = second_point - first_point;
         //             auto uq = (1.0 / 2.0) * difference * pq + (1.0 / 2.0) * difference;
         //             ru.setZero();
@@ -2412,7 +2580,7 @@ namespace lolita
         // requires(t_element.isSub(t_domain, 1))
         // {
         //     auto const current_nodes_coordinates = this->getCurrentCoordinates();
-        //     auto ru = Matrix<Real, 3, t_element.getDim()>();
+        //     auto ru = DenseMatrix<Real, 3, t_element.getDim()>();
         //     ru.setZero();
         //     for (auto i = 0; i < t_domain.getDim(); ++i)
         //     {
@@ -2442,7 +2610,7 @@ namespace lolita
         requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(2))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto ru = Matrix<Real, 3, t_element.getDim()>();
+            auto ru = DenseMatrix<Real, 3, t_element.getDim()>();
             auto normal_vector = Point();
             ru.setZero();
             normal_vector.setZero();
@@ -2466,7 +2634,7 @@ namespace lolita
         requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(3))
         {
             auto const current_nodes_coordinates = this->getCurrentCoordinates();
-            auto ru = Matrix<Real, 3, t_element.getDim()>();
+            auto ru = DenseMatrix<Real, 3, t_element.getDim()>();
             auto normal_vector = Point();
             ru.setZero();
             normal_vector.setZero();
@@ -2483,7 +2651,7 @@ namespace lolita
             return normal_vector;
         }
 
-        Matrix<Real, 3, 3>
+        DenseMatrix<Real, 3, 3>
         getRotationMatrix(
             Point const & point
         )
@@ -2498,7 +2666,7 @@ namespace lolita
             auto basis_vector_1 = (node_coordinates - centroid) / (node_coordinates - centroid).norm();
             auto basis_vector_2 = basis_vector_0.cross(basis_vector_1);
             // setting rotation matrix
-            auto rotation_matrix = Matrix<Real, 3, 3>();
+            auto rotation_matrix = DenseMatrix<Real, 3, 3>();
             rotation_matrix.setZero();
             rotation_matrix(0, 0) = + basis_vector_0(0);
             rotation_matrix(0, 1) = + basis_vector_0(1);
@@ -2512,7 +2680,7 @@ namespace lolita
             return rotation_matrix;
         }
 
-        Matrix<Real, 3, 3>
+        DenseMatrix<Real, 3, 3>
         getRotationMatrix(
             Point const & point
         )
@@ -2522,7 +2690,7 @@ namespace lolita
             // setting the only basis vector needed
             auto basis_vector_0 = getNormalVector(point);
             // setting rotation matrix
-            auto rotation_matrix = Matrix<Real, 3, 3>();
+            auto rotation_matrix = DenseMatrix<Real, 3, 3>();
             rotation_matrix.setZero();
             rotation_matrix(0, 0) = - basis_vector_0(1);
             rotation_matrix(0, 1) = + basis_vector_0(0);
@@ -2531,7 +2699,7 @@ namespace lolita
             return rotation_matrix;
         }
 
-        Matrix<Real, 3, 3>
+        DenseMatrix<Real, 3, 3>
         getRotationMatrix(
             Point const & point
         )
@@ -2539,7 +2707,7 @@ namespace lolita
         requires(t_element.isSub(t_domain, 1) && t_domain.hasDim(1))
         {
             // setting rotation matrix
-            auto rotation_matrix = Matrix<Real, 3, 3>();
+            auto rotation_matrix = DenseMatrix<Real, 3, 3>();
             rotation_matrix.setZero();
             rotation_matrix(0, 0) = 1.0;
             return rotation_matrix;
@@ -2638,7 +2806,7 @@ namespace lolita
             auto const & elt_reference_nodes = ElementTraits<t_element>::reference_nodes_;
             for (auto i = 0; i < t_domain.getDim(); ++i)
             {
-                auto cpt_coordinates = Vector<Real, t_component.getNumNodes()>();
+                auto cpt_coordinates = DenseVector<Real, t_component.getNumNodes()>();
                 for (auto j = 0; j < t_component.getNumNodes(); ++j)
                 {
                     auto const node_tag = getInnerNeighborNodeConnection<_i, _j>(component_index, j);//.get(component_index).get(j);

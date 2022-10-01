@@ -219,14 +219,14 @@ namespace lolita
                 }
             }
             
-            Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>
+            DenseMatrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>
             getPotentialLhs()
             const
             requires(t_element.isSub(t_domain, 0))
             {
                 // auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
-                auto lhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>();
+                auto lhs = DenseMatrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>();
                 lhs.setZero();
                 for (auto i_component = 0; i_component < t_domain.getDim(); i_component++)
                 {
@@ -243,7 +243,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Matrix<Real, getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>
+            DenseMatrix<Real, getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>
             getPotentialRhs(
                 Integer row
             )
@@ -253,7 +253,7 @@ namespace lolita
                 // auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
-                auto rhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>();
+                auto rhs = DenseMatrix<Real, getPotentialBasisSize<t_element>() - 1, getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
                 for (auto i_component = 0; i_component < t_domain.getDim(); i_component++)
                 {
@@ -318,7 +318,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Matrix<Real, getNumElementUnknowns<t_field>(), getNumElementUnknowns<t_field>()>
+            DenseMatrix<Real, getNumElementUnknowns<t_field>(), getNumElementUnknowns<t_field>()>
             getStabilization()
             const
             requires(t_element.isSub(t_domain, 0))
@@ -327,8 +327,8 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 //
-                auto S_T_A_B_I_L_I_Z_A_T_I_O_N = Matrix<Real, getNumElementUnknowns<t_field>(), getNumElementUnknowns<t_field>()>();
-                auto potential_operator = Matrix<Real, getPotentialBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
+                auto S_T_A_B_I_L_I_Z_A_T_I_O_N = DenseMatrix<Real, getNumElementUnknowns<t_field>(), getNumElementUnknowns<t_field>()>();
+                auto potential_operator = DenseMatrix<Real, getPotentialBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                 auto potential_lhs = getPotentialLhs();
                 auto denom = 1.0 / QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize();
                 S_T_A_B_I_L_I_Z_A_T_I_O_N.setZero();
@@ -349,8 +349,8 @@ namespace lolita
                         denom * weight * this->template getBasisEvaluation<getCellBasis()>(point).transpose();
                     }
                     //
-                    auto cell_projection_lhs = Matrix<Real, getCellBasisSize<t_element>(), getCellBasisSize<t_element>()>();
-                    auto cell_projection_rhs = Matrix<Real, getCellBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
+                    auto cell_projection_lhs = DenseMatrix<Real, getCellBasisSize<t_element>(), getCellBasisSize<t_element>()>();
+                    auto cell_projection_rhs = DenseMatrix<Real, getCellBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                     cell_projection_lhs.setZero();
                     cell_projection_rhs.setZero();
                     for (auto i_quadrature = 0; i_quadrature < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i_quadrature++)
@@ -376,8 +376,8 @@ namespace lolita
                             auto constexpr quadrature_size = QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize();
                             auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
                             auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
-                            auto face_projection_lhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getFaceBasisSize<t_inner_neighbor>()>();
-                            auto face_projection_rhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getNumElementUnknowns<t_field>()>();
+                            auto face_projection_lhs = DenseMatrix<Real, getFaceBasisSize<t_inner_neighbor>(), getFaceBasisSize<t_inner_neighbor>()>();
+                            auto face_projection_rhs = DenseMatrix<Real, getFaceBasisSize<t_inner_neighbor>(), getNumElementUnknowns<t_field>()>();
                             face_projection_lhs.setZero();
                             face_projection_rhs.setZero();
                             for (auto i_quadrature = 0; i_quadrature < quadrature_size; i_quadrature++)
@@ -428,14 +428,14 @@ namespace lolita
                 return S_T_A_B_I_L_I_Z_A_T_I_O_N;
             }
             
-            Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
+            DenseMatrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
             getGradientLhs()
             const
             requires(t_element.isSub(t_domain, 0))
             {
                 // auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
                 auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
-                auto lhs = Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
+                auto lhs = DenseMatrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
                 lhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
@@ -448,7 +448,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
+            DenseMatrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
             getGradientRhs(
                 Integer row,
                 Integer col
@@ -460,7 +460,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
+                auto rhs = DenseMatrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
@@ -517,7 +517,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
+            DenseMatrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>
             getSymmetricGradientRhs(
                 Integer row,
                 Integer col
@@ -529,7 +529,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
+                auto rhs = DenseMatrix<Real, getGradBasisSize<t_element>(), getNumElementUnknowns<t_field>()>();
                 rhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
@@ -599,14 +599,14 @@ namespace lolita
             }
 
             template<MappingConcept auto t_mapping>
-            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
+            DenseMatrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isGradient() || t_mapping.isLargeStrain())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
+                auto mapping = DenseMatrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -619,14 +619,14 @@ namespace lolita
             }
 
             template<MappingConcept auto t_mapping>
-            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
+            DenseMatrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isSmallStrain())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
+                auto mapping = DenseMatrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -639,14 +639,14 @@ namespace lolita
             }
 
             template<MappingConcept auto t_mapping>
-            Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
+            DenseMatrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isIdentity())
             {
-                auto mapping = Matrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
+                auto mapping = DenseMatrix<Real, getMappingSize<t_mapping>(), getNumElementUnknowns<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -660,12 +660,12 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Vector<Real, getNumElementUnknowns<t_field>()>
+            DenseVector<Real, getNumElementUnknowns<t_field>()>
             getUnknowns()
             const
             {
                 auto offset = 0;
-                auto unknown = Vector<Real, getNumElementUnknowns<t_field>()>();
+                auto unknown = DenseVector<Real, getNumElementUnknowns<t_field>()>();
                 auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
                 auto cell_block = unknown.template segment<cell_dof.template getSize<t_field, getCellBasis()>()>(offset);
                 cell_block = cell_dof.template getCoefficients<t_field, getCellBasis()>();
@@ -693,7 +693,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Vector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()>
+            DenseVector<Real, getDiscreteFieldDegreeOfFreedomNumCoefficients<t_field>()>
             getDiscreteFieldDegreeOfFreedomCoefficients()
             const
             {
@@ -729,21 +729,21 @@ namespace lolita
             template<FieldConcept auto t_field>
             void
             upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
+                DenseVectorConcept<Real> auto const & increment
             )
             {}
 
             template<FieldConcept auto t_field>
             void
             upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
+                DenseVectorConcept<Real> auto const & increment
             )
             requires(t_element.isSub(t_domain, 0))
             {
                 auto constexpr num_cell_unknowns = getNumCellUnknowns<t_field>();
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_field>();
                 auto constexpr num_face_unknowns = getNumElementUnknowns<t_field>() - num_cell_unknowns;
-                auto faces_correction = Vector<Real, num_face_unknowns>();
+                auto faces_correction = DenseVector<Real, num_face_unknowns>();
                 faces_correction.setZero();
                 auto faces_correction_offset = 0;
                 auto set_faces_increment = [&] <Integer t_i = 0> (
@@ -775,7 +775,7 @@ namespace lolita
             template<FieldConcept auto t_field>
             void
             upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
+                DenseVectorConcept<Real> auto const & increment
             )
             requires(t_element.isSub(t_domain, 1))
             {
@@ -849,17 +849,17 @@ namespace lolita
             }
 
             template<MappingConcept auto t_strain, PotentialConcept auto t_behavior>
-            Vector<Real, getNumElementUnknowns<t_strain.getField()>()>
+            DenseVector<Real, getNumElementUnknowns<t_strain.getField()>()>
             getInternalForces()
             const
             {
                 auto constexpr t_field = t_strain.getField();
                 auto constexpr strain_operator_num_rows = MappingTraits<t_strain>::template getSize<t_domain>();
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_field>();
-                // using StrainOperatorView = algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
-                using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+                // using StrainOperatorView = algebra::View<DenseMatrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+                using StrainView = algebra::View<DenseVector<Real, strain_operator_num_rows>>;
                 auto const unknown = this->template getUnknowns<t_field>();
-                auto internal_forces = Vector<Real, strain_operator_num_cols>();
+                auto internal_forces = DenseVector<Real, strain_operator_num_cols>();
                 internal_forces.setZero();
                 for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
                 {
@@ -878,13 +878,13 @@ namespace lolita
             // -------------------------------------------------------------------------------------------------------------------------------------------------
 
             template<FieldConcept auto t_field>
-            Vector<Real, getNumCellUnknowns<t_field>()>
+            DenseVector<Real, getNumCellUnknowns<t_field>()>
             getCellUnknowns(
                 std::basic_string_view<Character> label
             )
             const
             {
-                auto unknown = Vector<Real, getNumCellUnknowns<t_field>()>();
+                auto unknown = DenseVector<Real, getNumCellUnknowns<t_field>()>();
                 auto const & cell_dof = this->degrees_of_freedom_.at(std::string(label));
                 auto cell_block = unknown.template segment<cell_dof.template getSize<t_field, getCellBasis()>()>(0);
                 cell_block = cell_dof.template getCoefficients<t_field, getCellBasis()>();
@@ -892,13 +892,13 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Vector<Real, getNumFaceUnknowns<t_field>()>
+            DenseVector<Real, getNumFaceUnknowns<t_field>()>
             getFaceUnknowns(
                 std::basic_string_view<Character> label
             )
             const
             {
-                auto unknown = Vector<Real, getNumFaceUnknowns<t_field>()>();
+                auto unknown = DenseVector<Real, getNumFaceUnknowns<t_field>()>();
                 auto const & face_dof = this->degrees_of_freedom_.at(std::string(label));
                 auto face_block = unknown.template segment<face_dof.template getSize<t_field, getFaceBasis()>()>(0);
                 face_block = face_dof.template getCoefficients<t_field, getFaceBasis()>();
@@ -906,14 +906,14 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Vector<Real, getNumElementUnknowns<t_field>()>
+            DenseVector<Real, getNumElementUnknowns<t_field>()>
             getUnknowns(
                 std::basic_string_view<Character> label
             )
             const
             {
                 auto offset = 0;
-                auto unknown = Vector<Real, getNumElementUnknowns<t_field>()>();
+                auto unknown = DenseVector<Real, getNumElementUnknowns<t_field>()>();
                 auto const & cell_dof = this->degrees_of_freedom_.at(std::string(label));
                 auto cell_block = unknown.template segment<cell_dof.template getSize<t_field, getCellBasis()>()>(offset);
                 cell_block = cell_dof.template getCoefficients<t_field, getCellBasis()>();
@@ -941,8 +941,8 @@ namespace lolita
             }
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
-            Vector<Real, getNumElementUnknowns<t_finite_element_method.getField()>()>
-            // Vector<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - getNumCellUnknowns<t_finite_element_method.getField()>()>
+            DenseVector<Real, getNumElementUnknowns<t_finite_element_method.getField()>()>
+            // DenseVector<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - getNumCellUnknowns<t_finite_element_method.getField()>()>
             getInternalForces(
                 std::basic_string_view<Character> behavior_label,
                 std::basic_string_view<Character> degree_of_freedom_label
@@ -953,12 +953,12 @@ namespace lolita
                 // auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
                 auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
-                using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
-                using StrainView = lolita::algebra::View<Vector<Real, strain_operator_num_rows>>;
+                using StrainOperatorView = lolita::algebra::View<DenseMatrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+                using StrainView = lolita::algebra::View<DenseVector<Real, strain_operator_num_rows>>;
                 // auto & formulation = this->quadrature_.at(behavior_label);
-                // auto O_U_T = Vector<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns>();
+                // auto O_U_T = DenseVector<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns>();
                 auto unknown = this->template getUnknowns<t_finite_element_method.getField()>(degree_of_freedom_label);
-                auto internal_forces = Vector<Real, strain_operator_num_cols>();
+                auto internal_forces = DenseVector<Real, strain_operator_num_cols>();
                 internal_forces.setZero();
                 for (auto & integration_point : this->quadrature_.at(std::string(behavior_label)).ips_)
                 {
@@ -978,8 +978,8 @@ namespace lolita
             }
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
-            Vector<Real, getNumElementUnknowns<t_finite_element_method.getField()>()>
-            // Vector<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - getNumCellUnknowns<t_finite_element_method.getField()>()>
+            DenseVector<Real, getNumElementUnknowns<t_finite_element_method.getField()>()>
+            // DenseVector<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - getNumCellUnknowns<t_finite_element_method.getField()>()>
             getExternalForces(
                 std::basic_string_view<Character> behavior_label,
                 std::basic_string_view<Character> degree_of_freedom_label
@@ -990,9 +990,9 @@ namespace lolita
                 // auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
                 auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
-                auto external_forces = Vector<Real, strain_operator_num_cols>();
+                auto external_forces = DenseVector<Real, strain_operator_num_cols>();
                 // auto & formulation = this->quadrature_.at(behavior_label);
-                // auto O_U_T = Vector<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns>();
+                // auto O_U_T = DenseVector<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns>();
                 external_forces.setZero();
                 for (auto const & load : this->loads_)
                 {
@@ -1019,8 +1019,8 @@ namespace lolita
             }
 
             template<FiniteElementMethodConcept auto t_finite_element_method>
-            Matrix<Real, getNumElementUnknowns<t_finite_element_method.getField()>(), getNumElementUnknowns<t_finite_element_method.getField()>()>
-            // Matrix<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - getNumCellUnknowns<t_finite_element_method.getField()>(), getNumElementUnknowns<t_finite_element_method.getField()>() - getNumCellUnknowns<t_finite_element_method.getField()>()>
+            DenseMatrix<Real, getNumElementUnknowns<t_finite_element_method.getField()>(), getNumElementUnknowns<t_finite_element_method.getField()>()>
+            // DenseMatrix<Real, getNumElementUnknowns<t_finite_element_method.getField()>() - getNumCellUnknowns<t_finite_element_method.getField()>(), getNumElementUnknowns<t_finite_element_method.getField()>() - getNumCellUnknowns<t_finite_element_method.getField()>()>
             getJacobianMatrix(
                 std::basic_string_view<Character> behavior_label,
                 std::basic_string_view<Character> degree_of_freedom_label
@@ -1031,9 +1031,9 @@ namespace lolita
                 auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
                 auto constexpr strain_operator_num_rows = FiniteElementMethodTraits<t_finite_element_method>::template getGeneralizedStrainSize<t_domain>();
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
-                using JacobianOperator = Matrix<Real, strain_operator_num_cols, strain_operator_num_cols>;
-                using StrainOperatorView = lolita::algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
-                auto jacobian = Matrix<Real, strain_operator_num_cols, strain_operator_num_cols>();
+                using JacobianOperator = DenseMatrix<Real, strain_operator_num_cols, strain_operator_num_cols>;
+                using StrainOperatorView = lolita::algebra::View<DenseMatrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+                auto jacobian = DenseMatrix<Real, strain_operator_num_cols, strain_operator_num_cols>();
                 jacobian.setZero();
                 auto ipcount = 0;
                 for (auto & integration_point : this->quadrature_.at(std::string(behavior_label)).ips_)
@@ -1083,8 +1083,8 @@ namespace lolita
                 auto const k_ff = jacobian.template block<num_face_unknowns, num_face_unknowns>(num_cell_unknowns, num_cell_unknowns);
                 auto const r_t = residual.template segment<num_cell_unknowns>(0);
                 auto const r_f = residual.template segment<num_face_unknowns>(num_cell_unknowns);
-                // -> leave Matrix<Real, num_cell_unknowns, num_cell_unknowns> otherwise wont work !!
-                auto const k_tt_inv = Matrix<Real, num_cell_unknowns, num_cell_unknowns>(k_tt.llt().solve(decltype(k_tt)::Identity()));
+                // -> leave DenseMatrix<Real, num_cell_unknowns, num_cell_unknowns> otherwise wont work !!
+                auto const k_tt_inv = DenseMatrix<Real, num_cell_unknowns, num_cell_unknowns>(k_tt.llt().solve(decltype(k_tt)::Identity()));
                 // <-
                 auto k_c = k_ff - k_ft * k_tt_inv * k_tf;
                 auto r_c = r_f - k_ft * k_tt_inv * r_t;
@@ -1304,7 +1304,7 @@ namespace lolita
                 system->setNormalization(external_forces.cwiseAbs().maxCoeff());
                 // auto residual = internal_forces - external_forces;
                 auto residual = external_forces - internal_forces;
-                // std::cout << "element_residual : " << Matrix<Real, 1, -1>(residual) << std::endl;
+                // std::cout << "element_residual : " << DenseMatrix<Real, 1, -1>(residual) << std::endl;
                 // -> TEST
                 // auto jac = getJacobianMatrix<t_finite_element_method>(behavior_label, degree_of_freedom_label);
                 // auto k_tt = jac.template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
@@ -1536,11 +1536,11 @@ namespace lolita
                 auto lag_label = std::string(binding_label) + "Lagrange";
                 auto const & lagrange_parameter = this->parameters_.at(lag_label);
                 // -> DEBUG
-                // auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
+                // auto matrix = DenseMatrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
                 // <- DEBUG
-                auto binding_external_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
-                auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
-                auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto binding_external_forces_vector = DenseVector<Real, getFaceBasisSize<t_element>()>();
+                auto binding_internal_forces_vector = DenseVector<Real, getFaceBasisSize<t_element>()>();
+                auto unknown_internal_forces_vector = DenseVector<Real, getFaceBasisSize<t_element>()>();
                 auto const unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
                 auto const binding_vector = face_binding.template getCoefficients<Field(0), getFaceBasis()>(0, 0);
                 // -> DEBUG
@@ -1627,10 +1627,10 @@ namespace lolita
                 auto const & face_unknown = this->degrees_of_freedom_.at(std::string(unknown_label));
                 auto const & face_binding = this->degrees_of_freedom_.at(std::string(binding_label));
                 auto const & constraint = this->constraints_.at(std::string(constraint_label)).getFunction();
-                auto matrix = Matrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
-                // auto binding_external_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
-                // auto binding_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
-                // auto unknown_internal_forces_vector = Vector<Real, getFaceBasisSize<t_element>()>();
+                auto matrix = DenseMatrix<Real, getFaceBasisSize<t_element>(), getFaceBasisSize<t_element>()>();
+                // auto binding_external_forces_vector = DenseVector<Real, getFaceBasisSize<t_element>()>();
+                // auto binding_internal_forces_vector = DenseVector<Real, getFaceBasisSize<t_element>()>();
+                // auto unknown_internal_forces_vector = DenseVector<Real, getFaceBasisSize<t_element>()>();
                 // auto unknown_vector = face_unknown.template getCoefficients<field, getFaceBasis()>(constraint.getRow(), constraint.getCol());
                 // auto binding_vector = face_binding.template getCoefficients<Field::scalar(), getFaceBasis()>(0, 0);
                 auto lag_label = std::string(binding_label) + "Lagrange";
@@ -1692,7 +1692,7 @@ namespace lolita
                 auto constexpr strain_operator_num_cols = getNumElementUnknowns<t_finite_element_method.getField()>();
                 auto constexpr num_face_unknowns = getNumElementUnknowns<t_finite_element_method.getField()>() - num_cell_unknowns;
                 //
-                auto faces_correction = Vector<Real, num_face_unknowns>();
+                auto faces_correction = DenseVector<Real, num_face_unknowns>();
                 faces_correction.setZero();
                 auto faces_correction_offset = 0;
                 auto global_offset = system->getUnknownOffset(unknown_label);
@@ -1718,9 +1718,9 @@ namespace lolita
                 set_faces_unknowns(set_faces_unknowns);
                 // std::cout << "faces_correction : " << "\n";
                 // std::cout << faces_correction << "\n";
-                // auto k_tt_inv = algebra::View<Matrix<Real, num_cell_unknowns, num_cell_unknowns> const>(this->operators_["KTT"].data());
-                // auto k_tf = algebra::View<Matrix<Real, num_cell_unknowns, num_face_unknowns> const>(this->operators_["KTF"].data());
-                // auto r_t = algebra::View<Vector<Real, num_cell_unknowns> const>(this->operators_["RT"].data());
+                // auto k_tt_inv = algebra::View<DenseMatrix<Real, num_cell_unknowns, num_cell_unknowns> const>(this->operators_["KTT"].data());
+                // auto k_tf = algebra::View<DenseMatrix<Real, num_cell_unknowns, num_face_unknowns> const>(this->operators_["KTF"].data());
+                // auto r_t = algebra::View<DenseVector<Real, num_cell_unknowns> const>(this->operators_["RT"].data());
                 auto k_tt_inv = this->operators_.at("KTT").template block<num_cell_unknowns, num_cell_unknowns>(0, 0);
                 auto k_tf = this->operators_.at("KTF").template block<num_cell_unknowns, num_face_unknowns>(0, 0);
                 auto r_t = this->operators_.at("RT").template block<num_cell_unknowns, 1>(0, 0);
@@ -1761,11 +1761,11 @@ namespace lolita
                 // auto unknown_vector = face_unknown.template getCoefficientsCopy<field, getFaceBasis()>();
                 // face_unknown.template addCoefficients<field, getFaceBasis()>(system->getUnknownCorrection(unknown_label));
                 // auto unknown_increment = face_unknown.template getCoefficients<field, getFaceBasis()>() - unknown_vector;
-                // auto k_tt_inv = algebra::View<Matrix<Real, num_cell_unknowns, num_cell_unknowns> const>(this->operators_["KTT"].data());
+                // auto k_tt_inv = algebra::View<DenseMatrix<Real, num_cell_unknowns, num_cell_unknowns> const>(this->operators_["KTT"].data());
                 // // auto k_tf = this->operators_["KTF"];
                 // // auto r_t = this->operators_["RT"];
-                // auto k_tf = algebra::View<Matrix<Real, num_cell_unknowns, num_face_unknowns> const>(this->operators_["KTF"].data());
-                // auto r_t = algebra::View<Vector<Real, num_cell_unknowns> const>(this->operators_["RT"].data());
+                // auto k_tf = algebra::View<DenseMatrix<Real, num_cell_unknowns, num_face_unknowns> const>(this->operators_["KTF"].data());
+                // auto r_t = algebra::View<DenseVector<Real, num_cell_unknowns> const>(this->operators_["RT"].data());
                 // auto cell_corr = - (k_tt_inv * r_t + k_tt_inv * k_tf * unknown_increment);
             }
 
@@ -1876,7 +1876,7 @@ namespace lolita
                 auto const & lagrange_parameter = this->parameters_.at(lag_label);
                 // auto const & dofff = this->degrees_of_freedom_.at(std::string(binding_label));
                 // auto constexpr ones_size = dofff.template getSize<field, getFaceBasis()>();
-                // return coefficients.dot(Vector<Real, ones_size>::Ones()) * lagrange_parameter;
+                // return coefficients.dot(DenseVector<Real, ones_size>::Ones()) * lagrange_parameter;
                 return lagrange_parameter * value;
             }
         
@@ -2001,12 +2001,12 @@ namespace lolita
             // }
 
             // template<GeneralizedStrainConcept auto t_strain>
-            // Vector<Real>
+            // DenseVector<Real>
             // getUnknowns()
             // const
             // {
             //     auto offset = 0;
-            //     auto unknown = Vector<Real>(getNumElementUnknowns<t_strain.getField()>());
+            //     auto unknown = DenseVector<Real>(getNumElementUnknowns<t_strain.getField()>());
             //     auto const & cell_dof = this->template getDof<t_strain>();
             //     auto cell_lhs = unknown.template segment<cell_dof.template getSize<t_strain.getField(), getCellBasis()>()>(offset);
             //     auto cell_rhs = cell_dof.template get<t_strain.getField(), getCellBasis()>();

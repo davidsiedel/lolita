@@ -301,7 +301,7 @@ namespace lolita
         Integer
         getRows()
         {
-            return FieldTraits<Field(t_field.getDim() + 1)>::template getRows<t_domain>();
+            return FieldTraits<Field(t_field.getDomainDim(), t_field.getTensorDim() + 1)>::template getRows<t_domain>();
         }
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -309,7 +309,7 @@ namespace lolita
         Integer
         getCols()
         {
-            return FieldTraits<Field(t_field.getDim() + 1)>::template getCols<t_domain>();
+            return FieldTraits<Field(t_field.getDomainDim(), t_field.getTensorDim() + 1)>::template getCols<t_domain>();
         }
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -779,19 +779,19 @@ namespace lolita
         }
 
         template<auto t_element, Domain t_domain>
-        using ElementJacobianMatrix = Matrix<Real, getSize<t_element, t_domain>(), getSize<t_element, t_domain>()>;
+        using ElementJacobianMatrix = DenseMatrix<Real, getSize<t_element, t_domain>(), getSize<t_element, t_domain>()>;
 
         template<auto t_element, Domain t_domain>
-        using ElementResidualVector = Vector<Real, getSize<t_element, t_domain>()>;
+        using ElementResidualVector = DenseVector<Real, getSize<t_element, t_domain>()>;
 
         // template<Domain t_domain>
-        // using JacobianMatrix = Matrix<Real, getSize<t_domain>(), getSize<t_domain>()>;
+        // using JacobianMatrix = DenseMatrix<Real, getSize<t_domain>(), getSize<t_domain>()>;
 
         template<Domain t_domain>
-        using StrainVector = Vector<Real, getSize<t_domain>()>;
+        using StrainVector = DenseVector<Real, getSize<t_domain>()>;
 
         template<Domain t_domain>
-        using StressVector = Vector<Real, getSize<t_domain>()>;
+        using StressVector = DenseVector<Real, getSize<t_domain>()>;
 
         template<PotentialConcept auto t_potential>
         static constexpr

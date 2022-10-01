@@ -276,14 +276,14 @@ namespace lolita
                 }
             }
             
-            Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>
+            DenseMatrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>
             getPotentialLhs()
             const
             requires(t_element.isSub(t_domain, 0))
             {
                 // auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
-                auto lhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>();
+                auto lhs = DenseMatrix<Real, getPotentialBasisSize<t_element>() - 1, getPotentialBasisSize<t_element>() - 1>();
                 lhs.setZero();
                 for (auto i_component = 0; i_component < t_domain.getDim(); i_component++)
                 {
@@ -300,7 +300,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Matrix<Real, getPotentialBasisSize<t_element>() - 1, getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            DenseMatrix<Real, getPotentialBasisSize<t_element>() - 1, getDiscreteFieldDegreeOfFreedomSize<t_field>()>
             getPotentialRhs(
                 Integer row
             )
@@ -310,7 +310,7 @@ namespace lolita
                 // auto constexpr t_quadrature = Quadrature::gauss(getPotentialConstructionQuadratureOrder());
                 auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
-                auto rhs = Matrix<Real, getPotentialBasisSize<t_element>() - 1, getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto rhs = DenseMatrix<Real, getPotentialBasisSize<t_element>() - 1, getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
                 rhs.setZero();
                 for (auto i_component = 0; i_component < t_domain.getDim(); i_component++)
                 {
@@ -375,7 +375,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Matrix<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            DenseMatrix<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
             getStabilization()
             const
             requires(t_element.isSub(t_domain, 0))
@@ -384,8 +384,8 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getPotentialConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 //
-                auto S_T_A_B_I_L_I_Z_A_T_I_O_N = Matrix<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
-                auto potential_operator = Matrix<Real, getPotentialBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto S_T_A_B_I_L_I_Z_A_T_I_O_N = DenseMatrix<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto potential_operator = DenseMatrix<Real, getPotentialBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
                 auto potential_lhs = getPotentialLhs();
                 auto denom = 1.0 / QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize();
                 S_T_A_B_I_L_I_Z_A_T_I_O_N.setZero();
@@ -406,8 +406,8 @@ namespace lolita
                         denom * weight * this->template getBasisEvaluation<getCellBasis()>(point).transpose();
                     }
                     //
-                    auto cell_projection_lhs = Matrix<Real, getCellBasisSize<t_element>(), getCellBasisSize<t_element>()>();
-                    auto cell_projection_rhs = Matrix<Real, getCellBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                    auto cell_projection_lhs = DenseMatrix<Real, getCellBasisSize<t_element>(), getCellBasisSize<t_element>()>();
+                    auto cell_projection_rhs = DenseMatrix<Real, getCellBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
                     cell_projection_lhs.setZero();
                     cell_projection_rhs.setZero();
                     for (auto i_quadrature = 0; i_quadrature < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i_quadrature++)
@@ -433,8 +433,8 @@ namespace lolita
                             auto constexpr quadrature_size = QuadratureTraits<t_quadrature>::template Rule<t_inner_neighbor>::getSize();
                             auto face_orientation = this->template getInnerNeighborOrientation<0, t_i>(i_face);
                             auto face_sign = this->template getInnerNeighborSign<0, t_i>(i_face);
-                            auto face_projection_lhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getFaceBasisSize<t_inner_neighbor>()>();
-                            auto face_projection_rhs = Matrix<Real, getFaceBasisSize<t_inner_neighbor>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                            auto face_projection_lhs = DenseMatrix<Real, getFaceBasisSize<t_inner_neighbor>(), getFaceBasisSize<t_inner_neighbor>()>();
+                            auto face_projection_rhs = DenseMatrix<Real, getFaceBasisSize<t_inner_neighbor>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
                             face_projection_lhs.setZero();
                             face_projection_rhs.setZero();
                             for (auto i_quadrature = 0; i_quadrature < quadrature_size; i_quadrature++)
@@ -485,14 +485,14 @@ namespace lolita
                 return S_T_A_B_I_L_I_Z_A_T_I_O_N;
             }
             
-            Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
+            DenseMatrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>
             getGradientLhs()
             const
             requires(t_element.isSub(t_domain, 0))
             {
                 // auto constexpr t_quadrature = Quadrature::gauss(getGradientConstructionQuadratureOrder());
                 auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
-                auto lhs = Matrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
+                auto lhs = DenseMatrix<Real, getGradBasisSize<t_element>(), getGradBasisSize<t_element>()>();
                 lhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
@@ -505,7 +505,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Matrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            DenseMatrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
             getGradientRhs(
                 Integer row,
                 Integer col
@@ -517,7 +517,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto rhs = DenseMatrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
                 rhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
@@ -574,7 +574,7 @@ namespace lolita
             }
 
             template<FieldConcept auto t_field>
-            Matrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            DenseMatrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>
             getSymmetricGradientRhs(
                 Integer row,
                 Integer col
@@ -586,7 +586,7 @@ namespace lolita
                 auto constexpr t_quadrature = Quadrature("Gauss", getGradientConstructionQuadratureOrder());
                 auto constexpr t_field_size = FieldTraits<t_field>::template getSize<t_domain>();
                 auto face_offset = t_field_size * getCellBasisSize<t_element>();
-                auto rhs = Matrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+                auto rhs = DenseMatrix<Real, getGradBasisSize<t_element>(), getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
                 rhs.setZero();
                 for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
                 {
@@ -656,14 +656,14 @@ namespace lolita
             }
             
             template<MappingConcept auto t_mapping>
-            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
+            DenseMatrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isGradient() || t_mapping.isLargeStrain())
             {
-                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
+                auto mapping = DenseMatrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -676,14 +676,14 @@ namespace lolita
             }
 
             template<MappingConcept auto t_mapping>
-            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
+            DenseMatrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isSmallStrain())
             {
-                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
+                auto mapping = DenseMatrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -696,14 +696,14 @@ namespace lolita
             }
 
             template<MappingConcept auto t_mapping>
-            Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
+            DenseMatrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>
             getMapping(
                 PointConcept auto const & point
             )
             const
             requires(t_mapping.isIdentity())
             {
-                auto mapping = Matrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
+                auto mapping = DenseMatrix<Real, MappingTraits<t_mapping>::template getSize<t_domain>(), getDiscreteFieldDegreeOfFreedomSize<t_mapping.getField()>()>();
                 mapping.setZero();
                 auto lhs = getGradientLhs();
                 for (auto const & mapping_value : MappingTraits<t_mapping>::template getValues<t_domain>())
@@ -717,12 +717,12 @@ namespace lolita
             }
 
             // template<FieldConcept auto t_field>
-            // Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>()>
+            // DenseVector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>()>
             // getUnknowns()
             // const
             // {
             //     auto offset = 0;
-            //     auto unknown = Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
+            //     auto unknown = DenseVector<Real, getDiscreteFieldDegreeOfFreedomSize<t_field>()>();
             //     auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
             //     auto cell_block = unknown.template segment<cell_dof.template getSize<t_element, t_field, getCellBasis()>()>(offset);
             //     cell_block = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>();
@@ -750,13 +750,13 @@ namespace lolita
             // }
 
             template<FieldConcept auto t_field>
-            Vector<Real, Base::template getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
+            DenseVector<Real, Base::template getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>
             getDiscreteFieldDegreeOfFreedomCoefficients()
             const
             requires(t_element.isSub(t_domain, 0))
             {
                 auto offset = 0;
-                auto unknown = Vector<Real, Base::template getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>();
+                auto unknown = DenseVector<Real, Base::template getDiscreteFieldDegreeOfFreedomSize<t_field, t_discretization>()>();
                 auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
                 auto cell_block = unknown.template segment<cell_dof.template getSize<t_element, t_field, getCellBasis()>()>(offset);
                 cell_block = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>();
@@ -812,21 +812,21 @@ namespace lolita
             template<FieldConcept auto t_field>
             void
             upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
+                DenseVectorConcept<Real> auto const & increment
             )
             {}
 
             template<FieldConcept auto t_field>
             void
             upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
+                DenseVectorConcept<Real> auto const & increment
             )
             requires(t_element.isSub(t_domain, 0))
             {
                 auto constexpr num_cell_unknowns = getNumCellUnknowns<t_field>();
                 auto constexpr strain_operator_num_cols = getDiscreteFieldDegreeOfFreedomSize<t_field>();
                 auto constexpr num_face_unknowns = getDiscreteFieldDegreeOfFreedomSize<t_field>() - num_cell_unknowns;
-                auto faces_correction = Vector<Real, num_face_unknowns>();
+                auto faces_correction = DenseVector<Real, num_face_unknowns>();
                 faces_correction.setZero();
                 auto faces_correction_offset = 0;
                 auto set_faces_increment = [&] <Integer t_i = 0> (
@@ -858,7 +858,7 @@ namespace lolita
             template<FieldConcept auto t_field>
             void
             upgradeDiscreteFieldDegreeOfFreedom(
-                VectorConcept<Real> auto const & increment
+                DenseVectorConcept<Real> auto const & increment
             )
             requires(t_element.isSub(t_domain, 1))
             {
@@ -932,7 +932,7 @@ namespace lolita
             }
 
             template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
-            Vector<Real, getDiscreteFieldDegreeOfFreedomSize<t_strain.getField()>()>
+            DenseVector<Real, getDiscreteFieldDegreeOfFreedomSize<t_strain.getField()>()>
             getInternalForces()
             const
             requires(t_element.isSub(t_domain, 0))
@@ -940,10 +940,10 @@ namespace lolita
                 auto constexpr t_field = t_strain.getField();
                 auto constexpr strain_operator_num_rows = MappingTraits<t_strain>::template getSize<t_domain>();
                 auto constexpr strain_operator_num_cols = getDiscreteFieldDegreeOfFreedomSize<t_field>();
-                // using StrainOperatorView = algebra::View<Matrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
-                using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+                // using StrainOperatorView = algebra::View<DenseMatrix<Real, strain_operator_num_rows, strain_operator_num_cols> const>;
+                using StrainView = algebra::View<DenseVector<Real, strain_operator_num_rows>>;
                 auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
-                auto internal_forces = Vector<Real, strain_operator_num_cols>();
+                auto internal_forces = DenseVector<Real, strain_operator_num_cols>();
                 internal_forces.setZero();
                 for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
                 {
@@ -960,7 +960,7 @@ namespace lolita
             template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
             void
             setInternalForces(
-                Vector<Real> & internal_forces,
+                DenseVector<Real> & internal_forces,
                 Integer & offset
             )
             const
@@ -969,7 +969,7 @@ namespace lolita
                 auto constexpr t_field = t_strain.getField();
                 auto constexpr strain_operator_num_rows = MappingTraits<t_strain>::template getSize<t_domain>();
                 auto constexpr strain_operator_num_cols = getDiscreteFieldDegreeOfFreedomSize<t_field>();
-                using StrainView = algebra::View<Vector<Real, strain_operator_num_rows>>;
+                using StrainView = algebra::View<DenseVector<Real, strain_operator_num_rows>>;
                 auto internal_forces_block = internal_forces.template segment<getDiscreteFieldDegreeOfFreedomSize<t_field>()>(offset);
                 auto const unknown = this->template getDiscreteFieldDegreeOfFreedomCoefficients<t_field>();
                 for (auto const & ip : this->template getFormulation<t_behavior>().getIntegrationPoints())
@@ -983,7 +983,7 @@ namespace lolita
             template<PotentialConcept auto t_behavior, MappingConcept auto t_strain>
             void
             setStabilizationForces(
-                Vector<Real> & internal_forces,
+                DenseVector<Real> & internal_forces,
                 Integer & offset
             )
             const

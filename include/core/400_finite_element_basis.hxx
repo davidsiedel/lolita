@@ -106,13 +106,13 @@ namespace lolita
 
         public:
         
-            Vector<Real, getSize()>
+            DenseVector<Real, getSize()>
             getBasisEvaluation(
                 PointConcept auto const & point
             )
             const
             {
-                auto basis_vector_values = Vector<Real, getSize()>();
+                auto basis_vector_values = DenseVector<Real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 // auto const centroid = this->getCurrentCentroid();
                 // auto const diameters = this->getCurrentDiameters();
@@ -131,14 +131,14 @@ namespace lolita
                 return basis_vector_values;
             }
             
-            Vector<Real, getSize()>
+            DenseVector<Real, getSize()>
             getBasisDerivative(
                 PointConcept auto const & point,
                 Integer derivative_direction
             )
             const
             {
-                auto basis_vector_values = Vector<Real, getSize()>();
+                auto basis_vector_values = DenseVector<Real, getSize()>();
                 auto const centroid = this->getReferenceCentroid();
                 // auto const centroid = this->getCurrentCentroid();
                 // auto const diameters = this->getCurrentDiameters();
