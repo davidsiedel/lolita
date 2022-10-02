@@ -559,7 +559,7 @@ main(int argc, char** argv)
      * 
      */
     // elements->addElementDiscreteFieldOperator<cell_dim, displacement, hdg_discretization, _stab>("ROD");
-    elements->addElementDiscreteFieldOperator<cell_dim, displacement, _stab>("ROD");
+    // elements->addElementDiscreteFieldOperator<cell_dim, displacement, _stab>("ROD");
     std::cout << linear_system->getSize() << std::endl;
     /**
      * Potentials

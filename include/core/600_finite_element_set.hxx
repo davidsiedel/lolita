@@ -229,18 +229,18 @@ namespace lolita
         //     caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         // }
 
-        template<Integer t_i, FieldConcept auto t_field, Label t_label>
-        void
-        addElementDiscreteFieldOperator(
-            std::basic_string<Character> && domain_label
-        )
-        {
-            auto fun = [&] (auto const & finite_element)
-            {
-                finite_element->template addDiscreteFieldOperator<t_field, t_label>();
-            };
-            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
-        }
+        // template<Integer t_i, FieldConcept auto t_field, Label t_label>
+        // void
+        // addElementDiscreteFieldOperator(
+        //     std::basic_string<Character> && domain_label
+        // )
+        // {
+        //     auto fun = [&] (auto const & finite_element)
+        //     {
+        //         finite_element->template addDiscreteFieldOperator<t_field, t_label>();
+        //     };
+        //     caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        // }
 
         // template<Integer t_i, FieldConcept auto t_field, auto t_arg>
         // void

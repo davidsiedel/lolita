@@ -163,91 +163,6 @@ namespace lolita
         {
             return this->getStressVectorBlock<t_potential, t_strain>();
         }
-
-        // template<PotentialConcept auto t_potential>
-        // DenseMatrix<Real>
-        // getJacobian()
-        // const
-        // {
-        //     // auto size = PotentialTraits<t_potential>::template getSize<t_domain>();
-        //     // auto jacobian_matrix = DenseMatrix<Real>(size, size);
-        //     // jacobian_matrix.setZero();
-        //     // auto set_mapping_block = [&] <Integer t_i = 0> (
-        //     //     auto & self
-        //     // )
-        //     // constexpr mutable
-        //     // {
-        //     //     auto constexpr mapping = PotentialTraits<t_potential>::template getStrain<t_i>();
-        //     //     auto constexpr mapping_size = MappingTraits<mapping>::template getSize<t_domain>();
-        //     //     auto constexpr offset = PotentialTraits<t_potential>::template getOffset<t_domain, mapping>();
-        //     //     auto set_mapping_block = [&] <Integer t_i = 0> (
-        //     //         auto & self
-        //     //     )
-        //     //     constexpr mutable
-        //     //     {
-
-        //     //     };
-        //     //     auto rhs = algebra::View<DenseMatrix<Real, mapping_size, mapping_size> const>(behavior_data_->K.data() + offset * offset);
-        //     //     auto lhs = jacobian_matrix.template block<mapping_size, mapping_size>(offset, offset);
-        //     //     lhs = rhs;
-        //     //     if constexpr (t_i < t_potential.getNumMappings() - 1)
-        //     //     {
-        //     //         self.template operator ()<t_i + 1>(self);
-        //     //     }
-        //     // };
-        //     // set_mapping_block(set_mapping_block);
-        //     // return jacobian_matrix;
-        // }
-
-        // template<PotentialConcept auto t_potential>
-        // DenseMatrix<Real, PotentialTraits<t_potential>::template getSize<t_domain>(), PotentialTraits<t_potential>::template getSize<t_domain>()>
-        // getJacobian()
-        // const
-        // {
-        //     auto constexpr size = PotentialTraits<t_potential>::template getSize<t_domain>();
-        //     auto row_offset = 0;
-        //     auto col_offset = 0;
-        //     auto offset = 0;
-        //     auto jacobian_matrix = DenseMatrix<Real, size, size>();
-        //     jacobian_matrix.setZero();
-        //     auto set_mapping_rows = [&] <Integer t_row = 0> (
-        //         auto & t_set_mapping_rows
-        //     )
-        //     constexpr mutable
-        //     {
-        //         auto constexpr row_mapping_size = MappingTraits<t_potential.template getStrain<t_row>()>::template getSize<t_domain>();
-        //         auto set_jacobian_cols = [&] <Integer t_col = 0> (
-        //             auto & t_set_jacobian_cols
-        //         )
-        //         constexpr mutable
-        //         {
-        //             auto constexpr col_mapping_size = MappingTraits<t_potential.template getStrain<t_col>()>::template getSize<t_domain>();
-        //             auto rhs = algebra::View<DenseMatrix<Real, row_mapping_size, col_mapping_size> const>(behavior_data_->K.data() + offset);
-        //             auto lhs = jacobian_matrix.template block<row_mapping_size, col_mapping_size>(row_offset, col_offset);
-        //             lhs = rhs;
-        //             offset += row_mapping_size * col_mapping_size;
-        //             col_offset += col_mapping_size;
-        //             if constexpr (t_col < t_potential.getNumMappings() - 1)
-        //             {
-        //                 t_set_jacobian_cols.template operator ()<t_col + 1>(t_set_jacobian_cols);
-        //             }
-        //         };
-        //         set_jacobian_cols(set_jacobian_cols);
-        //         row_offset += row_mapping_size;
-        //         if constexpr (t_row < t_potential.getNumMappings() - 1)
-        //         {
-        //             t_set_mapping_rows.template operator ()<t_row + 1>(t_set_mapping_rows);
-        //         }
-        //     };
-        //     set_mapping_rows(set_mapping_rows);
-        //     return jacobian_matrix;
-        // }
-
-        // Point &
-        // getCurrentCoordinates()
-        // {
-        //     return coordinates_;
-        // }
         
         Point const &
         getCurrentCoordinates()
@@ -327,75 +242,75 @@ namespace lolita
             return false;
         }
 
-        template<FieldConcept auto t_field>
-        void
-        addDiscreteField()
-        {
-            if (ptr_data_ == nullptr)
-            {
-                ptr_data_ = std::make_unique<std::vector<ElementDiscreteField<t_domain>>>();
-            }
-            for (auto const & item : * ptr_data_)
-            {
-                if (item.getLabel() == t_field.getLabel())
-                {
-                    return;
-                }
-            }
-            ptr_data_->push_back(ElementDiscreteField<t_domain>(t_field));
-        }
+        // template<FieldConcept auto t_field>
+        // void
+        // addDiscreteField()
+        // {
+        //     if (ptr_data_ == nullptr)
+        //     {
+        //         ptr_data_ = std::make_unique<std::vector<ElementDiscreteField<t_domain>>>();
+        //     }
+        //     for (auto const & item : * ptr_data_)
+        //     {
+        //         if (item.getLabel() == t_field.getLabel())
+        //         {
+        //             return;
+        //         }
+        //     }
+        //     ptr_data_->push_back(ElementDiscreteField<t_domain>(t_field));
+        // }
 
-        template<FieldConcept auto t_field>
-        ElementDiscreteField<t_domain> const &
-        getDiscreteField()
-        const
-        {
-            if (ptr_data_ == nullptr)
-            {
-                throw std::runtime_error("Empty");
-            }
-            else
-            {
-                for (auto const & item : * ptr_data_)
-                {
-                    if (item.getLabel() == t_field.getLabel())
-                    {
-                        return item;
-                    }
-                }
-                throw std::runtime_error("No such field data");
-            }
-        }
+        // template<FieldConcept auto t_field>
+        // ElementDiscreteField<t_domain> const &
+        // getDiscreteField()
+        // const
+        // {
+        //     if (ptr_data_ == nullptr)
+        //     {
+        //         throw std::runtime_error("Empty");
+        //     }
+        //     else
+        //     {
+        //         for (auto const & item : * ptr_data_)
+        //         {
+        //             if (item.getLabel() == t_field.getLabel())
+        //             {
+        //                 return item;
+        //             }
+        //         }
+        //         throw std::runtime_error("No such field data");
+        //     }
+        // }
 
-        template<FieldConcept auto t_field>
-        ElementDiscreteField<t_domain> &
-        getDiscreteField()
-        {
-            if (ptr_data_ == nullptr)
-            {
-                throw std::runtime_error("Empty");
-            }
-            else
-            {
-                for (auto & item : * ptr_data_)
-                {
-                    if (item.getLabel() == t_field.getLabel())
-                    {
-                        return item;
-                    }
-                }
-                throw std::runtime_error("No such field data");
-            }
-        }
+        // template<FieldConcept auto t_field>
+        // ElementDiscreteField<t_domain> &
+        // getDiscreteField()
+        // {
+        //     if (ptr_data_ == nullptr)
+        //     {
+        //         throw std::runtime_error("Empty");
+        //     }
+        //     else
+        //     {
+        //         for (auto & item : * ptr_data_)
+        //         {
+        //             if (item.getLabel() == t_field.getLabel())
+        //             {
+        //                 return item;
+        //             }
+        //         }
+        //         throw std::runtime_error("No such field data");
+        //     }
+        // }
 
-        template<FieldConcept auto t_field, Basis t_basis>
-        void
-        addDiscreteFieldDegreeOfFreedom(
-            auto const &... args
-        )
-        {
-            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_basis>(args...);
-        }
+        // template<FieldConcept auto t_field, Basis t_basis>
+        // void
+        // addDiscreteFieldDegreeOfFreedom(
+        //     auto const &... args
+        // )
+        // {
+        //     this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_basis>(args...);
+        // }
 
         algebra::View<Point const> reference_coordinates_;
     
@@ -407,7 +322,7 @@ namespace lolita
 
         std::unique_ptr<std::vector<ElementaryOperator<Label, DenseMatrix<Real>>>> strain_matrix_list_;
 
-        std::unique_ptr<std::vector<ElementDiscreteField<t_domain>>> ptr_data_;
+        // std::unique_ptr<std::vector<ElementDiscreteField<t_domain>>> ptr_data_;
 
     };
     

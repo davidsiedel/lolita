@@ -15,6 +15,15 @@ namespace lolita
     template<DiscreteFieldConcept auto t_field>
     struct DiscretizationTraits2;
 
+    template<DiscretizationConcept auto t_discretization>
+    struct DiscretizationTraits3;
+
+    template<auto t_element, Domain t_domain>
+    struct FiniteElementTraits;
+
+    template<DiscreteFieldConcept auto t_field>
+    using FieldDiscretizationTraits = DiscretizationTraits3<t_field.getDiscretization()>;
+
     template<FieldConcept auto t_field>
     struct FieldTraits
     {
@@ -768,7 +777,8 @@ namespace lolita
             )
             constexpr mutable
             {
-                size += DiscretizationTraits2<getField<t_i>()>::template getStaticSize<t_element, t_domain>();
+                // size += FieldDiscretizationTraits<getField<t_i>()>::template getNumUnknownCoefficients<t_element, t_domain, getField<t_i>()>();
+                size += FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<getField<t_i>()>();
                 if constexpr (t_i < getNumFields() - 1)
                 {
                     t_set_size.template operator ()<t_i + 1>(t_set_size);
@@ -906,7 +916,8 @@ namespace lolita
             {
                 if constexpr (t_i > 0)
                 {
-                    offset += DiscretizationTraits2<getField<t_i - 1>()>::template getStaticSize<t_element, t_domain>();
+                    // offset += FieldDiscretizationTraits<getField<t_i - 1>()>::template getNumUnknownCoefficients<t_element, t_domain, getField<t_i - 1>()>();
+                    offset += FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<getField<t_i - 1>()>();
                 }
                 if constexpr (utility::areEqual(getField<t_i>(), t_field))
                 {
