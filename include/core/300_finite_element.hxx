@@ -216,7 +216,7 @@ namespace lolita
         }
         
         template<Basis t_basis>
-        DenseVector<Real, t_Basis<t_basis>::getSize()>
+        DenseVector<Real, BasisTraits<t_basis>::template getSize<t_element>()>
         getBasisEvaluation(
             auto const &... args
         )
@@ -226,7 +226,7 @@ namespace lolita
         }
         
         template<Basis t_basis>
-        DenseVector<Real, t_Basis<t_basis>::getSize()>
+        DenseVector<Real, BasisTraits<t_basis>::template getSize<t_element>()>
         getBasisDerivative(
             auto const &... args
         )
@@ -374,38 +374,57 @@ namespace lolita
             }
         }
 
-        template<FieldConcept auto t_field, Integer t_size>
-        void
-        addDiscreteFieldDegreeOfFreedom()
-        {
-            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_size>();
-        }
+        // template<FieldConcept auto t_field, Integer t_size>
+        // void
+        // addDiscreteFieldDegreeOfFreedom()
+        // {
+        //     this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_size>();
+        // }
 
-        template<FieldConcept auto t_field, Integer t_size, Strategy t_s>
+        // template<FieldConcept auto t_field, Basis t_basis>
+        // void
+        // addDiscreteFieldDegreeOfFreedom()
+        // {
+        //     this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>();
+        // }
+
+        template<FieldConcept auto t_field, Strategy t_s>
         void
-        addDiscreteFieldDegreeOfFreedom(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        addDiscreteFieldDegreeOfFreedomToSystem(
+            LinearSystem<t_s> & linear_system
         )
         {
-            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_size>(linear_system);
+            auto & dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
+            dof.link(linear_system.getRhsSize(), linear_system.getLhsSize());
+            linear_system.addRhsSize(DiscretizationTraits2<t_field>::template getNumElementDegreesOfFreedom<t_element, t_domain>());
+            linear_system.addLhsSize(this->template getBandWidth<t_field>());
         }
 
-        template<FieldConcept auto t_field, Basis t_basis>
-        void
-        addDiscreteFieldDegreeOfFreedom()
-        {
-            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>();
-        }
+        // template<FieldConcept auto t_field, Basis t_basis>
+        // void
+        // addDiscreteFieldDegreeOfFreedomToSystem()
+        // {
+        //     this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>();
+        // }
 
-        template<FieldConcept auto t_field, Basis t_basis, Strategy t_s>
-        void
-        addDiscreteFieldDegreeOfFreedom(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
-        )
-        {
-            this->template getBandWidth<t_field>();
-            this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>(linear_system);
-        }
+        // template<FieldConcept auto t_field, Integer t_size, Strategy t_s>
+        // void
+        // addDiscreteFieldDegreeOfFreedom(
+        //     std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        // )
+        // {
+        //     this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, t_size>(linear_system);
+        // }
+
+        // template<FieldConcept auto t_field, Basis t_basis, Strategy t_s>
+        // void
+        // addDiscreteFieldDegreeOfFreedom(
+        //     std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        // )
+        // {
+        //     this->template getBandWidth<t_field>();
+        //     this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_element, t_field, t_basis>(linear_system);
+        // }
 
         // template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization>
         // void
@@ -418,24 +437,25 @@ namespace lolita
 
         template<FieldConcept auto t_field>
         void
-        addDiscreteFieldDegreeOfFreedom(
-            auto const &... args
-        )
+        addDiscreteFieldDegreeOfFreedom()
         {
+            auto constexpr size = DiscretizationTraits2<t_field>::template getNumElementDegreesOfFreedom<t_element, t_domain>();
+            // this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field, size>();
+            this->template getDiscreteField<t_field>().addDegreeOfFreedom(size);
             // this->template getBandWidth<t_field>();
-            static_cast<t_Disc2<t_field> *>(this)->addDiscreteFieldDegreeOfFreedom(args...);
+            // static_cast<t_Disc2<t_field> *>(this)->addDiscreteFieldDegreeOfFreedom();
         }
 
-        template<FieldConcept auto t_field, Strategy t_s>
-        void
-        addDiscreteFieldDegreeOfFreedom(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system,
-            auto const &... args
-        )
-        {
+        // template<FieldConcept auto t_field, Strategy t_s>
+        // void
+        // addDiscreteFieldDegreeOfFreedom(
+        //     std::unique_ptr<LinearSystem<t_s>> const & linear_system,
+        //     auto const &... args
+        // )
+        // {
             
-            static_cast<t_Disc2<t_field> *>(this)->addDiscreteFieldDegreeOfFreedom(linear_system, args...);
-        }
+        //     static_cast<t_Disc2<t_field> *>(this)->addDiscreteFieldDegreeOfFreedom(linear_system, args...);
+        // }
 
         // template<FieldConcept auto t_field, DiscretizationConcept auto t_discretization, Label t_label>
         // void
@@ -526,7 +546,7 @@ namespace lolita
         const
         {
             auto const & dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
-            auto const coefficients = dof.template getCoefficients<t_element, t_field, t_basis>(row, col);
+            auto const coefficients = dof.template getCoefficients<t_field, BasisTraits<t_basis>::template getSize<t_element>()>(row, col);
             auto const basis_vector = this->template getBasisEvaluation<t_basis>(point);
             return coefficients.dot(basis_vector);
         }

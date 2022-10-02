@@ -552,7 +552,7 @@ main(int argc, char** argv)
      */
     elements->addElementDiscreteField<face_dim, displacement>("ROD");
     elements->addElementDiscreteField<cell_dim, displacement>("ROD");
-    elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, displacement>("ROD", linear_system);
+    elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, displacement>("ROD");
     elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, displacement>("ROD");
     /**
      * Ops

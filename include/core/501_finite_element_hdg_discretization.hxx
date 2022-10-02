@@ -141,6 +141,32 @@ namespace lolita
         {
             return getNumFaceUnknowns<t_element, t_domain>();
         }
+        
+        template<Element t_element, Domain t_domain>
+        static constexpr
+        Integer
+        getNumElementDegreesOfFreedom()
+        {
+            return 0;
+        }
+        
+        template<Element t_element, Domain t_domain>
+        static constexpr
+        Integer
+        getNumElementDegreesOfFreedom()
+        requires(t_element.isSub(t_domain, 0))
+        {
+            return getNumCellUnknowns<t_element, t_domain>();
+        }
+        
+        template<Element t_element, Domain t_domain>
+        static constexpr
+        Integer
+        getNumElementDegreesOfFreedom()
+        requires(t_element.isSub(t_domain, 1))
+        {
+            return getNumFaceUnknowns<t_element, t_domain>();
+        }
 
         template<Element t_element, Domain t_domain>
         struct Implementation : FiniteElement<t_element, t_domain>
@@ -262,9 +288,9 @@ namespace lolita
                 auto offset = 0;
                 auto unknown = DenseVector<Real, getStaticSize<t_element, t_domain>()>();
                 auto const & cell_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
-                auto cell_block = unknown.template segment<cell_dof.template getSize<t_element, t_field, getCellBasis()>()>(offset);
-                cell_block = cell_dof.template getCoefficients<t_element, t_field, getCellBasis()>();
-                offset += cell_dof.template getSize<t_element, t_field, getCellBasis()>();
+                auto cell_block = unknown.template segment<getNumElementDegreesOfFreedom<t_element, t_domain>()>(offset);
+                cell_block = cell_dof.template getCoefficients<getNumElementDegreesOfFreedom<t_element, t_domain>()>();
+                offset += getNumElementDegreesOfFreedom<t_element, t_domain>();
                 auto set_faces_unknowns = [&] <Integer t_i = 0> (
                     auto & self
                 )
@@ -274,9 +300,12 @@ namespace lolita
                     for (auto const & face : this->template getInnerNeighbors<0, t_i>())
                     {
                         auto const & face_dof = face->template getDiscreteField<t_field>().getDegreeOfFreedom();
-                        auto face_block = unknown.template segment<face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>()>(offset);
-                        face_block = face_dof.template getCoefficients<t_inner_neighbor, t_field, getFaceBasis()>();
-                        offset += face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>();
+                        auto face_block = unknown.template segment<getNumElementDegreesOfFreedom<t_inner_neighbor, t_domain>()>(offset);
+                        face_block = face_dof.template getCoefficients<getNumElementDegreesOfFreedom<t_inner_neighbor, t_domain>()>();
+                        offset += getNumElementDegreesOfFreedom<t_inner_neighbor, t_domain>();
+                        // auto face_block = unknown.template segment<face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>()>(offset);
+                        // face_block = face_dof.template getCoefficients<t_inner_neighbor, t_field, getFaceBasis()>();
+                        // offset += face_dof.template getSize<t_inner_neighbor, t_field, getFaceBasis()>();
                     }
                     if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                     {
@@ -292,25 +321,27 @@ namespace lolita
             const
             requires(t_element.isSub(t_domain, 1))
             {
-                return this->template getDiscreteField<t_field>().getDegreeOfFreedom().template getCoefficients<t_element, t_field, getFaceBasis()>();
+                auto const & face_dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
+                return face_dof.template getCoefficients<getNumElementDegreesOfFreedom<t_element, t_domain>()>();
             }
             
-            void
-            addDiscreteFieldDegreeOfFreedom()
-            requires(t_element.isSub(t_domain, 0))
-            {
-                static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getCellBasis()>();
-            }
+            // void
+            // addDiscreteFieldDegreeOfFreedom()
+            // requires(t_element.isSub(t_domain, 0))
+            // {
+            //     static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getCellBasis()>();
+            // }
 
-            template<Strategy t_s>
-            void
-            addDiscreteFieldDegreeOfFreedom(
-                std::unique_ptr<LinearSystem<t_s>> const & linear_system
-            )
-            requires(t_element.isSub(t_domain, 1))
-            {
-                static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(linear_system);
-            }
+            // // template<Strategy t_s>
+            // void
+            // addDiscreteFieldDegreeOfFreedom(
+            //     // std::unique_ptr<LinearSystem<t_s>> const & linear_system
+            // )
+            // requires(t_element.isSub(t_domain, 1))
+            // {
+            //     // static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>(linear_system);
+            //     static_cast<Base *>(this)->template addDiscreteFieldDegreeOfFreedom<t_field, getFaceBasis()>();
+            // }
 
             template<Label t_label>
             void

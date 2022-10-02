@@ -213,7 +213,7 @@ namespace lolita
 
         LinearSystem()
         :
-        size_(0),
+        rhs_size_(0),
         lhs_size_(0)
         {}
 
@@ -235,32 +235,48 @@ namespace lolita
         getSize()
         const
         {
-            return size_;
+            return rhs_size_;
         }
 
         std::atomic<Natural> &
         getSize()
         {
-            return size_;
+            return rhs_size_;
         }
 
-        std::atomic<Natural> &
+        std::atomic<Natural> const &
         getLhsSize()
+        const
         {
             return lhs_size_;
         }
 
+        std::atomic<Natural> const &
+        getRhsSize()
+        const
+        {
+            return rhs_size_;
+        }
+
         void
-        addLhsSize(
-            Natural size
+        addRhsSize(
+            Natural && size
         )
         {
-            lhs_size_ += size;
+            rhs_size_ += std::forward<Natural>(size);
+        }
+
+        void
+        addLhsSize(
+            Natural && size
+        )
+        {
+            lhs_size_ += std::forward<Natural>(size);
         }
 
     private:
 
-        std::atomic<Natural> size_;
+        std::atomic<Natural> rhs_size_;
 
         std::atomic<Natural> lhs_size_;
 

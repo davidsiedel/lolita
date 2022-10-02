@@ -206,13 +206,12 @@ namespace lolita
         template<Integer t_i, FieldConcept auto t_field>
         void
         addElementDiscreteFieldDegreeOfFreedom(
-            std::basic_string<Character> && domain_label,
-            auto const &... args
+            std::basic_string<Character> && domain_label
         )
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template addDiscreteFieldDegreeOfFreedom<t_field>(args...);
+                finite_element->template addDiscreteFieldDegreeOfFreedom<t_field>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }

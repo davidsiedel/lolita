@@ -72,107 +72,163 @@ namespace lolita
 
     };
 
+    struct DofCoordinates
+    {
+        
+        DofCoordinates(
+            Natural const & rhs_offset,
+            Natural const & lhs_offset
+        )
+        :
+        rhs_offset_(rhs_offset),
+        lhs_offset_(lhs_offset)
+        {}
+
+        DofCoordinates(
+            Natural && rhs_offset,
+            Natural && lhs_offset
+        )
+        :
+        rhs_offset_(std::move(rhs_offset)),
+        lhs_offset_(std::move(lhs_offset))
+        {}
+    
+        inline
+        Natural const &
+        getRhsOffset()
+        const
+        {
+            return rhs_offset_;
+        }
+    
+        inline
+        Natural const &
+        getLhsOffset()
+        const
+        {
+            return lhs_offset_;
+        }
+
+        inline
+        void
+        setOffsets(
+            Natural && rhs_offset,
+            Natural && lhs_offset
+        )
+        {
+            rhs_offset_ = std::forward<Natural>(rhs_offset);
+            lhs_offset_ = std::forward<Natural>(lhs_offset);
+        }
+
+    private:
+
+        Natural rhs_offset_;
+
+        Natural lhs_offset_;
+
+    };
+
     template<Domain t_domain>
     struct DegreeOfFreedom
     {
 
-        template<Integer t_size>
-        static constexpr
-        Integer
-        getSize()
-        {
-            return t_size;
-        }
+        // template<Integer t_size>
+        // static constexpr
+        // Integer
+        // getSize()
+        // {
+        //     return t_size;
+        // }
 
-        template<FieldConcept auto t_field, Integer t_size>
-        static constexpr
-        Integer
-        getSize()
-        {
-            return FieldTraits<t_field>::template getSize<t_domain>() * t_size;
-        }
+        // template<FieldConcept auto t_field, Integer t_size>
+        // static constexpr
+        // Integer
+        // getSize()
+        // {
+        //     return FieldTraits<t_field>::template getSize<t_domain>() * t_size;
+        // }
 
-        template<Element t_element, Basis t_basis>
-        static constexpr
-        Integer
-        getSize()
-        {
-            return BasisTraits<t_basis>::template getSize<t_element>();
-        }
+        // template<Element t_element, Basis t_basis>
+        // static constexpr
+        // Integer
+        // getSize()
+        // {
+        //     return BasisTraits<t_basis>::template getSize<t_element>();
+        // }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        static constexpr
-        Integer
-        getSize()
-        {
-            return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_basis>::template getSize<t_element>();
-        }
+        // template<Element t_element, FieldConcept auto t_field, Basis t_basis>
+        // static constexpr
+        // Integer
+        // getSize()
+        // {
+        //     return FieldTraits<t_field>::template getSize<t_domain>() * BasisTraits<t_basis>::template getSize<t_element>();
+        // }
 
-        template<FieldConcept auto t_field, Integer t_size, Strategy t_s>
-        static
-        DegreeOfFreedom
-        make(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
-        )
-        {
-            auto element_degree_of_freedom = DegreeOfFreedom(getSize<t_field, t_size>(), linear_system->getSize());
-            linear_system->getSize() += getSize<t_field, t_size>();
-            return element_degree_of_freedom;
-        }
+        // template<FieldConcept auto t_field, Integer t_size, Strategy t_s>
+        // static
+        // DegreeOfFreedom
+        // make(
+        //     std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        // )
+        // {
+        //     auto element_degree_of_freedom = DegreeOfFreedom(getSize<t_field, t_size>(), linear_system->getSize());
+        //     linear_system->getSize() += getSize<t_field, t_size>();
+        //     return element_degree_of_freedom;
+        // }
 
-        template<FieldConcept auto t_field, Integer t_size>
-        static
-        DegreeOfFreedom
-        make()
-        {
-            auto element_degree_of_freedom = DegreeOfFreedom(getSize<t_field, t_size>());
-            return element_degree_of_freedom;
-        }
+        // template<FieldConcept auto t_field, Integer t_size>
+        // static
+        // DegreeOfFreedom
+        // make()
+        // {
+        //     auto element_degree_of_freedom = DegreeOfFreedom(t_size);
+        //     return element_degree_of_freedom;
+        // }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis, Strategy t_s>
-        static
-        DegreeOfFreedom
-        make(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
-        )
-        {
-            auto element_degree_of_freedom = DegreeOfFreedom(getSize<t_element, t_field, t_basis>(), linear_system->getSize());
-            linear_system->getSize() += getSize<t_element, t_field, t_basis>();
-            return element_degree_of_freedom;
-        }
+        // template<Element t_element, FieldConcept auto t_field, Basis t_basis, Strategy t_s>
+        // static
+        // DegreeOfFreedom
+        // make(
+        //     std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        // )
+        // {
+        //     auto element_degree_of_freedom = DegreeOfFreedom(getSize<t_element, t_field, t_basis>(), linear_system->getSize());
+        //     linear_system->getSize() += getSize<t_element, t_field, t_basis>();
+        //     return element_degree_of_freedom;
+        // }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        static
-        DegreeOfFreedom
-        make()
-        {
-            auto element_degree_of_freedom = DegreeOfFreedom(getSize<t_element, t_field, t_basis>());
-            return element_degree_of_freedom;
-        }
+        // template<Element t_element, FieldConcept auto t_field, Basis t_basis>
+        // static
+        // DegreeOfFreedom
+        // make()
+        // {
+        //     auto element_degree_of_freedom = DegreeOfFreedom(getSize<t_element, t_field, t_basis>());
+        //     return element_degree_of_freedom;
+        // }
 
-    private:
+    // private:
 
         explicit
         DegreeOfFreedom(
             Integer size
         )
         :
-        offset_(-1),
+        coordinates_(),
         s0(DenseVector<Real>::Zero(size)),
         s1(DenseVector<Real>::Zero(size))
         {}
         
-        DegreeOfFreedom(
-            Integer size,
-            Integer offset
-        )
-        :
-        offset_(offset),
-        s0(DenseVector<Real>::Zero(size)),
-        s1(DenseVector<Real>::Zero(size))
-        {}
+        // DegreeOfFreedom(
+        //     Integer size,
+        //     Integer offset
+        // )
+        // :
+        // offset_(offset),
+        // s0(DenseVector<Real>::Zero(size)),
+        // s1(DenseVector<Real>::Zero(size))
+        // {}
 
-    public:
+    // public:
         
         Boolean
         operator==(
@@ -186,18 +242,47 @@ namespace lolita
         )
         const = default;
         
-        Natural &
-        getOffset()
-        {
-            return offset_;
-        }
-        
-        Natural const &
-        getOffset()
+        Boolean
+        isLinked()
         const
         {
-            return offset_;
+            return coordinates_ != nullptr;
         }
+
+        void
+        link(
+            Natural && rhs_offset,
+            Natural && lhs_offset
+        )
+        {
+            coordinates_ = std::make_unique<DofCoordinates>(std::forward<Natural>(rhs_offset), std::forward<Natural>(lhs_offset));
+        }
+        
+        // Natural &
+        // getOffset()
+        // {
+        //     return rhs_offset_;
+        // }
+        
+        // Natural const &
+        // getOffset()
+        // const
+        // {
+        //     return rhs_offset_;
+        // }
+        
+        // Natural &
+        // getLhsOffset()
+        // {
+        //     return lhs_offset_;
+        // }
+        
+        // Natural const &
+        // getLhsOffset()
+        // const
+        // {
+        //     return lhs_offset_;
+        // }
 
         Integer
         getSize()
@@ -214,36 +299,70 @@ namespace lolita
             s1 += std::forward<decltype(input)>(input);
         }
 
-        template<FieldConcept auto t_field, Integer t_size>
-        void
-        addCoefficients(
-            DenseVectorConcept<Real> auto && input
-        )
-        {
-            s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_field, t_size>()>(offset_);
-        }
+        // template<FieldConcept auto t_field, Integer t_size>
+        // void
+        // addCoefficients(
+        //     DenseVectorConcept<Real> auto && input
+        // )
+        // {
+        //     auto const & offset = coordinates_->getRhsOffset();
+        //     s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_field, t_size>()>(offset);
+        // }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        void
-        addCoefficients(
-            DenseVectorConcept<Real> auto && input
-        )
-        {
-            s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(offset_);
-        }
+        // template<Element t_element, FieldConcept auto t_field, Basis t_basis>
+        // void
+        // addCoefficients(
+        //     DenseVectorConcept<Real> auto && input
+        // )
+        // {
+        //     auto const & offset = coordinates_->getRhsOffset();
+        //     s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(offset);
+        // }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        void
-        addCoefficients(
-            DenseVectorConcept<Real> auto && input,
+        // template<Element t_element, FieldConcept auto t_field, Basis t_basis>
+        // void
+        // addCoefficients(
+        //     DenseVectorConcept<Real> auto && input,
+        //     Integer offset
+        // )
+        // {
+        //     s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(offset);
+        // }
+
+        // template<FieldConcept auto t_field, Integer t_size>
+        // algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_size>()> const>
+        // getCoefficients(
+        //     Integer row,
+        //     Integer col
+        // )
+        // const
+        // {
+        //     auto const & data = s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col;
+        //     return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_size>()> const>(data);
+        // }
+
+        // template<FieldConcept auto t_field, Integer t_size>
+        // algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_field, t_size>()> const>
+        // getCoefficients()
+        // const
+        // {
+        //     auto const & data = s1.data();
+        //     return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_field, t_size>()> const>(data);
+        // }
+
+        template<Integer t_size>
+        algebra::View<DenseVector<Real, t_size> const>
+        getCoefficients(
             Integer offset
         )
+        const
         {
-            s1 += std::forward<decltype(input)>(input).template segment<DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(offset);
+            auto const & data = s1.data() + offset;
+            return algebra::View<DenseVector<Real, t_size> const>(data);
         }
 
         template<FieldConcept auto t_field, Integer t_size>
-        algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_size>()> const>
+        algebra::View<DenseVector<Real, t_size> const>
         getCoefficients(
             Integer row,
             Integer col
@@ -251,57 +370,36 @@ namespace lolita
         const
         {
             auto const & data = s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-            return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_size>()> const>(data);
+            return algebra::View<DenseVector<Real, t_size> const>(data);
         }
 
-        template<FieldConcept auto t_field, Integer t_size>
-        algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_field, t_size>()> const>
+        template<Integer t_size>
+        algebra::View<DenseVector<Real, t_size> const>
         getCoefficients()
         const
         {
             auto const & data = s1.data();
-            return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_field, t_size>()> const>(data);
+            return algebra::View<DenseVector<Real, t_size> const>(data);
         }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_element, t_basis>()> const>
-        getCoefficients(
-            Integer row,
-            Integer col
-        )
-        const
-        {
-            auto const & data = s1.data() + FieldTraits<t_field>::template getCols<t_domain>() * row + col;
-            return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_element, t_basis>()> const>(data);
-        }
-
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()> const>
-        getCoefficients()
-        const
-        {
-            auto const & data = s1.data();
-            return algebra::View<DenseVector<Real, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()> const>(data);
-        }
-
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis, Integer t_size>
+        template<Integer t_size1, Integer t_size>
         auto
         packUp(
             DenseSystem<Real, t_size> const & system
         )
         {
-            condensation_ = StaticCondensation::template make<Real, t_size, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(system);
-            auto j = condensation_->template packUp<Real, t_size, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(system);
+            condensation_ = StaticCondensation::template make<Real, t_size, t_size1>(system);
+            auto j = condensation_->template packUp<Real, t_size, t_size1>(system);
             return j;
         }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis, Integer t_size>
+        template<Integer t_size1, Integer t_size>
         auto
         unPack(
-            DenseVectorConcept<Real, t_size> auto && vector
+            DenseVectorConcept<Real, t_size> auto const & vector
         )
         {
-            auto j = condensation_->template unPack<Real, t_size, DegreeOfFreedom::template getSize<t_element, t_field, t_basis>()>(std::forward<decltype(vector)>(vector));
+            auto j = condensation_->template unPack<Real, t_size, t_size1>(vector);
             condensation_ = nullptr;
             return j;
         }
@@ -329,7 +427,7 @@ namespace lolita
 
         std::unique_ptr<StaticCondensation> condensation_;
 
-        Natural offset_;
+        std::unique_ptr<DofCoordinates> coordinates_;
 
         DenseVector<Real> s0;
 
@@ -694,25 +792,39 @@ namespace lolita
             return * loads_;
         }
 
-        template<FieldConcept auto t_field, Integer t_size, Strategy t_s>
+        // template<FieldConcept auto t_field, Integer t_size, Strategy t_s>
+        // void
+        // addDegreeOfFreedom(
+        //     std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        // )
+        // {
+        //     if (dof_ == nullptr)
+        //     {
+        //         dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>(linear_system));
+        //     }
+        // }
+
+        // template<FieldConcept auto t_field, Integer t_size>
+        // void
+        // addDegreeOfFreedom()
+        // {
+        //     if (dof_ == nullptr)
+        //     {
+        //         // dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>());
+        //         dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(t_size);
+        //     }
+        // }
+
+        // template<FieldConcept auto t_field, Integer t_size>
         void
         addDegreeOfFreedom(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+            Integer size
         )
         {
             if (dof_ == nullptr)
             {
-                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>(linear_system));
-            }
-        }
-
-        template<FieldConcept auto t_field, Integer t_size>
-        void
-        addDegreeOfFreedom()
-        {
-            if (dof_ == nullptr)
-            {
-                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>());
+                // dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>());
+                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(size);
             }
         }
 
@@ -776,27 +888,49 @@ namespace lolita
             return dof_ != nullptr;
         }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis, Strategy t_s>
+        // template<FieldConcept auto t_field, Integer t_size>
+        // void
+        // addDegreeOfFreedom()
+        // {
+        //     if (dof_ == nullptr)
+        //     {
+        //         dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_field, t_size>());
+        //     }
+        // }
+
+        // template<FieldConcept auto t_field, Integer t_size>
         void
         addDegreeOfFreedom(
-            std::unique_ptr<LinearSystem<t_s>> const & linear_system
+            Integer size
         )
         {
             if (dof_ == nullptr)
             {
-                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_element, t_field, t_basis>(linear_system));
+                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(size);
             }
         }
 
-        template<Element t_element, FieldConcept auto t_field, Basis t_basis>
-        void
-        addDegreeOfFreedom()
-        {
-            if (dof_ == nullptr)
-            {
-                dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_element, t_field, t_basis>());
-            }
-        }
+        // template<Element t_element, FieldConcept auto t_field, Basis t_basis, Strategy t_s>
+        // void
+        // addDegreeOfFreedom(
+        //     std::unique_ptr<LinearSystem<t_s>> const & linear_system
+        // )
+        // {
+        //     if (dof_ == nullptr)
+        //     {
+        //         dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_element, t_field, t_basis>(linear_system));
+        //     }
+        // }
+
+        // template<Element t_element, FieldConcept auto t_field, Basis t_basis>
+        // void
+        // addDegreeOfFreedom()
+        // {
+        //     if (dof_ == nullptr)
+        //     {
+        //         dof_ = std::make_unique<DegreeOfFreedom<t_domain>>(DegreeOfFreedom<t_domain>::template make<t_element, t_field, t_basis>());
+        //     }
+        // }
 
         DegreeOfFreedom<t_domain> const &
         getDegreeOfFreedom()

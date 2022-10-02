@@ -38,14 +38,14 @@ namespace lolita
         struct Implementation : FiniteElement<t_element, t_domain>
         {
 
+        private:
+
             static constexpr
             Integer
             getSize()
             {
                 return BasisTraits::template getSize<t_element>();
             }
-
-        private:
         
             static constexpr
             std::array<std::array<Integer, 3>, getSize()>
