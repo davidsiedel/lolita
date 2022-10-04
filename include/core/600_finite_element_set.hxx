@@ -171,6 +171,27 @@ namespace lolita
             finite_domain.template addDiscreteFieldLoad<t_field>(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
         }
 
+        template<Integer t_i, LagrangianConcept auto t_lag>
+        void
+        setDomainLagrangian(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto & finite_domain = this->template getFiniteDomain<t_i>(std::forward<std::basic_string<Character>>(domain_label));
+            finite_domain.template setLagrangian<t_lag>();
+        }
+
+        template<Integer t_i, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        void
+        setDomainPotential(
+            std::basic_string<Character> && domain_label,
+            auto const &... args
+        )
+        {
+            auto & finite_domain = this->template getFiniteDomain<t_i>(std::forward<std::basic_string<Character>>(domain_label));
+            finite_domain.template setPotential<t_lag, t_potential>(args...);
+        }
+
         /**
          * Element DOF
          * *****************************************************************************************************************************************************
@@ -314,6 +335,58 @@ namespace lolita
          * Formulation
          * *****************************************************************************************************************************************************
          */
+        
+        template<Integer t_i, LagrangianConcept auto t_lag>
+        void
+        setLagrangian(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template setLagrangian<t_lag>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        void
+        setPotential(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template setPotential<t_lag, t_potential>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        void
+        setPotentialStrainOperators(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template setPotentialStrainOperators<t_lag, t_potential>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
+        template<Integer t_i, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        void
+        setPotentialStrains(
+            std::basic_string<Character> && domain_label
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template setPotentialStrains<t_lag, t_potential>();
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
 
         template<Integer t_i, PotentialConcept auto t_behavior>
         void

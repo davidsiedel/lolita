@@ -25,15 +25,21 @@ namespace lolita
     using FieldDiscretizationTraits = DiscretizationTraits3<t_field.getDiscretization()>;
 
     template<FieldConcept auto t_field>
-    struct FieldTraits
+    struct FieldView
     {
-            
+
         static constexpr
         auto const &
         getField()
         {
             return t_field;
         }
+
+    };
+
+    template<FieldConcept auto t_field>
+    struct FieldTraits
+    {
 
         template<Domain t_domain>
         static constexpr
@@ -199,7 +205,7 @@ namespace lolita
     };
 
     template<MappingConcept auto t_mapping>
-    struct MappingTraitsBase
+    struct MappingView
     {
 
         static constexpr
@@ -216,7 +222,7 @@ namespace lolita
 
     template<MappingConcept auto t_mapping>
     requires(t_mapping.isIdentity())
-    struct MappingTraits<t_mapping> : MappingTraitsBase<t_mapping>
+    struct MappingTraits<t_mapping>
     {
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -322,7 +328,7 @@ namespace lolita
 
     template<MappingConcept auto t_mapping>
     requires(t_mapping.isGradient())
-    struct MappingTraits<t_mapping> : MappingTraitsBase<t_mapping>
+    struct MappingTraits<t_mapping>
     {
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -461,7 +467,7 @@ namespace lolita
 
     template<MappingConcept auto t_mapping>
     requires(t_mapping.isSmallStrain())
-    struct MappingTraits<t_mapping> : MappingTraitsBase<t_mapping>
+    struct MappingTraits<t_mapping>
     {
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -583,7 +589,7 @@ namespace lolita
 
     template<MappingConcept auto t_mapping>
     requires(t_mapping.isLargeStrain())
-    struct MappingTraits<t_mapping> : MappingTraitsBase<t_mapping>
+    struct MappingTraits<t_mapping>
     {
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -668,19 +674,8 @@ namespace lolita
     };
 
     template<PotentialConcept auto t_potential>
-    struct PotentialTraits2
+    struct PotentialView
     {
-
-    private:
-        
-        template<MappingConcept auto t_mapping>
-        using StrainField = FieldTraits<t_mapping.getField()>;
-
-    public:
-
-        using StrainsTraits = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, MappingTraits, t_potential.getStrains()>>>;
-
-        using FieldsTraits = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, StrainField, t_potential.getStrains()>>>;
     
         static constexpr
         auto const &
@@ -688,13 +683,30 @@ namespace lolita
         {
             return t_potential;
         }
+
+    };
+    
+    template<PotentialConcept auto t_potential>
+    struct PotentialTraits2
+    {
+
+    private:
+        
+        template<MappingConcept auto t_mapping>
+        using FieldViews = FieldView<t_mapping.getField()>;
+
+    public:
+
+        using Strains = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, MappingView, t_potential.getStrains()>>>;
+
+        using Fields = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, FieldViews, t_potential.getStrains()>>>;
         
         template<Integer t_i>
         static constexpr
         auto
         getStrain()
         {
-            return std::tuple_element_t<t_i, StrainsTraits>::getMapping();
+            return std::tuple_element_t<t_i, Strains>::getMapping();
         }
         
         template<Integer t_i>
@@ -702,21 +714,21 @@ namespace lolita
         auto
         getField()
         {
-            return std::tuple_element_t<t_i, FieldsTraits>::getField();
+            return std::tuple_element_t<t_i, Fields>::getField();
         }
         
         static constexpr
         Integer
         getNumMappings()
         {
-            return std::tuple_size_v<StrainsTraits>;
+            return std::tuple_size_v<Strains>;
         }
         
         static constexpr
         Integer
         getNumFields()
         {
-            return std::tuple_size_v<FieldsTraits>;
+            return std::tuple_size_v<Fields>;
         }
 
         template<Domain t_domain>
@@ -886,15 +898,15 @@ namespace lolita
     private:
 
         template<MappingConcept auto t_mapping>
-        using StrainField = FieldTraits<t_mapping.getField()>;
-
-        using Potentials = utility::tuple_unique_t<std::tuple<PotentialTraits2<t_potentials>...>>;
-
-        using Strains = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, MappingTraits, t_potentials.getStrains()...>>;
-
-        using Fields = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, StrainField, t_potentials.getStrains()...>>>;
+        using FieldViews = FieldView<t_mapping.getField()>;
 
     public:
+
+        using Potentials = utility::tuple_unique_t<std::tuple<PotentialView<t_potentials>...>>;
+
+        using Strains = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, MappingView, t_potentials.getStrains()...>>;
+
+        using Fields = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, FieldViews, t_potentials.getStrains()...>>>;
         
         template<Integer t_i>
         static constexpr
@@ -1137,22 +1149,18 @@ namespace lolita
     private:
 
         template<PotentialConcept auto t_potential>
-        using PotentialStrains = typename PotentialTraits2<t_potential>::StrainsTraits;
+        using StrainViews = typename PotentialTraits2<t_potential>::Strains;
 
         template<PotentialConcept auto t_potential>
-        using PotentialFields = typename PotentialTraits2<t_potential>::FieldsTraits;
+        using FieldViews = typename PotentialTraits2<t_potential>::Fields;
 
     public:
 
-        using TEST = utility::tuple_expansion_t<std::tuple, PotentialStrains, t_lag.getPotentials()>;
+        using Potentials = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, PotentialView, t_lag.getPotentials()>>;
 
-        using PotentialsTraits = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, PotentialTraits2, t_lag.getPotentials()>>;
+        using Strains = utility::tuple_unique_t<utility::tuple_merge_t<utility::tuple_expansion_t<std::tuple, StrainViews, t_lag.getPotentials()>>>;
 
-        using StrainsTraits = utility::tuple_unique_t<utility::tuple_merge_t<TEST>>;
-
-        using FieldsTraits = utility::tuple_unique_t<utility::tuple_merge_t<utility::tuple_expansion_t<std::tuple, PotentialFields, t_lag.getPotentials()>>>;
-
-        using TEST2 = utility::tuple_unique_t<utility::tuple_merge_t<TEST>>;
+        using Fields = utility::tuple_unique_t<utility::tuple_merge_t<utility::tuple_expansion_t<std::tuple, FieldViews, t_lag.getPotentials()>>>;
     
         static constexpr
         auto const &
@@ -1166,7 +1174,7 @@ namespace lolita
         auto
         getPotential()
         {
-            return std::tuple_element_t<t_i, PotentialsTraits>::getPotential();
+            return std::tuple_element_t<t_i, Potentials>::getPotential();
         }
         
         template<Integer t_i>
@@ -1174,7 +1182,7 @@ namespace lolita
         auto
         getStrain()
         {
-            return std::tuple_element_t<t_i, StrainsTraits>::getMapping();
+            return std::tuple_element_t<t_i, Strains>::getMapping();
         }
         
         template<Integer t_i>
@@ -1182,28 +1190,28 @@ namespace lolita
         auto
         getField()
         {
-            return std::tuple_element_t<t_i, FieldsTraits>::getField();
+            return std::tuple_element_t<t_i, Fields>::getField();
         }
         
         static constexpr
         Integer
         getNumPotentials()
         {
-            return std::tuple_size_v<PotentialsTraits>;
+            return std::tuple_size_v<Potentials>;
         }
         
         static constexpr
         Integer
         getNumMappings()
         {
-            return std::tuple_size_v<StrainsTraits>;
+            return std::tuple_size_v<Strains>;
         }
         
         static constexpr
         Integer
         getNumFields()
         {
-            return std::tuple_size_v<FieldsTraits>;
+            return std::tuple_size_v<Fields>;
         }
 
         template<Domain t_domain>

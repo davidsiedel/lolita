@@ -1042,10 +1042,12 @@ namespace lolita
         constexpr
         Potential(
             std::basic_string_view<Character> && label,
+            Quadrature const & quadrature,
             t_Strains const &... strains
         )
         :
         label_(std::forward<std::basic_string_view<Character>>(label)),
+        quadrature_(quadrature),
         fields_(strains.getField()...),
         strains_(strains...)
         {}
@@ -1070,6 +1072,14 @@ namespace lolita
         const
         {
             return label_;
+        }
+
+        constexpr
+        Quadrature const &
+        getQuadrature()
+        const
+        {
+            return quadrature_;
         }
 
         template<Integer t_i>
@@ -1098,6 +1108,8 @@ namespace lolita
         }
 
         Label label_;
+
+        Quadrature quadrature_;
 
         Fields fields_;
 

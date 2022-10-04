@@ -199,14 +199,109 @@ namespace lolita
             this->template getDiscreteField<t_field>().addLoad(row, col, std::forward<std::function<Real(Point const &, Real const &)>>(function));
         }
 
+        using t_Lag = AbstractDomainLagrangian<t_dim, t_domain>;
+
+        template<LagrangianConcept auto t_lag>
+        using t_LagImpl = DomainLagrangian<t_dim, t_domain, t_lag>;
+
+        template<LagrangianConcept auto t_lag>
+        void
+        setLagrangian()
+        {
+            if (lags_ == nullptr)
+            {
+                lags_ = std::make_unique<std::vector<std::unique_ptr<t_Lag>>>();
+            }
+            for (auto & kk : * lags_)
+            {
+                if (kk->getLabel() == t_lag.getLabel())
+                {
+                    kk = std::make_unique<t_LagImpl<t_lag>>(* this);
+                    return;
+                }
+            }
+            lags_->push_back(std::make_unique<t_LagImpl<t_lag>>(* this));
+        }
+
+        template<LagrangianConcept auto t_lag>
+        Boolean
+        hasLagrangian()
+        const
+        {
+            if (lags_ == nullptr)
+            {
+                return false;
+            }
+            for (auto const & kk : * lags_)
+            {
+                if (kk->getLabel() == t_lag.getLabel())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        template<LagrangianConcept auto t_lag>
+        t_Lag const &
+        getLagrangian()
+        const
+        {
+            if (lags_ == nullptr)
+            {
+                throw std::runtime_error("NO");
+            }
+            for (auto const & kk : * lags_)
+            {
+                if (kk->getLabel() == t_lag.getLabel())
+                {
+                    return * kk;
+                }
+            }
+            throw std::runtime_error("NO");
+        }
+
+        template<LagrangianConcept auto t_lag>
+        t_Lag &
+        getLagrangian()
+        {
+            if (lags_ == nullptr)
+            {
+                throw std::runtime_error("NO");
+            }
+            for (auto & kk : * lags_)
+            {
+                if (kk->getLabel() == t_lag.getLabel())
+                {
+                    return * kk;
+                }
+            }
+            throw std::runtime_error("NO");
+        }
+
+        template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        void
+        setPotential(
+            auto const &... args
+        )
+        {
+            if (!this->template hasLagrangian<t_lag>())
+            {
+                this->template setLagrangian<t_lag>();
+            }
+            this->template getLagrangian<t_lag>().template setPotential<t_lag, t_potential>(args...);
+        }
+
     private:
+
+        std::unique_ptr<std::vector<std::unique_ptr<t_Lag>>> lags_;
 
         std::unique_ptr<std::vector<MeshDiscreteField<t_domain>>> ptr_data_;
 
         std::basic_string<Character> tag_;
 
     };
-        
+    
     template<Element t_element, Domain t_domain>
     struct FiniteElement
     {
@@ -219,6 +314,8 @@ namespace lolita
         using t_Neighbor = std::shared_ptr<FiniteElement<t__element, t__domain>>;
 
         using t_Domains = typename t_ElementTraits::template Domains<FiniteDomain, t_domain>;
+
+        using t_Domain = FiniteDomain<t_element.getDim(), t_domain>;
     
         using t_InnerNeighbors = typename t_ElementTraits::template InnerConnectivity<t_Neighbor, t_domain>;
         
@@ -257,9 +354,12 @@ namespace lolita
         tag_(tag),
         coordinates_(),
         domains_(),
+        domain_(),
         outer_neighbors_(),
         inner_neighbors_()
         {}
+
+        std::shared_ptr<t_Domain> domain_;
 
         Point const &
         getCoordinates()
@@ -323,6 +423,21 @@ namespace lolita
                 }
             }
             domains_.push_back(domain);
+        }
+
+        void
+        setDomain(
+            std::shared_ptr<t_Domain> const & domain
+        )
+        {
+            domain_ = domain;
+        }
+
+        t_Domain const &
+        getDomain()
+        const
+        {
+            return * domain_;
         }
 
         /**
@@ -658,6 +773,221 @@ namespace lolita
         
         template<PotentialConcept auto... t_potential>
         using ElementResidualVector = typename PotentialTraits<t_potential...>::template ElementResidualVector<t_element, t_domain>;
+
+        using t_Lag = AbstractElementLagrangian<t_element, t_domain>;
+
+        template<LagrangianConcept auto t_lag>
+        using t_LagImpl = ConcreteElementLagrangian<t_element, t_domain, t_lag>;
+
+        template<LagrangianConcept auto t_lag>
+        void
+        setLagrangian()
+        {
+            if (lags_ == nullptr)
+            {
+                lags_ = std::make_unique<std::vector<std::unique_ptr<t_Lag>>>();
+            }
+            for (auto & kk : * lags_)
+            {
+                if (kk->getLabel() == t_lag.getLabel())
+                {
+                    kk = std::make_unique<t_LagImpl<t_lag>>(* this);
+                    return;
+                }
+            }
+            lags_->push_back(std::make_unique<t_LagImpl<t_lag>>(* this));
+        }
+
+        template<LagrangianConcept auto t_lag>
+        Boolean
+        hasLagrangian()
+        const
+        {
+            if (lags_ == nullptr)
+            {
+                return false;
+            }
+            for (auto const & kk : * lags_)
+            {
+                if (kk->getLabel() == t_lag.getLabel())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        template<LagrangianConcept auto t_lag>
+        t_Lag const &
+        getLagrangian()
+        const
+        {
+            if (lags_ == nullptr)
+            {
+                throw std::runtime_error("NO");
+            }
+            for (auto const & kk : * lags_)
+            {
+                if (kk->getLabel() == t_lag.getLabel())
+                {
+                    return * kk;
+                }
+            }
+            throw std::runtime_error("NO");
+        }
+
+        template<LagrangianConcept auto t_lag>
+        t_Lag &
+        getLagrangian()
+        {
+            if (lags_ == nullptr)
+            {
+                throw std::runtime_error("NO");
+            }
+            for (auto & kk : * lags_)
+            {
+                if (kk->getLabel() == t_lag.getLabel())
+                {
+                    return * kk;
+                }
+            }
+            throw std::runtime_error("NO");
+        }
+
+        std::unique_ptr<std::vector<std::unique_ptr<t_Lag>>> lags_;
+
+        template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        void
+        setPotential()
+        {
+            if (!this->template hasLagrangian<t_lag>())
+            {
+                this->template setLagrangian<t_lag>();
+            }
+            this->template getLagrangian<t_lag>().template setPotential<t_lag, t_potential>();
+        }
+
+        template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        void
+        setPotentialStrainOperators()
+        {
+            this->template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>().setStrainOperators();
+        }
+
+        template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        void
+        setPotentialStrains()
+        {
+            this->template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>().setStrains();
+        }
+        
+        template<PotentialConcept auto t_behavior>
+        void
+        addFormulation()
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
+            }
+            for (auto const & item : * ptr_formulations_)
+            {
+                if (item.getLabel() == t_behavior.getLabel())
+                {
+                    return;
+                }
+            }
+            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior));
+        }
+
+        template<PotentialConcept auto t_behavior>
+        void
+        addFormulation(
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+        )
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
+            }
+            for (auto const & item : * ptr_formulations_)
+            {
+                if (item.getLabel() == t_behavior.getLabel())
+                {
+                    return;
+                }
+            }
+            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior, behavior));
+        }
+
+        template<PotentialConcept auto t_behavior, Quadrature t_quadrature>
+        void
+        addFormulation(
+            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
+        )
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
+            }
+            for (auto const & item : * ptr_formulations_)
+            {
+                if (item.getLabel() == t_behavior.getLabel())
+                {
+                    return;
+                }
+            }
+            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior, behavior));
+            for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
+            {
+                auto point = getCurrentQuadraturePoint<t_quadrature>(i);
+                auto r_point = getReferenceQuadraturePoint<t_quadrature>(i);
+                auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
+                ptr_formulations_->back().addIntegrationPoint(std::move(r_point), std::move(point), weight, behavior);
+            }
+        }
+
+        template<PotentialConcept auto t_behavior>
+        ElementFormulation<t_domain> const &
+        getFormulation()
+        const
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto const & item : * ptr_formulations_)
+                {
+                    if (item.getLabel() == t_behavior.getLabel())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
+        }
+
+        template<PotentialConcept auto t_behavior>
+        ElementFormulation<t_domain> &
+        getFormulation()
+        {
+            if (ptr_formulations_ == nullptr)
+            {
+                throw std::runtime_error("Empty");
+            }
+            else
+            {
+                for (auto & item : * ptr_formulations_)
+                {
+                    if (item.getLabel() == t_behavior.getLabel())
+                    {
+                        return item;
+                    }
+                }
+                throw std::runtime_error("No such field data");
+            }
+        }
         
         // template<FieldConcept auto... t_fields>
         // using ElementExternalForces = typename DiscreteFieldsTraits<t_fields...>::template ElementExternalForces<t_element, t_domain>;
@@ -1150,114 +1480,6 @@ namespace lolita
         {
             return this->template getElementExternalEnergy<t_potential...>(time) - this->template getElementInternalEnergy<t_potential...>();
         }
-        
-        template<PotentialConcept auto t_behavior>
-        void
-        addFormulation()
-        {
-            if (ptr_formulations_ == nullptr)
-            {
-                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
-            }
-            for (auto const & item : * ptr_formulations_)
-            {
-                if (item.getLabel() == t_behavior.getLabel())
-                {
-                    return;
-                }
-            }
-            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior));
-        }
-
-        template<PotentialConcept auto t_behavior>
-        void
-        addFormulation(
-            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
-        )
-        {
-            if (ptr_formulations_ == nullptr)
-            {
-                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
-            }
-            for (auto const & item : * ptr_formulations_)
-            {
-                if (item.getLabel() == t_behavior.getLabel())
-                {
-                    return;
-                }
-            }
-            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior, behavior));
-        }
-
-        template<PotentialConcept auto t_behavior, Quadrature t_quadrature>
-        void
-        addFormulation(
-            std::shared_ptr<mgis::behaviour::Behaviour> const & behavior
-        )
-        {
-            if (ptr_formulations_ == nullptr)
-            {
-                ptr_formulations_ = std::make_unique<std::vector<ElementFormulation<t_domain>>>();
-            }
-            for (auto const & item : * ptr_formulations_)
-            {
-                if (item.getLabel() == t_behavior.getLabel())
-                {
-                    return;
-                }
-            }
-            ptr_formulations_->push_back(ElementFormulation<t_domain>(t_behavior, behavior));
-            for (auto i = 0; i < QuadratureTraits<t_quadrature>::template Rule<t_element>::getSize(); i++)
-            {
-                auto point = getCurrentQuadraturePoint<t_quadrature>(i);
-                auto r_point = getReferenceQuadraturePoint<t_quadrature>(i);
-                auto weight = getCurrentQuadratureWeight<t_quadrature>(i);
-                ptr_formulations_->back().addIntegrationPoint(std::move(r_point), std::move(point), weight, behavior);
-            }
-        }
-
-        template<PotentialConcept auto t_behavior>
-        ElementFormulation<t_domain> const &
-        getFormulation()
-        const
-        {
-            if (ptr_formulations_ == nullptr)
-            {
-                throw std::runtime_error("Empty");
-            }
-            else
-            {
-                for (auto const & item : * ptr_formulations_)
-                {
-                    if (item.getLabel() == t_behavior.getLabel())
-                    {
-                        return item;
-                    }
-                }
-                throw std::runtime_error("No such field data");
-            }
-        }
-
-        template<PotentialConcept auto t_behavior>
-        ElementFormulation<t_domain> &
-        getFormulation()
-        {
-            if (ptr_formulations_ == nullptr)
-            {
-                throw std::runtime_error("Empty");
-            }
-            else
-            {
-                for (auto & item : * ptr_formulations_)
-                {
-                    if (item.getLabel() == t_behavior.getLabel())
-                    {
-                        return item;
-                    }
-                }
-                throw std::runtime_error("No such field data");
-            }
-        }
 
         template<MappingConcept auto t_mapping>
         auto
@@ -1454,14 +1676,20 @@ namespace lolita
         const
         requires(t_i == t_element.getDim())
         {
-            for (auto const & dom : domains_)
+            if (this->domain_ != nullptr)
             {
-                if (dom->getLabel() == std::forward<std::basic_string<Character>>(domain))
-                {
-                    return true;
-                }
+                return this->domain_->getLabel() == std::forward<std::basic_string<Character>>(domain);
             }
             return false;
+            
+            // for (auto const & dom : domains_)
+            // {
+            //     if (dom->getLabel() == std::forward<std::basic_string<Character>>(domain))
+            //     {
+            //         return true;
+            //     }
+            // }
+            // return false;
         }
 
         template<Integer t_i>

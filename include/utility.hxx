@@ -822,6 +822,15 @@ namespace lolita::utility
         using type = std::tuple<t_T..., t_U...>;
         
     };
+    
+    template<typename t_T>
+    struct tuple_merge_traits<std::tuple<t_T>>
+    {
+
+        // using type = std::tuple<t_T>;
+        using type = t_T;
+        
+    };
 
     template<typename t_T>
     using tuple_merge_t = typename tuple_merge_traits<t_T>::type;

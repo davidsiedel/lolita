@@ -273,37 +273,9 @@ namespace lolita
 
     template<typename t_Scalar, Integer...>
     struct DenseSystem;
-    
-    struct DenseSystemBase
-    {
-
-        DenseSystemBase()
-        {}
-
-        virtual
-        ~DenseSystemBase()
-        {}
-
-        template<typename t_Scalar, Integer... t_args>
-        auto const &
-        getMatrix()
-        const
-        {
-            return static_cast<DenseSystem<t_Scalar, t_args...> const *>(this)->getMatrix();
-        }
-
-        template<typename t_Scalar, Integer... t_args>
-        auto const &
-        getVector()
-        const
-        {
-            return static_cast<DenseSystem<t_Scalar, t_args...> const *>(this)->getVector();
-        }
-
-    };
 
     template<typename t_Scalar>
-    struct DenseSystem<t_Scalar> : DenseSystemBase
+    struct DenseSystem<t_Scalar>
     {
 
         DenseSystem(
@@ -311,7 +283,6 @@ namespace lolita
             DenseMatrixConcept<t_Scalar> auto const & matrix
         )
         :
-        DenseSystemBase(),
         vector_(vector),
         matrix_(matrix)
         {}
@@ -321,7 +292,6 @@ namespace lolita
             DenseMatrixConcept<t_Scalar> auto && matrix
         )
         :
-        DenseSystemBase(),
         vector_(std::move(vector)),
         matrix_(std::move(matrix))
         {}
@@ -340,6 +310,8 @@ namespace lolita
             return matrix_;
         }
 
+    private:
+
         DenseVector<t_Scalar> vector_;
 
         DenseMatrix<t_Scalar> matrix_;
@@ -347,7 +319,7 @@ namespace lolita
     };
 
     template<typename t_Scalar, Integer t_size>
-    struct DenseSystem<t_Scalar, t_size> : DenseSystemBase
+    struct DenseSystem<t_Scalar, t_size>
     {
 
         DenseSystem(
@@ -355,7 +327,6 @@ namespace lolita
             DenseMatrixConcept<t_Scalar, t_size, t_size> auto const & matrix
         )
         :
-        DenseSystemBase(),
         vector_(vector),
         matrix_(matrix)
         {}
@@ -365,7 +336,6 @@ namespace lolita
             DenseMatrixConcept<t_Scalar, t_size, t_size> auto && matrix
         )
         :
-        DenseSystemBase(),
         vector_(std::move(vector)),
         matrix_(std::move(matrix))
         {}
@@ -384,23 +354,86 @@ namespace lolita
             return matrix_;
         }
 
+    private:
+
         DenseVector<t_Scalar, t_size> vector_;
 
         DenseMatrix<t_Scalar, t_size, t_size> matrix_;
 
     };
 
-    template<typename, Integer...>
-    struct VectorOperatorImpl;
-
-    struct VectorOperator
+    template<typename t_Scalar, Integer...>
+    struct ConcreteDenseSystem;
+    
+    struct AbstractDenseSystem
     {
 
-        VectorOperator()
+        AbstractDenseSystem()
         {}
 
         virtual
-        ~VectorOperator()
+        ~AbstractDenseSystem()
+        {}
+
+        template<typename t_Scalar, Integer... t_args>
+        auto const &
+        getMatrix()
+        const
+        {
+            return static_cast<ConcreteDenseSystem<t_Scalar, t_args...> const *>(this)->getMatrix();
+        }
+
+        template<typename t_Scalar, Integer... t_args>
+        auto const &
+        getVector()
+        const
+        {
+            return static_cast<ConcreteDenseSystem<t_Scalar, t_args...> const *>(this)->getVector();
+        }
+
+    };
+
+    template<typename t_Scalar>
+    struct ConcreteDenseSystem<t_Scalar> : AbstractDenseSystem, DenseSystem<t_Scalar>
+    {
+
+        ConcreteDenseSystem(
+            DenseVectorConcept<t_Scalar> auto && vector,
+            DenseMatrixConcept<t_Scalar> auto && matrix
+        )
+        :
+        AbstractDenseSystem(),
+        DenseSystem<t_Scalar>(std::forward<decltype(vector)>(vector), std::forward<decltype(matrix)>(matrix))
+        {}
+
+    };
+
+    template<typename t_Scalar, Integer t_size>
+    struct ConcreteDenseSystem<t_Scalar, t_size> : AbstractDenseSystem, DenseSystem<t_Scalar, t_size>
+    {
+
+        ConcreteDenseSystem(
+            DenseVectorConcept<t_Scalar, t_size> auto && vector,
+            DenseMatrixConcept<t_Scalar, t_size, t_size> auto && matrix
+        )
+        :
+        AbstractDenseSystem(),
+        DenseSystem<t_Scalar, t_size>(std::forward<decltype(vector)>(vector), std::forward<decltype(matrix)>(matrix))
+        {}
+        
+    };
+
+    template<typename, Integer...>
+    struct ConcreteDenseVector;
+
+    struct AbstractDenseVector
+    {
+
+        AbstractDenseVector()
+        {}
+
+        virtual
+        ~AbstractDenseVector()
         {}
 
         template<typename t_Scalar, Integer... t_args>
@@ -408,55 +441,57 @@ namespace lolita
         get()
         const
         {
-            return static_cast<VectorOperatorImpl<t_Scalar, t_args...> const *>(this)->get();
+            return static_cast<ConcreteDenseVector<t_Scalar, t_args...> const *>(this)->get();
         }
 
     };
 
     template<typename t_Scalar, Integer t_num_cols>
-    struct VectorOperatorImpl<t_Scalar, t_num_cols> : VectorOperator
+    struct ConcreteDenseVector<t_Scalar, t_num_cols> : AbstractDenseVector
     {
 
         explicit
-        VectorOperatorImpl(
-            DenseVectorConcept<t_Scalar, t_num_cols> auto const & data
+        ConcreteDenseVector(
+            DenseVectorConcept<t_Scalar, t_num_cols> auto const & vector
         )
         :
-        VectorOperator(),
-        data_(data)
+        AbstractDenseVector(),
+        vector_(vector)
         {}
         
         explicit
-        VectorOperatorImpl(
-            DenseVectorConcept<t_Scalar, t_num_cols> auto && data
+        ConcreteDenseVector(
+            DenseVectorConcept<t_Scalar, t_num_cols> auto && vector
         )
         :
-        VectorOperator(),
-        data_(std::move(data))
+        AbstractDenseVector(),
+        vector_(std::move(vector))
         {}
 
         DenseVector<t_Scalar, t_num_cols> const &
         get()
         const
         {
-            return data_;
+            return vector_;
         }
+
+    private:
         
-        DenseVector<t_Scalar, t_num_cols> data_;
+        DenseVector<t_Scalar, t_num_cols> vector_;
 
     };
 
     template<typename, Integer...>
-    struct MatrixOperatorImpl;
+    struct ConcreteDenseMatrix;
 
-    struct MatrixOperator
+    struct AbstractDenseMatrix
     {
 
-        MatrixOperator()
+        AbstractDenseMatrix()
         {}
 
         virtual
-        ~MatrixOperator()
+        ~AbstractDenseMatrix()
         {}
 
         template<typename t_Scalar, Integer... t_system_size>
@@ -464,41 +499,43 @@ namespace lolita
         get()
         const
         {
-            return static_cast<MatrixOperatorImpl<t_Scalar, t_system_size...> const *>(this)->get();
+            return static_cast<ConcreteDenseMatrix<t_Scalar, t_system_size...> const *>(this)->get();
         }
 
     };
 
     template<typename t_Scalar, Integer t_num_rows, Integer t_num_cols>
-    struct MatrixOperatorImpl<t_Scalar, t_num_rows, t_num_cols> : MatrixOperator
+    struct ConcreteDenseMatrix<t_Scalar, t_num_rows, t_num_cols> : AbstractDenseMatrix
     {
 
         explicit
-        MatrixOperatorImpl(
-            DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto const & data
+        ConcreteDenseMatrix(
+            DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto const & matrix
         )
         :
-        MatrixOperator(),
-        data_(data)
+        AbstractDenseMatrix(),
+        matrix_(matrix)
         {}
         
         explicit
-        MatrixOperatorImpl(
-            DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto && data
+        ConcreteDenseMatrix(
+            DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto && matrix
         )
         :
-        MatrixOperator(),
-        data_(std::move(data))
+        AbstractDenseMatrix(),
+        matrix_(std::move(matrix))
         {}
 
         DenseMatrix<t_Scalar, t_num_rows, t_num_cols> const &
         get()
         const
         {
-            return data_;
+            return matrix_;
         }
+
+    private:
         
-        DenseMatrix<t_Scalar, t_num_rows, t_num_cols> data_;
+        DenseMatrix<t_Scalar, t_num_rows, t_num_cols> matrix_;
         
     };
 

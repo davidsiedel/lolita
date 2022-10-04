@@ -23,6 +23,60 @@
 //     }
 // };
 
+template<int a>
+struct Slave;
+
+template<int a>
+struct Master
+{
+
+    explicit
+    Master(
+        int val
+    )
+    :
+    val_(val)
+    {}
+    
+    void
+    makeSlave()
+    {
+        slave_ = std::make_unique<Slave<a>>(* this);
+    }
+
+    void
+    print()
+    {
+        slave_->print();
+    }
+
+    int val_;
+
+    std::unique_ptr<Slave<a>> slave_;
+};
+
+template<int a>
+struct Slave
+{
+
+    explicit
+    Slave(
+        Master<a> const & master
+    )
+    :
+    master_(master)
+    {}
+
+    void
+    print()
+    {
+        std::cout << "val : " << master_.val_ << std::endl;
+    }
+
+    Master<a> const & master_;
+
+};
+
 static void
 dummy(
     lolita::DenseMatrixConcept<lolita::Real, 2, 2> auto matrix
@@ -309,6 +363,10 @@ int
 main(int argc, char** argv)
 {
 
+    auto master = Master<2>(5);
+    master.makeSlave();
+    master.print();
+
     std::unique_ptr<DataBase> ptr_test = std::make_unique<Data<3>>(lolita::DenseVector<lolita::Real, 3>::Zero());
     // std::cout << ptr_test->get().template segment<2>(0) << std::endl;
     std::cout << ptr_test->view<2>() << std::endl;
@@ -494,18 +552,18 @@ main(int argc, char** argv)
      * Potentials
      * 
      */
-    auto constexpr elastic_potential = lolita::Potential("Elasticity", hdg_displacement_gradient); // psi(I(u))
-    auto constexpr stabilization_potential = lolita::Potential("Stabilization", hdg_displacement_stabilization); // psi(Z(u))
-    auto constexpr force_potential = lolita::Potential("Lagrangian", hdg_displacement_x, hdg_force_view); // psi(I_x(u), I(f))
+    auto constexpr elastic_potential = lolita::Potential("Elasticity", quadrature, hdg_displacement_gradient); // psi(I(u))
+    auto constexpr stabilization_potential = lolita::Potential("Stabilization", quadrature, hdg_displacement_stabilization); // psi(Z(u))
+    auto constexpr force_potential = lolita::Potential("Lagrangian", quadrature, hdg_displacement_x, hdg_force_view); // psi(I_x(u), I(f))
     auto constexpr lagrangian = lolita::Lagrangian("All", elastic_potential, stabilization_potential); // psi(I_x(u), I(f))
     // auto constexpr pot_size = lolita::PotentialTraits<elastic_potential>::template getSize<lolita::Element::triangle(1), domain>();
     // auto constexpr mat0 = lolita::Mapping("Gradient", displacement);
     // auto constexpr mat1 = lolita::Mapping("Gradient", damage);
     // auto constexpr mat2 = lolita::Mapping("Identity", damage);
-    auto constexpr pot0 = lolita::Potential("Elasticity", lolita::Mapping("Gradient", displacement));
-    auto constexpr pot1 = lolita::Potential("Fracture", lolita::Mapping("Gradient", damage), lolita::Mapping("Identity", damage));
-    auto constexpr pot2 = lolita::Potential("Stab", lolita::Mapping("Identity", displacement));
-    auto constexpr pot3 = lolita::Potential("Penalization", lolita::Mapping("Identity", force));
+    auto constexpr pot0 = lolita::Potential("Elasticity", quadrature, lolita::Mapping("Gradient", displacement));
+    auto constexpr pot1 = lolita::Potential("Fracture", quadrature, lolita::Mapping("Gradient", damage), lolita::Mapping("Identity", damage));
+    auto constexpr pot2 = lolita::Potential("Stab", quadrature, lolita::Mapping("Identity", displacement));
+    auto constexpr pot3 = lolita::Potential("Penalization", quadrature, lolita::Mapping("Identity", force));
     auto constexpr lag0 = lolita::Lagrangian("0", pot0, pot1, pot2, pot3);
     auto constexpr lag1 = lolita::Lagrangian("1", pot0, pot1, pot2);
     auto constexpr lag2 = lolita::Lagrangian("2", pot0, pot1);
@@ -551,6 +609,18 @@ main(int argc, char** argv)
      * Potentials
      * 
      */
+    using HHHIIIA = lolita::AbstractElementLagrangian<lolita::Element::triangle(1), domain>;
+    using HHHIIIC = lolita::ConcreteElementLagrangian<lolita::Element::triangle(1), domain, lag3>;
+    auto constexpr size_test = lolita::LagTraits<lag3>::template getSize<lolita::Element::triangle(1), domain>();
+    auto constexpr index_test = lolita::LagTraits<lag3>::template getField<0>();
+    std::cout << "lolita::LagTraits<lag3>::template getSize<lolita::Element::triangle(1), domain>() : " << size_test << std::endl;
+    std::cout << "lolita::LagTraits<lag3>::getNumFields() : " << lolita::LagTraits<lag3>::getNumFields() << std::endl;
+    std::cout << "lolita::LagTraits<lag0>::getNumFields() : " << lolita::LagTraits<lag0>::getNumFields() << std::endl;
+    // auto non_abstract_test = HHHIIIC();
+    // std::unique_ptr<HHHIIIA> abstract_test = std::make_unique<HHHIIIC>();
+    // abstract_test->template setPotential<lag3, pot0>();
+    // abstract_test->template getPotential<lag3, pot0>().hello();
+
     auto elements = lolita::MeshFileParser(file_path).template makeFiniteElementSet<domain>();
     auto linear_system = lolita::LinearSystem<lolita::Strategy::eigenLU()>::make_unique();
     // std::cout << * elements << std::endl;
@@ -558,8 +628,10 @@ main(int argc, char** argv)
      * Domain stuff
      * 
      */
-    elements->addDomainDiscreteField<cell_dim, displacement>("ROD");
-    elements->addDomainDiscreteFieldLoad<cell_dim, displacement>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
+    /**
+     * @brief 
+     * 
+     */
     /**
      * Dofs
      * 
@@ -569,12 +641,35 @@ main(int argc, char** argv)
     elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, displacement>("ROD");
     elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, displacement>("ROD");
     elements->addElementDiscreteFieldDegreeOfFreedomToSystem<face_dim, displacement>("ROD", * linear_system);
+    elements->addDomainDiscreteField<cell_dim, displacement>("ROD");
+    elements->addDomainDiscreteFieldLoad<cell_dim, displacement>("ROD", 0, 0, [](lolita::Point const & p, lolita::Real const & t) { return t; });
     /**
      * Ops
      * 
      */
-    // elements->addElementDiscreteFieldOperator<cell_dim, displacement, hdg_discretization, _stab>("ROD");
-    // elements->addElementDiscreteFieldOperator<cell_dim, displacement, _stab>("ROD");
+    elements->setDomainLagrangian<cell_dim, lag3>("ROD");
+    elements->setDomainPotential<cell_dim, lag3, elastic_potential>("ROD", lib_displacement_path, lib_displacement_label, hyp);
+    elements->setLagrangian<cell_dim, lag3>("ROD");
+
+    struct TestRefDom
+    {
+
+        explicit
+        TestRefDom(
+            lolita::DomainPotential<2, domain, lag3, elastic_potential> const & r
+        )
+        :
+        r_(r)
+        {}
+
+        lolita::DomainPotential<2, domain, lag3, elastic_potential> const & r_;
+
+    };
+    elements->getFiniteDomain<cell_dim>("ROD").getLagrangian<lag3>().getPotential<lag3, elastic_potential>().getMgisBehavior();
+    auto ggg = TestRefDom(elements->getFiniteDomain<cell_dim>("ROD").getLagrangian<lag3>().getPotential<lag3, elastic_potential>());
+    elements->setPotential<cell_dim, lag3, elastic_potential>("ROD");
+    // elements->setPotentialStrainOperators<cell_dim, lag3, elastic_potential>("ROD");
+    // elements->setPotentialStrains<cell_dim, lag3, elastic_potential>("ROD");
     std::cout << linear_system->getSize() << std::endl;
     /**
      * Potentials

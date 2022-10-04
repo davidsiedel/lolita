@@ -1001,8 +1001,6 @@ namespace lolita
 
         std::unique_ptr<StaticCondensation> condensation_;
 
-        std::unique_ptr<DenseSystemBase> system_;
-
         std::unique_ptr<DegreeOfFreedomBase<t_element, t_domain>> dof_;
 
     };

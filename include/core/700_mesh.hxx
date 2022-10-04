@@ -159,6 +159,12 @@ namespace lolita
 
         using t_Domains = typename t_ElementTraits::template Domains<MeshDomain, t_domain>;
 
+        /**
+         * @brief The MeshDomain the element is connected to.
+         * 
+         */
+        using t_Domain = MeshDomain<t_element.getDim(), t_domain>;
+
     public:
         
         /**
@@ -231,6 +237,19 @@ namespace lolita
                 }
             }
             domains_.push_back(domain);
+        }
+
+        /**
+         * @brief Set the domain pointer that the element is connected to.
+         * 
+         * @param domain The domain pointer to be set.
+         */
+        void
+        setDomain(
+            std::shared_ptr<t_Domain> const & domain
+        )
+        {
+            domain_ = domain;
         }
 
         /**
@@ -359,10 +378,15 @@ namespace lolita
                 }
                 if constexpr (t_is_initialized)
                 {
-                    for (auto const & domain : domains_)
+                    // for (auto const & domain : domains_)
+                    // {
+                    //     finite_element_->addDomain(element_map.template getDomains<t_element.getDim()>().at(domain->getLabel()));
+                    // }
+                    if (domain_ != nullptr)
                     {
-                        finite_element_->addDomain(element_map.template getDomains<t_element.getDim()>().at(domain->getLabel()));
-                    }
+                        finite_element_->setDomain(element_map.template getDomains<t_element.getDim()>().at(domain_->getLabel()));
+                    }                    
+                    // finite_element_->setDomain(element_map.template getDomains<t_element.getDim()>().at(domain_->getLabel()));
                     finite_element_->setCoordinates(finite_element_->getCurrentCentroid());
                     element_map.template getElements<t_element_coordinates.getDim(), t_element_coordinates.getTag()>()[getHash(node_tags_)] = finite_element_;
                 }
@@ -390,6 +414,12 @@ namespace lolita
          */
         std::shared_ptr<FiniteElement<t_element, t_domain>> finite_element_;
 
+        /**
+         * @brief The MeshDomain the element is connected to.
+         * 
+         */
+        std::shared_ptr<t_Domain> domain_;
+
     };
 
     /**
@@ -411,6 +441,8 @@ namespace lolita
         using t_ElementTraits = ElementTraits<t_element>;
 
         using t_Domains = typename t_ElementTraits::template Domains<MeshDomain, t_domain>;
+
+        using t_Domain = MeshDomain<t_element.getDim(), t_domain>;
 
     public:
 
@@ -446,6 +478,19 @@ namespace lolita
                 }
             }
             domains_.push_back(domain);
+        }
+        
+        /**
+         * @brief Set the domain pointer that the element is connected to.
+         * 
+         * @param domain The domain pointer to be set.
+         */
+        void
+        setDomain(
+            std::shared_ptr<t_Domain> const & domain
+        )
+        {
+            domain_ = domain;
         }
 
         void
@@ -489,10 +534,15 @@ namespace lolita
             auto constexpr t_element_coordinates = DomainTraits<t_domain>::template getElementCoordinates<t_element>();
             finite_element_ = std::make_shared<FiniteElement<t_element, t_domain>>(FiniteElement<t_element, t_domain>(tag_));
             finite_element_->setCoordinates(coordinates_);
-            for (auto const & domain : domains_)
+            if (domain_ != nullptr)
             {
-                finite_element_->addDomain(element_set.template getDomains<t_element.getDim()>().at(domain->getLabel()));
+                finite_element_->setDomain(element_set.template getDomains<t_element.getDim()>().at(domain_->getLabel()));
             }
+            // finite_element_->setDomain(element_set.template getDomains<t_element.getDim()>().at(domain_->getLabel()));
+            // for (auto const & domain : domains_)
+            // {
+            //     finite_element_->addDomain(element_set.template getDomains<t_element.getDim()>().at(domain->getLabel()));
+            // }
             element_set.template getElements<t_element_coordinates.getDim(), t_element_coordinates.getTag()>()[getHash(tag_)] = finite_element_;
         }
 
@@ -521,6 +571,12 @@ namespace lolita
          * 
          */
         std::shared_ptr<FiniteElement<t_element, t_domain>> finite_element_;
+
+        /**
+         * @brief The MeshDomain the element is connected to.
+         * 
+         */
+        std::shared_ptr<t_Domain> domain_;
 
     };
         
@@ -670,6 +726,8 @@ namespace lolita
         template<Integer t_dim, auto...>
         struct GeometricEntity
         {
+
+            using t_Domain = MeshDomain<t_dim, t_domain>;
         
             static
             std::basic_string<Character>
@@ -712,11 +770,28 @@ namespace lolita
                 return domains_;
             }
 
+            void
+            setDomain(
+                std::shared_ptr<t_Domain> const & d
+            )
+            {
+                domain_ = d;
+            }
+
+            std::shared_ptr<t_Domain> const &
+            getDomain()
+            const
+            {
+                return domain_;
+            }
+
         private:
 
             Integer tag_;
 
             std::vector<std::shared_ptr<MeshDomain<t_dim, t_domain>>> domains_;
+
+            std::shared_ptr<t_Domain> domain_;
 
         };
 
@@ -855,10 +930,17 @@ namespace lolita
                             line_stream >> num_physical_entities;
                             for (auto k = 0; k < num_physical_entities; ++k)
                             {
-                                auto physical_entity_tag = Integer();
-                                line_stream >> physical_entity_tag;
-                                auto physical_entity_hash = MeshDomain<t_i, t_domain>::getHash(physical_entity_tag);
-                                geometric_entity->addDomain(this->template getDomains<t_i>().at(physical_entity_hash));
+                                if (k == 0)
+                                {
+                                    auto physical_entity_tag = Integer();
+                                    line_stream >> physical_entity_tag;
+                                    auto physical_entity_hash = MeshDomain<t_i, t_domain>::getHash(physical_entity_tag);
+                                    geometric_entity->setDomain(this->template getDomains<t_i>().at(physical_entity_hash));
+                                }
+                                // auto physical_entity_tag = Integer();
+                                // line_stream >> physical_entity_tag;
+                                // auto physical_entity_hash = MeshDomain<t_i, t_domain>::getHash(physical_entity_tag);
+                                // geometric_entity->addDomain(this->template getDomains<t_i>().at(physical_entity_hash));
                             }
                             geometric_entities_.template getDomains<t_i>()[GeometricEntity<t_i, t_domain>::getHash(tag)] = geometric_entity;
                         }
@@ -917,10 +999,12 @@ namespace lolita
                     if (entity_dim == t_element.getDim())
                     {
                         auto const entity_hash = GeometricEntity<t_element.getDim(), t_domain>::getHash(entity_tag);
-                        for (auto const & physical_entity : geometric_entities_.template getDomains<t_element.getDim()>().at(entity_hash)->getDomains())
-                        {
-                            mesh_element->addDomain(physical_entity);
-                        }
+                        auto const & domain = geometric_entities_.template getDomains<t_element.getDim()>().at(entity_hash)->getDomain();
+                        mesh_element->setDomain(domain);
+                        // for (auto const & physical_entity : geometric_entities_.template getDomains<t_element.getDim()>().at(entity_hash)->getDomains())
+                        // {
+                        //     mesh_element->addDomain(physical_entity);
+                        // }
                     }
                     elements[getElemHash(tag)] = mesh_element;
                     offset += 1;
@@ -971,10 +1055,12 @@ namespace lolita
                             line_stream >> node_tag;
                             mesh_element->setNodeTag(k, node_tag - 1);
                         }
-                        for (auto const & physical_entity : geometric_entities_.template getDomains<t_element.getDim()>().at(entity_hash)->getDomains())
-                        {
-                            mesh_element->addDomain(physical_entity);
-                        }
+                        auto const & domain = geometric_entities_.template getDomains<t_element.getDim()>().at(entity_hash)->getDomain();
+                        mesh_element->setDomain(domain);
+                        // for (auto const & physical_entity : geometric_entities_.template getDomains<t_element.getDim()>().at(entity_hash)->getDomains())
+                        // {
+                        //     mesh_element->addDomain(physical_entity);
+                        // }
                         elements[getElemHash(tag)] = mesh_element;
                         offset += 1;
                     }
