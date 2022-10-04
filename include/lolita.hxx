@@ -1119,6 +1119,88 @@ namespace lolita
     template<typename t_T>
     concept PotentialConcept = detail::IsPotential<std::decay_t<t_T>>::value;
 
+    template<PotentialConcept... t_Potentials>
+    struct Lagrangian
+    {
+
+        using Potentials = utility::Aggregate<t_Potentials...>;
+        
+        static constexpr
+        Integer
+        getNumPotentials()
+        {
+            return sizeof...(t_Potentials);
+        }
+
+        constexpr
+        Lagrangian(
+            std::basic_string_view<Character> && label,
+            t_Potentials const &... potentials
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        potentials_(potentials...)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            Lagrangian const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Lagrangian const & other
+        )
+        const = default;
+
+        constexpr
+        Label const &
+        getLabel()
+        const
+        {
+            return label_;
+        }
+
+        template<Integer t_i>
+        constexpr
+        utility::aggregate_element_t<t_i, Potentials> const &
+        getPotential()
+        const
+        {
+            return utility::get<t_i>(potentials_);
+        }
+
+        constexpr
+        Potentials const &
+        getPotentials()
+        const
+        {
+            return potentials_;
+        }
+
+        Label label_;
+
+        Potentials potentials_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename t_T>
+        struct IsLagrangian : std::false_type {};
+        
+        template<typename... t_T>
+        struct IsLagrangian<Lagrangian<t_T...>> : std::true_type {};
+
+    }
+
+    template<typename t_T>
+    concept LagrangianConcept = detail::IsLagrangian<std::decay_t<t_T>>::value;
+
 } // namespace lolita
 
 #endif /* A4BCD9B5_985A_4D19_B3E9_7C559F45A353 */

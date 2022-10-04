@@ -456,15 +456,29 @@ namespace lolita
             }            
         }
 
+        template<Integer t_size>
+        void
+        setSystem(
+            DenseMatrixConcept<Real, t_size, t_size> auto && matrix,
+            DenseVectorConcept<Real, t_size> auto && vector
+        )
+        {
+            system_ = std::make_unique<DenseSystem<Real, t_size>>(std::forward<decltype(matrix)>(matrix), std::forward<decltype(vector)>(vector));
+        }
+
         Label const & label_;
 
         std::unique_ptr<std::vector<t_IntegrationPoint>> integration_points_;
 
         std::shared_ptr<mgis::behaviour::Behaviour> behavior_;
 
-        DenseMatrix<Real> jacobian_matrix_;
+        std::unique_ptr<StaticCondensation> condensation_;
 
-        DenseVector<Real> residual_vector_;
+        std::unique_ptr<DenseSystemBase> system_;
+
+        // DenseMatrix<Real> jacobian_matrix_;
+
+        // DenseVector<Real> residual_vector_;
 
     };
     

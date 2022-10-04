@@ -216,6 +216,20 @@ namespace lolita
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
 
+        template<Integer t_i, FieldConcept auto t_field, Strategy t_s>
+        void
+        addElementDiscreteFieldDegreeOfFreedomToSystem(
+            std::basic_string<Character> && domain_label,
+            LinearSystem<t_s> & linear_system
+        )
+        {
+            auto fun = [&] (auto const & finite_element)
+            {
+                finite_element->template addDiscreteFieldDegreeOfFreedomToSystem<t_field>(linear_system);
+            };
+            caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
+        }
+
         // template<Integer t_i, FieldConcept auto t_field, auto t_arg, Label t_label>
         // void
         // addElementDiscreteFieldOperator(

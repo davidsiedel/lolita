@@ -273,9 +273,37 @@ namespace lolita
 
     template<typename t_Scalar, Integer...>
     struct DenseSystem;
+    
+    struct DenseSystemBase
+    {
+
+        DenseSystemBase()
+        {}
+
+        virtual
+        ~DenseSystemBase()
+        {}
+
+        template<typename t_Scalar, Integer... t_args>
+        auto const &
+        getMatrix()
+        const
+        {
+            return static_cast<DenseSystem<t_Scalar, t_args...> const *>(this)->getMatrix();
+        }
+
+        template<typename t_Scalar, Integer... t_args>
+        auto const &
+        getVector()
+        const
+        {
+            return static_cast<DenseSystem<t_Scalar, t_args...> const *>(this)->getVector();
+        }
+
+    };
 
     template<typename t_Scalar>
-    struct DenseSystem<t_Scalar>
+    struct DenseSystem<t_Scalar> : DenseSystemBase
     {
 
         DenseSystem(
@@ -283,6 +311,7 @@ namespace lolita
             DenseMatrixConcept<t_Scalar> auto const & matrix
         )
         :
+        DenseSystemBase(),
         vector_(vector),
         matrix_(matrix)
         {}
@@ -292,6 +321,7 @@ namespace lolita
             DenseMatrixConcept<t_Scalar> auto && matrix
         )
         :
+        DenseSystemBase(),
         vector_(std::move(vector)),
         matrix_(std::move(matrix))
         {}
@@ -317,7 +347,7 @@ namespace lolita
     };
 
     template<typename t_Scalar, Integer t_size>
-    struct DenseSystem<t_Scalar, t_size>
+    struct DenseSystem<t_Scalar, t_size> : DenseSystemBase
     {
 
         DenseSystem(
@@ -325,6 +355,7 @@ namespace lolita
             DenseMatrixConcept<t_Scalar, t_size, t_size> auto const & matrix
         )
         :
+        DenseSystemBase(),
         vector_(vector),
         matrix_(matrix)
         {}
@@ -334,6 +365,7 @@ namespace lolita
             DenseMatrixConcept<t_Scalar, t_size, t_size> auto && matrix
         )
         :
+        DenseSystemBase(),
         vector_(std::move(vector)),
         matrix_(std::move(matrix))
         {}
@@ -352,18 +384,122 @@ namespace lolita
             return matrix_;
         }
 
-        template<Integer t__size>
-        DenseSystem<t_Scalar, t__size>
-        condensate()
-        requires(t__size < t_size)
-        {
-
-        }
-
         DenseVector<t_Scalar, t_size> vector_;
 
         DenseMatrix<t_Scalar, t_size, t_size> matrix_;
 
+    };
+
+    template<typename, Integer...>
+    struct VectorOperatorImpl;
+
+    struct VectorOperator
+    {
+
+        VectorOperator()
+        {}
+
+        virtual
+        ~VectorOperator()
+        {}
+
+        template<typename t_Scalar, Integer... t_args>
+        auto const &
+        get()
+        const
+        {
+            return static_cast<VectorOperatorImpl<t_Scalar, t_args...> const *>(this)->get();
+        }
+
+    };
+
+    template<typename t_Scalar, Integer t_num_cols>
+    struct VectorOperatorImpl<t_Scalar, t_num_cols> : VectorOperator
+    {
+
+        explicit
+        VectorOperatorImpl(
+            DenseVectorConcept<t_Scalar, t_num_cols> auto const & data
+        )
+        :
+        VectorOperator(),
+        data_(data)
+        {}
+        
+        explicit
+        VectorOperatorImpl(
+            DenseVectorConcept<t_Scalar, t_num_cols> auto && data
+        )
+        :
+        VectorOperator(),
+        data_(std::move(data))
+        {}
+
+        DenseVector<t_Scalar, t_num_cols> const &
+        get()
+        const
+        {
+            return data_;
+        }
+        
+        DenseVector<t_Scalar, t_num_cols> data_;
+
+    };
+
+    template<typename, Integer...>
+    struct MatrixOperatorImpl;
+
+    struct MatrixOperator
+    {
+
+        MatrixOperator()
+        {}
+
+        virtual
+        ~MatrixOperator()
+        {}
+
+        template<typename t_Scalar, Integer... t_system_size>
+        auto const &
+        get()
+        const
+        {
+            return static_cast<MatrixOperatorImpl<t_Scalar, t_system_size...> const *>(this)->get();
+        }
+
+    };
+
+    template<typename t_Scalar, Integer t_num_rows, Integer t_num_cols>
+    struct MatrixOperatorImpl<t_Scalar, t_num_rows, t_num_cols> : MatrixOperator
+    {
+
+        explicit
+        MatrixOperatorImpl(
+            DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto const & data
+        )
+        :
+        MatrixOperator(),
+        data_(data)
+        {}
+        
+        explicit
+        MatrixOperatorImpl(
+            DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto && data
+        )
+        :
+        MatrixOperator(),
+        data_(std::move(data))
+        {}
+
+        DenseMatrix<t_Scalar, t_num_rows, t_num_cols> const &
+        get()
+        const
+        {
+            return data_;
+        }
+        
+        DenseMatrix<t_Scalar, t_num_rows, t_num_cols> data_;
+        
     };
 
     template<typename, Integer...>
@@ -375,16 +511,6 @@ namespace lolita
         virtual
         ~StaticCondensation()
         {}
-
-        template<typename t_Scalar, Integer... t_system_size>
-        static
-        std::unique_ptr<StaticCondensation>
-        make(
-            auto &&... args
-        )
-        {
-            return std::make_unique<StaticCondensationImpl<t_Scalar, t_system_size...>>(std::forward<decltype(args)>(args)...);
-        }
 
         template<typename t_Scalar, Integer... t_system_size>
         auto
@@ -437,10 +563,19 @@ namespace lolita
             return t_block_size;
         }
 
+        static
+        DenseMatrix<t_Scalar, getTTSize(), getTTSize()>
+        make(
+            DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto && input
+        )
+        {
+            return input.llt().solve(DenseMatrix<t_Scalar, getTTSize(), getTTSize()>::Identity());
+        }
+
         StaticCondensationImpl(
-            DenseVector<t_Scalar, getTTSize()> const & r_t,
-            DenseMatrix<t_Scalar, getTTSize(), getTTSize()> const & k_tf,
-            DenseMatrix<t_Scalar, getTTSize(), getFTSize()> const & k_tt
+            DenseVectorConcept<t_Scalar, getTTSize()> auto const & r_t,
+            DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto const & k_tf,
+            DenseMatrixConcept<t_Scalar, getTTSize(), getFTSize()> auto const & k_tt
         )
         :
         StaticCondensation(),
@@ -450,15 +585,37 @@ namespace lolita
         {}
 
         StaticCondensationImpl(
-            DenseVector<t_Scalar, getTTSize()> && r_t,
-            DenseMatrix<t_Scalar, getTTSize(), getTTSize()> && k_tf,
-            DenseMatrix<t_Scalar, getTTSize(), getFTSize()> && k_tt
+            DenseVectorConcept<t_Scalar, getTTSize()> auto && r_t,
+            DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto && k_tf,
+            DenseMatrixConcept<t_Scalar, getTTSize(), getFTSize()> auto && k_tt
         )
         :
         StaticCondensation(),
         r_t_(std::move(r_t)),
         k_tf_(std::move(k_tf)),
         k_tt_(std::move(k_tt))
+        {}
+
+        explicit
+        StaticCondensationImpl(
+            DenseSystem<t_Scalar, t_system_size> const & system
+        )
+        :
+        StaticCondensation(),
+        r_t_(system.getVector().template segment<getTTSize()>(0)),
+        k_tf_(system.getMatrix().template block<getTTSize(), getFTSize()>(0, getTTSize())),
+        k_tt_(make(system.getMatrix().template block<getTTSize(), getTTSize()>(0, 0)))
+        {}
+
+        explicit
+        StaticCondensationImpl(
+            DenseSystem<t_Scalar, t_system_size> && system
+        )
+        :
+        StaticCondensation(),
+        r_t_(std::move(system).getVector().template segment<getTTSize()>(0)),
+        k_tf_(std::move(system).getMatrix().template block<getTTSize(), getFTSize()>(0, getTTSize())),
+        k_tt_(make(std::move(system).getMatrix().template block<getTTSize(), getTTSize()>(0, 0)))
         {}
 
         DenseSystem<t_Scalar, getFTSize()>
@@ -483,10 +640,10 @@ namespace lolita
     private:
 
         DenseVector<t_Scalar, getTTSize()> r_t_;
-        
-        DenseMatrix<t_Scalar, getTTSize(), getTTSize()> k_tt_;
 
         DenseMatrix<t_Scalar, getTTSize(), getFTSize()> k_tf_;
+        
+        DenseMatrix<t_Scalar, getTTSize(), getTTSize()> k_tt_;
 
     };
 

@@ -678,8 +678,17 @@ namespace lolita::utility
     {
 
         using type = typename tuple_concatenation_traits<t_T, typename tuple_concatenation_traits<t_U...>::type>::type;
+        // using type = typename tuple_concatenation_traits<std::tuple<t_T>, typename tuple_concatenation_traits<t_U...>::type>::type;
 
     };
+
+    // template<typename... t_T, typename... t_U>
+    // struct tuple_concatenation_traits<std::tuple<t_T...>, t_U...>
+    // {
+
+    //     using type = typename tuple_concatenation_traits<std::tuple<>, typename tuple_concatenation_traits<t_T..., t_U...>::type>::type;
+
+    // };
 
     template<typename... t_T, typename... t_U>
     struct tuple_concatenation_traits<std::tuple<t_T...>, std::tuple<t_U...>>
@@ -751,6 +760,71 @@ namespace lolita::utility
 
     template<typename... t_T>
     using tuple_cat_t = typename tuple_concatenation_traits<t_T...>::type;
+
+    /**
+     * Hello
+     * *********************************************************************************************************************************************************
+     */
+
+    // template<template<typename...> typename t_VariadicType, typename... t_T>
+    // struct tuple_merge_traits;
+
+    // template<template<typename...> typename t_VariadicType, typename t_T, typename... t_U>
+    // struct tuple_merge_traits<t_VariadicType, t_T, t_U...>
+    // {
+
+    //     using type = typename tuple_merge_traits<t_VariadicType, t_VariadicType<t_T>, typename tuple_merge_traits<t_VariadicType, t_U...>::type>::type;
+        
+    // };
+
+    // template<template<typename...> typename t_VariadicType, typename... t_T, typename... t_U>
+    // struct tuple_merge_traits<t_VariadicType, t_VariadicType<t_T...>, t_U...>
+    // {
+
+    //     using type = typename tuple_merge_traits<t_VariadicType, t_VariadicType<>, typename tuple_merge_traits<t_VariadicType, t_T..., t_U...>::type>::type;
+        
+    // };
+    
+    // template<template<typename...> typename t_VariadicType, typename... t_T, typename... t_U>
+    // struct tuple_merge_traits<t_VariadicType, t_VariadicType<t_T...>, t_VariadicType<t_U...>>
+    // {
+
+    //     using type = t_VariadicType<t_T..., t_U...>;
+        
+    // };
+
+    // template<typename t_T>
+    // using tuple_merge_t = typename tuple_merge_traits<decltype(t_T), t_T>::type;
+
+    template<typename... t_T>
+    struct tuple_merge_traits;
+
+    template<typename t_T, typename... t_U>
+    struct tuple_merge_traits<t_T, t_U...>
+    {
+
+        using type = typename tuple_merge_traits<std::tuple<t_T>, typename tuple_merge_traits<t_U...>::type>::type;
+        
+    };
+
+    template<typename... t_T, typename... t_U>
+    struct tuple_merge_traits<std::tuple<t_T...>, t_U...>
+    {
+
+        using type = typename tuple_merge_traits<std::tuple<>, typename tuple_merge_traits<t_T..., t_U...>::type>::type;
+        
+    };
+    
+    template<typename... t_T, typename... t_U>
+    struct tuple_merge_traits<std::tuple<t_T...>, std::tuple<t_U...>>
+    {
+
+        using type = std::tuple<t_T..., t_U...>;
+        
+    };
+
+    template<typename t_T>
+    using tuple_merge_t = typename tuple_merge_traits<t_T>::type;
 
     /**
      * Hello

@@ -12,6 +12,63 @@
 namespace lolita
 {
 
+    template<Element t_element, Domain t_domain>
+    struct FiniteElementTraits<t_element, t_domain>
+    {
+        
+        template<DiscretizationConcept auto t_discretization>
+        static constexpr
+        Integer
+        getNumElementCoefficients()
+        {
+            return DiscretizationTraits3<t_discretization>::template getNumElementCoefficients<t_element, t_domain>();
+        }
+
+        template<DiscreteFieldConcept auto t_field>
+        static constexpr
+        Integer
+        getNumElementCoefficients()
+        {
+            return getNumElementCoefficients<t_field.getDiscretization()>() * FieldTraits<t_field>::template getSize<t_domain>();
+        }
+        
+        template<DiscretizationConcept auto t_discretization>
+        static constexpr
+        Integer
+        getNumUnknownCoefficients1()
+        {
+            auto num_unknowns = DiscretizationTraits3<t_discretization>::template getNumElementCoefficients<t_element, t_domain>();
+            auto set_num_unknowns = [&] <Integer t_i = 0, Integer t_j = 0> (
+                auto & t_set_num_unknowns
+            )
+            constexpr mutable
+            {
+                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
+                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>();
+                num_unknowns += DiscretizationTraits3<t_discretization>::template getNumElementCoefficients<inner_neighbor, t_domain>() * num_inner_neighbors;
+                if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
+                {
+                    t_set_num_unknowns.template operator ()<t_i, t_j + 1>(t_set_num_unknowns);
+                }
+                else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
+                {
+                    t_set_num_unknowns.template operator ()<t_i + 1, 0>(t_set_num_unknowns);
+                }
+            };
+            set_num_unknowns(set_num_unknowns);
+            return num_unknowns;
+        }
+
+        template<DiscreteFieldConcept auto t_field>
+        static constexpr
+        Integer
+        getNumUnknownCoefficients()
+        {
+            return getNumUnknownCoefficients1<t_field.getDiscretization()>() * FieldTraits<t_field>::template getSize<t_domain>();
+        }
+
+    };
+
     template<Integer t_dim, Domain t_domain>
     struct FiniteDomain
     {
@@ -149,65 +206,7 @@ namespace lolita
         std::basic_string<Character> tag_;
 
     };
-    
-    template<Element t_element, Domain t_domain>
-    struct FiniteElementTraits<t_element, t_domain>
-    {
         
-        template<DiscretizationConcept auto t_discretization>
-        static constexpr
-        Integer
-        getNumElementCoefficients()
-        {
-            return DiscretizationTraits3<t_discretization>::template getNumElementCoefficients<t_element, t_domain>();
-        }
-
-        template<FieldConcept auto t_field>
-        static constexpr
-        Integer
-        getNumElementCoefficients()
-        {
-            return getNumElementCoefficients<t_field.getDiscretization()>() * FieldTraits<t_field>::template getSize<t_domain>();
-            // return FieldDiscretizationTraits<t_field>::template getNumElementCoefficients<t_element, t_domain, t_field>();
-        }
-        
-        template<DiscretizationConcept auto t_discretization>
-        static constexpr
-        Integer
-        getNumUnknownCoefficients1()
-        {
-            auto num_unknowns = DiscretizationTraits3<t_discretization>::template getNumElementCoefficients<t_element, t_domain>();
-            auto set_num_unknowns = [&] <Integer t_i = 0, Integer t_j = 0> (
-                auto & t_set_num_unknowns
-            )
-            constexpr mutable
-            {
-                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
-                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>();
-                num_unknowns += DiscretizationTraits3<t_discretization>::template getNumElementCoefficients<inner_neighbor, t_domain>() * num_inner_neighbors;
-                if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
-                {
-                    t_set_num_unknowns.template operator ()<t_i, t_j + 1>(t_set_num_unknowns);
-                }
-                else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
-                {
-                    t_set_num_unknowns.template operator ()<t_i + 1, 0>(t_set_num_unknowns);
-                }
-            };
-            set_num_unknowns(set_num_unknowns);
-            return num_unknowns;
-        }
-
-        template<FieldConcept auto t_field>
-        static constexpr
-        Integer
-        getNumUnknownCoefficients()
-        {
-            return getNumUnknownCoefficients1<t_field.getDiscretization()>() * FieldTraits<t_field>::template getSize<t_domain>();
-        }
-
-    };
-    
     template<Element t_element, Domain t_domain>
     struct FiniteElement
     {
@@ -244,15 +243,9 @@ namespace lolita
         
         t_InnerNeighbors inner_neighbors_;
 
-        //
-
-        // std::unique_ptr<std::vector<ElementDiscreteField<t_domain>>> ptr_data_;
-
         std::unique_ptr<std::vector<ElementDiscreteField<t_element, t_domain>>> fields_;
 
         std::unique_ptr<std::vector<ElementFormulation<t_domain>>> ptr_formulations_;
-
-        //
 
     public:
 
@@ -425,7 +418,6 @@ namespace lolita
         {
             auto & dof = this->template getDiscreteField<t_field>().getDegreeOfFreedom();
             dof.link(linear_system.getRhsSize(), linear_system.getLhsSize());
-            // linear_system.addRhsSize(FieldDiscretizationTraits<t_field>::template getNumElementCoefficients<t_element, t_domain, t_field>());
             linear_system.addRhsSize(FiniteElementTraits<t_element, t_domain>::template getNumElementCoefficients<t_field>());
             linear_system.addLhsSize(this->template getBandWidth<t_field>());
         }
@@ -533,7 +525,83 @@ namespace lolita
             };
             set_faces_unknowns(set_faces_unknowns);
             return unknown;
-            // return static_cast<t_Disc2<t_field> const *>(this)->getUnknownCoefficients();
+        }
+        
+        template<FieldConcept auto t_field, Integer t_a, Integer t_b>
+        static constexpr
+        Integer
+        getNeighborOffset(
+            Integer kkk
+        )
+        {
+            auto num_unknowns = FieldDiscretizationTraits<t_field>::template getNumElementCoefficients<t_element, t_domain>();
+            auto set_num_unknowns = [&] <Integer t_i = 0, Integer t_j = 0> (
+                auto & t_set_num_unknowns
+            )
+            constexpr mutable
+            {
+                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
+                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>();
+                for (auto iii = 0; iii < num_inner_neighbors; iii++)
+                {
+                    if (kkk == iii && t_a == t_i && t_b == t_j)
+                    {
+                        return num_unknowns;
+                    }
+                    else
+                    {
+                        num_unknowns += FieldDiscretizationTraits<t_field>::template getNumElementCoefficients<inner_neighbor, t_domain>();
+                    }
+                }
+                if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
+                {
+                    t_set_num_unknowns.template operator ()<t_i, t_j + 1>(t_set_num_unknowns);
+                }
+                else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
+                {
+                    t_set_num_unknowns.template operator ()<t_i + 1, 0>(t_set_num_unknowns);
+                }
+            };
+            set_num_unknowns(set_num_unknowns);
+            return num_unknowns;
+        }
+        
+        template<FieldConcept auto t_field, Integer t_a, Integer t_b>
+        Integer
+        getNeighborOffset(
+            std::shared_ptr<FiniteElement<ElementTraits<t_element>::template getInnerNeighbor<t_a, t_b>(), t_domain>> const & inner_neighbor
+        )
+        {
+            auto num_unknowns = FieldDiscretizationTraits<t_field>::template getNumElementCoefficients<t_element, t_domain>();
+            auto set_num_unknowns = [&] <Integer t_i = 0, Integer t_j = 0> (
+                auto & t_set_num_unknowns
+            )
+            constexpr mutable
+            {
+                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
+                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>();
+                for (auto const & in : this->template getInnerNeighbors<t_i, t_j>())
+                {
+                    if (utility::areEqual(inner_neighbor, in))
+                    {
+                        return num_unknowns;
+                    }
+                    else
+                    {
+                        num_unknowns += FieldDiscretizationTraits<t_field>::template getNumElementCoefficients<inner_neighbor, t_domain>();
+                    }
+                }
+                if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
+                {
+                    t_set_num_unknowns.template operator ()<t_i, t_j + 1>(t_set_num_unknowns);
+                }
+                else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
+                {
+                    t_set_num_unknowns.template operator ()<t_i + 1, 0>(t_set_num_unknowns);
+                }
+            };
+            set_num_unknowns(set_num_unknowns);
+            return num_unknowns;
         }
         
         template<FieldConcept auto t_field>
@@ -542,55 +610,41 @@ namespace lolita
         const
         {
             auto band_width = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<t_field>();
-            auto set_faces_unknowns = [&] <Integer t_i = 0> (
-                auto & self
+            auto constexpr cell_offset = t_field.getDomainDim() - t_element.getDim();
+            auto set_faces_unknowns2 = [&] <Integer t_i = 0, Integer t_j = 0, Integer t_k = 0> (
+                auto & self2
             )
             constexpr mutable
             {
-                auto constexpr t_cell = ElementTraits<t_element>::template getOuterNeighbor<t_domain, t_field.getDomainDim() - t_element.getDim(), t_i>();
-                if constexpr (t_element.getDim() <  t_field.getDomainDim())
+                auto constexpr t_cell = ElementTraits<t_element>::template getOuterNeighbor<t_domain, cell_offset, t_i>();
+                auto constexpr t_cell_neighbor = ElementTraits<t_cell>::template getInnerNeighbor<t_j, t_k>();
+                for (auto const & cell : this->template getOuterNeighbors<cell_offset, t_i>())
                 {
-                    for (auto const & cell : this->template getOuterNeighbors<t_field.getDomainDim() - t_element.getDim(), t_i>())
+                    for (auto const & cell_neighbor : cell->template getInnerNeighbors<t_j, t_k>())
                     {
-                        auto set_faces_unknowns2 = [&] <Integer t_j = 0> (
-                            auto & self2
-                        )
-                        constexpr mutable
+                        if (!utility::areEqual(* cell_neighbor, * this))
                         {
-                            auto set_faces_unknowns3 = [&] <Integer t_k = 0> (
-                                auto & self3
-                            )
-                            constexpr mutable
-                            {
-                                auto constexpr t_cell_neighbor = ElementTraits<t_cell>::template getInnerNeighbor<t_j, t_k>();
-                                for (auto const & cell_neighbor : cell->template getInnerNeighbors<t_j, t_k>())
-                                {
-                                    if (!utility::areEqual(* cell_neighbor, * this) && cell_neighbor->template hasDiscreteField<t_field>())
-                                    {
-                                        // FiniteElementTraits<t_cell_neighbor, t_domain>::template getNumUnknownCoefficients<t_field>()
-                                        band_width += FiniteElementTraits<t_cell_neighbor, t_domain>::template getNumUnknownCoefficients<t_field>();
-                                    }
-                                }
-                                if constexpr (t_k < ElementTraits<t_cell>::template getNumInnerNeighbors<t_j>() - 1)
-                                {
-                                    self3.template operator ()<t_k + 1>(self3);
-                                }
-                            };
-                            set_faces_unknowns3(set_faces_unknowns3);
-                            if constexpr (t_j < t_field.getDomainDim() - t_element.getDim() - 1)
-                            {
-                                self2.template operator ()<t_j + 1>(self2);
-                            }
-                        };
-                        set_faces_unknowns2(set_faces_unknowns2);
-                    }
-                    if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, t_field.getDomainDim() - t_element.getDim()>() - 1)
-                    {
-                        self.template operator ()<t_i + 1>(self);
+                            band_width += FiniteElementTraits<t_cell_neighbor, t_domain>::template getNumElementCoefficients<t_field>();
+                        }
                     }
                 }
+                if constexpr (t_k < ElementTraits<t_cell>::template getNumInnerNeighbors<t_j>() - 1)
+                {
+                    self2.template operator ()<t_i, t_j, t_k + 1>(self2);
+                }
+                else if constexpr (t_j < ElementTraits<t_cell>::template getNumInnerNeighbors<>() - 1)
+                {
+                    self2.template operator ()<t_i, t_j + 1, 0>(self2);
+                }
+                else if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, cell_offset>() - 1)
+                {
+                    self2.template operator ()<t_i + 1, 0, 0>(self2);
+                }
             };
-            set_faces_unknowns(set_faces_unknowns);
+            if constexpr (t_element.getDim() < t_field.getDomainDim())
+            {
+                set_faces_unknowns2(set_faces_unknowns2);
+            }
             return band_width;
         }
 
@@ -604,6 +658,9 @@ namespace lolita
         
         template<PotentialConcept auto... t_potential>
         using ElementResidualVector = typename PotentialTraits<t_potential...>::template ElementResidualVector<t_element, t_domain>;
+        
+        // template<FieldConcept auto... t_fields>
+        // using ElementExternalForces = typename DiscreteFieldsTraits<t_fields...>::template ElementExternalForces<t_element, t_domain>;
 
         template<FieldConcept auto t_field>
         DenseVector<Real, FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<t_field>()>
@@ -653,33 +710,26 @@ namespace lolita
         void
         setElementStrainOperators()
         {
-            auto set_i = [&] <Integer t_i = 0> (
+            auto set_i = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & t_set_i
             )
             constexpr mutable
             {
                 auto constexpr potential = PotentialTraits<t_potential...>::template getPotential<t_i>();
                 auto & frm = this->template getFormulation<potential>();
-                auto set_j = [&] <Integer t_j = 0> (
-                    auto & t_set_j
-                )
-                constexpr mutable
+                auto constexpr j_mapping = PotentialTraits<potential>::template getStrain<t_j>();
+                for (auto & ip : frm.getIntegrationPoints())
                 {
-                    auto constexpr j_mapping = PotentialTraits<potential>::template getStrain<t_j>();
-                    for (auto & ip : frm.getIntegrationPoints())
-                    {
-                        auto strain_operator = this->template getMapping<j_mapping>(ip.getReferenceCoordinates());
-                        ip.template addStrainOperator<j_mapping>(strain_operator);
-                    }
-                    if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
-                    {
-                        t_set_j.template operator()<t_j + 1>(t_set_j);
-                    }
-                };
-                set_j(set_j);
-                if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
+                    auto strain_operator = this->template getMapping<j_mapping>(ip.getReferenceCoordinates());
+                    ip.template addStrainOperator<j_mapping>(strain_operator);
+                }
+                if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
                 {
-                    t_set_i.template operator()<t_i + 1>(t_set_i);
+                    t_set_i.template operator()<t_i, t_j + 1>(t_set_i);
+                }
+                else if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
+                {
+                    t_set_i.template operator()<t_i + 1, 0>(t_set_i);
                 }
             };
             set_i(set_i);
@@ -689,40 +739,260 @@ namespace lolita
         void
         setElementStrains()
         {
-            auto set_i = [&] <Integer t_i = 0> (
+            auto set_i = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & t_set_i
             )
             constexpr mutable
             {
                 auto constexpr potential = PotentialTraits<t_potential...>::template getPotential<t_i>();
                 auto & frm = this->template getFormulation<potential>();
-                auto set_j = [&] <Integer t_j = 0> (
-                    auto & t_set_j
-                )
-                constexpr mutable
+                auto constexpr j_mapping = PotentialTraits<potential>::template getStrain<t_j>();
+                auto constexpr j_field = j_mapping.getField();
+                auto const unknown = this->template getUnknownCoefficients<j_field>();
+                for (auto & ip : frm.getIntegrationPoints())
                 {
-                    auto constexpr j_mapping = PotentialTraits<potential>::template getStrain<t_j>();
-                    auto constexpr j_field = j_mapping.getField();
-                    auto const unknown = this->template getUnknownCoefficients<j_field>();
-                    for (auto & ip : frm.getIntegrationPoints())
-                    {
-                        auto const & mat0 = ip.template getStrainOperator<j_mapping>();
-                        ip.template setStrainVectorBlock<potential, j_mapping>(mat0 * unknown);
-                    }
-                    if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
-                    {
-                        t_set_j.template operator()<t_j + 1>(t_set_j);
-                    }
-                };
-                set_j(set_j);
-                if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
+                    auto const & mat0 = ip.template getStrainOperator<j_mapping>();
+                    ip.template setStrainVectorBlock<potential, j_mapping>(mat0 * unknown);
+                }
+                if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
                 {
-                    t_set_i.template operator()<t_i + 1>(t_set_i);
+                    t_set_i.template operator()<t_i, t_j + 1>(t_set_i);
+                }
+                else if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
+                {
+                    t_set_i.template operator()<t_i + 1, 0>(t_set_i);
                 }
             };
             set_i(set_i);
         }
         
+        template<PotentialConcept auto... t_potential>
+        ElementResidualVector<t_potential...>
+        getElementInternalForces()
+        const
+        {
+            auto internal_forces = ElementResidualVector<t_potential...>();
+            internal_forces.setZero();
+            auto set_i = [&] <Integer t_i = 0, Integer t_j = 0> (
+                auto & t_set_i
+            )
+            constexpr mutable
+            {
+                auto constexpr potential = PotentialTraits<t_potential...>::template getPotential<t_i>();
+                auto const & frm = this->template getFormulation<potential>();
+                auto constexpr j_mapping = PotentialTraits<potential>::template getStrain<t_j>();
+                auto constexpr j_field = j_mapping.getField();
+                // --> making block
+                auto constexpr size_j = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<j_field>();
+                auto constexpr offset_j = PotentialTraits<t_potential...>::template getOffset<t_element, t_domain, j_field>();
+                for (auto const & ip : frm.getIntegrationPoints())
+                {
+                    auto const & mat0 = ip.template getStrainOperator<j_mapping>();
+                    auto const mat = ip.template getStressVectorBlock<potential, j_mapping>();
+                    internal_forces.template segment<size_j>(offset_j) += ip.getCurrentWeight() * mat0.transpose() * mat;
+                }
+                if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
+                {
+                    t_set_i.template operator()<t_i, t_j + 1>(t_set_i);
+                }
+                else if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
+                {
+                    t_set_i.template operator()<t_i + 1, 0>(t_set_i);
+                }
+            };
+            set_i(set_i);
+            return internal_forces;
+        }
+        
+        // template<DiscreteFieldConcept auto... t_fields>
+        // ElementExternalForces<t_fields...>
+        // getElementExternalForces(
+        //     Real const & time
+        // )
+        // const
+        // {
+        //     auto constexpr quadrature = Quadrature("Gauss", 4);
+        //     auto external_forces = ElementExternalForces<t_fields...>();
+        //     external_forces.setZero();
+        //     auto set_i = [&] <Integer t_i = 0> (
+        //         auto & t_set_i
+        //     )
+        //     constexpr mutable
+        //     {
+        //         auto constexpr field = utility::get<t_i>(utility::Aggregate(t_fields...));
+        //         auto constexpr size_j = DiscreteFieldsTraits<field>::template getSize<t_element, t_domain>();
+        //         auto constexpr offset_j = DiscreteFieldsTraits<t_fields...>::template getOffset<t_element, t_domain, field>();
+        //         for (auto const & domain : this->getDomains())
+        //         {
+        //             if (domain->template hasDiscreteField<field>())
+        //             {
+        //                 if (domain->template getDiscreteField<field>().hasLoads())
+        //                 {
+        //                     for (auto const & load : domain->template getDiscreteField<field>().getLoads())
+        //                     {
+        //                         for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
+        //                         {
+        //                             auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
+        //                             auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
+        //                             auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
+        //                             auto vector = this->template getFieldDualVector<field>(reference_point, load.getRow(), load.getCol());
+        //                             external_forces.template segment<size_j>(offset_j) += weight * load.getValue(current_point, time) * vector;
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         if constexpr (t_i < DiscreteFieldsTraits<t_fields...>::getNumFields() - 1)
+        //         {
+        //             t_set_i.template operator()<t_i + 1>(t_set_i);
+        //         }
+        //     };
+        //     set_i(set_i);
+        //     return external_forces;
+        // }
+
+        template<PotentialConcept auto... t_potential>
+        ElementResidualVector<t_potential...>
+        getElementExternalForces(
+            Real const & time
+        )
+        const
+        {
+            auto constexpr quadrature = Quadrature("Gauss", 4);
+            auto external_forces = ElementResidualVector<t_potential...>();
+            external_forces.setZero();
+            auto set_i = [&] <Integer t_i = 0> (
+                auto & t_set_i
+            )
+            constexpr mutable
+            {
+                auto constexpr field = PotentialTraits<t_potential...>::template getField<t_i>();
+                auto constexpr size_j = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<field>();
+                auto constexpr offset_j = PotentialTraits<t_potential...>::template getOffset<t_element, t_domain, field>();
+                for (auto const & domain : this->getDomains())
+                {
+                    if (domain->template hasDiscreteField<field>())
+                    {
+                        if (domain->template getDiscreteField<field>().hasLoads())
+                        {
+                            for (auto const & load : domain->template getDiscreteField<field>().getLoads())
+                            {
+                                for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
+                                {
+                                    auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
+                                    auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
+                                    auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
+                                    auto vector = this->template getFieldDualVector<field>(reference_point, load.getRow(), load.getCol());
+                                    external_forces.template segment<size_j>(offset_j) += weight * load.getValue(current_point, time) * vector;
+                                }
+                            }
+                        }
+                    }
+                }
+                if constexpr (t_i < PotentialTraits<t_potential...>::getNumFields() - 1)
+                {
+                    t_set_i.template operator()<t_i + 1>(t_set_i);
+                }
+            };
+            set_i(set_i);
+            return external_forces;
+        }
+        
+        template<PotentialConcept auto... t_potential>
+        ElementResidualVector<t_potential...>
+        getElementResidualForces(
+            Real const & time
+        )
+        const
+        {
+            return this->template getElementExternalForces<t_potential...>(time) - this->template getElementInternalForces<t_potential...>();
+        }
+        
+        template<PotentialConcept auto... t_potential>
+        void
+        getElementResidualForces(
+            Real const & time,
+            std::atomic<Real> & i,
+            std::atomic<Real> & o
+        )
+        const
+        {
+            auto internal_forces = this->template getElementInternalForces<t_potential...>();
+            auto external_forces = this->template getElementExternalForces<t_potential...>(time);
+            auto residual_forces = external_forces - internal_forces;
+            auto residual_forces_max = residual_forces.cwiseAbs().maxCoeff();
+            auto external_forces_max = external_forces.cwiseAbs().maxCoeff();
+            if (residual_forces_max > i)
+            {
+                i = residual_forces_max;
+            }
+            if (external_forces_max > o)
+            {
+                o = external_forces_max;
+            }
+            return this->template getElementExternalForces<t_potential...>(time) - this->template getElementInternalForces<t_potential...>();
+        }
+        
+        template<PotentialConcept auto... t_potential>
+        ElementJacobianMatrix<t_potential...>
+        getElementJacobianMatrix()
+        const
+        {
+            auto jacobian_matrix = ElementJacobianMatrix<t_potential...>();
+            jacobian_matrix.setZero();
+            auto set_i = [&] <Integer t_i = 0, Integer t_j = 0, Integer t_k = 0> (
+                auto & t_set_i
+            )
+            constexpr mutable
+            {
+                auto constexpr potential = PotentialTraits<t_potential...>::template getPotential<t_i>();
+                auto constexpr j_mapping = PotentialTraits<potential>::template getStrain<t_j>();
+                auto constexpr j_field = j_mapping.getField();
+                auto constexpr k_mapping = PotentialTraits<potential>::template getStrain<t_k>();
+                auto constexpr k_field = k_mapping.getField();
+                auto constexpr size_j = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<j_field>();
+                auto constexpr size_k = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<k_field>();
+                auto constexpr offset_j = PotentialTraits<t_potential...>::template getOffset<t_element, t_domain, j_field>();
+                auto constexpr offset_k = PotentialTraits<t_potential...>::template getOffset<t_element, t_domain, k_field>();
+                auto const & frm = this->template getFormulation<potential>();
+                for (auto const & ip : frm.getIntegrationPoints())
+                {
+                    auto const & mat0 = ip.template getStrainOperator<j_mapping>();
+                    auto const & mat1 = ip.template getStrainOperator<k_mapping>();
+                    auto const mat = ip.template getJacobianMatrixBlock<potential, j_mapping, k_mapping>();
+                    jacobian_matrix.template block<size_j, size_k>(offset_j, offset_k) += ip.getCurrentWeight() * mat0.transpose() * mat * mat1;
+                }
+                if constexpr (t_k < PotentialTraits<potential>::getNumMappings() - 1)
+                {
+                    t_set_i.template operator()<t_i, t_j, t_k + 1>(t_set_i);
+                }
+                if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
+                {
+                    t_set_i.template operator()<t_i, t_j + 1, 0>(t_set_i);
+                }
+                else if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
+                {
+                    t_set_i.template operator()<t_i + 1, 0, 0>(t_set_i);
+                }
+            };
+            set_i(set_i);
+            return jacobian_matrix;
+        }
+
+        template<PotentialConcept auto... t_potentials>
+        void
+        setSystems(
+            Real const & time
+        )
+        {
+            auto ii = [&] <PotentialConcept auto t_potential> ()
+            {
+                auto const & frm = this->template getFormulation<t_potential>();
+                frm.setSystem(this->template getElementJacobianMatrix<t_potential>(), this->template getElementResidualForces<t_potential>(time));
+            };
+            (ii.template operator()<t_potentials>(), ...);
+        }
+
         template<PotentialConcept auto... t_potential>
         Real
         getElementInternalEnergy()
@@ -748,51 +1018,6 @@ namespace lolita
                         auto const stress = ip.template getStressVectorBlock<potential, j_mapping>();
                         auto const strain = ip.template getStrainVectorBlock<potential, j_mapping>();
                         internal_forces += ip.getCurrentWeight() * strain.transpose() * stress;
-                    }
-                    if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
-                    {
-                        t_set_j.template operator()<t_j + 1>(t_set_j);
-                    }
-                };
-                set_j(set_j);
-                if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
-                {
-                    t_set_i.template operator()<t_i + 1>(t_set_i);
-                }
-            };
-            set_i(set_i);
-            return internal_forces;
-        }
-        
-        template<PotentialConcept auto... t_potential>
-        ElementResidualVector<t_potential...>
-        getElementInternalForces()
-        const
-        {
-            auto internal_forces = ElementResidualVector<t_potential...>();
-            internal_forces.setZero();
-            auto set_i = [&] <Integer t_i = 0> (
-                auto & t_set_i
-            )
-            constexpr mutable
-            {
-                auto constexpr potential = PotentialTraits<t_potential...>::template getPotential<t_i>();
-                auto const & frm = this->template getFormulation<potential>();
-                auto set_j = [&] <Integer t_j = 0> (
-                    auto & t_set_j
-                )
-                constexpr mutable
-                {
-                    auto constexpr j_mapping = PotentialTraits<potential>::template getStrain<t_j>();
-                    auto constexpr j_field = j_mapping.getField();
-                    // --> making block
-                    auto constexpr size_j = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<j_field>();
-                    auto constexpr offset_j = PotentialTraits<t_potential...>::template getOffset<t_element, t_domain, j_field>();
-                    for (auto const & ip : frm.getIntegrationPoints())
-                    {
-                        auto const & mat0 = ip.template getStrainOperator<j_mapping>();
-                        auto const mat = ip.template getStressVectorBlock<potential, j_mapping>();
-                        internal_forces.template segment<size_j>(offset_j) += ip.getCurrentWeight() * mat0.transpose() * mat;
                     }
                     if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
                     {
@@ -925,166 +1150,7 @@ namespace lolita
         {
             return this->template getElementExternalEnergy<t_potential...>(time) - this->template getElementInternalEnergy<t_potential...>();
         }
-
-        template<PotentialConcept auto... t_potential>
-        ElementResidualVector<t_potential...>
-        getElementExternalForces(
-            Real const & time
-        )
-        const
-        {
-            auto constexpr quadrature = Quadrature("Gauss", 4);
-            auto external_forces = ElementResidualVector<t_potential...>();
-            external_forces.setZero();
-            auto set_i = [&] <Integer t_i = 0> (
-                auto & t_set_i
-            )
-            constexpr mutable
-            {
-                auto constexpr potential = PotentialTraits<t_potential...>::template getPotential<t_i>();
-                auto set_j = [&] <Integer t_j = 0> (
-                    auto & t_set_j
-                )
-                constexpr mutable
-                {
-                    auto constexpr field = PotentialTraits<potential>::template getField<t_j>();
-                    auto constexpr size_j = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<field>();
-                    auto constexpr offset_j = PotentialTraits<t_potential...>::template getOffset<t_element, t_domain, field>();
-                    for (auto const & domain : this->getDomains())
-                    {
-                        if (domain->template hasDiscreteField<field>())
-                        {
-                            if (domain->template getDiscreteField<field>().hasLoads())
-                            {
-                                for (auto const & load : domain->template getDiscreteField<field>().getLoads())
-                                {
-                                    for (auto i = 0; i < QuadratureTraits<quadrature>::template Rule<t_element>::getSize(); i++)
-                                    {
-                                        auto weight = this->template getCurrentQuadratureWeight<quadrature>(i);
-                                        auto reference_point = this->template getReferenceQuadraturePoint<quadrature>(i);
-                                        auto current_point = this->template getCurrentQuadraturePoint<quadrature>(i);
-                                        auto vector = this->template getFieldDualVector<field>(reference_point, load.getRow(), load.getCol());
-                                        external_forces.template segment<size_j>(offset_j) += weight * load.getValue(current_point, time) * vector;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if constexpr (t_j < PotentialTraits<potential>::getNumFields() - 1)
-                    {
-                        t_set_j.template operator()<t_j + 1>(t_set_j);
-                    }
-                };
-                set_j(set_j);
-                if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
-                {
-                    t_set_i.template operator()<t_i + 1>(t_set_i);
-                }
-            };
-            set_i(set_i);
-            return external_forces;
-        }
         
-        template<PotentialConcept auto... t_potential>
-        ElementResidualVector<t_potential...>
-        getElementResidualForces(
-            Real const & time
-        )
-        const
-        {
-            return this->template getElementExternalForces<t_potential...>(time) - this->template getElementInternalForces<t_potential...>();
-        }
-        
-        template<PotentialConcept auto... t_potential>
-        void
-        getElementResidualForces(
-            Real const & time,
-            std::atomic<Real> & i,
-            std::atomic<Real> & o
-        )
-        const
-        {
-            auto internal_forces = this->template getElementInternalForces<t_potential...>();
-            auto external_forces = this->template getElementExternalForces<t_potential...>(time);
-            auto residual_forces = external_forces - internal_forces;
-            auto residual_forces_max = residual_forces.cwiseAbs().maxCoeff();
-            auto external_forces_max = external_forces.cwiseAbs().maxCoeff();
-            if (residual_forces_max > i)
-            {
-                i = residual_forces_max;
-            }
-            if (external_forces_max > o)
-            {
-                o = external_forces_max;
-            }
-            return this->template getElementExternalForces<t_potential...>(time) - this->template getElementInternalForces<t_potential...>();
-        }
-        
-        template<PotentialConcept auto... t_potential>
-        ElementJacobianMatrix<t_potential...>
-        getElementJacobianMatrix()
-        const
-        {
-            auto jacobian_matrix = ElementJacobianMatrix<t_potential...>();
-            jacobian_matrix.setZero();
-            auto set_i = [&] <Integer t_i = 0> (
-                auto & t_set_i
-            )
-            constexpr mutable
-            {
-                auto constexpr potential = PotentialTraits<t_potential...>::template getPotential<t_i>();
-                auto const & frm = this->template getFormulation<potential>();
-                // --> J
-                auto set_j = [&] <Integer t_j = 0> (
-                    auto & t_set_j
-                )
-                constexpr mutable
-                {
-                    auto constexpr j_mapping = PotentialTraits<potential>::template getStrain<t_j>();
-                    auto constexpr j_field = j_mapping.getField();
-                    // --> K
-                    auto set_k = [&] <Integer t_k = 0> (
-                        auto & t_set_k
-                    )
-                    constexpr mutable
-                    {
-                        auto constexpr k_mapping = PotentialTraits<potential>::template getStrain<t_k>();
-                        auto constexpr k_field = k_mapping.getField();
-                        // --> making block
-                        // auto constexpr size_j = FieldDiscretizationTraits<j_field>::template getNumUnknownCoefficients<t_element, t_domain, j_field>();
-                        // auto constexpr size_k = FieldDiscretizationTraits<k_field>::template getNumUnknownCoefficients<t_element, t_domain, k_field>();
-                        auto constexpr size_j = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<j_field>();
-                        auto constexpr size_k = FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<k_field>();
-                        auto constexpr offset_j = PotentialTraits<t_potential...>::template getOffset<t_element, t_domain, j_field>();
-                        auto constexpr offset_k = PotentialTraits<t_potential...>::template getOffset<t_element, t_domain, k_field>();
-                        for (auto const & ip : frm.getIntegrationPoints())
-                        {
-                            auto const & mat0 = ip.template getStrainOperator<j_mapping>();
-                            auto const & mat1 = ip.template getStrainOperator<k_mapping>();
-                            auto const mat = ip.template getJacobianMatrixBlock<potential, j_mapping, k_mapping>();
-                            jacobian_matrix.template block<size_j, size_k>(offset_j, offset_k) += ip.getCurrentWeight() * mat0.transpose() * mat * mat1;
-                        }
-                        if constexpr (t_k < PotentialTraits<potential>::getNumMappings() - 1)
-                        {
-                            t_set_k.template operator()<t_k + 1>(t_set_k);
-                        }
-                    };
-                    set_k(set_k);
-                    if constexpr (t_j < PotentialTraits<potential>::getNumMappings() - 1)
-                    {
-                        t_set_j.template operator()<t_j + 1>(t_set_j);
-                    }
-                };
-                set_j(set_j);
-                if constexpr (t_i < PotentialTraits<t_potential...>::getNumPotentials() - 1)
-                {
-                    t_set_i.template operator()<t_i + 1>(t_set_i);
-                }
-            };
-            set_i(set_i);
-            return jacobian_matrix;
-        }
-
         template<PotentialConcept auto t_behavior>
         void
         addFormulation()

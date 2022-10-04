@@ -9,7 +9,7 @@
 
 namespace lolita
 {
-
+    
     struct ExternalLoad
     {
 
@@ -147,9 +147,9 @@ namespace lolita
         coordinates_()
         {}
 
-        // virtual
-        // ~DegreeOfFreedomBase()
-        // {}
+        virtual
+        ~DegreeOfFreedomBase()
+        {}
         
         Boolean
         operator==(
@@ -169,6 +169,12 @@ namespace lolita
         {
             return coordinates_ != nullptr;
         }
+
+        virtual
+        Integer
+        getSize()
+        const
+        =0;
 
         void
         link(
@@ -247,14 +253,14 @@ namespace lolita
 
         static constexpr
         Integer
-        getComponentSize()
+        getNumScalarCoefficients()
         {
             return FiniteElementTraits<t_element, t_domain>::template getNumElementCoefficients<t_field.getDiscretization()>();
         }
 
         static constexpr
         Integer
-        getFullFieldSize()
+        getNumTensorCoefficients()
         {
             return FiniteElementTraits<t_element, t_domain>::template getNumElementCoefficients<t_field>();
         }
@@ -265,25 +271,32 @@ namespace lolita
         s0_(),
         s1_()
         {
-            algebra::View<DenseVector<Real, getFullFieldSize()>>(s1_[0][0].data()) = DenseVector<Real, getFullFieldSize()>::Zero();
-            algebra::View<DenseVector<Real, getFullFieldSize()>>(s0_[0][0].data()) = DenseVector<Real, getFullFieldSize()>::Zero();
+            algebra::View<DenseVector<Real, getNumTensorCoefficients()>>(s1_[0][0].data()) = DenseVector<Real, getNumTensorCoefficients()>::Zero();
+            algebra::View<DenseVector<Real, getNumTensorCoefficients()>>(s0_[0][0].data()) = DenseVector<Real, getNumTensorCoefficients()>::Zero();
         }
 
-        algebra::View<DenseVector<Real, getComponentSize()> const>
+        Integer
+        getSize()
+        const
+        {
+            return getNumTensorCoefficients();
+        }
+
+        algebra::View<DenseVector<Real, getNumScalarCoefficients()> const>
         getCoefficients(
             Integer row,
             Integer col
         )
         const
         {
-            return algebra::View<DenseVector<Real, getComponentSize()> const>(s1_[row][col].data());
+            return algebra::View<DenseVector<Real, getNumScalarCoefficients()> const>(s1_[row][col].data());
         }
 
-        algebra::View<DenseVector<Real, getFullFieldSize()> const>
+        algebra::View<DenseVector<Real, getNumTensorCoefficients()> const>
         getCoefficients()
         const
         {
-            return algebra::View<DenseVector<Real, getFullFieldSize()> const>(s1_[0][0].data());
+            return algebra::View<DenseVector<Real, getNumTensorCoefficients()> const>(s1_[0][0].data());
         }
 
         void
@@ -291,7 +304,7 @@ namespace lolita
             DenseVectorConcept<Real> auto && input
         )
         {
-            algebra::View<DenseVector<Real, getFullFieldSize()>>(s1_[0][0].data()) += std::forward<decltype(input)>(input);
+            algebra::View<DenseVector<Real, getNumTensorCoefficients()>>(s1_[0][0].data()) += std::forward<decltype(input)>(input);
         }
 
         void
@@ -308,9 +321,9 @@ namespace lolita
 
     private:
         
-        std::array<std::array<std::array<Real, getComponentSize()>, getNumRows()>, getNumCols()> s1_;
+        std::array<std::array<std::array<Real, getNumScalarCoefficients()>, getNumRows()>, getNumCols()> s1_;
         
-        std::array<std::array<std::array<Real, getComponentSize()>, getNumRows()>, getNumCols()> s0_;
+        std::array<std::array<std::array<Real, getNumScalarCoefficients()>, getNumRows()>, getNumCols()> s0_;
 
     };
     
@@ -403,27 +416,27 @@ namespace lolita
             return algebra::View<DenseVector<Real, t_size> const>(data);
         }
 
-        template<Integer t_size1, Integer t_size>
-        auto
-        packUp(
-            DenseSystem<Real, t_size> const & system
-        )
-        {
-            condensation_ = StaticCondensation::template make<Real, t_size, t_size1>(system);
-            auto j = condensation_->template packUp<Real, t_size, t_size1>(system);
-            return j;
-        }
+        // template<Integer t_size1, Integer t_size>
+        // auto
+        // packUp(
+        //     DenseSystem<Real, t_size> const & system
+        // )
+        // {
+        //     condensation_ = StaticCondensation::template make<Real, t_size, t_size1>(system);
+        //     auto j = condensation_->template packUp<Real, t_size, t_size1>(system);
+        //     return j;
+        // }
 
-        template<Integer t_size1, Integer t_size>
-        auto
-        unPack(
-            DenseVectorConcept<Real, t_size> auto const & vector
-        )
-        {
-            auto j = condensation_->template unPack<Real, t_size, t_size1>(vector);
-            condensation_ = nullptr;
-            return j;
-        }
+        // template<Integer t_size1, Integer t_size>
+        // auto
+        // unPack(
+        //     DenseVectorConcept<Real, t_size> auto const & vector
+        // )
+        // {
+        //     auto j = condensation_->template unPack<Real, t_size, t_size1>(vector);
+        //     condensation_ = nullptr;
+        //     return j;
+        // }
 
         void
         reserve()
@@ -948,9 +961,47 @@ namespace lolita
             return * dof_;
         }
 
+        template<FieldConcept auto t_field, Integer t_size>
+        void
+        condensate(
+            DenseSystem<Real, t_size> const & system
+        )
+        {
+            auto constexpr jj = DegreeOfFreedomChild<t_element, t_domain, t_field>::getNumTensorCoefficients();
+            condensation_ = std::make_unique<StaticCondensationImpl<Real, t_size, jj>>(system);
+        }
+
+        template<FieldConcept auto t_field, Integer t_size>
+        auto
+        packUp(
+            DenseSystem<Real, t_size> const & system
+        )
+        {
+            auto constexpr jj = DegreeOfFreedomChild<t_element, t_domain, t_field>::getNumTensorCoefficients();
+            // condensation_ = std::make_unique<StaticCondensationImpl<t_Scalar, t_size, Implementation<t_field>::getNumTensorCoefficients()>>(system);
+            auto j = condensation_->template packUp<Real, t_size, jj>(system);
+            return j;
+        }
+
+        template<FieldConcept auto t_field, Integer t_size>
+        auto
+        unPack(
+            DenseVectorConcept<Real, t_size> auto const & vector
+        )
+        {
+            auto constexpr jj = DegreeOfFreedomChild<t_element, t_domain, t_field>::getNumTensorCoefficients();
+            auto j = condensation_->template unPack<Real, t_size, jj>(vector);
+            // condensation_ = nullptr;
+            return j;
+        }
+
     private:
 
         Label const & label_;
+
+        std::unique_ptr<StaticCondensation> condensation_;
+
+        std::unique_ptr<DenseSystemBase> system_;
 
         std::unique_ptr<DegreeOfFreedomBase<t_element, t_domain>> dof_;
 

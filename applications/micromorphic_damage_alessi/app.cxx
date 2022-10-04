@@ -497,6 +497,7 @@ main(int argc, char** argv)
     auto constexpr elastic_potential = lolita::Potential("Elasticity", hdg_displacement_gradient); // psi(I(u))
     auto constexpr stabilization_potential = lolita::Potential("Stabilization", hdg_displacement_stabilization); // psi(Z(u))
     auto constexpr force_potential = lolita::Potential("Lagrangian", hdg_displacement_x, hdg_force_view); // psi(I_x(u), I(f))
+    auto constexpr lagrangian = lolita::Lagrangian("All", elastic_potential, stabilization_potential); // psi(I_x(u), I(f))
     // auto constexpr pot_size = lolita::PotentialTraits<elastic_potential>::template getSize<lolita::Element::triangle(1), domain>();
     // auto constexpr mat0 = lolita::Mapping("Gradient", displacement);
     // auto constexpr mat1 = lolita::Mapping("Gradient", damage);
@@ -505,11 +506,24 @@ main(int argc, char** argv)
     auto constexpr pot1 = lolita::Potential("Fracture", lolita::Mapping("Gradient", damage), lolita::Mapping("Identity", damage));
     auto constexpr pot2 = lolita::Potential("Stab", lolita::Mapping("Identity", displacement));
     auto constexpr pot3 = lolita::Potential("Penalization", lolita::Mapping("Identity", force));
+    auto constexpr lag0 = lolita::Lagrangian("0", pot0, pot1, pot2, pot3);
+    auto constexpr lag1 = lolita::Lagrangian("1", pot0, pot1, pot2);
+    auto constexpr lag2 = lolita::Lagrangian("2", pot0, pot1);
+    auto constexpr lag3 = lolita::Lagrangian("3", pot0);
+    using LHS_PP = std::tuple<std::tuple<std::tuple<int>>, std::tuple<char, double>, std::tuple<float>>;
+    using RHS_PP = std::tuple<int, char, float>;
+    // static_assert(std::is_same_v<lolita::utility::tuple_cat_t<LHS_PP>, RHS_PP>);
+    lolita::utility::TD<lolita::utility::tuple_merge_t<LHS_PP>>();
+    // lolita::utility::TD<typename lolita::LagTraits<lag0>::TEST2>();
     // auto constexpr pot_size = lolita::PotentialTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>();
-    std::cout << "num fields : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::getNumFields() << std::endl;
-    std::cout << "offset : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getOffset<domain, lolita::Mapping("Gradient", displacement)>() << std::endl;
-    std::cout << "offset : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getOffset<domain, lolita::Mapping("Identity", damage)>() << std::endl;
-    std::cout << "offset : " << lolita::PotentialTraits<pot0, pot1, pot2, pot3>::template getOffset<domain, lolita::Mapping("Identity", force)>() << std::endl;
+    std::cout << "num fields : " << lolita::LagTraits<lag0>::getNumFields() << std::endl;
+    
+    std::cout << "field index : " << lolita::LagTraits<lag0>::template getIndex<displacement>() << std::endl;
+    std::cout << "field index : " << lolita::LagTraits<lag0>::template getIndex<damage>() << std::endl;
+    std::cout << "field index : " << lolita::LagTraits<lag0>::template getIndex<force>() << std::endl;
+    std::cout << "offset : " << lolita::LagTraits<lag0>::template getOffset<domain, lolita::Mapping("Gradient", displacement)>() << std::endl;
+    std::cout << "offset : " << lolita::LagTraits<lag0>::template getOffset<domain, lolita::Mapping("Identity", damage)>() << std::endl;
+    std::cout << "offset : " << lolita::LagTraits<lag0>::template getOffset<domain, lolita::Mapping("Identity", force)>() << std::endl;
     //
     std::cout << "pot size : " << lolita::PotentialTraits<pot0, pot1, pot2>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
     std::cout << "pot size : " << lolita::PotentialTraits<pot0, pot1>::template getSize<lolita::Element::triangle(1), domain>() << std::endl;
@@ -554,6 +568,7 @@ main(int argc, char** argv)
     elements->addElementDiscreteField<cell_dim, displacement>("ROD");
     elements->addElementDiscreteFieldDegreeOfFreedom<face_dim, displacement>("ROD");
     elements->addElementDiscreteFieldDegreeOfFreedom<cell_dim, displacement>("ROD");
+    elements->addElementDiscreteFieldDegreeOfFreedomToSystem<face_dim, displacement>("ROD", * linear_system);
     /**
      * Ops
      * 
@@ -567,7 +582,7 @@ main(int argc, char** argv)
      */
     elements->addFormulation<cell_dim, elastic_potential, quadrature>("ROD", lib_displacement_path, lib_displacement_label, hyp);
     elements->addFormulation<face_dim, elastic_potential>("TOP");
-    elements->addFormulationStrainOperator<cell_dim, elastic_potential, elastic_potential.getStrain<0>()>("ROD");
+    // elements->addFormulationStrainOperator<cell_dim, elastic_potential, elastic_potential.getStrain<0>()>("ROD");
     //
     elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _yg>("ROD", [](lolita::Point const & p) { return 200.0; });
     elements->setFormulationMaterialProperty<cell_dim, elastic_potential, _nu>("ROD", [](lolita::Point const & p) { return 0.2; });

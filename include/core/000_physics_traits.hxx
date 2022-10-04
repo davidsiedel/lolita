@@ -27,6 +27,13 @@ namespace lolita
     template<FieldConcept auto t_field>
     struct FieldTraits
     {
+            
+        static constexpr
+        auto const &
+        getField()
+        {
+            return t_field;
+        }
 
         template<Domain t_domain>
         static constexpr
@@ -192,11 +199,24 @@ namespace lolita
     };
 
     template<MappingConcept auto t_mapping>
+    struct MappingTraitsBase
+    {
+
+        static constexpr
+        auto const &
+        getMapping()
+        {
+            return t_mapping;
+        }
+
+    };
+    
+    template<MappingConcept auto t_mapping>
     struct MappingTraits;
 
     template<MappingConcept auto t_mapping>
     requires(t_mapping.isIdentity())
-    struct MappingTraits<t_mapping>
+    struct MappingTraits<t_mapping> : MappingTraitsBase<t_mapping>
     {
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -302,7 +322,7 @@ namespace lolita
 
     template<MappingConcept auto t_mapping>
     requires(t_mapping.isGradient())
-    struct MappingTraits<t_mapping>
+    struct MappingTraits<t_mapping> : MappingTraitsBase<t_mapping>
     {
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -441,7 +461,7 @@ namespace lolita
 
     template<MappingConcept auto t_mapping>
     requires(t_mapping.isSmallStrain())
-    struct MappingTraits<t_mapping>
+    struct MappingTraits<t_mapping> : MappingTraitsBase<t_mapping>
     {
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -563,7 +583,7 @@ namespace lolita
 
     template<MappingConcept auto t_mapping>
     requires(t_mapping.isLargeStrain())
-    struct MappingTraits<t_mapping>
+    struct MappingTraits<t_mapping> : MappingTraitsBase<t_mapping>
     {
 
         template<Domain t_domain, FieldConcept auto t_field = t_mapping.getField()>
@@ -647,56 +667,232 @@ namespace lolita
         
     };
 
+    template<PotentialConcept auto t_potential>
+    struct PotentialTraits2
+    {
+
+    private:
+        
+        template<MappingConcept auto t_mapping>
+        using StrainField = FieldTraits<t_mapping.getField()>;
+
+    public:
+
+        using StrainsTraits = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, MappingTraits, t_potential.getStrains()>>>;
+
+        using FieldsTraits = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, StrainField, t_potential.getStrains()>>>;
+    
+        static constexpr
+        auto const &
+        getPotential()
+        {
+            return t_potential;
+        }
+        
+        template<Integer t_i>
+        static constexpr
+        auto
+        getStrain()
+        {
+            return std::tuple_element_t<t_i, StrainsTraits>::getMapping();
+        }
+        
+        template<Integer t_i>
+        static constexpr
+        auto
+        getField()
+        {
+            return std::tuple_element_t<t_i, FieldsTraits>::getField();
+        }
+        
+        static constexpr
+        Integer
+        getNumMappings()
+        {
+            return std::tuple_size_v<StrainsTraits>;
+        }
+        
+        static constexpr
+        Integer
+        getNumFields()
+        {
+            return std::tuple_size_v<FieldsTraits>;
+        }
+
+        template<Domain t_domain>
+        static constexpr
+        Integer
+        getSize()
+        {
+            auto size = Integer(0);
+            auto set_size = [&] <Integer t_i = 0> (
+                auto & t_set_size
+            )
+            constexpr mutable
+            {
+                size += MappingTraits<getStrain<t_i>()>::template getSize<t_domain>();
+                if constexpr (t_i < getNumMappings() - 1)
+                {
+                    t_set_size.template operator ()<t_i + 1>(t_set_size);
+                }
+            };
+            set_size(set_size);
+            return size;
+        }
+
+        template<auto t_element, Domain t_domain>
+        static constexpr
+        Integer
+        getSize()
+        {
+            auto size = Integer(0);
+            auto set_size = [&] <Integer t_i = 0> (
+                auto & t_set_size
+            )
+            constexpr mutable
+            {
+                size += FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<getField<t_i>()>();
+                if constexpr (t_i < getNumFields() - 1)
+                {
+                    t_set_size.template operator ()<t_i + 1>(t_set_size);
+                }
+            };
+            set_size(set_size);
+            return size;
+        }
+
+        template<auto t_element, Domain t_domain>
+        using ElementJacobianMatrix = DenseMatrix<Real, getSize<t_element, t_domain>(), getSize<t_element, t_domain>()>;
+
+        template<auto t_element, Domain t_domain>
+        using ElementResidualVector = DenseVector<Real, getSize<t_element, t_domain>()>;
+
+        template<Domain t_domain>
+        using StrainVector = DenseVector<Real, getSize<t_domain>()>;
+
+        template<Domain t_domain>
+        using StressVector = DenseVector<Real, getSize<t_domain>()>;
+
+        template<MappingConcept auto t_mapping>
+        static constexpr
+        Integer
+        getIndex()
+        {
+            auto index = Integer(-1);
+            auto set_index = [&] <Integer t_i = 0> (
+                auto & t_set_index
+            )
+            constexpr mutable
+            {
+                if (utility::areEqual(t_mapping, getStrain<t_i>()))
+                {
+                    index = t_i;
+                }
+                if constexpr (t_i < getNumMappings() - 1)
+                {
+                    t_set_index.template operator ()<t_i + 1>(t_set_index);
+                }
+            };
+            set_index(set_index);
+            return index;
+        }
+
+        template<FieldConcept auto t_field>
+        static constexpr
+        Integer
+        getIndex()
+        {
+            auto index = Integer(-1);
+            auto set_index = [&] <Integer t_i = 0> (
+                auto & t_set_index
+            )
+            constexpr mutable
+            {
+                if (utility::areEqual(t_field, getField<t_i>()))
+                {
+                    index = t_i;
+                }
+                if constexpr (t_i < getNumFields() - 1)
+                {
+                    t_set_index.template operator ()<t_i + 1>(t_set_index);
+                }
+            };
+            set_index(set_index);
+            return index;
+        }
+
+        template<Domain t_domain, MappingConcept auto t_mapping>
+        static constexpr
+        Integer
+        getOffset()
+        {
+            auto offset = Integer(0);
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & t_set_offset
+            )
+            constexpr mutable
+            {
+                if constexpr (t_i > 0)
+                {
+                    offset += MappingTraits<getStrain<t_i - 1>()>::template getSize<t_domain>();
+                }
+                if constexpr (utility::areEqual(getStrain<t_i>(), t_mapping))
+                {
+                    return;
+                }
+                else if constexpr (t_i < getNumMappings() - 1)
+                {
+                    t_set_offset.template operator ()<t_i + 1>(t_set_offset);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
+        }
+
+        template<auto t_element, Domain t_domain, FieldConcept auto t_field>
+        static constexpr
+        Integer
+        getOffset()
+        {
+            auto offset = Integer(0);
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & t_set_offset
+            )
+            constexpr mutable
+            {
+                if constexpr (t_i > 0)
+                {
+                    offset += FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<getField<t_i - 1>()>();
+                }
+                if constexpr (utility::areEqual(getField<t_i>(), t_field))
+                {
+                    return;
+                }
+                else if constexpr (t_i < getNumFields() - 1)
+                {
+                    t_set_offset.template operator ()<t_i + 1>(t_set_offset);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
+        }
+
+    };
+    
     template<PotentialConcept auto... t_potentials>
     struct PotentialTraits
     {
 
     private:
 
-        template<PotentialConcept auto t_potential>
-        struct PotentialView
-        {
-            
-            static constexpr
-            auto
-            getPotential()
-            {
-                return t_potential;
-            }
-        
-        };
-
         template<MappingConcept auto t_mapping>
-        struct MappingView
-        {
-            
-            static constexpr
-            auto
-            getMapping()
-            {
-                return t_mapping;
-            }
-        
-        };
+        using StrainField = FieldTraits<t_mapping.getField()>;
 
-        template<FieldConcept auto t_field>
-        struct FieldView
-        {
-            
-            static constexpr
-            auto
-            getField()
-            {
-                return t_field;
-            }
-        
-        };
+        using Potentials = utility::tuple_unique_t<std::tuple<PotentialTraits2<t_potentials>...>>;
 
-        using Potentials = utility::tuple_unique_t<std::tuple<PotentialView<t_potentials>...>>;
+        using Strains = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, MappingTraits, t_potentials.getStrains()...>>;
 
-        using Strains = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, MappingView, t_potentials.getStrains()...>>;
-
-        using Fields = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, FieldView, t_potentials.getFields()...>>;
+        using Fields = utility::tuple_unique_t<utility::tuple_cat_t<utility::tuple_expansion_t<std::tuple, StrainField, t_potentials.getStrains()...>>>;
 
     public:
         
@@ -917,6 +1113,266 @@ namespace lolita
                 if constexpr (t_i > 0)
                 {
                     // offset += FieldDiscretizationTraits<getField<t_i - 1>()>::template getNumUnknownCoefficients<t_element, t_domain, getField<t_i - 1>()>();
+                    offset += FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<getField<t_i - 1>()>();
+                }
+                if constexpr (utility::areEqual(getField<t_i>(), t_field))
+                {
+                    return;
+                }
+                else if constexpr (t_i < getNumFields() - 1)
+                {
+                    t_set_offset.template operator ()<t_i + 1>(t_set_offset);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
+        }
+
+    };
+
+    template<LagrangianConcept auto t_lag>
+    struct LagTraits
+    {
+
+    private:
+
+        template<PotentialConcept auto t_potential>
+        using PotentialStrains = typename PotentialTraits2<t_potential>::StrainsTraits;
+
+        template<PotentialConcept auto t_potential>
+        using PotentialFields = typename PotentialTraits2<t_potential>::FieldsTraits;
+
+    public:
+
+        using TEST = utility::tuple_expansion_t<std::tuple, PotentialStrains, t_lag.getPotentials()>;
+
+        using PotentialsTraits = utility::tuple_unique_t<utility::tuple_expansion_t<std::tuple, PotentialTraits2, t_lag.getPotentials()>>;
+
+        using StrainsTraits = utility::tuple_unique_t<utility::tuple_merge_t<TEST>>;
+
+        using FieldsTraits = utility::tuple_unique_t<utility::tuple_merge_t<utility::tuple_expansion_t<std::tuple, PotentialFields, t_lag.getPotentials()>>>;
+
+        using TEST2 = utility::tuple_unique_t<utility::tuple_merge_t<TEST>>;
+    
+        static constexpr
+        auto const &
+        getLagrangian()
+        {
+            return t_lag;
+        }
+        
+        template<Integer t_i>
+        static constexpr
+        auto
+        getPotential()
+        {
+            return std::tuple_element_t<t_i, PotentialsTraits>::getPotential();
+        }
+        
+        template<Integer t_i>
+        static constexpr
+        auto
+        getStrain()
+        {
+            return std::tuple_element_t<t_i, StrainsTraits>::getMapping();
+        }
+        
+        template<Integer t_i>
+        static constexpr
+        auto
+        getField()
+        {
+            return std::tuple_element_t<t_i, FieldsTraits>::getField();
+        }
+        
+        static constexpr
+        Integer
+        getNumPotentials()
+        {
+            return std::tuple_size_v<PotentialsTraits>;
+        }
+        
+        static constexpr
+        Integer
+        getNumMappings()
+        {
+            return std::tuple_size_v<StrainsTraits>;
+        }
+        
+        static constexpr
+        Integer
+        getNumFields()
+        {
+            return std::tuple_size_v<FieldsTraits>;
+        }
+
+        template<Domain t_domain>
+        static constexpr
+        Integer
+        getSize()
+        {
+            auto size = Integer(0);
+            auto set_size = [&] <Integer t_i = 0> (
+                auto & t_set_size
+            )
+            constexpr mutable
+            {
+                size += MappingTraits<getStrain<t_i>()>::template getSize<t_domain>();
+                if constexpr (t_i < getNumMappings() - 1)
+                {
+                    t_set_size.template operator ()<t_i + 1>(t_set_size);
+                }
+            };
+            set_size(set_size);
+            return size;
+        }
+
+        template<auto t_element, Domain t_domain>
+        static constexpr
+        Integer
+        getSize()
+        {
+            auto size = Integer(0);
+            auto set_size = [&] <Integer t_i = 0> (
+                auto & t_set_size
+            )
+            constexpr mutable
+            {
+                size += FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<getField<t_i>()>();
+                if constexpr (t_i < getNumFields() - 1)
+                {
+                    t_set_size.template operator ()<t_i + 1>(t_set_size);
+                }
+            };
+            set_size(set_size);
+            return size;
+        }
+
+        template<auto t_element, Domain t_domain>
+        using ElementJacobianMatrix = DenseMatrix<Real, getSize<t_element, t_domain>(), getSize<t_element, t_domain>()>;
+
+        template<auto t_element, Domain t_domain>
+        using ElementResidualVector = DenseVector<Real, getSize<t_element, t_domain>()>;
+
+        template<Domain t_domain>
+        using StrainVector = DenseVector<Real, getSize<t_domain>()>;
+
+        template<Domain t_domain>
+        using StressVector = DenseVector<Real, getSize<t_domain>()>;
+
+        template<PotentialConcept auto t_potential>
+        static constexpr
+        Integer
+        getIndex()
+        {
+            auto index = Integer(-1);
+            auto set_index = [&] <Integer t_i = 0> (
+                auto & t_set_index
+            )
+            constexpr mutable
+            {
+                if (utility::areEqual(t_potential, getPotential<t_i>()))
+                {
+                    index = t_i;
+                }
+                if constexpr (t_i < getNumPotentials() - 1)
+                {
+                    t_set_index.template operator ()<t_i + 1>(t_set_index);
+                }
+            };
+            set_index(set_index);
+            return index;
+        }
+
+        template<MappingConcept auto t_mapping>
+        static constexpr
+        Integer
+        getIndex()
+        {
+            auto index = Integer(-1);
+            auto set_index = [&] <Integer t_i = 0> (
+                auto & t_set_index
+            )
+            constexpr mutable
+            {
+                if (utility::areEqual(t_mapping, getStrain<t_i>()))
+                {
+                    index = t_i;
+                }
+                if constexpr (t_i < getNumMappings() - 1)
+                {
+                    t_set_index.template operator ()<t_i + 1>(t_set_index);
+                }
+            };
+            set_index(set_index);
+            return index;
+        }
+
+        template<FieldConcept auto t_field>
+        static constexpr
+        Integer
+        getIndex()
+        {
+            auto index = Integer(-1);
+            auto set_index = [&] <Integer t_i = 0> (
+                auto & t_set_index
+            )
+            constexpr mutable
+            {
+                if (utility::areEqual(t_field, getField<t_i>()))
+                {
+                    index = t_i;
+                }
+                if constexpr (t_i < getNumFields() - 1)
+                {
+                    t_set_index.template operator ()<t_i + 1>(t_set_index);
+                }
+            };
+            set_index(set_index);
+            return index;
+        }
+
+        template<Domain t_domain, MappingConcept auto t_mapping>
+        static constexpr
+        Integer
+        getOffset()
+        {
+            auto offset = Integer(0);
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & t_set_offset
+            )
+            constexpr mutable
+            {
+                if constexpr (t_i > 0)
+                {
+                    offset += MappingTraits<getStrain<t_i - 1>()>::template getSize<t_domain>();
+                }
+                if constexpr (utility::areEqual(getStrain<t_i>(), t_mapping))
+                {
+                    return;
+                }
+                else if constexpr (t_i < getNumMappings() - 1)
+                {
+                    t_set_offset.template operator ()<t_i + 1>(t_set_offset);
+                }
+            };
+            set_offset(set_offset);
+            return offset;
+        }
+
+        template<auto t_element, Domain t_domain, FieldConcept auto t_field>
+        static constexpr
+        Integer
+        getOffset()
+        {
+            auto offset = Integer(0);
+            auto set_offset = [&] <Integer t_i = 0> (
+                auto & t_set_offset
+            )
+            constexpr mutable
+            {
+                if constexpr (t_i > 0)
+                {
                     offset += FiniteElementTraits<t_element, t_domain>::template getNumUnknownCoefficients<getField<t_i - 1>()>();
                 }
                 if constexpr (utility::areEqual(getField<t_i>(), t_field))
