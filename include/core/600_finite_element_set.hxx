@@ -357,7 +357,8 @@ namespace lolita
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template setPotential<t_lag, t_potential>();
+                finite_element->template getLagrangian<t_lag>().template setPotential<t_lag, t_potential>();
+                // finite_element->template setPotential<t_lag, t_potential>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -370,7 +371,8 @@ namespace lolita
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template setPotentialStrainOperators<t_lag, t_potential>();
+                finite_element->template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>().setStrainOperators();
+                // finite_element->template setPotentialStrainOperators<t_lag, t_potential>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }
@@ -383,7 +385,8 @@ namespace lolita
         {
             auto fun = [&] (auto const & finite_element)
             {
-                finite_element->template setPotentialStrains<t_lag, t_potential>();
+                finite_element->template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>().setStrains();
+                // finite_element->template setPotentialStrains<t_lag, t_potential>();
             };
             caller2<t_i>(std::forward<std::basic_string<Character>>(domain_label), fun);
         }

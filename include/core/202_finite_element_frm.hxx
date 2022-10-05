@@ -21,16 +21,26 @@ namespace lolita
     struct DomainPotential;
     
     template<Element t_element, Domain t_domain, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
-    struct ConcreteElementPotential;
+    struct ElementPotential;
 
     template<Integer t_dim, Domain t_domain, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
     struct DomainPotential;
     
+    template<Integer t_dim, Domain t_domain>
+    struct AbstractDomainLagrangian;
+
+    template<Element t_element, Domain t_domain>
+    struct AbstractElementLagrangian;
+    
     template<Element t_element, Domain t_domain, LagrangianConcept auto t_lag>
-    struct ConcreteElementLagrangian;
+    struct ElementLagrangian;
     
     template<Integer t_dim, Domain t_domain, LagrangianConcept auto t_lag>
     struct DomainLagrangian;
+
+    /**
+     * *********************************************************************************************************************************************************
+     */
 
     template<Domain t_domain>
     struct IntegrationPoint
@@ -570,6 +580,10 @@ namespace lolita
 
     private:
 
+        using t_FiniteElement = FiniteElement<t_element, t_domain>;
+
+        using t_ElementPotential = ElementPotential<t_element, t_domain, t_lag, t_potential>;
+
         using t_Bhv = BehaviourData<t_element.getDim(), t_domain, t_lag, t_potential>;
 
         template<MappingConcept auto t_strain>
@@ -607,16 +621,16 @@ namespace lolita
     public:
         
         IntegrationPoint2(
-            ConcreteElementPotential<t_element, t_domain, t_lag, t_potential> const & potential,
+            t_ElementPotential const & potential,
             Integer index
         )
         :
         potential_(potential),
         index_(index),
-        behavior_data_(potential.getBehavior())
+        behavior_data_(potential.getFiniteElement().getDomain().template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>())
         {}
 
-        FiniteElement<t_element, t_domain> const &
+        t_FiniteElement const &
         getFiniteElement()
         const
         {
@@ -628,6 +642,12 @@ namespace lolita
         const
         {
             return index_;
+        }
+
+        auto const &
+        getDomainPotential()
+        {
+            return this->getFiniteElement().getDomain().template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>();
         }
 
         t_Bhv const &
@@ -814,15 +834,17 @@ namespace lolita
 
         t_Bhv behavior_data_;
 
-        ConcreteElementPotential<t_element, t_domain, t_lag, t_potential> const & potential_;
+        t_ElementPotential const & potential_;
         
     };
     
     template<Element t_element, Domain t_domain, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
-    struct ConcreteElementPotential
+    struct ElementPotential
     {
 
-        using t_DomainPotential = DomainPotential<t_element.getDim(), t_domain, t_lag, t_potential>;
+        using t_ElementLagrangian = ElementLagrangian<t_element, t_domain, t_lag>;
+
+        using t_FiniteElement = FiniteElement<t_element, t_domain>;
 
         static constexpr
         Integer
@@ -851,35 +873,27 @@ namespace lolita
     public:
         
         explicit
-        ConcreteElementPotential(
-            ConcreteElementLagrangian<t_element, t_domain, t_lag> const & lag
+        ElementPotential(
+            t_ElementLagrangian const & lag
         )
         :
-        lag_(lag),
-        behavior_(lag.getFiniteElement().getDomain().template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>())
+        lag_(lag)
         {
             setIntegrationPoints();
         }
 
-        FiniteElement<t_element, t_domain> const &
+        t_FiniteElement const &
         getFiniteElement()
         const
         {
             return lag_.getFiniteElement();
         }
 
-        ConcreteElementLagrangian<t_element, t_domain, t_lag> const &
+        t_ElementLagrangian const &
         getLag()
         const
         {
             return lag_;
-        }
-
-        t_DomainPotential const &
-        getBehavior()
-        const
-        {
-            return behavior_;
         }
 
         IntegrationPoints const &
@@ -997,25 +1011,20 @@ namespace lolita
             }            
         }
 
-        ConcreteElementLagrangian<t_element, t_domain, t_lag> const & lag_;
-
-        t_DomainPotential const & behavior_;
+        t_ElementLagrangian const & lag_;
 
         IntegrationPoints integration_points_;
 
     };
-
-    template<Element t_element, Domain t_domain>
-    struct AbstractElementLagrangian;
     
     template<Element t_element, Domain t_domain, LagrangianConcept auto t_lag>
-    struct ConcreteElementLagrangian : AbstractElementLagrangian<t_element, t_domain>
+    struct ElementLagrangian : AbstractElementLagrangian<t_element, t_domain>
     {
 
     private:
 
         template<PotentialConcept auto t_potential>
-        using t_ElementPotential = ConcreteElementPotential<t_element, t_domain, t_lag, t_potential>;
+        using t_ElementPotential = ElementPotential<t_element, t_domain, t_lag, t_potential>;
 
         template<PotentialConcept auto t_potential>
         using t_ElementPotentialPtr = std::unique_ptr<t_ElementPotential<t_potential>>;
@@ -1040,7 +1049,7 @@ namespace lolita
     public:
 
         explicit
-        ConcreteElementLagrangian(
+        ElementLagrangian(
             FiniteElement<t_element, t_domain> const & finite_element
         )
         :
@@ -1260,7 +1269,7 @@ namespace lolita
     private:
 
         template<LagrangianConcept auto t_lag>
-        using Implementation = ConcreteElementLagrangian<t_element, t_domain, t_lag>;
+        using Implementation = ElementLagrangian<t_element, t_domain, t_lag>;
 
     public:
 
@@ -1385,9 +1394,6 @@ namespace lolita
         mgis::behaviour::Behaviour behavior_;
 
     };
-    
-    template<Integer t_dim, Domain t_domain>
-    struct AbstractDomainLagrangian;
     
     template<Integer t_dim, Domain t_domain, LagrangianConcept auto t_lag>
     struct DomainLagrangian : AbstractDomainLagrangian<t_dim, t_domain>
@@ -1514,21 +1520,6 @@ namespace lolita
         {
             return static_cast<Implementation<t_lag> *>(this)->template getPotential<t_potential>();
         }
-
-        // template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
-        // auto const &
-        // getPotential()
-        // const
-        // {
-        //     return static_cast<Implementation<t_lag> const *>(this)->template getPotential<t_potential>();
-        // }
-
-        // template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
-        // auto &
-        // getPotential()
-        // {
-        //     return static_cast<Implementation<t_lag> *>(this)->template getPotential<t_potential>();
-        // }
 
     protected:
 

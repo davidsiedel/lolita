@@ -610,7 +610,7 @@ main(int argc, char** argv)
      * 
      */
     using HHHIIIA = lolita::AbstractElementLagrangian<lolita::Element::triangle(1), domain>;
-    using HHHIIIC = lolita::ConcreteElementLagrangian<lolita::Element::triangle(1), domain, lag3>;
+    using HHHIIIC = lolita::ElementLagrangian<lolita::Element::triangle(1), domain, lag3>;
     auto constexpr size_test = lolita::LagTraits<lag3>::template getSize<lolita::Element::triangle(1), domain>();
     auto constexpr index_test = lolita::LagTraits<lag3>::template getField<0>();
     std::cout << "lolita::LagTraits<lag3>::template getSize<lolita::Element::triangle(1), domain>() : " << size_test << std::endl;
@@ -668,8 +668,8 @@ main(int argc, char** argv)
     elements->getFiniteDomain<cell_dim>("ROD").getLagrangian<lag3>().getPotential<lag3, elastic_potential>().getMgisBehavior();
     auto ggg = TestRefDom(elements->getFiniteDomain<cell_dim>("ROD").getLagrangian<lag3>().getPotential<lag3, elastic_potential>());
     elements->setPotential<cell_dim, lag3, elastic_potential>("ROD");
-    // elements->setPotentialStrainOperators<cell_dim, lag3, elastic_potential>("ROD");
-    // elements->setPotentialStrains<cell_dim, lag3, elastic_potential>("ROD");
+    elements->setPotentialStrainOperators<cell_dim, lag3, elastic_potential>("ROD");
+    elements->setPotentialStrains<cell_dim, lag3, elastic_potential>("ROD");
     std::cout << linear_system->getSize() << std::endl;
     /**
      * Potentials

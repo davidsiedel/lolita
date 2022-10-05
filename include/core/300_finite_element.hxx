@@ -777,7 +777,7 @@ namespace lolita
         using t_Lag = AbstractElementLagrangian<t_element, t_domain>;
 
         template<LagrangianConcept auto t_lag>
-        using t_LagImpl = ConcreteElementLagrangian<t_element, t_domain, t_lag>;
+        using t_LagImpl = ElementLagrangian<t_element, t_domain, t_lag>;
 
         template<LagrangianConcept auto t_lag>
         void
@@ -860,10 +860,6 @@ namespace lolita
         void
         setPotential()
         {
-            if (!this->template hasLagrangian<t_lag>())
-            {
-                this->template setLagrangian<t_lag>();
-            }
             this->template getLagrangian<t_lag>().template setPotential<t_lag, t_potential>();
         }
 
