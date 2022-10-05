@@ -521,11 +521,11 @@ namespace lolita
     struct BehaviourData
     {
 
-        using t_DomainPotential = DomainPotential<t_dim, t_domain, t_lag, t_potential>;
+        using DomainPotential_ = DomainPotential<t_dim, t_domain, t_lag, t_potential>;
         
         explicit
         BehaviourData(
-            t_DomainPotential const & potential
+            DomainPotential_ const & potential
         )
         :
         potential_(potential),
@@ -570,7 +570,7 @@ namespace lolita
 
         mgis::behaviour::BehaviourData behavior_data_;
 
-        t_DomainPotential const & potential_;
+        DomainPotential_ const & potential_;
         
     };
 
@@ -579,12 +579,6 @@ namespace lolita
     {
 
     private:
-
-        using t_FiniteElement = FiniteElement<t_element, t_domain>;
-
-        using t_ElementPotential = ElementPotential<t_element, t_domain, t_lag, t_potential>;
-
-        using t_Bhv = BehaviourData<t_element.getDim(), t_domain, t_lag, t_potential>;
 
         template<MappingConcept auto t_strain>
         static constexpr
@@ -610,18 +604,24 @@ namespace lolita
             return PotentialTraits2<t_potential>::template getIndex<t_strain>();
         }
 
-        template<MappingConcept auto t_strain>
-        using StrainOpOK = std::unique_ptr<DenseMatrix<Real, getStrainOperatorNumRows<t_strain>(), getStrainOperatorNumCols<t_strain>()>>;
+        using FiniteElement_ = FiniteElement<t_element, t_domain>;
+
+        using ElementPotential_ = ElementPotential<t_element, t_domain, t_lag, t_potential>;
+
+        using BehaviorData_ = BehaviourData<t_element.getDim(), t_domain, t_lag, t_potential>;
 
         template<MappingConcept auto t_strain>
-        using StrainOpOK2 = DenseMatrix<Real, getStrainOperatorNumRows<t_strain>(), getStrainOperatorNumCols<t_strain>()>;
+        using StrainOperator_ = DenseMatrix<Real, getStrainOperatorNumRows<t_strain>(), getStrainOperatorNumCols<t_strain>()>;
 
-        using StrainOperators = utility::tuple_expansion_t<std::tuple, StrainOpOK, t_potential.getStrains()>;
+        template<MappingConcept auto t_strain>
+        using StrainOperatorPtr_ = std::unique_ptr<StrainOperator_<t_strain>>;
+
+        using StrainOperators_ = utility::tuple_expansion_t<std::tuple, StrainOperatorPtr_, t_potential.getStrains()>;
 
     public:
         
         IntegrationPoint2(
-            t_ElementPotential const & potential,
+            ElementPotential_ const & potential,
             Integer index
         )
         :
@@ -630,7 +630,7 @@ namespace lolita
         behavior_data_(potential.getFiniteElement().getDomain().template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>())
         {}
 
-        t_FiniteElement const &
+        FiniteElement_ const &
         getFiniteElement()
         const
         {
@@ -650,14 +650,14 @@ namespace lolita
             return this->getFiniteElement().getDomain().template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>();
         }
 
-        t_Bhv const &
+        BehaviorData_ const &
         getBhv()
         const
         {
             return behavior_data_;
         }
 
-        t_Bhv &
+        BehaviorData_ &
         getBhv()
         {
             return behavior_data_;
@@ -729,7 +729,8 @@ namespace lolita
             auto jacobian_block_row_offset = PotentialTraits2<t_potential>::template getOffset<t_domain, t_strain1>();
             auto jacobian_block_col_offset = PotentialTraits2<t_potential>::template getOffset<t_domain, t_strain2>();
             auto block_offset = jacobian_size * jacobian_block_row_offset + jacobian_block_col_offset;
-            return algebra::View<DenseMatrix<Real, jacobian_block_num_rows, jacobian_block_num_cols> const>(this->getMgisBhv().K.data() + block_offset);
+            auto const * mgis_data = this->getMgisBhv().K.data();
+            return algebra::View<DenseMatrix<Real, jacobian_block_num_rows, jacobian_block_num_cols> const>(mgis_data + block_offset);
         }
 
         template<MappingConcept auto t_strain>
@@ -739,7 +740,8 @@ namespace lolita
         {
             auto constexpr jacobian_block_num_cols = MappingTraits<t_strain>::template getSize<t_domain>();
             auto jacobian_block_col_offset = PotentialTraits2<t_potential>::template getOffset<t_domain, t_strain>();
-            return algebra::View<DenseVector<Real, jacobian_block_num_cols> const>(this->getMgisBhv().s1.thermodynamic_forces.data() + jacobian_block_col_offset);
+            auto const * mgis_data = this->getMgisBhv().s1.thermodynamic_forces.data();
+            return algebra::View<DenseVector<Real, jacobian_block_num_cols> const>(mgis_data + jacobian_block_col_offset);
         }
 
         template<MappingConcept auto t_strain>
@@ -749,7 +751,8 @@ namespace lolita
         {
             auto constexpr jacobian_block_num_cols = MappingTraits<t_strain>::template getSize<t_domain>();
             auto jacobian_block_col_offset = PotentialTraits2<t_potential>::template getOffset<t_domain, t_strain>();
-            return algebra::View<DenseVector<Real, jacobian_block_num_cols> const>(this->getMgisBhv().s1.gradients.data() + jacobian_block_col_offset);
+            auto const * mgis_data = this->getMgisBhv().s1.gradients.data();
+            return algebra::View<DenseVector<Real, jacobian_block_num_cols> const>(mgis_data + jacobian_block_col_offset);
         }
 
         template<MappingConcept auto t_strain>
@@ -758,7 +761,8 @@ namespace lolita
         {
             auto constexpr jacobian_block_num_cols = MappingTraits<t_strain>::template getSize<t_domain>();
             auto jacobian_block_col_offset = PotentialTraits2<t_potential>::template getOffset<t_domain, t_strain>();
-            auto strain_block = algebra::View<DenseVector<Real, jacobian_block_num_cols>>(this->getMgisBhv().s1.gradients.data() + jacobian_block_col_offset);
+            auto * mgis_data = this->getMgisBhv().s1.gradients.data();
+            auto strain_block = algebra::View<DenseVector<Real, jacobian_block_num_cols>>(mgis_data + jacobian_block_col_offset);
             if (this->template hasStrainOperator<t_strain>())
             {
                 strain_block = this->template getStrainOperator<t_strain>() * this->getFiniteElement().template getUnknownCoefficients<t_strain.getField()>();
@@ -806,7 +810,7 @@ namespace lolita
         }
         
         template<MappingConcept auto t_strain>
-        StrainOpOK2<t_strain> const &
+        StrainOperator_<t_strain> const &
         getStrainOperator()
         const
         {
@@ -814,7 +818,7 @@ namespace lolita
         }
 
         template<MappingConcept auto t_strain>
-        StrainOpOK2<t_strain>
+        StrainOperator_<t_strain>
         letStrainOperator()
         const
         {
@@ -825,26 +829,22 @@ namespace lolita
         void
         setStrainOperator()
         {
-            std::get<getStrainIndex<t_strain>()>(strain_operators_) = std::make_unique<StrainOpOK2<t_strain>>(this->template letStrainOperator<t_strain>());
+            std::get<getStrainIndex<t_strain>()>(strain_operators_) = std::make_unique<StrainOperator_<t_strain>>(this->template letStrainOperator<t_strain>());
         }
 
         Integer index_;
 
-        StrainOperators strain_operators_;
+        StrainOperators_ strain_operators_;
 
-        t_Bhv behavior_data_;
+        BehaviorData_ behavior_data_;
 
-        t_ElementPotential const & potential_;
+        ElementPotential_ const & potential_;
         
     };
     
     template<Element t_element, Domain t_domain, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
     struct ElementPotential
     {
-
-        using t_ElementLagrangian = ElementLagrangian<t_element, t_domain, t_lag>;
-
-        using t_FiniteElement = FiniteElement<t_element, t_domain>;
 
         static constexpr
         Integer
@@ -853,9 +853,11 @@ namespace lolita
             return QuadratureTraits<t_potential.getQuadrature()>::template Rule<t_element>::getSize();
         }
 
-        using t_IntegrationPoint = IntegrationPoint2<t_element, t_domain, t_lag, t_potential>;
+        using ElementLagrangian_ = ElementLagrangian<t_element, t_domain, t_lag>;
 
-        using IntegrationPoints = std::array<std::unique_ptr<t_IntegrationPoint>, getNumQuadraturePoints()>;
+        using FiniteElement_ = FiniteElement<t_element, t_domain>;
+
+        using IntegrationPoint_ = IntegrationPoint2<t_element, t_domain, t_lag, t_potential>;
 
     private:
 
@@ -865,7 +867,7 @@ namespace lolita
             auto quadrature_index = Integer(0);
             for (auto & ip : integration_points_)
             {
-                ip = std::make_unique<t_IntegrationPoint>(* this, quadrature_index);
+                ip = std::make_unique<IntegrationPoint_>(* this, quadrature_index);
                 quadrature_index ++;
             }
         }
@@ -874,7 +876,7 @@ namespace lolita
         
         explicit
         ElementPotential(
-            t_ElementLagrangian const & lag
+            ElementLagrangian_ const & lag
         )
         :
         lag_(lag)
@@ -882,38 +884,31 @@ namespace lolita
             setIntegrationPoints();
         }
 
-        t_FiniteElement const &
+        FiniteElement_ const &
         getFiniteElement()
         const
         {
             return lag_.getFiniteElement();
         }
 
-        t_ElementLagrangian const &
+        ElementLagrangian_ const &
         getLag()
         const
         {
             return lag_;
         }
 
-        IntegrationPoints const &
+        std::array<std::unique_ptr<IntegrationPoint_>, getNumQuadraturePoints()> const &
         getIntegrationPoints()
         const
         {
             return integration_points_;
         }
 
-        IntegrationPoints &
+        std::array<std::unique_ptr<IntegrationPoint_>, getNumQuadraturePoints()> &
         getIntegrationPoints()
         {
             return integration_points_;
-        }
-
-        void
-        hello()
-        const
-        {
-            std::cout << "COUCOU !!!" << std::endl;
         }
 
         void
@@ -1011,9 +1006,9 @@ namespace lolita
             }            
         }
 
-        t_ElementLagrangian const & lag_;
+        ElementLagrangian_ const & lag_;
 
-        IntegrationPoints integration_points_;
+        std::array<std::unique_ptr<IntegrationPoint_>, getNumQuadraturePoints()> integration_points_;
 
     };
     
@@ -1022,14 +1017,6 @@ namespace lolita
     {
 
     private:
-
-        template<PotentialConcept auto t_potential>
-        using t_ElementPotential = ElementPotential<t_element, t_domain, t_lag, t_potential>;
-
-        template<PotentialConcept auto t_potential>
-        using t_ElementPotentialPtr = std::unique_ptr<t_ElementPotential<t_potential>>;
-
-        using t_ElementPotentials = utility::tuple_expansion_t<std::tuple, t_ElementPotentialPtr, t_lag.getPotentials()>;
 
         static constexpr
         Integer
@@ -1046,18 +1033,30 @@ namespace lolita
             return LagTraits<t_lag>::template getIndex<t_potential>();
         }
 
+        using Base_ = AbstractElementLagrangian<t_element, t_domain>;
+
+        using FiniteElement_ = FiniteElement<t_element, t_domain>;
+
+        template<PotentialConcept auto t_potential>
+        using ElementPotential_ = ElementPotential<t_element, t_domain, t_lag, t_potential>;
+
+        template<PotentialConcept auto t_potential>
+        using ElementPotentialPtr_ = std::unique_ptr<ElementPotential_<t_potential>>;
+
+        using ElementPotentials_ = utility::tuple_expansion_t<std::tuple, ElementPotentialPtr_, t_lag.getPotentials()>;
+
     public:
 
         explicit
         ElementLagrangian(
-            FiniteElement<t_element, t_domain> const & finite_element
+            FiniteElement_ const & finite_element
         )
         :
-        AbstractElementLagrangian<t_element, t_domain>(t_lag),
+        Base_(t_lag),
         finite_element_(finite_element)
         {}
 
-        FiniteElement<t_element, t_domain> const &
+        FiniteElement_ const &
         getFiniteElement()
         const
         {
@@ -1068,11 +1067,11 @@ namespace lolita
         void
         setPotential()
         {
-            std::get<getPotentialIndex<t_potential>()>(element_potentials_) = std::make_unique<t_ElementPotential<t_potential>>(* this);
+            std::get<getPotentialIndex<t_potential>()>(element_potentials_) = std::make_unique<ElementPotential_<t_potential>>(* this);
         }
 
         template<PotentialConcept auto t_potential>
-        t_ElementPotential<t_potential> const &
+        ElementPotential_<t_potential> const &
         getPotential()
         const
         {
@@ -1080,7 +1079,7 @@ namespace lolita
         }
 
         template<PotentialConcept auto t_potential>
-        t_ElementPotential<t_potential> &
+        ElementPotential_<t_potential> &
         getPotential()
         {
             return * std::get<getPotentialIndex<t_potential>()>(element_potentials_);
@@ -1098,7 +1097,6 @@ namespace lolita
             constexpr mutable
             {
                 auto constexpr potential = LagTraits<t_lag>::template getPotential<t_i>();
-                // auto const & frm = this->template getFormulation<potential>();
                 auto constexpr j_mapping = PotentialTraits2<potential>::template getStrain<t_j>();
                 auto constexpr j_field = j_mapping.getField();
                 // --> making block
@@ -1252,9 +1250,9 @@ namespace lolita
             return * this->jacobian_matrix_;
         }
 
-        FiniteElement<t_element, t_domain> const & finite_element_;
+        FiniteElement_ const & finite_element_;
 
-        t_ElementPotentials element_potentials_;
+        ElementPotentials_ element_potentials_;
 
         std::unique_ptr<DenseVector<Real, getSystemSize()>> residual_vector_;
 
@@ -1269,9 +1267,9 @@ namespace lolita
     private:
 
         template<LagrangianConcept auto t_lag>
-        using Implementation = ElementLagrangian<t_element, t_domain, t_lag>;
+        using ElementLagrangian_ = ElementLagrangian<t_element, t_domain, t_lag>;
 
-    public:
+    protected:
 
         explicit
         AbstractElementLagrangian(
@@ -1281,9 +1279,7 @@ namespace lolita
         label_(lag.getLabel())
         {}
 
-        virtual
-        ~AbstractElementLagrangian()
-        {}
+    public:
 
         Label const &
         getLabel()
@@ -1296,7 +1292,7 @@ namespace lolita
         void
         setPotential()
         {
-            static_cast<Implementation<t_lag> *>(this)->template setPotential<t_potential>();
+            static_cast<ElementLagrangian_<t_lag> *>(this)->template setPotential<t_potential>();
         }
 
         template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
@@ -1304,14 +1300,14 @@ namespace lolita
         getPotential()
         const
         {
-            return static_cast<Implementation<t_lag> const *>(this)->template getPotential<t_potential>();
+            return static_cast<ElementLagrangian_<t_lag> const *>(this)->template getPotential<t_potential>();
         }
 
         template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
         auto &
         getPotential()
         {
-            return static_cast<Implementation<t_lag> *>(this)->template getPotential<t_potential>();
+            return static_cast<ElementLagrangian_<t_lag> *>(this)->template getPotential<t_potential>();
         }
 
         template<LagrangianConcept auto t_lag>
@@ -1320,7 +1316,7 @@ namespace lolita
             DenseMatrixConcept<Real> auto && matrix
         )
         {
-            return static_cast<Implementation<t_lag> *>(this)->setJacobianMatrix(std::forward<decltype(matrix)>(matrix));
+            return static_cast<ElementLagrangian_<t_lag> *>(this)->setJacobianMatrix(std::forward<decltype(matrix)>(matrix));
         }
 
         template<LagrangianConcept auto t_lag>
@@ -1328,7 +1324,7 @@ namespace lolita
         getJacobianMatrix()
         const
         {
-            return static_cast<Implementation<t_lag> const *>(this)->getJacobianMatrix();
+            return static_cast<ElementLagrangian_<t_lag> const *>(this)->getJacobianMatrix();
         }
 
         template<LagrangianConcept auto t_lag>
@@ -1337,7 +1333,7 @@ namespace lolita
             DenseVectorConcept<Real> auto && vector
         )
         {
-            return static_cast<Implementation<t_lag> *>(this)->setResidualVector(std::forward<decltype(vector)>(vector));
+            return static_cast<ElementLagrangian_<t_lag> *>(this)->setResidualVector(std::forward<decltype(vector)>(vector));
         }
 
         template<LagrangianConcept auto t_lag>
@@ -1345,7 +1341,7 @@ namespace lolita
         getResidualVector()
         const
         {
-            return static_cast<Implementation<t_lag> const *>(this)->getResidualVector();
+            return static_cast<ElementLagrangian_<t_lag> const *>(this)->getResidualVector();
         }
 
     protected:
@@ -1362,10 +1358,14 @@ namespace lolita
     struct DomainPotential
     {
 
-        using t_DomainLagrangian = DomainLagrangian<t_dim, t_domain, t_lag>;
+    private:
+
+        using DomainLagrangian_ = DomainLagrangian<t_dim, t_domain, t_lag>;
+
+    public:
 
         DomainPotential(
-            DomainLagrangian<t_dim, t_domain, t_lag> const & lag,
+            DomainLagrangian_ const & lag,
             auto const &... args
         )
         :
@@ -1373,7 +1373,7 @@ namespace lolita
         behavior_(mgis::behaviour::load(args...))
         {}
 
-        t_DomainLagrangian const &
+        DomainLagrangian_ const &
         getLag()
         const
         {
@@ -1389,7 +1389,7 @@ namespace lolita
 
     private:
 
-        t_DomainLagrangian const & lag_;
+        DomainLagrangian_ const & lag_;
         
         mgis::behaviour::Behaviour behavior_;
 
@@ -1409,26 +1409,30 @@ namespace lolita
             return LagTraits<t_lag>::template getIndex<t_potential>();
         }
 
+        using Base_ = AbstractDomainLagrangian<t_dim, t_domain>;
+
+        using Domain_ = FiniteDomain<t_dim, t_domain>;
+
+        template<PotentialConcept auto t_potential>
+        using DomainPotential_ = DomainPotential<t_dim, t_domain, t_lag, t_potential>;
+
+        template<PotentialConcept auto t_potential>
+        using DomainPotentialPtr_ = std::unique_ptr<DomainPotential_<t_potential>>;
+
+        using DomainPotentials_ = utility::tuple_expansion_t<std::tuple, DomainPotentialPtr_, t_lag.getPotentials()>;
+
     public:
-
-        template<PotentialConcept auto t_potential>
-        using t_DomainPotential = DomainPotential<t_dim, t_domain, t_lag, t_potential>;
-
-        template<PotentialConcept auto t_potential>
-        using t_DomainPotentialPtr = std::unique_ptr<t_DomainPotential<t_potential>>;
-
-        using t_DomainPotentials = utility::tuple_expansion_t<std::tuple, t_DomainPotentialPtr, t_lag.getPotentials()>;
 
         explicit
         DomainLagrangian(
-            FiniteDomain<t_dim, t_domain> const & domain
+            Domain_ const & domain
         )
         :
-        AbstractDomainLagrangian<t_dim, t_domain>(t_lag),
+        Base_(t_lag),
         domain_(domain)
         {}
 
-        FiniteDomain<t_dim, t_domain> const &
+        Domain_ const &
         getFiniteDomain()
         const
         {
@@ -1441,11 +1445,11 @@ namespace lolita
             auto const &... args
         )
         {
-            std::get<getPotentialIndex<t_potential>()>(domain_potentials_) = std::make_unique<t_DomainPotential<t_potential>>(* this, args...);
+            std::get<getPotentialIndex<t_potential>()>(domain_potentials_) = std::make_unique<DomainPotential_<t_potential>>(* this, args...);
         }
 
         template<PotentialConcept auto t_potential>
-        t_DomainPotential<t_potential> const &
+        DomainPotential_<t_potential> const &
         getPotential()
         const
         {
@@ -1453,7 +1457,7 @@ namespace lolita
         }
 
         template<PotentialConcept auto t_potential>
-        t_DomainPotential<t_potential> &
+        DomainPotential_<t_potential> &
         getPotential()
         {
             return * std::get<getPotentialIndex<t_potential>()>(domain_potentials_);
@@ -1461,9 +1465,9 @@ namespace lolita
 
     private:
 
-        FiniteDomain<t_dim, t_domain> const & domain_;
+        Domain_ const & domain_;
 
-        t_DomainPotentials domain_potentials_;
+        DomainPotentials_ domain_potentials_;
 
     };
 
@@ -1474,9 +1478,9 @@ namespace lolita
     private:
 
         template<LagrangianConcept auto t_lag>
-        using Implementation = DomainLagrangian<t_dim, t_domain, t_lag>;
+        using DomainLagrangian_ = DomainLagrangian<t_dim, t_domain, t_lag>;
 
-    public:
+    protected:
 
         explicit
         AbstractDomainLagrangian(
@@ -1486,9 +1490,7 @@ namespace lolita
         label_(lag.getLabel())
         {}
 
-        virtual
-        ~AbstractDomainLagrangian()
-        {}
+    public:
 
         Label const &
         getLabel()
@@ -1503,7 +1505,7 @@ namespace lolita
             auto const &... args
         )
         {
-            static_cast<Implementation<t_lag> *>(this)->template setPotential<t_potential>(args...);
+            static_cast<DomainLagrangian_<t_lag> *>(this)->template setPotential<t_potential>(args...);
         }
 
         template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
@@ -1511,14 +1513,14 @@ namespace lolita
         getPotential()
         const
         {
-            return static_cast<Implementation<t_lag> const *>(this)->template getPotential<t_potential>();
+            return static_cast<DomainLagrangian_<t_lag> const *>(this)->template getPotential<t_potential>();
         }
 
         template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
         auto &
         getPotential()
         {
-            return static_cast<Implementation<t_lag> *>(this)->template getPotential<t_potential>();
+            return static_cast<DomainLagrangian_<t_lag> *>(this)->template getPotential<t_potential>();
         }
 
     protected:

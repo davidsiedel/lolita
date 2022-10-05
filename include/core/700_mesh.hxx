@@ -10,7 +10,7 @@
 #include "core/202_finite_element_frm.hxx"
 #include "core/300_finite_element.hxx"
 #include "core/400_finite_element_basis.hxx"
-#include "core/500_finite_element_hdg_discretization.hxx"
+#include "core/501_finite_element_hdg_discretization.hxx"
 #include "core/600_finite_element_set.hxx"
 
 namespace lolita
