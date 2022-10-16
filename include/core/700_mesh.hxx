@@ -16,15 +16,35 @@
 namespace lolita
 {
 
+    /**
+     * @brief 
+     * 
+     * @tparam t_domain 
+     */
     template<Domain t_domain>
     struct FiniteElementMap : ElementMap<FiniteElement, t_domain>, DomainMap<FiniteDomain, t_domain>
     {
 
-        std::unique_ptr<FiniteElementSet<t_domain>>
+    private:
+
+        /**
+         * @brief 
+         * 
+         */
+        using FiniteElementSet_ = FiniteElementSet<t_domain>;
+
+    public:
+    
+        /**
+         * @brief 
+         * 
+         * @return std::unique_ptr<FiniteElementSet_> 
+         */
+        std::unique_ptr<FiniteElementSet_>
         makeFiniteElementSet()
         const
         {
-            auto finite_element_set = std::make_unique<FiniteElementSet<t_domain>>();
+            auto finite_element_set = std::make_unique<FiniteElementSet_>();
             auto make_sets = [&] <Integer t_i = 0> (
                 auto & self
             )
@@ -64,10 +84,33 @@ namespace lolita
 
     };
 
+    /**
+     * @brief A helper class to create a Domain object.
+     * An object of this class is intended to be built by any mesh format parser.
+     * 
+     * @tparam t_dim The dimension of the domain to be built
+     * @tparam t_domain The domain object defining the global domain geometry
+     */
     template<Integer t_dim, Domain t_domain>
     struct MeshDomain
     {
-        
+
+    private:
+
+        /**
+         * @brief Alias for FiniteDomain 
+         * 
+         */
+        using Domain_ = FiniteDomain<t_dim, t_domain>;
+
+    public:
+
+        /**
+         * @brief Get the Hash object
+         * 
+         * @param label 
+         * @return std::basic_string<Character> 
+         */
         static
         std::basic_string<Character>
         getHash(
@@ -80,6 +123,12 @@ namespace lolita
             return hash.str();
         }
         
+        /**
+         * @brief Get the Hash object
+         * 
+         * @param tag 
+         * @return std::basic_string<Character> 
+         */
         static
         std::basic_string<Character>
         getHash(
@@ -91,12 +140,21 @@ namespace lolita
             hash << std::setfill('0') << std::setw(10) << tag;
             return hash.str();
         }
-
+        
+        /**
+         * @brief Construct a new Mesh Domain object
+         * 
+         */
         MeshDomain()
         :
         label_()
         {}
 
+        /**
+         * @brief Construct a new Mesh Domain object
+         * 
+         * @param label 
+         */
         MeshDomain(
             std::basic_string<Character> const & label
         )
@@ -104,6 +162,11 @@ namespace lolita
         label_(label)
         {}
 
+        /**
+         * @brief Construct a new Mesh Domain object
+         * 
+         * @param label 
+         */
         MeshDomain(
             std::basic_string<Character> && label
         )
@@ -111,6 +174,11 @@ namespace lolita
         label_(std::move(label))
         {}
 
+        /**
+         * @brief Get the Label object
+         * 
+         * @return std::basic_string<Character> const& 
+         */
         std::basic_string<Character> const &
         getLabel()
         const
@@ -118,19 +186,28 @@ namespace lolita
             return label_;
         }
 
-        std::shared_ptr<FiniteDomain<t_dim, t_domain>>
-        makeDom()
+        /**
+         * @brief 
+         * 
+         * @return std::shared_ptr<FiniteDomain<t_dim, t_domain>> 
+         */
+        std::shared_ptr<Domain_>
+        letDomain()
         const
         {
-            return std::make_shared<FiniteDomain<t_dim, t_domain>>(label_);
+            return std::make_shared<Domain_>(label_);
         }
 
+        /**
+         * @brief The name of the domain to be built
+         * 
+         */
         std::basic_string<Character> label_;
     
     };
     
     /**
-     * @brief A helper class to create a Finite Element object for a node.
+     * @brief A helper class to create a Finite Element object for an element.
      * An object of this class is intended to be built by any mesh format parser.
      * 
      * @tparam t_element The element object defining the element geometry
@@ -140,7 +217,7 @@ namespace lolita
     struct MeshElement;
     
     /**
-     * @brief A helper class to create a Finite Element object for a node.
+     * @brief A helper class to create a Finite Element object for an element.
      * An object of this class is intended to be built by any mesh format parser.
      * For a generic element that is not a node, it consists in defining
      * the list of all node tags the element is connected to, and the list of all domains it belongs to.
@@ -159,11 +236,15 @@ namespace lolita
 
         using t_Domains = typename t_ElementTraits::template Domains<MeshDomain, t_domain>;
 
+        using FiniteElement_ = FiniteElement<t_element, t_domain>;
+
+        using NodeConnectivity_ = ElementNodeConnectivity<t_element>;
+
         /**
          * @brief The MeshDomain the element is connected to.
          * 
          */
-        using t_Domain = MeshDomain<t_element.getDim(), t_domain>;
+        using MeshDomain_ = MeshDomain<t_element.getDim(), t_domain>;
 
     public:
         
@@ -246,7 +327,7 @@ namespace lolita
          */
         void
         setDomain(
-            std::shared_ptr<t_Domain> const & domain
+            std::shared_ptr<MeshDomain_> const & domain
         )
         {
             domain_ = domain;
@@ -400,7 +481,7 @@ namespace lolita
          * @brief The tag of each node the element is connected to.
          * 
          */
-        ElementNodeConnectivity<t_element> node_tags_;
+        NodeConnectivity_ node_tags_;
 
         /**
          * @brief A vector containing each MeshDomain the element is connected to.
@@ -412,13 +493,13 @@ namespace lolita
          * @brief A pointer to the FiniteElement to be build.
          * 
          */
-        std::shared_ptr<FiniteElement<t_element, t_domain>> finite_element_;
+        std::shared_ptr<FiniteElement_> finite_element_;
 
         /**
          * @brief The MeshDomain the element is connected to.
          * 
          */
-        std::shared_ptr<t_Domain> domain_;
+        std::shared_ptr<MeshDomain_> domain_;
 
     };
 
@@ -442,7 +523,7 @@ namespace lolita
 
         using t_Domains = typename t_ElementTraits::template Domains<MeshDomain, t_domain>;
 
-        using t_Domain = MeshDomain<t_element.getDim(), t_domain>;
+        using MeshDomain_ = MeshDomain<t_element.getDim(), t_domain>;
 
     public:
 
@@ -487,7 +568,7 @@ namespace lolita
          */
         void
         setDomain(
-            std::shared_ptr<t_Domain> const & domain
+            std::shared_ptr<MeshDomain_> const & domain
         )
         {
             domain_ = domain;
@@ -576,7 +657,7 @@ namespace lolita
          * @brief The MeshDomain the element is connected to.
          * 
          */
-        std::shared_ptr<t_Domain> domain_;
+        std::shared_ptr<MeshDomain_> domain_;
 
     };
         
@@ -652,7 +733,7 @@ namespace lolita
             {
                 for (auto const & dm : this->template getDomains<t_i>())
                 {
-                    element_map->template getDomains<t_i>()[dm.second->getLabel()] = dm.second->makeDom();
+                    element_map->template getDomains<t_i>()[dm.second->getLabel()] = dm.second->letDomain();
                 }
                 if constexpr (t_i < t_domain.getDim())
                 {
@@ -727,7 +808,7 @@ namespace lolita
         struct GeometricEntity
         {
 
-            using t_Domain = MeshDomain<t_dim, t_domain>;
+            using MeshDomain_ = MeshDomain<t_dim, t_domain>;
         
             static
             std::basic_string<Character>
@@ -772,13 +853,13 @@ namespace lolita
 
             void
             setDomain(
-                std::shared_ptr<t_Domain> const & d
+                std::shared_ptr<MeshDomain_> const & d
             )
             {
                 domain_ = d;
             }
 
-            std::shared_ptr<t_Domain> const &
+            std::shared_ptr<MeshDomain_> const &
             getDomain()
             const
             {
@@ -791,7 +872,7 @@ namespace lolita
 
             std::vector<std::shared_ptr<MeshDomain<t_dim, t_domain>>> domains_;
 
-            std::shared_ptr<t_Domain> domain_;
+            std::shared_ptr<MeshDomain_> domain_;
 
         };
 

@@ -363,6 +363,13 @@ int
 main(int argc, char** argv)
 {
 
+    auto constexpr cell_field = lolita::UnknownField(2, 1, lolita::Basis("Monomial", 1));
+    static_assert(lolita::FieldConcept<decltype(cell_field)>);
+
+    static_assert(lolita::LinearOperatorConcept<decltype(lolita::Gradient(cell_field))>);
+
+    std::cout << lolita::FieldTraits<lolita::Gradient(cell_field)>::template getSize<lolita::Domain("Cartesian", 2)>() << std::endl;
+
     auto master = Master<2>(5);
     master.makeSlave();
     master.print();
@@ -650,6 +657,8 @@ main(int argc, char** argv)
     elements->setDomainLagrangian<cell_dim, lag3>("ROD");
     elements->setDomainPotential<cell_dim, lag3, elastic_potential>("ROD", lib_displacement_path, lib_displacement_label, hyp);
     elements->setLagrangian<cell_dim, lag3>("ROD");
+
+    auto jklmpoiu = lolita::HHHIIIMMM3::getSize();
 
     struct TestRefDom
     {

@@ -1,0 +1,74 @@
+
+
+        // template<FieldConcept auto t_field>
+        // auto
+        // getDiscreteFieldDegreeOfFreedom()
+        // const
+        // {
+        //     return this->template getDiscreteField<t_field>().getDegreeOfFreedom().template getCoefficients<t_field>();
+        // }
+
+        // template<FieldConcept auto t_field>
+        // auto
+        // getDiscreteFieldDegreeOfFreedom(
+        //     Integer row,
+        //     Integer col
+        // )
+        // const
+        // {
+        //     return this->template getDiscreteField<t_field>().getDegreeOfFreedom().template getCoefficients<t_field>(row, col);
+        // }
+
+        // template<FieldConcept auto t_field>
+        // void
+        // addDiscreteFieldDegreeOfFreedom()
+        // {
+        //     this->template getDiscreteField<t_field>().template addDegreeOfFreedom<t_field>();
+        // }
+
+        // template<FieldConcept auto t_field>
+        // void
+        // upgradeDiscreteFieldDegreeOfFreedom(
+        //     DenseVectorConcept<Real> auto && input
+        // )
+        // {
+        //     this->template getDiscreteField<t_field>().getDegreeOfFreedom().template upgradeCoefficients<t_field>(std::forward<decltype(input)>(input));
+        // }
+
+        // template<FieldConcept auto t_field>
+        // void
+        // recoverDiscreteFieldDegreeOfFreedom()
+        // {
+        //     this->template getDiscreteField<t_field>().getDegreeOfFreedom().template recoverCoefficients<t_field>();
+        // }
+
+        // template<FieldConcept auto t_field>
+        // void
+        // reserveDiscreteFieldDegreeOfFreedom()
+        // {
+        //     this->template getDiscreteField<t_field>().getDegreeOfFreedom().template reserveCoefficients<t_field>();
+        // }
+
+        // template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        // void
+        // setPotential()
+        // {
+        //     this->template getLagrangian<t_lag>().template setPotential<t_lag, t_potential>();
+        // }
+
+        // template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        // void
+        // setPotentialStrainOperators()
+        // {
+        //     this->template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>().setStrainOperators();
+        // }
+
+        // template<LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
+        // void
+        // setPotentialStrains()
+        // {
+        //     this->template getLagrangian<t_lag>().template getPotential<t_lag, t_potential>().setStrains();
+        // }
+        
+        // template<FieldConcept auto... t_fields>
+        // using ElementExternalForces = typename DiscreteFieldsTraits<t_fields...>::template ElementExternalForces<t_element, t_domain>;

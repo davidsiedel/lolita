@@ -18,363 +18,6 @@
 namespace lolita::utility
 {
 
-    template<typename t_T>
-    static
-    std::vector<t_T>
-    linspace(
-        t_T start,
-        t_T end,
-        Integer steps
-    )
-    {
-        auto linspacee = std::vector<t_T>(steps);
-        auto step = (end - start) / (steps - 1);
-        auto count = 0;
-        for (auto & val : linspacee)
-        {
-            val = start + count * step;
-            count ++;
-        }
-        return linspacee;
-    }
-
-    struct TimeSteps
-    {
-
-        TimeSteps()
-        :
-        step_(0),
-        iteration_(0),
-        values_(1, 0)
-        {}
-
-        inline
-        void
-        addRange(
-            Real end,
-            Integer steps
-        )
-        {
-            auto start = values_.back();
-            if (end > start)
-            {
-                auto step = (end - start) / (steps);
-                for (auto i = 1; i < steps + 1; i++)
-                {
-                    values_.push_back(start + i * step);
-                }
-            }
-            else
-            {
-                throw std::runtime_error("NO !");
-            }
-        }
-        
-        inline
-        Real const &
-        getTime()
-        const
-        {
-            return values_[step_];
-        }
-        
-        inline
-        Integer
-        getStep()
-        const
-        {
-            return step_;
-        }
-        
-        inline
-        Integer
-        getIteration()
-        const
-        {
-            return iteration_;
-        }
-        
-        inline
-        Boolean
-        isDone()
-        const
-        {
-            return step_ == values_.size() - 1;
-        }
-        
-        inline
-        Boolean
-        hasIteration(
-            Integer iteration
-        )
-        const
-        {
-            return iteration_ == iteration;
-        }
-
-        inline
-        void
-        split()
-        {
-            if (step_ > 0)
-            {
-                auto value = values_[step_ - 1] + (1.0 / 2.0) * (values_[step_] - values_[step_ - 1]);
-                values_.insert(values_.begin() + step_, value);
-                iteration_ = 0;
-            }
-            else
-            {
-                throw std::runtime_error("NO !");
-            }
-        }
-
-        inline
-        void
-        update()
-        {
-            step_ ++;
-            iteration_ = 0;
-        }
-        
-        inline
-        void
-        updateIteration()
-        {
-            iteration_ ++;
-        }
-        
-        inline
-        friend
-        std::ostream &
-        operator<<(
-            std::ostream & os,
-            TimeSteps const & time_steps
-        )
-        {
-            os << "time_steps : ";
-            for (auto time_step : time_steps.values_)
-            {
-                os << time_step << " / ";
-            }
-            return os;
-        }
-
-    private:
-
-        Integer step_;
-
-        Integer iteration_;
-
-        std::vector<Real> values_;
-
-    };
-
-    template<typename t_T>
-    struct Holderr
-    {
-
-    private:
-
-        struct Item
-        {
-
-            template<typename... t_U>
-            static
-            Item
-            make(
-                std::basic_string_view<Character> label,
-                t_U const &... args
-            )
-            {
-                return Item(label, t_T(args...));
-            }
-
-            template<typename... t_U>
-            static
-            Item
-            make(
-                std::basic_string_view<Character> label,
-                t_U &&... args
-            )
-            {
-                return Item(label, t_T(std::forward<t_U>(args)...));
-            }
-
-            Item(
-                std::basic_string_view<Character> label,
-                t_T const & value
-            )
-            :
-            label_(label),
-            value_(value)
-            {}
-
-            Item(
-                std::basic_string_view<Character> label,
-                t_T && value
-            )
-            :
-            label_(label),
-            value_(std::forward<t_T>(value))
-            {}
-
-            t_T const &
-            getValue()
-            const
-            {
-                return value_;
-            }
-
-            t_T &
-            getValue()
-            {
-                return value_;
-            }
-
-            std::basic_string_view<Character>
-            getLabel()
-            const
-            {
-                return label_;
-            }
-
-            t_T value_;
-
-            std::basic_string_view<Character> label_;
-
-        };
-
-        Integer
-        getItemIndex(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            return std::distance(items_.begin(), std::find_if(items_.begin(), items_.end(), [&] (Item const & item) { return item.getLabel() == label; }));
-        }
-
-    public:
-
-        Holderr()
-        {}
-
-        t_T const &
-        getValue(
-            std::basic_string_view<Character> label
-        )
-        const
-        {
-            auto item_index = getItemIndex(label);
-            if (item_index != items_.size())
-            {
-                return items_[item_index].getValue();
-            }
-            else
-            {
-                throw std::runtime_error("NO");
-            }
-        }
-
-        t_T &
-        getValue(
-            std::basic_string_view<Character> label
-        )
-        {
-            auto item_index = getItemIndex(label);
-            if (item_index != items_.size())
-            {
-                return items_[item_index].getValue();
-            }
-            else
-            {
-                throw std::runtime_error("NO");
-            }
-        }
-
-        // void
-        // setItem(
-        //     std::basic_string_view<Character> label,
-        //     t_T const & value
-        // )
-        // {
-        //     auto item_index = getItemIndex(label);
-        //     if (item_index != items_.size())
-        //     {
-        //         items_[item_index] = Item(label, value);
-        //     }
-        //     else
-        //     {
-        //         items_.push_back(Item(label, value));
-        //     }
-        // }
-
-        // void
-        // setItem(
-        //     std::basic_string_view<Character> label,
-        //     t_T && value
-        // )
-        // {
-        //     auto item_index = getItemIndex(label);
-        //     if (item_index != items_.size())
-        //     {
-        //         items_[item_index] = Item(label, std::forward<t_T>(value));
-        //     }
-        //     else
-        //     {
-        //         items_.push_back(Item(label, std::forward<t_T>(value)));
-        //     }
-        // }
-
-        template<typename... t_U>
-        void
-        setItem(
-            std::basic_string_view<Character> label,
-            t_U const &... args
-        )
-        {
-            auto item_index = getItemIndex(label);
-            if (item_index != items_.size())
-            {
-                items_[item_index] = Item::template make<t_U...>(label, args...);
-            }
-            else
-            {
-                items_.push_back(Item::template make<t_U...>(label, args...));
-            }
-        }
-
-        template<typename... t_U>
-        void
-        setItem(
-            std::basic_string_view<Character> label,
-            t_U &&... args
-        )
-        {
-            auto item_index = getItemIndex(label);
-            if (item_index != items_.size())
-            {
-                items_[item_index] = Item::template make<t_U...>(label, std::forward<t_U>(args)...);
-            }
-            else
-            {
-                items_.push_back(Item::template make<t_U...>(label, std::forward<t_U>(args)...));
-            }
-        }
-
-    private:
-
-        std::vector<Item> items_;
-
-    };
-
-    template<auto t_value>
-    struct Holder
-    {
-
-        auto static constexpr value_ = t_value;
-
-    };
-
     template<typename t_T, typename t_U>
     static constexpr
     Boolean
@@ -1252,6 +895,365 @@ namespace lolita::utility
         std::basic_string<Character> file_path_;
 
     };
+
+
+
+    // template<typename t_T>
+    // static
+    // std::vector<t_T>
+    // linspace(
+    //     t_T start,
+    //     t_T end,
+    //     Integer steps
+    // )
+    // {
+    //     auto linspacee = std::vector<t_T>(steps);
+    //     auto step = (end - start) / (steps - 1);
+    //     auto count = 0;
+    //     for (auto & val : linspacee)
+    //     {
+    //         val = start + count * step;
+    //         count ++;
+    //     }
+    //     return linspacee;
+    // }
+
+    // struct TimeSteps
+    // {
+
+    //     TimeSteps()
+    //     :
+    //     step_(0),
+    //     iteration_(0),
+    //     values_(1, 0)
+    //     {}
+
+    //     inline
+    //     void
+    //     addRange(
+    //         Real end,
+    //         Integer steps
+    //     )
+    //     {
+    //         auto start = values_.back();
+    //         if (end > start)
+    //         {
+    //             auto step = (end - start) / (steps);
+    //             for (auto i = 1; i < steps + 1; i++)
+    //             {
+    //                 values_.push_back(start + i * step);
+    //             }
+    //         }
+    //         else
+    //         {
+    //             throw std::runtime_error("NO !");
+    //         }
+    //     }
+        
+    //     inline
+    //     Real const &
+    //     getTime()
+    //     const
+    //     {
+    //         return values_[step_];
+    //     }
+        
+    //     inline
+    //     Integer
+    //     getStep()
+    //     const
+    //     {
+    //         return step_;
+    //     }
+        
+    //     inline
+    //     Integer
+    //     getIteration()
+    //     const
+    //     {
+    //         return iteration_;
+    //     }
+        
+    //     inline
+    //     Boolean
+    //     isDone()
+    //     const
+    //     {
+    //         return step_ == values_.size() - 1;
+    //     }
+        
+    //     inline
+    //     Boolean
+    //     hasIteration(
+    //         Integer iteration
+    //     )
+    //     const
+    //     {
+    //         return iteration_ == iteration;
+    //     }
+
+    //     inline
+    //     void
+    //     split()
+    //     {
+    //         if (step_ > 0)
+    //         {
+    //             auto value = values_[step_ - 1] + (1.0 / 2.0) * (values_[step_] - values_[step_ - 1]);
+    //             values_.insert(values_.begin() + step_, value);
+    //             iteration_ = 0;
+    //         }
+    //         else
+    //         {
+    //             throw std::runtime_error("NO !");
+    //         }
+    //     }
+
+    //     inline
+    //     void
+    //     update()
+    //     {
+    //         step_ ++;
+    //         iteration_ = 0;
+    //     }
+        
+    //     inline
+    //     void
+    //     updateIteration()
+    //     {
+    //         iteration_ ++;
+    //     }
+        
+    //     inline
+    //     friend
+    //     std::ostream &
+    //     operator<<(
+    //         std::ostream & os,
+    //         TimeSteps const & time_steps
+    //     )
+    //     {
+    //         os << "time_steps : ";
+    //         for (auto time_step : time_steps.values_)
+    //         {
+    //             os << time_step << " / ";
+    //         }
+    //         return os;
+    //     }
+
+    // private:
+
+    //     Integer step_;
+
+    //     Integer iteration_;
+
+    //     std::vector<Real> values_;
+
+    // };
+
+    // template<typename t_T>
+    // struct Holderr
+    // {
+
+    // private:
+
+    //     struct Item
+    //     {
+
+    //         template<typename... t_U>
+    //         static
+    //         Item
+    //         make(
+    //             std::basic_string_view<Character> label,
+    //             t_U const &... args
+    //         )
+    //         {
+    //             return Item(label, t_T(args...));
+    //         }
+
+    //         template<typename... t_U>
+    //         static
+    //         Item
+    //         make(
+    //             std::basic_string_view<Character> label,
+    //             t_U &&... args
+    //         )
+    //         {
+    //             return Item(label, t_T(std::forward<t_U>(args)...));
+    //         }
+
+    //         Item(
+    //             std::basic_string_view<Character> label,
+    //             t_T const & value
+    //         )
+    //         :
+    //         label_(label),
+    //         value_(value)
+    //         {}
+
+    //         Item(
+    //             std::basic_string_view<Character> label,
+    //             t_T && value
+    //         )
+    //         :
+    //         label_(label),
+    //         value_(std::forward<t_T>(value))
+    //         {}
+
+    //         t_T const &
+    //         getValue()
+    //         const
+    //         {
+    //             return value_;
+    //         }
+
+    //         t_T &
+    //         getValue()
+    //         {
+    //             return value_;
+    //         }
+
+    //         std::basic_string_view<Character>
+    //         getLabel()
+    //         const
+    //         {
+    //             return label_;
+    //         }
+
+    //         t_T value_;
+
+    //         std::basic_string_view<Character> label_;
+
+    //     };
+
+    //     Integer
+    //     getItemIndex(
+    //         std::basic_string_view<Character> label
+    //     )
+    //     const
+    //     {
+    //         return std::distance(items_.begin(), std::find_if(items_.begin(), items_.end(), [&] (Item const & item) { return item.getLabel() == label; }));
+    //     }
+
+    // public:
+
+    //     Holderr()
+    //     {}
+
+    //     t_T const &
+    //     getValue(
+    //         std::basic_string_view<Character> label
+    //     )
+    //     const
+    //     {
+    //         auto item_index = getItemIndex(label);
+    //         if (item_index != items_.size())
+    //         {
+    //             return items_[item_index].getValue();
+    //         }
+    //         else
+    //         {
+    //             throw std::runtime_error("NO");
+    //         }
+    //     }
+
+    //     t_T &
+    //     getValue(
+    //         std::basic_string_view<Character> label
+    //     )
+    //     {
+    //         auto item_index = getItemIndex(label);
+    //         if (item_index != items_.size())
+    //         {
+    //             return items_[item_index].getValue();
+    //         }
+    //         else
+    //         {
+    //             throw std::runtime_error("NO");
+    //         }
+    //     }
+
+    //     // void
+    //     // setItem(
+    //     //     std::basic_string_view<Character> label,
+    //     //     t_T const & value
+    //     // )
+    //     // {
+    //     //     auto item_index = getItemIndex(label);
+    //     //     if (item_index != items_.size())
+    //     //     {
+    //     //         items_[item_index] = Item(label, value);
+    //     //     }
+    //     //     else
+    //     //     {
+    //     //         items_.push_back(Item(label, value));
+    //     //     }
+    //     // }
+
+    //     // void
+    //     // setItem(
+    //     //     std::basic_string_view<Character> label,
+    //     //     t_T && value
+    //     // )
+    //     // {
+    //     //     auto item_index = getItemIndex(label);
+    //     //     if (item_index != items_.size())
+    //     //     {
+    //     //         items_[item_index] = Item(label, std::forward<t_T>(value));
+    //     //     }
+    //     //     else
+    //     //     {
+    //     //         items_.push_back(Item(label, std::forward<t_T>(value)));
+    //     //     }
+    //     // }
+
+    //     template<typename... t_U>
+    //     void
+    //     setItem(
+    //         std::basic_string_view<Character> label,
+    //         t_U const &... args
+    //     )
+    //     {
+    //         auto item_index = getItemIndex(label);
+    //         if (item_index != items_.size())
+    //         {
+    //             items_[item_index] = Item::template make<t_U...>(label, args...);
+    //         }
+    //         else
+    //         {
+    //             items_.push_back(Item::template make<t_U...>(label, args...));
+    //         }
+    //     }
+
+    //     template<typename... t_U>
+    //     void
+    //     setItem(
+    //         std::basic_string_view<Character> label,
+    //         t_U &&... args
+    //     )
+    //     {
+    //         auto item_index = getItemIndex(label);
+    //         if (item_index != items_.size())
+    //         {
+    //             items_[item_index] = Item::template make<t_U...>(label, std::forward<t_U>(args)...);
+    //         }
+    //         else
+    //         {
+    //             items_.push_back(Item::template make<t_U...>(label, std::forward<t_U>(args)...));
+    //         }
+    //     }
+
+    // private:
+
+    //     std::vector<Item> items_;
+
+    // };
+
+    // template<auto t_value>
+    // struct Holder
+    // {
+
+    //     auto static constexpr value_ = t_value;
+
+    // };
 
 } // namespace lolita::utility
 

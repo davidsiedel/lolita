@@ -14,6 +14,46 @@ namespace lolita
 {
 
     template<Basis t_basis>
+    struct BasisTraits2;
+
+    template<Basis t_basis>
+    requires(t_basis.isMonomial())
+    struct BasisTraits2<t_basis>
+    {
+        template<Element t_element>
+        struct Rule
+        {
+            
+            static constexpr
+            Integer
+            getSize()
+            {
+                return lolita::numerics::binomial(t_element.getDim() + t_basis.getOrd(), t_element.getDim());
+            }
+
+        };
+
+        template<Element t_element>
+        requires(t_element.isNode())
+        struct Rule<t_element>
+        {
+            
+            static constexpr
+            Integer
+            getSize()
+            {
+                return 1;
+            }
+
+        };
+
+    };
+
+    using HHHIIIMMM = BasisTraits2<Basis("Monomial", 2)>::template Rule<Element::node()>;
+
+    static constexpr int ici_ = HHHIIIMMM::getSize();
+
+    template<Basis t_basis>
     requires(t_basis.isMonomial())
     struct BasisTraits<t_basis>
     {

@@ -196,6 +196,113 @@ namespace lolita
     template<typename t_T, typename t_Scalar, Integer t_rows = -1>
     concept DenseVectorConcept = algebra::VectorConcept<t_T, t_Scalar, t_rows>;
 
+    template<typename t_Scalar, Integer...>
+    struct StaticCondensationImplementation;
+
+    struct StaticCondensationInterface
+    {
+
+    protected:
+
+        StaticCondensationInterface()
+        {}
+
+    public:
+
+        template<typename t_Scalar, Integer... t_system_size>
+        auto
+        packUp(
+            auto &&... args
+        )
+        {
+            return static_cast<StaticCondensationImplementation<t_Scalar, t_system_size...> *>(this)->packUp(std::forward<decltype(args)>(args)...);
+        }
+
+        template<typename t_Scalar, Integer... t_system_size>
+        auto
+        unPack(
+            auto &&... args
+        )
+        {
+            return static_cast<StaticCondensationImplementation<t_Scalar, t_system_size...> *>(this)->unPack(std::forward<decltype(args)>(args)...);
+        }
+
+    };
+
+    template<typename t_Scalar, Integer t_system_size, Integer t_block_size>
+    struct StaticCondensationImplementation<t_Scalar, t_system_size, t_block_size> : StaticCondensationInterface
+    {
+
+    private:
+
+        static constexpr
+        Integer
+        getSize()
+        {
+            return t_system_size;
+        }
+
+        static constexpr
+        Integer
+        getFTSize()
+        {
+            return t_system_size - t_block_size;
+        }
+
+        static constexpr
+        Integer
+        getTTSize()
+        {
+            return t_block_size;
+        }
+
+        static
+        DenseMatrix<t_Scalar, getTTSize(), getTTSize()>
+        make(
+            DenseMatrixConcept<t_Scalar> auto && input
+        )
+        {
+            return input.llt().solve(DenseMatrix<t_Scalar, getTTSize(), getTTSize()>::Identity());
+        }
+
+        using Base_ = StaticCondensationInterface;
+
+    public:
+
+        StaticCondensationImplementation()
+        :
+        Base_()
+        {}
+
+        StaticCondensationImplementation(
+            DenseMatrixConcept<t_Scalar> auto const & matrix,
+            DenseVectorConcept<t_Scalar> auto const & vector
+        )
+        :
+        Base_(),
+        r_t_(vector.template segment<getTTSize()>(0)),
+        k_tf_(matrix.template block<getTTSize(), getFTSize()>(0, getTTSize())),
+        k_tt_(make(matrix.template block<getTTSize(), getTTSize()>(0, 0))),
+        r_c_(vector.template segment<getFTSize()>(getTTSize()) - matrix.template block<getFTSize(), getTTSize()>(getTTSize(), 0) * k_tt_ * r_t_),
+        k_c_(matrix.template block<getFTSize(), getFTSize()>(getTTSize(), getTTSize()) - matrix.template block<getFTSize(), getTTSize()>(getTTSize(), 0) * k_tt_ * k_tf_)
+        {}
+
+    private:
+
+        DenseVector<t_Scalar, getTTSize()> r_t_;
+
+        DenseMatrix<t_Scalar, getTTSize(), getFTSize()> k_tf_;
+        
+        DenseMatrix<t_Scalar, getTTSize(), getTTSize()> k_tt_;
+
+        //
+
+        DenseVector<t_Scalar, getFTSize()> r_c_;
+
+        DenseMatrix<t_Scalar, getFTSize(), getFTSize()> k_c_;
+        
+    };
+
     auto static const print_format = Eigen::IOFormat(3, 0, ", ", "\n", "[", "]");
 
     static inline
@@ -271,418 +378,430 @@ namespace lolita
         return out.str();
     }
 
-    template<typename t_Scalar, Integer...>
-    struct DenseSystem;
+    // template<typename t_Scalar, Integer...>
+    // struct DenseSystem;
 
-    template<typename t_Scalar>
-    struct DenseSystem<t_Scalar>
-    {
+    // template<typename t_Scalar>
+    // struct DenseSystem<t_Scalar>
+    // {
 
-        DenseSystem(
-            DenseVectorConcept<t_Scalar> auto const & vector,
-            DenseMatrixConcept<t_Scalar> auto const & matrix
-        )
-        :
-        vector_(vector),
-        matrix_(matrix)
-        {}
+    //     DenseSystem(
+    //         DenseVectorConcept<t_Scalar> auto const & vector,
+    //         DenseMatrixConcept<t_Scalar> auto const & matrix
+    //     )
+    //     :
+    //     vector_(vector),
+    //     matrix_(matrix)
+    //     {}
 
-        DenseSystem(
-            DenseVectorConcept<t_Scalar> auto && vector,
-            DenseMatrixConcept<t_Scalar> auto && matrix
-        )
-        :
-        vector_(std::move(vector)),
-        matrix_(std::move(matrix))
-        {}
+    //     DenseSystem(
+    //         DenseVectorConcept<t_Scalar> auto && vector,
+    //         DenseMatrixConcept<t_Scalar> auto && matrix
+    //     )
+    //     :
+    //     vector_(std::move(vector)),
+    //     matrix_(std::move(matrix))
+    //     {}
 
-        DenseVector<t_Scalar> const &
-        getVector()
-        const
-        {
-            return vector_;
-        }
+    //     DenseVector<t_Scalar> const &
+    //     getVector()
+    //     const
+    //     {
+    //         return vector_;
+    //     }
 
-        DenseMatrix<t_Scalar> const &
-        getMatrix()
-        const
-        {
-            return matrix_;
-        }
+    //     DenseMatrix<t_Scalar> const &
+    //     getMatrix()
+    //     const
+    //     {
+    //         return matrix_;
+    //     }
 
-    private:
+    // private:
 
-        DenseVector<t_Scalar> vector_;
+    //     DenseVector<t_Scalar> vector_;
 
-        DenseMatrix<t_Scalar> matrix_;
+    //     DenseMatrix<t_Scalar> matrix_;
 
-    };
+    // };
 
-    template<typename t_Scalar, Integer t_size>
-    struct DenseSystem<t_Scalar, t_size>
-    {
+    // template<typename t_Scalar, Integer t_size>
+    // struct DenseSystem<t_Scalar, t_size>
+    // {
 
-        DenseSystem(
-            DenseVectorConcept<t_Scalar, t_size> auto const & vector,
-            DenseMatrixConcept<t_Scalar, t_size, t_size> auto const & matrix
-        )
-        :
-        vector_(vector),
-        matrix_(matrix)
-        {}
+    //     DenseSystem(
+    //         DenseVectorConcept<t_Scalar, t_size> auto const & vector,
+    //         DenseMatrixConcept<t_Scalar, t_size, t_size> auto const & matrix
+    //     )
+    //     :
+    //     vector_(vector),
+    //     matrix_(matrix)
+    //     {}
 
-        DenseSystem(
-            DenseVectorConcept<t_Scalar, t_size> auto && vector,
-            DenseMatrixConcept<t_Scalar, t_size, t_size> auto && matrix
-        )
-        :
-        vector_(std::move(vector)),
-        matrix_(std::move(matrix))
-        {}
+    //     DenseSystem(
+    //         DenseVectorConcept<t_Scalar, t_size> auto && vector,
+    //         DenseMatrixConcept<t_Scalar, t_size, t_size> auto && matrix
+    //     )
+    //     :
+    //     vector_(std::move(vector)),
+    //     matrix_(std::move(matrix))
+    //     {}
 
-        DenseVector<t_Scalar, t_size> const &
-        getVector()
-        const
-        {
-            return vector_;
-        }
+    //     DenseVector<t_Scalar, t_size> const &
+    //     getVector()
+    //     const
+    //     {
+    //         return vector_;
+    //     }
 
-        DenseMatrix<t_Scalar, t_size, t_size> const &
-        getMatrix()
-        const
-        {
-            return matrix_;
-        }
+    //     DenseMatrix<t_Scalar, t_size, t_size> const &
+    //     getMatrix()
+    //     const
+    //     {
+    //         return matrix_;
+    //     }
 
-    private:
+    // private:
 
-        DenseVector<t_Scalar, t_size> vector_;
+    //     DenseVector<t_Scalar, t_size> vector_;
 
-        DenseMatrix<t_Scalar, t_size, t_size> matrix_;
+    //     DenseMatrix<t_Scalar, t_size, t_size> matrix_;
 
-    };
+    // };
 
-    template<typename t_Scalar, Integer...>
-    struct ConcreteDenseSystem;
+    // template<typename t_Scalar, Integer...>
+    // struct ConcreteDenseSystem;
     
-    struct AbstractDenseSystem
-    {
+    // struct AbstractDenseSystem
+    // {
 
-        AbstractDenseSystem()
-        {}
+    //     AbstractDenseSystem()
+    //     {}
 
-        virtual
-        ~AbstractDenseSystem()
-        {}
+    //     virtual
+    //     ~AbstractDenseSystem()
+    //     {}
 
-        template<typename t_Scalar, Integer... t_args>
-        auto const &
-        getMatrix()
-        const
-        {
-            return static_cast<ConcreteDenseSystem<t_Scalar, t_args...> const *>(this)->getMatrix();
-        }
+    //     template<typename t_Scalar, Integer... t_args>
+    //     auto const &
+    //     getMatrix()
+    //     const
+    //     {
+    //         return static_cast<ConcreteDenseSystem<t_Scalar, t_args...> const *>(this)->getMatrix();
+    //     }
 
-        template<typename t_Scalar, Integer... t_args>
-        auto const &
-        getVector()
-        const
-        {
-            return static_cast<ConcreteDenseSystem<t_Scalar, t_args...> const *>(this)->getVector();
-        }
+    //     template<typename t_Scalar, Integer... t_args>
+    //     auto const &
+    //     getVector()
+    //     const
+    //     {
+    //         return static_cast<ConcreteDenseSystem<t_Scalar, t_args...> const *>(this)->getVector();
+    //     }
 
-    };
+    // };
 
-    template<typename t_Scalar>
-    struct ConcreteDenseSystem<t_Scalar> : AbstractDenseSystem, DenseSystem<t_Scalar>
-    {
+    // template<typename t_Scalar>
+    // struct ConcreteDenseSystem<t_Scalar> : AbstractDenseSystem, DenseSystem<t_Scalar>
+    // {
 
-        ConcreteDenseSystem(
-            DenseVectorConcept<t_Scalar> auto && vector,
-            DenseMatrixConcept<t_Scalar> auto && matrix
-        )
-        :
-        AbstractDenseSystem(),
-        DenseSystem<t_Scalar>(std::forward<decltype(vector)>(vector), std::forward<decltype(matrix)>(matrix))
-        {}
+    //     ConcreteDenseSystem(
+    //         DenseVectorConcept<t_Scalar> auto && vector,
+    //         DenseMatrixConcept<t_Scalar> auto && matrix
+    //     )
+    //     :
+    //     AbstractDenseSystem(),
+    //     DenseSystem<t_Scalar>(std::forward<decltype(vector)>(vector), std::forward<decltype(matrix)>(matrix))
+    //     {}
 
-    };
+    // };
 
-    template<typename t_Scalar, Integer t_size>
-    struct ConcreteDenseSystem<t_Scalar, t_size> : AbstractDenseSystem, DenseSystem<t_Scalar, t_size>
-    {
+    // template<typename t_Scalar, Integer t_size>
+    // struct ConcreteDenseSystem<t_Scalar, t_size> : AbstractDenseSystem, DenseSystem<t_Scalar, t_size>
+    // {
 
-        ConcreteDenseSystem(
-            DenseVectorConcept<t_Scalar, t_size> auto && vector,
-            DenseMatrixConcept<t_Scalar, t_size, t_size> auto && matrix
-        )
-        :
-        AbstractDenseSystem(),
-        DenseSystem<t_Scalar, t_size>(std::forward<decltype(vector)>(vector), std::forward<decltype(matrix)>(matrix))
-        {}
+    //     ConcreteDenseSystem(
+    //         DenseVectorConcept<t_Scalar, t_size> auto && vector,
+    //         DenseMatrixConcept<t_Scalar, t_size, t_size> auto && matrix
+    //     )
+    //     :
+    //     AbstractDenseSystem(),
+    //     DenseSystem<t_Scalar, t_size>(std::forward<decltype(vector)>(vector), std::forward<decltype(matrix)>(matrix))
+    //     {}
         
-    };
+    // };
 
-    template<typename, Integer...>
-    struct ConcreteDenseVector;
+    // template<typename, Integer...>
+    // struct ConcreteDenseVector;
 
-    struct AbstractDenseVector
-    {
+    // struct AbstractDenseVector
+    // {
 
-        AbstractDenseVector()
-        {}
+    //     AbstractDenseVector()
+    //     {}
 
-        virtual
-        ~AbstractDenseVector()
-        {}
+    //     virtual
+    //     ~AbstractDenseVector()
+    //     {}
 
-        template<typename t_Scalar, Integer... t_args>
-        auto const &
-        get()
-        const
-        {
-            return static_cast<ConcreteDenseVector<t_Scalar, t_args...> const *>(this)->get();
-        }
+    //     template<typename t_Scalar, Integer... t_args>
+    //     auto const &
+    //     get()
+    //     const
+    //     {
+    //         return static_cast<ConcreteDenseVector<t_Scalar, t_args...> const *>(this)->get();
+    //     }
 
-    };
+    // };
 
-    template<typename t_Scalar, Integer t_num_cols>
-    struct ConcreteDenseVector<t_Scalar, t_num_cols> : AbstractDenseVector
-    {
+    // template<typename t_Scalar, Integer t_num_cols>
+    // struct ConcreteDenseVector<t_Scalar, t_num_cols> : AbstractDenseVector
+    // {
 
-        explicit
-        ConcreteDenseVector(
-            DenseVectorConcept<t_Scalar, t_num_cols> auto const & vector
-        )
-        :
-        AbstractDenseVector(),
-        vector_(vector)
-        {}
+    //     explicit
+    //     ConcreteDenseVector(
+    //         DenseVectorConcept<t_Scalar, t_num_cols> auto const & vector
+    //     )
+    //     :
+    //     AbstractDenseVector(),
+    //     vector_(vector)
+    //     {}
         
-        explicit
-        ConcreteDenseVector(
-            DenseVectorConcept<t_Scalar, t_num_cols> auto && vector
-        )
-        :
-        AbstractDenseVector(),
-        vector_(std::move(vector))
-        {}
+    //     explicit
+    //     ConcreteDenseVector(
+    //         DenseVectorConcept<t_Scalar, t_num_cols> auto && vector
+    //     )
+    //     :
+    //     AbstractDenseVector(),
+    //     vector_(std::move(vector))
+    //     {}
 
-        DenseVector<t_Scalar, t_num_cols> const &
-        get()
-        const
-        {
-            return vector_;
-        }
+    //     DenseVector<t_Scalar, t_num_cols> const &
+    //     get()
+    //     const
+    //     {
+    //         return vector_;
+    //     }
 
-    private:
+    // private:
         
-        DenseVector<t_Scalar, t_num_cols> vector_;
+    //     DenseVector<t_Scalar, t_num_cols> vector_;
 
-    };
+    // };
 
-    template<typename, Integer...>
-    struct ConcreteDenseMatrix;
+    // template<typename, Integer...>
+    // struct ConcreteDenseMatrix;
 
-    struct AbstractDenseMatrix
-    {
+    // struct AbstractDenseMatrix
+    // {
 
-        AbstractDenseMatrix()
-        {}
+    //     AbstractDenseMatrix()
+    //     {}
 
-        virtual
-        ~AbstractDenseMatrix()
-        {}
+    //     virtual
+    //     ~AbstractDenseMatrix()
+    //     {}
 
-        template<typename t_Scalar, Integer... t_system_size>
-        auto const &
-        get()
-        const
-        {
-            return static_cast<ConcreteDenseMatrix<t_Scalar, t_system_size...> const *>(this)->get();
-        }
+    //     template<typename t_Scalar, Integer... t_system_size>
+    //     auto const &
+    //     get()
+    //     const
+    //     {
+    //         return static_cast<ConcreteDenseMatrix<t_Scalar, t_system_size...> const *>(this)->get();
+    //     }
 
-    };
+    // };
 
-    template<typename t_Scalar, Integer t_num_rows, Integer t_num_cols>
-    struct ConcreteDenseMatrix<t_Scalar, t_num_rows, t_num_cols> : AbstractDenseMatrix
-    {
+    // template<typename t_Scalar, Integer t_num_rows, Integer t_num_cols>
+    // struct ConcreteDenseMatrix<t_Scalar, t_num_rows, t_num_cols> : AbstractDenseMatrix
+    // {
 
-        explicit
-        ConcreteDenseMatrix(
-            DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto const & matrix
-        )
-        :
-        AbstractDenseMatrix(),
-        matrix_(matrix)
-        {}
+    //     explicit
+    //     ConcreteDenseMatrix(
+    //         DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto const & matrix
+    //     )
+    //     :
+    //     AbstractDenseMatrix(),
+    //     matrix_(matrix)
+    //     {}
         
-        explicit
-        ConcreteDenseMatrix(
-            DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto && matrix
-        )
-        :
-        AbstractDenseMatrix(),
-        matrix_(std::move(matrix))
-        {}
+    //     explicit
+    //     ConcreteDenseMatrix(
+    //         DenseMatrixConcept<t_Scalar, t_num_rows, t_num_cols> auto && matrix
+    //     )
+    //     :
+    //     AbstractDenseMatrix(),
+    //     matrix_(std::move(matrix))
+    //     {}
 
-        DenseMatrix<t_Scalar, t_num_rows, t_num_cols> const &
-        get()
-        const
-        {
-            return matrix_;
-        }
+    //     DenseMatrix<t_Scalar, t_num_rows, t_num_cols> const &
+    //     get()
+    //     const
+    //     {
+    //         return matrix_;
+    //     }
 
-    private:
+    // private:
         
-        DenseMatrix<t_Scalar, t_num_rows, t_num_cols> matrix_;
+    //     DenseMatrix<t_Scalar, t_num_rows, t_num_cols> matrix_;
         
-    };
+    // };
 
-    template<typename, Integer...>
-    struct StaticCondensationImpl;
+    // // template<typename, Integer...>
+    // // struct StaticCondensationImpl;
 
-    struct StaticCondensation
-    {
+    // template<typename t_Scalar, Integer...>
+    // struct StaticCondensationImplementation;
+    
+    // struct StaticCondensation
+    // {
 
-        virtual
-        ~StaticCondensation()
-        {}
+    //     virtual
+    //     ~StaticCondensation()
+    //     {}
 
-        template<typename t_Scalar, Integer... t_system_size>
-        auto
-        packUp(
-            auto &&... args
-        )
-        {
-            return static_cast<StaticCondensationImpl<t_Scalar, t_system_size...> const *>(this)->packUp(std::forward<decltype(args)>(args)...);
-        }
+    //     template<typename t_Scalar, Integer... t_system_size>
+    //     auto
+    //     packUp(
+    //         auto &&... args
+    //     )
+    //     {
+    //         return static_cast<StaticCondensationImpl<t_Scalar, t_system_size...> const *>(this)->packUp(std::forward<decltype(args)>(args)...);
+    //     }
 
-        template<typename t_Scalar, Integer... t_system_size>
-        auto
-        unPack(
-            auto &&... args
-        )
-        {
-            return static_cast<StaticCondensationImpl<t_Scalar, t_system_size...> const *>(this)->unPack(std::forward<decltype(args)>(args)...);
-        }
+    //     template<typename t_Scalar, Integer... t_system_size>
+    //     auto
+    //     unPack(
+    //         auto &&... args
+    //     )
+    //     {
+    //         return static_cast<StaticCondensationImpl<t_Scalar, t_system_size...> const *>(this)->unPack(std::forward<decltype(args)>(args)...);
+    //     }
 
-    };
+    // };
 
-    template<typename t_Scalar, Integer t_system_size, Integer t_block_size>
-    struct StaticCondensationImpl<t_Scalar, t_system_size, t_block_size> : StaticCondensation
-    {
+    
+    
+    // template<typename t_Scalar, Integer t_system_size, Integer t_block_size>
+    // struct StaticCondensationImpl<t_Scalar, t_system_size, t_block_size> : StaticCondensationInterface
+    // {
 
-    private:
+    // private:
 
-        using t_SystemIn = DenseSystem<t_Scalar, t_system_size>;
+    //     using Base_ = StaticCondensationInterface;
 
-    public:
+    //     using t_SystemIn = DenseSystem<t_Scalar, t_system_size>;
 
-        static constexpr
-        Integer
-        getSize()
-        {
-            return t_system_size;
-        }
+    // public:
 
-        static constexpr
-        Integer
-        getFTSize()
-        {
-            return t_system_size - t_block_size;
-        }
+    //     StaticCondensationImpl()
+    //     :
+    //     Base_()
+    //     {}
 
-        static constexpr
-        Integer
-        getTTSize()
-        {
-            return t_block_size;
-        }
+    //     static constexpr
+    //     Integer
+    //     getSize()
+    //     {
+    //         return t_system_size;
+    //     }
 
-        static
-        DenseMatrix<t_Scalar, getTTSize(), getTTSize()>
-        make(
-            DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto && input
-        )
-        {
-            return input.llt().solve(DenseMatrix<t_Scalar, getTTSize(), getTTSize()>::Identity());
-        }
+    //     static constexpr
+    //     Integer
+    //     getFTSize()
+    //     {
+    //         return t_system_size - t_block_size;
+    //     }
 
-        StaticCondensationImpl(
-            DenseVectorConcept<t_Scalar, getTTSize()> auto const & r_t,
-            DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto const & k_tf,
-            DenseMatrixConcept<t_Scalar, getTTSize(), getFTSize()> auto const & k_tt
-        )
-        :
-        StaticCondensation(),
-        r_t_(r_t),
-        k_tf_(k_tf),
-        k_tt_(k_tt)
-        {}
+    //     static constexpr
+    //     Integer
+    //     getTTSize()
+    //     {
+    //         return t_block_size;
+    //     }
 
-        StaticCondensationImpl(
-            DenseVectorConcept<t_Scalar, getTTSize()> auto && r_t,
-            DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto && k_tf,
-            DenseMatrixConcept<t_Scalar, getTTSize(), getFTSize()> auto && k_tt
-        )
-        :
-        StaticCondensation(),
-        r_t_(std::move(r_t)),
-        k_tf_(std::move(k_tf)),
-        k_tt_(std::move(k_tt))
-        {}
+    //     static
+    //     DenseMatrix<t_Scalar, getTTSize(), getTTSize()>
+    //     make(
+    //         DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto && input
+    //     )
+    //     {
+    //         return input.llt().solve(DenseMatrix<t_Scalar, getTTSize(), getTTSize()>::Identity());
+    //     }
 
-        explicit
-        StaticCondensationImpl(
-            DenseSystem<t_Scalar, t_system_size> const & system
-        )
-        :
-        StaticCondensation(),
-        r_t_(system.getVector().template segment<getTTSize()>(0)),
-        k_tf_(system.getMatrix().template block<getTTSize(), getFTSize()>(0, getTTSize())),
-        k_tt_(make(system.getMatrix().template block<getTTSize(), getTTSize()>(0, 0)))
-        {}
+    //     StaticCondensationImpl(
+    //         DenseVectorConcept<t_Scalar, getTTSize()> auto const & r_t,
+    //         DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto const & k_tf,
+    //         DenseMatrixConcept<t_Scalar, getTTSize(), getFTSize()> auto const & k_tt
+    //     )
+    //     :
+    //     StaticCondensation(),
+    //     r_t_(r_t),
+    //     k_tf_(k_tf),
+    //     k_tt_(k_tt)
+    //     {}
 
-        explicit
-        StaticCondensationImpl(
-            DenseSystem<t_Scalar, t_system_size> && system
-        )
-        :
-        StaticCondensation(),
-        r_t_(std::move(system).getVector().template segment<getTTSize()>(0)),
-        k_tf_(std::move(system).getMatrix().template block<getTTSize(), getFTSize()>(0, getTTSize())),
-        k_tt_(make(std::move(system).getMatrix().template block<getTTSize(), getTTSize()>(0, 0)))
-        {}
+    //     StaticCondensationImpl(
+    //         DenseVectorConcept<t_Scalar, getTTSize()> auto && r_t,
+    //         DenseMatrixConcept<t_Scalar, getTTSize(), getTTSize()> auto && k_tf,
+    //         DenseMatrixConcept<t_Scalar, getTTSize(), getFTSize()> auto && k_tt
+    //     )
+    //     :
+    //     StaticCondensation(),
+    //     r_t_(std::move(r_t)),
+    //     k_tf_(std::move(k_tf)),
+    //     k_tt_(std::move(k_tt))
+    //     {}
 
-        DenseSystem<t_Scalar, getFTSize()>
-        packUp(
-            DenseSystem<t_Scalar, t_system_size> && system
-        )
-        {
-            auto const r_f = std::forward<t_SystemIn>(system).getVector().template segment<getFTSize()>(getTTSize());
-            auto const k_ft = std::forward<t_SystemIn>(system).getMatrix().template block<getFTSize(), getTTSize()>(getTTSize(), 0);
-            auto const k_ff = std::forward<t_SystemIn>(system).getMatrix().template block<getFTSize(), getFTSize()>(getTTSize(), getTTSize());
-            return DenseSystem<t_Scalar, getFTSize()>(k_ff - k_ft * k_tt_ * k_tf_, r_f - k_ft * k_tt_ * r_t_);
-        }
+    //     explicit
+    //     StaticCondensationImpl(
+    //         DenseSystem<t_Scalar, t_system_size> const & system
+    //     )
+    //     :
+    //     StaticCondensation(),
+    //     r_t_(system.getVector().template segment<getTTSize()>(0)),
+    //     k_tf_(system.getMatrix().template block<getTTSize(), getFTSize()>(0, getTTSize())),
+    //     k_tt_(make(system.getMatrix().template block<getTTSize(), getTTSize()>(0, 0)))
+    //     {}
 
-        DenseVector<t_Scalar, getTTSize()>
-        unPack(
-            DenseVectorConcept<t_Scalar, getFTSize()> auto && vector
-        )
-        {
-            return k_tt_ * (r_t_ - k_tf_ * std::forward<decltype(vector)>(vector));
-        }
+    //     explicit
+    //     StaticCondensationImpl(
+    //         DenseSystem<t_Scalar, t_system_size> && system
+    //     )
+    //     :
+    //     StaticCondensation(),
+    //     r_t_(std::move(system).getVector().template segment<getTTSize()>(0)),
+    //     k_tf_(std::move(system).getMatrix().template block<getTTSize(), getFTSize()>(0, getTTSize())),
+    //     k_tt_(make(std::move(system).getMatrix().template block<getTTSize(), getTTSize()>(0, 0)))
+    //     {}
 
-    private:
+    //     DenseSystem<t_Scalar, getFTSize()>
+    //     packUp(
+    //         DenseSystem<t_Scalar, t_system_size> && system
+    //     )
+    //     {
+    //         auto const r_f = std::forward<t_SystemIn>(system).getVector().template segment<getFTSize()>(getTTSize());
+    //         auto const k_ft = std::forward<t_SystemIn>(system).getMatrix().template block<getFTSize(), getTTSize()>(getTTSize(), 0);
+    //         auto const k_ff = std::forward<t_SystemIn>(system).getMatrix().template block<getFTSize(), getFTSize()>(getTTSize(), getTTSize());
+    //         return DenseSystem<t_Scalar, getFTSize()>(k_ff - k_ft * k_tt_ * k_tf_, r_f - k_ft * k_tt_ * r_t_);
+    //     }
 
-        DenseVector<t_Scalar, getTTSize()> r_t_;
+    //     DenseVector<t_Scalar, getTTSize()>
+    //     unPack(
+    //         DenseVectorConcept<t_Scalar, getFTSize()> auto && vector
+    //     )
+    //     {
+    //         return k_tt_ * (r_t_ - k_tf_ * std::forward<decltype(vector)>(vector));
+    //     }
 
-        DenseMatrix<t_Scalar, getTTSize(), getFTSize()> k_tf_;
+    // private:
+
+    //     DenseVector<t_Scalar, getTTSize()> r_t_;
+
+    //     DenseMatrix<t_Scalar, getTTSize(), getFTSize()> k_tf_;
         
-        DenseMatrix<t_Scalar, getTTSize(), getTTSize()> k_tt_;
+    //     DenseMatrix<t_Scalar, getTTSize(), getTTSize()> k_tt_;
 
-    };
+    // };
 
     // template<typename t_Scalar>
     // struct StaticCondensationImpl<t_Scalar> : StaticCondensation

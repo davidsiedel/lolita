@@ -1,0 +1,44 @@
+*Heading
+ /home/dsiedel/projetcs/lolita/applications/micromorphic_damage_alessi/data/mesh/test.inp
+*NODE
+1, 0, 0, 0
+2, 1, 0, 0
+3, 1, 1, 0
+4, 0, 1, 0
+5, 0.5, 0.5, 0
+******* E L E M E N T S *************
+*ELEMENT, type=T3D2, ELSET=Line1
+2, 1, 2
+*ELEMENT, type=T3D2, ELSET=Line2
+3, 2, 3
+*ELEMENT, type=T3D2, ELSET=Line3
+4, 3, 4
+*ELEMENT, type=T3D2, ELSET=Line4
+5, 4, 1
+*ELEMENT, type=CPS3, ELSET=Surface1
+6, 1, 2, 5
+7, 4, 1, 5
+8, 2, 3, 5
+9, 3, 4, 5
+*ELSET,ELSET=TOP
+4, 
+*ELSET,ELSET=BOTTOM
+2, 
+*ELSET,ELSET=RIGHT
+3, 
+*ELSET,ELSET=LEFT
+5, 
+*ELSET,ELSET=ROD
+6, 7, 8, 9, 
+*NSET,NSET=NODE
+1, 
+*NSET,NSET=TOP
+3, 4, 
+*NSET,NSET=BOTTOM
+1, 2, 
+*NSET,NSET=RIGHT
+2, 3, 
+*NSET,NSET=LEFT
+1, 4, 
+*NSET,NSET=ROD
+1, 2, 3, 4, 5, 

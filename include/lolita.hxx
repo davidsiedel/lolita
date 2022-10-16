@@ -385,6 +385,22 @@ namespace lolita
         const = default;
         
         constexpr
+        Label const &
+        getRule()
+        const
+        {
+            return rule_;
+        }
+
+        constexpr
+        Integer
+        getOrder()
+        const
+        {
+            return ord_;
+        }
+        
+        constexpr
         Boolean
         isGauss()
         const
@@ -693,13 +709,13 @@ namespace lolita
 
     };
 
-    template<typename t_T>
-    concept DiscretizationConcept = std::derived_from<t_T, Discretization>;
+    template<typename T>
+    concept DiscretizationConcept = std::derived_from<std::decay_t<T>, Discretization>;
 
     struct Field
     {
 
-        constexpr explicit
+        constexpr
         Field(
             Integer dim_domain,
             Integer dim_tensor
@@ -776,6 +792,768 @@ namespace lolita
 
         Integer dim_tensor_;
 
+    };
+
+    template<typename T>
+    concept FieldConcept = std::derived_from<std::decay_t<T>, Field>;
+    
+    struct UnknownField : Field
+    {
+
+    private:
+
+        using Base_ = Field;
+
+    public:
+
+        constexpr
+        UnknownField(
+            Integer dim_domain,
+            Integer dim_tensor,
+            Basis const & basis
+        )
+        :
+        Base_(dim_domain, dim_tensor),
+        basis_(basis)
+        {}
+        
+        constexpr
+        UnknownField(
+            std::basic_string_view<Character> && label,
+            Integer dim_domain,
+            Integer dim_tensor,
+            Basis const & basis
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor),
+        basis_(basis)
+        {}
+        
+        constexpr
+        UnknownField(
+            Field const & field,
+            Basis const & basis
+        )
+        :
+        Base_(field),
+        basis_(basis)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            UnknownField const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            UnknownField const & other
+        )
+        const = default;
+
+        constexpr
+        Basis const &
+        getBasis()
+        const
+        {
+            return basis_;
+        }
+
+        Basis basis_;
+
+    };
+    
+    struct ImposedField : Field
+    {
+
+    private:
+
+        using Base_ = Field;
+
+    public:
+
+        using Base_::Base_;
+
+    };
+
+    template<typename... UnknownFieldT>
+    struct LinearOperator : Field
+    {
+
+    private:
+
+        using Base_ = Field;
+
+        using UnknownFields_ = utility::Aggregate<UnknownFieldT...>;
+
+    protected:
+
+        constexpr 
+        LinearOperator(
+            Integer dim_domain,
+            Integer dim_tensor,
+            UnknownFieldT const &... unknown_fields
+        )
+        :
+        Base_(dim_domain, dim_tensor),
+        row_(-1),
+        col_(-1),
+        unknown_fields_(unknown_fields...)
+        {}
+
+        constexpr 
+        LinearOperator(
+            Integer dim_domain,
+            Integer dim_tensor,
+            Integer row,
+            Integer col,
+            UnknownFieldT const &... unknown_fields
+        )
+        :
+        Base_(dim_domain, dim_tensor),
+        row_(row),
+        col_(col),
+        unknown_fields_(unknown_fields...)
+        {}
+
+        constexpr 
+        LinearOperator(
+            std::basic_string_view<Character> && label,
+            Integer dim_domain,
+            Integer dim_tensor,
+            UnknownFieldT const &... unknown_fields
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor),
+        row_(-1),
+        col_(-1),
+        unknown_fields_(unknown_fields...)
+        {}
+
+        constexpr 
+        LinearOperator(
+            std::basic_string_view<Character> && label,
+            Integer dim_domain,
+            Integer dim_tensor,
+            Integer row,
+            Integer col,
+            UnknownFieldT const &... unknown_fields
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor),
+        row_(row),
+        col_(col),
+        unknown_fields_(unknown_fields...)
+        {}
+
+    public:
+
+        constexpr
+        Boolean
+        operator==(
+            LinearOperator const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            LinearOperator const & other
+        )
+        const = default;
+
+        constexpr
+        Integer
+        getRow()
+        const
+        {
+            return row_;
+        }
+
+        constexpr
+        Integer
+        getCol()
+        const
+        {
+            return col_;
+        }
+
+        template<Integer i>
+        constexpr
+        std::tuple_element_t<i, std::tuple<UnknownFieldT...>> const &
+        getField()
+        const
+        {
+            return utility::get<i>(unknown_fields_);
+        }
+
+        Integer row_;
+
+        Integer col_;
+
+        UnknownFields_ unknown_fields_;
+
+    };
+
+    template<typename CellFieldT>
+    struct Gradient : LinearOperator<CellFieldT>
+    {
+
+    private:
+
+        using Base_ = LinearOperator<CellFieldT>;
+
+    public:
+
+        explicit constexpr
+        Gradient(
+            CellFieldT const & cell_field
+        )
+        :
+        Base_(cell_field.getDomainDim(), cell_field.getTensorDim() + 1, cell_field)
+        {}
+
+        constexpr 
+        Gradient(
+            std::basic_string_view<Character> && label,
+            CellFieldT const & cell_field
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), cell_field.getDomainDim(), cell_field.getTensorDim() + 1, cell_field)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            Gradient const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Gradient const & other
+        )
+        const = default;
+        
+    };
+
+    template<typename CellFieldT>
+    struct Trace : LinearOperator<CellFieldT>
+    {
+
+    private:
+
+        using Base_ = LinearOperator<CellFieldT>;
+
+    public:
+
+        explicit constexpr
+        Trace(
+            CellFieldT const & cell_field
+        )
+        :
+        Base_(cell_field.getDomainDim(), cell_field.getTensorDim(), cell_field)
+        {}
+        
+        constexpr
+        Trace(
+            std::basic_string_view<Character> && label,
+            CellFieldT const & cell_field
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), cell_field.getDomainDim(), cell_field.getTensorDim(), cell_field)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            Trace const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            Trace const & other
+        )
+        const = default;
+        
+    };
+
+    template<typename CellFieldT, typename FaceFieldT>
+    struct HybridDiscontinuousGalerkinGradient : LinearOperator<CellFieldT, FaceFieldT>
+    {
+
+    private:
+
+        using Base_ = LinearOperator<CellFieldT>;
+
+    public:
+
+        constexpr
+        HybridDiscontinuousGalerkinGradient(
+            CellFieldT const & cell_field,
+            CellFieldT const & face_field
+        )
+        :
+        Base_(cell_field.getDomainDim(), cell_field.getTensorDim() + 1, cell_field, face_field)
+        {}
+
+        constexpr
+        HybridDiscontinuousGalerkinGradient(
+            std::basic_string_view<Character> && label,
+            CellFieldT const & cell_field,
+            CellFieldT const & face_field
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), cell_field.getDomainDim(), cell_field.getTensorDim() + 1, cell_field, face_field)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            HybridDiscontinuousGalerkinGradient const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            HybridDiscontinuousGalerkinGradient const & other
+        )
+        const = default;
+        
+    };
+
+    template<typename CellFieldT, typename FaceFieldT>
+    struct HybridDiscontinuousGalerkinStabilization : LinearOperator<CellFieldT, FaceFieldT>
+    {
+
+    private:
+
+        using Base_ = LinearOperator<CellFieldT>;
+
+    public:
+
+        constexpr
+        HybridDiscontinuousGalerkinStabilization(
+            CellFieldT const & cell_field,
+            CellFieldT const & face_field
+        )
+        :
+        Base_(face_field.getDomainDim(), cell_field.getTensorDim(), cell_field, face_field)
+        {}
+
+        constexpr
+        HybridDiscontinuousGalerkinStabilization(
+            std::basic_string_view<Character> && label,
+            CellFieldT const & cell_field,
+            CellFieldT const & face_field
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), face_field.getDomainDim(), cell_field.getTensorDim(), cell_field, face_field)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            HybridDiscontinuousGalerkinStabilization const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            HybridDiscontinuousGalerkinStabilization const & other
+        )
+        const = default;
+        
+    };
+
+    namespace detail
+    {
+
+        template<typename T>
+        struct IsLinearOperator : std::false_type {};
+        
+        template<typename... T>
+        struct IsLinearOperator<LinearOperator<T...>> : std::true_type {};
+        
+        template<typename... T>
+        struct IsLinearOperator<Gradient<T...>> : std::true_type {};
+        
+        template<typename... T>
+        struct IsLinearOperator<Trace<T...>> : std::true_type {};
+        
+        template<typename... T>
+        struct IsLinearOperator<HybridDiscontinuousGalerkinGradient<T...>> : std::true_type {};
+        
+        template<typename... T>
+        struct IsLinearOperator<HybridDiscontinuousGalerkinStabilization<T...>> : std::true_type {};
+
+    }
+    
+    template<typename T>
+    concept LinearOperatorConcept = detail::IsLinearOperator<std::decay_t<T>>::value;
+    
+    struct PotentialBase
+    {
+
+        constexpr
+        PotentialBase(
+            Integer dim_domain,
+            Quadrature quadrature
+        )
+        :
+        label_(),
+        dim_domain_(dim_domain),
+        quadrature_(quadrature)
+        {}
+
+        constexpr
+        PotentialBase(
+            std::basic_string_view<Character> && label,
+            Integer dim_domain,
+            Quadrature quadrature
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        dim_domain_(dim_domain),
+        quadrature_(quadrature)
+        {}
+
+        constexpr
+        Label const &
+        getLabel()
+        const
+        {
+            return label_;
+        }
+
+        constexpr
+        Integer
+        getDomainDim()
+        const
+        {
+            return dim_domain_;
+        }
+
+        constexpr
+        Quadrature const &
+        getQuadrature()
+        const
+        {
+            return quadrature_;
+        }
+
+        Label label_;
+
+        Integer dim_domain_;
+
+        Quadrature quadrature_;
+
+    };
+
+    template<typename... LinearOperatorT>
+    struct InternalPotential : PotentialBase
+    {
+
+    private:
+
+        using Base_ = PotentialBase;
+
+    public:
+        
+        static constexpr
+        Integer
+        getNumMappings()
+        {
+            return sizeof...(LinearOperatorT);
+        }
+
+    private:
+
+        using LinearOperators_ = utility::Aggregate<LinearOperatorT...>;
+
+    public:
+
+        constexpr
+        InternalPotential(
+            Integer dim_domain,
+            Quadrature quadrature,
+            LinearOperatorT const &... linear_operators
+        )
+        :
+        Base_(dim_domain, quadrature),
+        linear_operators_(linear_operators...)
+        {}
+
+        constexpr
+        InternalPotential(
+            std::basic_string_view<Character> && label,
+            Integer dim_domain,
+            Quadrature quadrature,
+            LinearOperatorT const &... linear_operators
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), dim_domain, quadrature),
+        linear_operators_(linear_operators...)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            InternalPotential const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            InternalPotential const & other
+        )
+        const = default;
+
+        constexpr
+        LinearOperators_ const &
+        getLinearOperators()
+        const
+        {
+            return linear_operators_;
+        }
+
+        template<Integer i>
+        constexpr
+        std::tuple_element_t<i, std::tuple<LinearOperatorT...>> const &
+        getLinearOperator()
+        const
+        {
+            return utility::get<i>(linear_operators_);
+        }
+
+        LinearOperators_ linear_operators_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename T>
+        struct IsInternalPotential : std::false_type {};
+        
+        template<typename... T>
+        struct IsInternalPotential<InternalPotential<T...>> : std::true_type {};
+
+    }
+    
+    template<typename T>
+    concept InternalPotentialConcept = detail::IsInternalPotential<std::decay_t<T>>::value;
+    
+    struct ExternalPotential : PotentialBase
+    {
+
+    private:
+
+        using Base_ = PotentialBase;
+
+    public:
+
+        constexpr
+        ExternalPotential(
+            Integer dim_domain,
+            Quadrature quadrature,
+            UnknownField const & unknown_field,
+            ImposedField const & imposed_field
+        )
+        :
+        Base_(dim_domain, quadrature),
+        unknown_field_(unknown_field),
+        imposed_field_(imposed_field)
+        {}
+
+        constexpr
+        ExternalPotential(
+            std::basic_string_view<Character> && label,
+            Integer dim_domain,
+            Quadrature quadrature,
+            UnknownField const & unknown_field,
+            ImposedField const & imposed_field
+        )
+        :
+        Base_(std::forward<std::basic_string_view<Character>>(label), dim_domain, quadrature),
+        unknown_field_(unknown_field),
+        imposed_field_(imposed_field)
+        {}
+
+        constexpr
+        UnknownField const &
+        getUnknownField()
+        const
+        {
+            return unknown_field_;
+        }
+
+        constexpr
+        ImposedField const &
+        getImposedField()
+        const
+        {
+            return imposed_field_;
+        }
+
+        UnknownField unknown_field_;
+
+        ImposedField imposed_field_;
+
+    };
+    
+    template<typename... PotentialT>
+    struct InternalEnergy
+    {
+        
+        static constexpr
+        Integer
+        getNumMappings()
+        {
+            return sizeof...(PotentialT);
+        }
+
+    private:
+
+        using Potentials_ = utility::Aggregate<PotentialT...>;
+
+    public:
+
+        constexpr
+        InternalEnergy(
+            PotentialT const &... linear_operators
+        )
+        :
+        label_(),
+        linear_operators_(linear_operators...)
+        {}
+
+        constexpr
+        InternalEnergy(
+            std::basic_string_view<Character> && label,
+            PotentialT const &... linear_operators
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        linear_operators_(linear_operators...)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            InternalEnergy const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            InternalEnergy const & other
+        )
+        const = default;
+
+        constexpr
+        Potentials_ const &
+        getPotentials()
+        const
+        {
+            return linear_operators_;
+        }
+
+        template<Integer i>
+        constexpr
+        std::tuple_element_t<i, std::tuple<PotentialT...>> const &
+        getPotential()
+        const
+        {
+            return utility::get<i>(linear_operators_);
+        }
+
+        Label label_;
+
+        Potentials_ linear_operators_;
+
+    };
+
+    template<typename... PotentialT>
+    struct ExternalEnergy
+    {
+        
+        static constexpr
+        Integer
+        getNumMappings()
+        {
+            return sizeof...(PotentialT);
+        }
+
+    private:
+
+        using Potentials_ = utility::Aggregate<PotentialT...>;
+
+    public:
+
+        constexpr
+        InternalEnergy(
+            PotentialT const &... linear_operators
+        )
+        :
+        label_(),
+        linear_operators_(linear_operators...)
+        {}
+
+        constexpr
+        InternalEnergy(
+            std::basic_string_view<Character> && label,
+            PotentialT const &... linear_operators
+        )
+        :
+        label_(std::forward<std::basic_string_view<Character>>(label)),
+        linear_operators_(linear_operators...)
+        {}
+
+        constexpr
+        Boolean
+        operator==(
+            InternalEnergy const & other
+        )
+        const = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            InternalEnergy const & other
+        )
+        const = default;
+
+        constexpr
+        Potentials_ const &
+        getPotentials()
+        const
+        {
+            return linear_operators_;
+        }
+
+        template<Integer i>
+        constexpr
+        std::tuple_element_t<i, std::tuple<PotentialT...>> const &
+        getPotential()
+        const
+        {
+            return utility::get<i>(linear_operators_);
+        }
+
+        Label label_;
+
+        Potentials_ linear_operators_;
+        
     };
     
     template<DiscretizationConcept t_Discretization = Discretization>
@@ -866,9 +1644,6 @@ namespace lolita
 
     template<typename t_T>
     concept DiscreteFieldConcept = detail::IsDiscreteField<std::decay_t<t_T>>::value;
-
-    template<typename t_T>
-    concept FieldConcept = std::derived_from<t_T, Field>;
     
     template<DiscreteFieldConcept t_Field>
     struct Mapping

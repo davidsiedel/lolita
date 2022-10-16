@@ -1,83 +1,27 @@
-#ifndef F402E53D_B7DA_4E80_B9B0_6CC57A882459
-#define F402E53D_B7DA_4E80_B9B0_6CC57A882459
+#ifndef C8DE0CF3_9846_4A8D_96D4_CFC8D5FA4C7E
+#define C8DE0CF3_9846_4A8D_96D4_CFC8D5FA4C7E
 
-#include "lolita.hxx"
-#include "core/000_physics_traits.hxx"
-#include "core/100_geometry.hxx"
-#include "core/linear_system.hxx"
+#include "2/quadrature.hxx"
+#include "2/shape.hxx"
 
-namespace lolita
+namespace lolita::core
 {
 
-    template<Quadrature t_quadrature>
+    template<QuadratureConcept auto t_quadrature>
     struct QuadratureTraits;
-
-    template<Quadrature t_quadrature>
-    requires(t_quadrature.getRule() == "Gauss" && t_quadrature.getOrder() < 0)
-    struct QuadratureTraits<t_quadrature>
-    {
-
-        template<Element t_element>
-        struct Rule;
-
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
-        {
-
-            static constexpr
-            Integer
-            getSize()
-            {
-                return 1;
-            }
-
-            static constexpr
-            std::array<std::array<Real, 3>, getSize()> const &
-            getReferencePoints()
-            {
-                return reference_points_;
-            }
-
-            static constexpr
-            std::array<Real, getSize()> const &
-            getReferenceWeights()
-            {
-                return reference_weights_;
-            }
-
-            std::array<std::array<Real, 3>, getSize()> static constexpr reference_points_ = {
-                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
-            };
-            
-            std::array<Real, getSize()> static constexpr reference_weights_ = {
-                +1.0000000000000000,
-            };
-
-        };
-
-    };
-
-    template<Element t_element, Quadrature t_quadrature>
-    using QuadratureRule = typename QuadratureTraits<t_quadrature>::template Rule<t_element>;
-
-    using HHHIIIMMM2 = QuadratureTraits<Quadrature("Gauss", -1)>::template Rule<Element::node()>;
-
-    using HHHIIIMMM3 = QuadratureRule<Element::node(), Quadrature("Gauss", -1)>;
-
-    // template<Quadrature t_quadrature>
-    // requires(t_quadrature.getRule() == "Gauss" && t_quadrature.getOrder() < 2)
+    
+    // template<QuadratureConcept auto t_quadrature>
+    // requires(GaussQuadratureConcept<decltype(t_quadrature)> && t_quadrature.getOrder() == 1)
     // struct QuadratureTraits<t_quadrature>
     template<>
-    struct QuadratureTraits<Quadrature("Gauss", 1)>
+    struct QuadratureTraits<GaussQuadrature(1)>
     {
 
-        template<Element t_element>
+        template<ShapeConcept auto shape_>
         struct Rule;
 
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
+        template<PointShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -111,9 +55,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isSegment())
-        struct Rule<t_element>
+        template<SegmentShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -147,9 +90,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isTriangle())
-        struct Rule<t_element>
+        template<TriangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -183,9 +125,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isQuadrangle())
-        struct Rule<t_element>
+        template<QuadrangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -221,21 +162,15 @@ namespace lolita
 
     };
 
-    // template<Quadrature t_quadrature>
-    // requires(t_quadrature.isGauss(2))
-    // struct QuadratureTraits<t_quadrature>
     template<>
-    // struct QuadratureTraits<Quadrature::gauss(2)>
-    struct QuadratureTraits<Quadrature("Gauss", 2)>
-    // struct QuadratureTraits<Quadrature(2, Quadrature::Gauss)>
+    struct QuadratureTraits<GaussQuadrature(2)>
     {
 
-        template<Element t_element>
+        template<ShapeConcept auto shape_>
         struct Rule;
 
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
+        template<PointShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -269,9 +204,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isSegment())
-        struct Rule<t_element>
+        template<SegmentShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -307,9 +241,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isTriangle())
-        struct Rule<t_element>
+        template<TriangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -347,9 +280,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isQuadrangle())
-        struct Rule<t_element>
+        template<QuadrangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -391,21 +323,15 @@ namespace lolita
 
     };
 
-    // template<Quadrature t_quadrature>
-    // requires(t_quadrature.isGauss(3))
-    // struct QuadratureTraits<t_quadrature>
     template<>
-    // struct QuadratureTraits<Quadrature::gauss(3)>
-    struct QuadratureTraits<Quadrature("Gauss", 3)>
-    // struct QuadratureTraits<Quadrature(3, Quadrature::Gauss)>
+    struct QuadratureTraits<GaussQuadrature(3)>
     {
 
-        template<Element t_element>
+        template<ShapeConcept auto shape_>
         struct Rule;
 
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
+        template<PointShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -439,9 +365,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isSegment())
-        struct Rule<t_element>
+        template<SegmentShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -479,9 +404,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isTriangle())
-        struct Rule<t_element>
+        template<TriangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -521,9 +445,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isQuadrangle())
-        struct Rule<t_element>
+        template<QuadrangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -575,21 +498,15 @@ namespace lolita
 
     };
 
-    // template<Quadrature t_quadrature>
-    // requires(t_quadrature.isGauss(4))
-    // struct QuadratureTraits<t_quadrature>
     template<>
-    // struct QuadratureTraits<Quadrature::gauss(4)>
-    struct QuadratureTraits<Quadrature("Gauss", 4)>
-    // struct QuadratureTraits<Quadrature(4, Quadrature::Gauss)>
+    struct QuadratureTraits<GaussQuadrature(4)>
     {
 
-        template<Element t_element>
+        template<ShapeConcept auto shape_>
         struct Rule;
 
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
+        template<PointShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -623,9 +540,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isSegment())
-        struct Rule<t_element>
+        template<SegmentShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -665,9 +581,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isTriangle())
-        struct Rule<t_element>
+        template<TriangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -711,9 +626,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isQuadrangle())
-        struct Rule<t_element>
+        template<QuadrangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -779,21 +693,15 @@ namespace lolita
 
     };
 
-    // template<Quadrature t_quadrature>
-    // requires(t_quadrature.isGauss(5))
-    // struct QuadratureTraits<t_quadrature>
     template<>
-    // struct QuadratureTraits<Quadrature::gauss(5)>
-    struct QuadratureTraits<Quadrature("Gauss", 5)>
-    // struct QuadratureTraits<Quadrature(5, Quadrature::Gauss)>
+    struct QuadratureTraits<GaussQuadrature(5)>
     {
 
-        template<Element t_element>
+        template<ShapeConcept auto shape_>
         struct Rule;
 
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
+        template<PointShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -827,9 +735,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isSegment())
-        struct Rule<t_element>
+        template<SegmentShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -871,9 +778,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isTriangle())
-        struct Rule<t_element>
+        template<TriangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -919,9 +825,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isQuadrangle())
-        struct Rule<t_element>
+        template<QuadrangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1005,21 +910,15 @@ namespace lolita
 
     };
 
-    // template<Quadrature t_quadrature>
-    // requires(t_quadrature.isGauss(6))
-    // struct QuadratureTraits<t_quadrature>
     template<>
-    // struct QuadratureTraits<Quadrature::gauss(6)>
-    struct QuadratureTraits<Quadrature("Gauss", 6)>
-    // struct QuadratureTraits<Quadrature(6, Quadrature::Gauss)>
+    struct QuadratureTraits<GaussQuadrature(6)>
     {
 
-        template<Element t_element>
+        template<ShapeConcept auto shape_>
         struct Rule;
 
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
+        template<PointShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1053,9 +952,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isSegment())
-        struct Rule<t_element>
+        template<SegmentShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1099,9 +997,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isTriangle())
-        struct Rule<t_element>
+        template<TriangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1157,9 +1054,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isQuadrangle())
-        struct Rule<t_element>
+        template<QuadrangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1265,21 +1161,15 @@ namespace lolita
 
     };
    
-    // template<Quadrature t_quadrature>
-    // requires(t_quadrature.isGauss(7))
-    // struct QuadratureTraits<t_quadrature>
     template<>
-    // struct QuadratureTraits<Quadrature::gauss(7)>
-    struct QuadratureTraits<Quadrature("Gauss", 7)>
-    // struct QuadratureTraits<Quadrature(7, Quadrature::Gauss)>
+    struct QuadratureTraits<GaussQuadrature(7)>
     {
 
-        template<Element t_element>
+        template<ShapeConcept auto shape_>
         struct Rule;
 
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
+        template<PointShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1313,9 +1203,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isSegment())
-        struct Rule<t_element>
+        template<SegmentShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1361,9 +1250,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isTriangle())
-        struct Rule<t_element>
+        template<TriangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1421,9 +1309,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isQuadrangle())
-        struct Rule<t_element>
+        template<QuadrangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1555,21 +1442,15 @@ namespace lolita
 
     };
     
-    // template<Quadrature t_quadrature>
-    // requires(t_quadrature.isGauss(8))
-    // struct QuadratureTraits<t_quadrature>
     template<>
-    // struct QuadratureTraits<Quadrature::gauss(8)>
-    struct QuadratureTraits<Quadrature("Gauss", 8)>
-    // struct QuadratureTraits<Quadrature(8, Quadrature::Gauss)>
+    struct QuadratureTraits<GaussQuadrature(8)>
     {
 
-        template<Element t_element>
+        template<ShapeConcept auto shape_>
         struct Rule;
 
-        template<Element t_element>
-        requires(t_element.isPoint())
-        struct Rule<t_element>
+        template<PointShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1603,9 +1484,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isSegment())
-        struct Rule<t_element>
+        template<SegmentShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1653,9 +1533,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isTriangle())
-        struct Rule<t_element>
+        template<TriangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1719,9 +1598,8 @@ namespace lolita
 
         };
 
-        template<Element t_element>
-        requires(t_element.isQuadrangle())
-        struct Rule<t_element>
+        template<QuadrangleShapeConcept auto shape_>
+        struct Rule<shape_>
         {
 
             static constexpr
@@ -1883,7 +1761,7 @@ namespace lolita
 
     };
 
-} // namespace lolita
+} // namespace lolita::core
 
 
-#endif /* F402E53D_B7DA_4E80_B9B0_6CC57A882459 */
+#endif /* C8DE0CF3_9846_4A8D_96D4_CFC8D5FA4C7E */

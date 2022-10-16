@@ -22,21 +22,18 @@ namespace lolita
     
     template<Element t_element, Domain t_domain, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
     struct ElementPotential;
-
-    template<Integer t_dim, Domain t_domain, LagrangianConcept auto t_lag, PotentialConcept auto t_potential>
-    struct DomainPotential;
-    
-    template<Integer t_dim, Domain t_domain>
-    struct AbstractDomainLagrangian;
-
-    template<Element t_element, Domain t_domain>
-    struct AbstractElementLagrangian;
     
     template<Element t_element, Domain t_domain, LagrangianConcept auto t_lag>
     struct ElementLagrangian;
     
     template<Integer t_dim, Domain t_domain, LagrangianConcept auto t_lag>
     struct DomainLagrangian;
+    
+    template<Integer t_dim, Domain t_domain>
+    struct AbstractDomainLagrangian;
+
+    template<Element t_element, Domain t_domain>
+    struct AbstractElementLagrangian;
 
     /**
      * *********************************************************************************************************************************************************
