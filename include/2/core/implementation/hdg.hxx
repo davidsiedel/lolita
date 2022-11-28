@@ -30,8 +30,7 @@ namespace lolita::core
     template<ShapeConcept auto t_element, MeshConcept auto t_domain, FieldConcept auto t_field>
     struct DiscretizationImplementation;
 
-    template<ShapeConcept auto t_element, MeshConcept auto t_domain, FieldConcept auto t_field>
-    requires(HybridDiscontinuousGalerkinDiscretizationConcept<decltype(t_field.getDiscretization())>)
+    template<ShapeConcept auto t_element, MeshConcept auto t_domain, HdgElementConcept auto t_field>
     struct DiscretizationImplementation<t_element, t_domain, t_field> : DegreesOfFreedomInterface<t_element, t_domain>
     {
 
@@ -41,28 +40,28 @@ namespace lolita::core
         BasisConcept auto const &
         getCellBasis()
         {
-            return t_field.getDiscretization().getCellBasis();
+            return t_field.getCellBasis();
         }
 
         static constexpr
         BasisConcept auto const &
         getFaceBasis()
         {
-            return t_field.getDiscretization().getFaceBasis();
+            return t_field.getFaceBasis();
         }
 
         static constexpr
         BasisConcept auto const &
         getGradBasis()
         {
-            return t_field.getDiscretization().getFaceBasis();
+            return t_field.getFaceBasis();
         }
 
         static constexpr
         BasisConcept auto
         getPotentialBasis()
         {
-            return t_field.getDiscretization().getFaceBasis().toOrder(t_field.getDiscretization().getFaceBasis().getOrd() + 1);
+            return t_field.getFaceBasis().toOrder(t_field.getFaceBasis().getOrd() + 1);
         }
 
         template<LagrangeShapeConcept auto shape_>
@@ -256,7 +255,7 @@ namespace lolita::core
                     lhs = rhs;
                     faces_correction_offset += face_dof.template getSize<t_field, getFaceBasis()>();
                 }
-                if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                 {
                     self.template operator ()<t_i + 1>(self);
                 }
@@ -461,8 +460,8 @@ namespace lolita::core
                 )
                 constexpr mutable
                 {
-                    auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-                    auto constexpr t_num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
+                    auto constexpr t_inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                    auto constexpr t_num_inner_neighbors = ShapeTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
                     auto i_face = 0;
                     for (auto const & face : this->getFiniteElement().template getInnerNeighbors<0, t_i>())
                     {
@@ -494,7 +493,7 @@ namespace lolita::core
                         face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>();
                         i_face ++;
                     }
-                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                    if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                     {
                         self.template operator()<t_i + 1>(self);
                     }
@@ -554,8 +553,8 @@ namespace lolita::core
                 )
                 constexpr mutable
                 {
-                    auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-                    auto constexpr t_num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
+                    auto constexpr t_inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                    auto constexpr t_num_inner_neighbors = ShapeTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
                     auto i_face = 0;
                     for (auto const & face : this->getFiniteElement().template getInnerNeighbors<0, t_i>())
                     {
@@ -604,7 +603,7 @@ namespace lolita::core
                         face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>();
                         i_face ++;
                     }
-                    if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                    if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                     {
                         self.template operator()<t_i + 1>(self);
                     }
@@ -662,8 +661,8 @@ namespace lolita::core
             )
             constexpr mutable
             {
-                auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-                auto constexpr t_num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
+                auto constexpr t_inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                auto constexpr t_num_inner_neighbors = ShapeTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
                 auto i_face = 0;
                 for (auto const & face : this->getFiniteElement().template getInnerNeighbors<0, t_i>())
                 {
@@ -692,7 +691,7 @@ namespace lolita::core
                     face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>();
                     i_face ++;
                 }
-                if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                 {
                     self.template operator()<t_i + 1>(self);
                 }
@@ -734,8 +733,8 @@ namespace lolita::core
             )
             constexpr mutable
             {
-                auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<0, t_i>();
-                auto constexpr t_num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
+                auto constexpr t_inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<0, t_i>();
+                auto constexpr t_num_inner_neighbors = ShapeTraits<t_element>::template getNumInnerNeighbors<0, t_i>();
                 auto i_face = 0;
                 for (auto const & face : this->getFiniteElement().template getInnerNeighbors<0, t_i>())
                 {
@@ -773,7 +772,7 @@ namespace lolita::core
                     face_offset += t_field_size * getFaceBasisSize<t_inner_neighbor>();
                     i_face ++;
                 }
-                if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
+                if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<0>() - 1)
                 {
                     self.template operator()<t_i + 1>(self);
                 }

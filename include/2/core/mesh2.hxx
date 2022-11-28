@@ -225,11 +225,11 @@ namespace lolita::core
 
     private:
     
-        using t_ElementTraits = ElementTraits<t_element>;
+        using t_ElementTraits = ShapeTraits<t_element>;
 
         using FiniteElement_ = FiniteElement<t_element, t_domain>;
 
-        using NodeConnectivity_ = ElementNodeConnectivity<t_element>;
+        using NodeConnectivity_ = ShapeNodeConnectivity<t_element>;
         
         template<DomainConcept auto t_dim, MeshConcept auto t__domain>
         using t_Dom = MeshDomain<t_dim, t__domain>;
@@ -259,7 +259,7 @@ namespace lolita::core
             Integer j
         )
         {
-            return std::get<t_j>(std::get<t_i>(ElementTraits<t_element>::node_connectivity_))[i][j];
+            return std::get<t_j>(std::get<t_i>(ShapeTraits<t_element>::node_connectivity_))[i][j];
         }
 
         /**
@@ -386,19 +386,19 @@ namespace lolita::core
             )
             mutable
             {
-                auto const constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
+                auto const constexpr t_inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
                 auto const constexpr t_is_initialized = t_i == 0 && t_j == 0;
                 auto const constexpr t_element_coordinates = MeshTraits<t_domain>::template getElementCoordinates<t_element>();
-                auto const constexpr t_node_coordinates = ElementTraits<t_element>::template getInnerNeighborCoordinates<Node{}>();
+                auto const constexpr t_node_coordinates = ShapeTraits<t_element>::template getInnerNeighborCoordinates<Node{}>();
                 auto const constexpr t_inner_neighbor_coordinates = MeshTraits<t_domain>::template getElementCoordinates<t_inner_neighbor>();
-                auto const constexpr t_neighbour_coordinates = ElementTraits<t_inner_neighbor>::template getOuterNeighborCoordinates<t_domain, t_element>();
+                auto const constexpr t_neighbour_coordinates = ShapeTraits<t_inner_neighbor>::template getOuterNeighborCoordinates<t_domain, t_element>();
                 auto & inner_neighbors = element_map.template getElements<t_inner_neighbor_coordinates.getDim(), t_inner_neighbor_coordinates.getTag()>();
                 if constexpr (t_is_initialized)
                 {
                     auto tag = element_map.template getElements<t_element_coordinates.getDim(), t_element_coordinates.getTag()>().size();
                     finite_element_ = std::make_shared<FiniteElement<t_element, t_domain>>(FiniteElement<t_element, t_domain>(tag));
                 }
-                for (auto i = 0; i < ElementTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>(); ++i)
+                for (auto i = 0; i < ShapeTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>(); ++i)
                 {
                     auto inner_neighbor_hash = std::basic_string<Character>();
                     if constexpr(t_inner_neighbor != Node())
@@ -422,11 +422,11 @@ namespace lolita::core
                     finite_element_->template getInnerNeighbors<t_i, t_j>()[i] = inner_neighbor;
                     inner_neighbor->template getOuterNeighbors<t_neighbour_coordinates.dim_, t_neighbour_coordinates.tag_>().push_back(finite_element_);
                 }
-                if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
+                if constexpr (t_j < ShapeTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
                 {
                     self.template operator()<t_i, t_j + 1>(self);
                 }
-                else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
+                else if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<>() - 1)
                 {
                     self.template operator()<t_i + 1, 0>(self);
                 }
@@ -486,7 +486,7 @@ namespace lolita::core
 
     private:
     
-        using t_ElementTraits = ElementTraits<t_element>;
+        using t_ElementTraits = ShapeTraits<t_element>;
         
         template<DomainConcept auto t_dim, MeshConcept auto t__domain>
         using t_Dom = MeshDomain<t_dim, t__domain>;
@@ -635,7 +635,7 @@ namespace lolita::core
         requires(t_element != Node())
         {
             auto const constexpr t_element_coordinates = MeshTraits<t_domain>::template getElementCoordinates<t_element>();
-            auto const constexpr t_node_coordinates = ElementTraits<t_element>::template getInnerNeighborCoordinates<Node{}>();
+            auto const constexpr t_node_coordinates = ShapeTraits<t_element>::template getInnerNeighborCoordinates<Node{}>();
             for (auto const & nde : finite_element->template getInnerNeighbors<t_node_coordinates.getDim(), t_node_coordinates.getTag()>())
             {
                 auto const & ngs = nde->template getOuterNeighbors<t_element_coordinates.getDim() - 1, t_i>();

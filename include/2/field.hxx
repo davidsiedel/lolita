@@ -5,7 +5,7 @@
 
 #include "2/label.hxx"
 #include "2/basis.hxx"
-#include "2/discretization.hxx"
+// #include "2/discretization.hxx"
 
 namespace lolita
 {
@@ -215,7 +215,7 @@ namespace lolita
     template<typename T>
     concept ImposedFieldConcept = detail::IsImposedFieldTraits<T>::value;
 
-    template<DiscretizationConcept Discretization_>
+    template<typename Discretization_>
     struct UnknownField : FieldBase<UnknownField<Discretization_>>
     {
 

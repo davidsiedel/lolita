@@ -137,7 +137,7 @@ namespace lolita::core
         template<DomainConcept auto t_dim, MeshConcept auto t__domain>
         using BehaviorData_1 = BehaviourData<t_dim, t__domain, t_lag, t_potential>;
 
-        using BehaviorData_ = ElementTraits<t_element>::template DomainConnectivity<BehaviorData_1, t_domain>;
+        using BehaviorData_ = ShapeTraits<t_element>::template DomainConnectivity<BehaviorData_1, t_domain>;
 
         template<LinearOperatorConcept auto t_strain>
         using StrainOperator_ = DenseMatrix<Real, getStrainOperatorNumRows<t_strain>(), getStrainOperatorNumCols<t_strain>()>;

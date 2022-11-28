@@ -6,9 +6,12 @@ main(int argc, char** argv)
 {
 
     auto constexpr d = lolita::CartesianMesh(2);
-    auto constexpr hdg = lolita::HybridDiscontinuousGalerkinDiscretization(lolita::MonomialBasis(1), lolita::MonomialBasis(1));
-    auto constexpr displacement = lolita::UnknownField("Displacement", 2, 1, hdg);
+    // auto constexpr hdg = lolita::HybridDiscontinuousGalerkinDiscretization(lolita::MonomialBasis(1), lolita::MonomialBasis(1));
+    auto constexpr displacement = lolita::HdgElement("Displacement", 2, 1, lolita::MonomialBasis(1), lolita::MonomialBasis(1));
+    // auto constexpr displacement = lolita::UnknownField("Displacement", 2, 1, hdg);
     auto constexpr eps = lolita::SmallStrainOperator(displacement);
+    auto constexpr tra = lolita::TraceOperator(1, 2, displacement, 0, 0);
+    auto constexpr stab = lolita::StabilizationOperator(displacement);
     auto constexpr quad = lolita::GaussQuadrature(2);
     auto constexpr pot = lolita::InternalPotential(2, quad, eps);
     auto constexpr lag = lolita::Lagrangian("1", pot);

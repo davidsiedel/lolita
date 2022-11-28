@@ -552,16 +552,16 @@ namespace lolita::core
             {
                 if constexpr (t_element != Node())
                 {
-                    auto const constexpr t_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
+                    auto const constexpr t_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
                     for (auto const & c_ : element->template getInnerNeighbors<t_i, t_j>())
                     {
                         os << "layer : " << t_i << " type : " << t_j << " <-- " << t_neighbor << " " << c_->getHash() << std::endl;
                     }
-                    if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
+                    if constexpr (t_j < ShapeTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
                     {
                         self.template operator()<t_element, t_i, t_j + 1>(element, self);
                     }
-                    else if constexpr (t_i < ElementTraits<t_element>::getNumInnerNeighbors() - 1)
+                    else if constexpr (t_i < ShapeTraits<t_element>::getNumInnerNeighbors() - 1)
                     {
                         self.template operator()<t_element, t_i + 1, 0>(element, self);
                     }
@@ -573,7 +573,7 @@ namespace lolita::core
             )
             mutable
             {
-                auto const constexpr t_neighbor = ElementTraits<t_element>::template getOuterNeighbor<t_domain, t_i, t_j>();
+                auto const constexpr t_neighbor = ShapeTraits<t_element>::template getOuterNeighbor<t_domain, t_i, t_j>();
                 for (auto const & c_ : element->template getOuterNeighbors<t_i, t_j>())
                 {
                     if constexpr (t_element != Node() && t_i == 0)
@@ -585,11 +585,11 @@ namespace lolita::core
                         os << "layer : " << t_i << " type : " << t_j << " --> " << t_neighbor << " " << c_->getHash() << std::endl;
                     }
                 }
-                if constexpr (t_j < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, t_i>() - 1)
+                if constexpr (t_j < ShapeTraits<t_element>::template getNumOuterNeighbors<t_domain, t_i>() - 1)
                 {
                     self.template operator()<t_element, t_i, t_j + 1>(element, self);
                 }
-                else if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain>() - 1)
+                else if constexpr (t_i < ShapeTraits<t_element>::template getNumOuterNeighbors<t_domain>() - 1)
                 {
                     self.template operator()<t_element, t_i + 1, 0>(element, self);
                 }

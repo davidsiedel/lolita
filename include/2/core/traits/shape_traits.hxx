@@ -7,7 +7,7 @@ namespace lolita::core
 {
 
     template<LagrangeShapeConcept auto t_element, auto...>
-    struct ElementView
+    struct ShapeView
     {
         
         static constexpr
@@ -20,16 +20,16 @@ namespace lolita::core
     };
     
     template<LagrangeShapeConcept auto t_element>
-    struct ElementTraits;
+    struct ShapeTraits;
     
     template<LagrangeShapeConcept auto t_element, auto...>
-    using ElementNodeConnectivity = std::array<Natural, t_element.getNumNodes()>;
+    using ShapeNodeConnectivity = std::array<Natural, t_element.getNumNodes()>;
     
     template<LagrangeShapeConcept auto t_element>
-    struct ElementInnerGeometryTraits;
+    struct ShapeInnerGeometryTraits;
     
     template<>
-    struct ElementInnerGeometryTraits<Node{}>
+    struct ShapeInnerGeometryTraits<Node{}>
     {
         
         template<template<LagrangeShapeConcept auto, auto...> typename T, auto... t_args>
@@ -37,7 +37,7 @@ namespace lolita::core
 
     private:
 
-        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+        using NodeConnectivity = InnerConnectivity<ShapeNodeConnectivity>;
 
     public:
     
@@ -65,13 +65,13 @@ namespace lolita::core
         NodeConnectivity const static constexpr node_connectivity_ = NodeConnectivity{};
         
         std::array<std::array<Real, 3>, 1> const static constexpr reference_nodes_ = {
-                +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
+            +0.0000000000000000, +0.0000000000000000, +0.0000000000000000
         };
 
     };
     
     template<>
-    struct ElementInnerGeometryTraits<LinearSegment{}>
+    struct ShapeInnerGeometryTraits<LinearSegment{}>
     {
         
         template<template<LagrangeShapeConcept auto, auto...> typename T, auto... t_args>
@@ -83,7 +83,7 @@ namespace lolita::core
 
     private:
 
-        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+        using NodeConnectivity = InnerConnectivity<ShapeNodeConnectivity>;
 
     public:
     
@@ -132,7 +132,7 @@ namespace lolita::core
     };
     
     template<>
-    struct ElementInnerGeometryTraits<LinearTriangle{}>
+    struct ShapeInnerGeometryTraits<LinearTriangle{}>
     {
         
         template<template<LagrangeShapeConcept auto, auto...> typename T, auto... t_args>
@@ -147,7 +147,7 @@ namespace lolita::core
 
     private:
 
-        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+        using NodeConnectivity = InnerConnectivity<ShapeNodeConnectivity>;
 
     public:
     
@@ -216,7 +216,7 @@ namespace lolita::core
     };
     
     template<>
-    struct ElementInnerGeometryTraits<LinearQuadrangle{}>
+    struct ShapeInnerGeometryTraits<LinearQuadrangle{}>
     {
         
         template<template<LagrangeShapeConcept auto, auto...> typename T, auto... t_args>
@@ -231,7 +231,7 @@ namespace lolita::core
 
     private:
 
-        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+        using NodeConnectivity = InnerConnectivity<ShapeNodeConnectivity>;
 
     public:
     
@@ -306,7 +306,7 @@ namespace lolita::core
     };
     
     template<>
-    struct ElementInnerGeometryTraits<LinearTetrahedron{}>
+    struct ShapeInnerGeometryTraits<LinearTetrahedron{}>
     {
 
         template<template<LagrangeShapeConcept auto, auto...> typename T, auto... t_args>
@@ -324,7 +324,7 @@ namespace lolita::core
 
     private:
 
-        using NodeConnectivity = InnerConnectivity<ElementNodeConnectivity>;
+        using NodeConnectivity = InnerConnectivity<ShapeNodeConnectivity>;
 
     public:
     
@@ -399,7 +399,7 @@ namespace lolita::core
     };
         
     template<LagrangeShapeConcept auto t_element>
-    struct ElementOuterGeometryTraits
+    struct ShapeOuterGeometryTraits
     {
 
     private:
@@ -411,10 +411,10 @@ namespace lolita::core
         private:
         
             template<LagrangeShapeConcept auto t__element, MeshConcept auto t__domain>
-            using NeighbourVector = std::vector<T<t__element, t__domain>>;
+            using Neighbors = std::vector<T<t__element, t__domain>>;
 
             template<MeshConcept auto t__domain>
-            using Expansion = typename ShapeLibrary::template Elements<NeighbourVector, t__domain>;
+            using Expansion = typename ShapeLibrary::template Elements<Neighbors, t__domain>;
 
         public:
 
@@ -431,7 +431,7 @@ namespace lolita::core
     };
     
     template<>
-    struct ElementOuterGeometryTraits<Node{}>
+    struct ShapeOuterGeometryTraits<Node{}>
     {
 
     private:
@@ -443,10 +443,10 @@ namespace lolita::core
         private:
 
             template<LagrangeShapeConcept auto t__element, MeshConcept auto t__domain>
-            using NeighbourVector = std::vector<T<t__element, t__domain>>;
+            using Neighbors = std::vector<T<t__element, t__domain>>;
 
             template<MeshConcept auto t__domain>
-            using Expansion = typename ShapeLibrary::template Elements<NeighbourVector, t__domain>;
+            using Expansion = typename ShapeLibrary::template Elements<Neighbors, t__domain>;
 
         public:
 
@@ -463,18 +463,18 @@ namespace lolita::core
     };
 
     template<LagrangeShapeConcept auto t_element>
-    struct ElementTraits : ElementOuterGeometryTraits<t_element>, ElementInnerGeometryTraits<t_element>
+    struct ShapeTraits : ShapeOuterGeometryTraits<t_element>, ShapeInnerGeometryTraits<t_element>
     {
 
     private:
 
-        using t_ElementInnerNeighborhood = typename ElementTraits<t_element>::template InnerConnectivity<ElementView>;
+        using t_ElementInnerNeighborhood = typename ShapeTraits<t_element>::template InnerConnectivity<ShapeView>;
 
         template<MeshConcept auto t_domain>
-        using t_ElementOuterNeighborhood = typename ElementTraits<t_element>::template OuterConnectivity<ElementView, t_domain>;
+        using t_ElementOuterNeighborhood = typename ShapeTraits<t_element>::template OuterConnectivity<ShapeView, t_domain>;
         
         template<MeshConcept auto t_domain>
-        using t_Elements = lolita::utility::tuple_slice_t<typename ShapeLibrary::template Elements<ElementView>, 0, t_domain.getDim() + 1>;
+        using t_Elements = lolita::utility::tuple_slice_t<typename ShapeLibrary::template Elements<ShapeView>, 0, t_domain.getDim() + 1>;
 
     public:
 
@@ -490,10 +490,10 @@ namespace lolita::core
         
         template<MeshConcept auto t_domain>
         static constexpr
-        ElementCoordinates
+        ShapeCoordinates
         getCoordinates()
         {
-            auto coordinates = ElementCoordinates();
+            auto coordinates = ShapeCoordinates();
             auto set_coordinates = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & t_set_coordinates
             )
@@ -520,11 +520,11 @@ namespace lolita::core
         
         template<LagrangeShapeConcept auto t_neighbour>
         static constexpr
-        ElementCoordinates
+        ShapeCoordinates
         getInnerNeighborCoordinates()
         requires(t_element != Node())
         {
-            auto coordinates = ElementCoordinates();
+            auto coordinates = ShapeCoordinates();
             auto set_coordinates = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & t_set_coordinates
             )
@@ -589,10 +589,10 @@ namespace lolita::core
         
         template<MeshConcept auto t_domain, LagrangeShapeConcept auto t_neighbour>
         static constexpr
-        ElementCoordinates
+        ShapeCoordinates
         getOuterNeighborCoordinates()
         {
-            auto coordinates = ElementCoordinates();
+            auto coordinates = ShapeCoordinates();
             auto set_coordinates = [&] <Integer t_i = 0, Integer t_j = 0> (
                 auto & t_set_coordinates
             )

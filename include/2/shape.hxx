@@ -467,18 +467,18 @@ namespace lolita
 
     };
 
-    struct ElementCoordinates
+    struct ShapeCoordinates
     {
 
         constexpr
-        ElementCoordinates()
+        ShapeCoordinates()
         :
         dim_(-1),
         tag_(-1)
         {}
         
         constexpr
-        ElementCoordinates(
+        ShapeCoordinates(
             Integer dim,
             Integer tag
         )

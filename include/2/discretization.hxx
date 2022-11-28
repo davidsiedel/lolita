@@ -3,6 +3,7 @@
 
 #include "config.hxx"
 #include "2/basis.hxx"
+#include "2/field.hxx"
 
 namespace lolita
 {
@@ -206,6 +207,193 @@ namespace lolita
 
     template<typename T>
     concept LagrangeDiscretizationConcept = detail::IsLagrangeDiscretizationTraits<std::decay_t<T>>::value;
+
+    template<typename Implementation_>
+    struct ElementBase;
+
+    namespace detail
+    {
+        
+        struct ElementType
+        {
+
+        private:
+
+            constexpr
+            ElementType()
+            {}
+
+            constexpr
+            Boolean
+            operator==(
+                ElementType const & other
+            )
+            const
+            = default;
+
+            constexpr
+            Boolean
+            operator!=(
+                ElementType const & other
+            )
+            const
+            = default;
+
+            template<typename Implementation_>
+            friend class lolita::ElementBase;
+
+        };
+        
+    } // namespace detail
+
+    template<typename T>
+    concept ElementConcept = std::derived_from<std::decay_t<T>, detail::ElementType>;
+
+    template<typename Implementation_>
+    struct ElementBase : detail::ElementType, FieldBase<ElementBase<Implementation_>>
+    {
+
+    protected:
+
+        using FieldBase_ = FieldBase<ElementBase<Implementation_>>;
+        
+        constexpr
+        ElementBase(
+            std::basic_string_view<Character> && label,
+            Integer dim_domain,
+            Integer dim_tensor
+        )
+        :
+        detail::ElementType(),
+        FieldBase_(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor)
+        {}
+        
+        constexpr
+        ElementBase(
+            Integer dim_domain,
+            Integer dim_tensor
+        )
+        :
+        detail::ElementType(),
+        FieldBase_(dim_domain, dim_tensor)
+        {}
+
+    public:
+
+        constexpr
+        Boolean
+        operator==(
+            ElementBase const & other
+        )
+        const
+        = default;
+
+        constexpr
+        Boolean
+        operator!=(
+            ElementBase const & other
+        )
+        const
+        = default;
+
+        template<typename... T>
+        constexpr
+        Boolean
+        operator==(
+            ElementBase<T...> const & other
+        )
+        const
+        {
+            return utility::areEqual(* this, other);
+        }
+
+        template<typename... T>
+        constexpr
+        Boolean
+        operator!=(
+            ElementBase<T...> const & other
+        )
+        const
+        {
+            return !(* this == other);
+        }
+
+    };
+
+    template<typename CellBasis_, typename FaceBasis_>
+    struct HdgElement : ElementBase<HdgElement<CellBasis_, FaceBasis_>>
+    {
+
+    private:
+
+        using ElementBase_ = ElementBase<HdgElement<CellBasis_, FaceBasis_>>;
+
+    public:
+    
+        constexpr
+        HdgElement(
+            Integer dim_domain,
+            Integer dim_tensor,
+            CellBasis_ const & cell_basis,
+            FaceBasis_ const & face_basis
+        )
+        :
+        ElementBase_(dim_domain, dim_tensor),
+        cell_basis_(cell_basis),
+        face_basis_(face_basis)
+        {}
+    
+        constexpr
+        HdgElement(
+            std::basic_string_view<Character> && label,
+            Integer dim_domain,
+            Integer dim_tensor,
+            CellBasis_ const & cell_basis,
+            FaceBasis_ const & face_basis
+        )
+        :
+        ElementBase_(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor),
+        cell_basis_(cell_basis),
+        face_basis_(face_basis)
+        {}
+
+        constexpr
+        CellBasis_ const &
+        getCellBasis()
+        const
+        {
+            return cell_basis_;
+        }
+
+        constexpr
+        FaceBasis_ const &
+        getFaceBasis()
+        const
+        {
+            return face_basis_;
+        }
+
+        CellBasis_ cell_basis_;
+
+        FaceBasis_ face_basis_;
+
+    };
+
+    namespace detail
+    {
+
+        template<typename... T>
+        struct IsHdgElementTraits : std::false_type
+        {};
+
+        template<typename... T>
+        struct IsHdgElementTraits<HdgElement<T...>> : std::true_type
+        {};
+        
+    } // namespace detail
+
+    template<typename T>
+    concept HdgElementConcept = detail::IsHdgElementTraits<std::decay_t<T>>::value;
     
 } // namespace lolita
 

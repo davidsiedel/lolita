@@ -62,11 +62,13 @@ namespace lolita
         LinearOperatorBase(
             Integer dim_domain,
             Integer dim_tensor,
+            Integer dim_unknown,
             UnknownField_ const & unknown_field
         )
         :
         detail::LinearOperatorType(),
         Base_(dim_domain, dim_tensor),
+        dim_unknown_(dim_unknown),
         row_(-1),
         col_(-1),
         unknown_field_(unknown_field)
@@ -76,6 +78,7 @@ namespace lolita
         LinearOperatorBase(
             Integer dim_domain,
             Integer dim_tensor,
+            Integer dim_unknown,
             Integer row,
             Integer col,
             UnknownField_ const & unknown_field
@@ -83,6 +86,7 @@ namespace lolita
         :
         detail::LinearOperatorType(),
         Base_(dim_domain, dim_tensor),
+        dim_unknown_(dim_unknown),
         row_(row),
         col_(col),
         unknown_field_(unknown_field)
@@ -93,11 +97,13 @@ namespace lolita
             std::basic_string_view<Character> && label,
             Integer dim_domain,
             Integer dim_tensor,
+            Integer dim_unknown,
             UnknownField_ const & unknown_field
         )
         :
         detail::LinearOperatorType(),
         Base_(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor),
+        dim_unknown_(dim_unknown),
         row_(-1),
         col_(-1),
         unknown_field_(unknown_field)
@@ -108,6 +114,7 @@ namespace lolita
             std::basic_string_view<Character> && label,
             Integer dim_domain,
             Integer dim_tensor,
+            Integer dim_unknown,
             Integer row,
             Integer col,
             UnknownField_ const & unknown_field
@@ -115,6 +122,7 @@ namespace lolita
         :
         detail::LinearOperatorType(),
         Base_(std::forward<std::basic_string_view<Character>>(label), dim_domain, dim_tensor),
+        dim_unknown_(dim_unknown),
         row_(row),
         col_(col),
         unknown_field_(unknown_field)
@@ -177,6 +185,14 @@ namespace lolita
         }
 
         constexpr
+        Integer
+        getDimUnknown()
+        const
+        {
+            return dim_unknown_;
+        }
+
+        constexpr
         UnknownField_ const &
         getField()
         const
@@ -187,6 +203,8 @@ namespace lolita
         Integer row_;
 
         Integer col_;
+
+        Integer dim_unknown_;
 
         UnknownField_ unknown_field_;
 
@@ -207,31 +225,8 @@ namespace lolita
             CellField_ const & cell_field
         )
         :
-        Base_("Gradient", cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field)
+        Base_("Gradient", cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field.getDimDomain(), cell_field)
         {}
-
-        constexpr 
-        GradientOperator(
-            std::basic_string_view<Character> && label,
-            CellField_ const & cell_field
-        )
-        :
-        Base_(std::forward<std::basic_string_view<Character>>(label), cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field)
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            GradientOperator const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            GradientOperator const & other
-        )
-        const = default;
         
     };
 
@@ -261,36 +256,27 @@ namespace lolita
 
     public:
 
-        explicit constexpr
+        constexpr
         TraceOperator(
+            Integer dim_domain,
+            Integer dim_unknown,
             CellFieldT const & cell_field
         )
         :
-        Base_(cell_field.getDomainDim(), cell_field.getTensorDim(), cell_field)
+        Base_(dim_domain, cell_field.getDimTensor(), dim_unknown, cell_field)
         {}
-        
+
         constexpr
         TraceOperator(
-            std::basic_string_view<Character> && label,
-            CellFieldT const & cell_field
+            Integer dim_domain,
+            Integer dim_unknown,
+            CellFieldT const & cell_field,
+            Integer row,
+            Integer col
         )
         :
-        Base_(std::forward<std::basic_string_view<Character>>(label), cell_field.getDomainDim(), cell_field.getTensorDim(), cell_field)
+        Base_(dim_domain, cell_field.getDimTensor(), dim_unknown, row, col, cell_field)
         {}
-
-        constexpr
-        Boolean
-        operator==(
-            TraceOperator const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            TraceOperator const & other
-        )
-        const = default;
         
     };
 
@@ -325,31 +311,8 @@ namespace lolita
             CellField_ const & cell_field
         )
         :
-        Base_("SmallStrain", cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field)
+        Base_("SmallStrain", cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field.getDimDomain(), cell_field)
         {}
-
-        constexpr 
-        SmallStrainOperator(
-            std::basic_string_view<Character> && label,
-            CellField_ const & cell_field
-        )
-        :
-        Base_(std::forward<std::basic_string_view<Character>>(label), cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field)
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            SmallStrainOperator const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            SmallStrainOperator const & other
-        )
-        const = default;
         
     };
 
@@ -384,31 +347,8 @@ namespace lolita
             CellField_ const & cell_field
         )
         :
-        Base_("LargeStrain", cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field)
+        Base_("LargeStrain", cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field.getDimDomain(), cell_field)
         {}
-
-        constexpr 
-        LargeStrainOperator(
-            std::basic_string_view<Character> && label,
-            CellField_ const & cell_field
-        )
-        :
-        Base_(std::forward<std::basic_string_view<Character>>(label), cell_field.getDimDomain(), cell_field.getDimTensor() + 1, cell_field)
-        {}
-
-        constexpr
-        Boolean
-        operator==(
-            LargeStrainOperator const & other
-        )
-        const = default;
-
-        constexpr
-        Boolean
-        operator!=(
-            LargeStrainOperator const & other
-        )
-        const = default;
         
     };
 
@@ -427,6 +367,42 @@ namespace lolita
 
     template<typename T>
     concept LargeStrainOperatorConcept = detail::IsLargeStrainOperatorTraits<std::decay_t<T>>::value;
+
+    template<typename CellField_>
+    struct StabilizationOperator : LinearOperatorBase<StabilizationOperator<CellField_>, CellField_>
+    {
+
+    private:
+
+        using Base_ = LinearOperatorBase<StabilizationOperator<CellField_>, CellField_>;
+
+    public:
+
+        explicit constexpr
+        StabilizationOperator(
+            CellField_ const & cell_field
+        )
+        :
+        Base_("Stabilization", cell_field.getDimDomain() - 1, cell_field.getDimTensor(), cell_field.getDimDomain(), cell_field)
+        {}
+        
+    };
+
+    namespace detail
+    {
+
+        template<typename... T>
+        struct IsStabilizationOperatorTraits : std::false_type
+        {};
+
+        template<typename... T>
+        struct IsStabilizationOperatorTraits<StabilizationOperator<T...>> : std::true_type
+        {};
+        
+    } // namespace detail
+
+    template<typename T>
+    concept StabilizationOperatorConcept = detail::IsStabilizationOperatorTraits<std::decay_t<T>>::value;
 
     // template<typename CellFieldT, typename FaceFieldT>
     // struct HybridDiscontinuousGalerkinGradientOperator : LinearOperatorBase<HybridDiscontinuousGalerkinGradientOperator<CellFieldT, FaceFieldT>, CellFieldT, FaceFieldT>

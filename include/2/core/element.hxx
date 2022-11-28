@@ -26,7 +26,7 @@ namespace lolita::core
 
     private:
     
-        using ElementTraits_ = ElementTraits<t_element>;
+        using ElementTraits_ = ShapeTraits<t_element>;
 
         template<BasisConcept auto t_basis>
         using BasisImplementation_ = BasisImplementation<t_element, t_domain, t_basis>;
@@ -391,7 +391,7 @@ namespace lolita::core
         )
         requires(t_element != Node())
         {
-            return std::get<t_j>(std::get<t_i>(ElementTraits<t_element>::node_connectivity_))[component_index][node_index];
+            return std::get<t_j>(std::get<t_i>(ShapeTraits<t_element>::node_connectivity_))[component_index][node_index];
         }
 
         template<Integer t_i>
@@ -484,7 +484,7 @@ namespace lolita::core
         // requires(t_element != Node())
         // {
         //     auto constexpr t_inner_neighbor = ElementTraits_::template getInnerNeighbor<t_i, t_j>();
-        //     auto constexpr t_coordinates = ElementTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
+        //     auto constexpr t_coordinates = ShapeTraits<t_inner_neighbor, t_domain>::template getOuterNeighborCoordinates<t_element>();
         //     auto const & items = getInnerNeighbors<t_i, t_j>()[i]->template getOuterNeighbors<t_coordinates.dim_, t_coordinates.tag_>();
         //     // auto is_equal = [&] (t_ElementPointer<t_element, t_domain> const & ptr_element)
         //     auto is_equal = [&] (std::shared_ptr<FiniteElement<t_element, t_domain>> const & ptr_element)
@@ -497,13 +497,13 @@ namespace lolita::core
         // template<Integer t_i, Integer t_j>
         // Integer
         // getInnerNeighborIndex(
-        //     std::shared_ptr<FiniteElement<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
+        //     std::shared_ptr<FiniteElement<ShapeTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
         // )
         // const
         // requires(t_element != Node())
         // {
         //     auto const & inner_neighbors = getInnerNeighbors<t_i, t_j>();
-        //     // auto constexpr t_inner_neighbor = ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
+        //     // auto constexpr t_inner_neighbor = ShapeTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>();
         //     // auto is_equal = [&] (std::shared_ptr<FiniteElement<t_inner_neighbor, t_domain>> const & neighbor)
         //     // {
         //     //     return * neighbor == * ptr_neighbor;
@@ -524,8 +524,8 @@ namespace lolita::core
             // return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
             auto constexpr t_inner_neighbor = ElementTraits_::template getInnerNeighbor<t_i, t_j>();
             auto constexpr ggg = t_inner_neighbor.getDim() - 1;
-            auto constexpr t_num_inner_neighbor_nodes = ElementTraits<t_inner_neighbor>::template getNumInnerNeighbors<t_inner_neighbor.getDim() - 1, 0>();
-            // auto constexpr t_inner_neighbor_num_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
+            auto constexpr t_num_inner_neighbor_nodes = ShapeTraits<t_inner_neighbor>::template getNumInnerNeighbors<t_inner_neighbor.getDim() - 1, 0>();
+            // auto constexpr t_inner_neighbor_num_nodes = ShapeTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
             auto ori = 1;
             for (auto node_tag = 0; node_tag < t_num_inner_neighbor_nodes; node_tag++)
             {
@@ -565,9 +565,9 @@ namespace lolita::core
             // // return getInnerNeighborIndex<t_i, t_j>(i) == 0 ? 1 : -1;
             // auto constexpr t_inner_neighbor = ElementTraits_::template getInnerNeighbor<t_i, t_j>();
             // auto constexpr ggg = t_inner_neighbor.getDim() - 1;
-            // // auto constexpr t_inner_neighbor_num_nodes = ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
+            // // auto constexpr t_inner_neighbor_num_nodes = ShapeTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>();
             // auto ori = 1;
-            // for (auto node_tag = 0; node_tag < ElementTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>(); node_tag++)
+            // for (auto node_tag = 0; node_tag < ShapeTraits<t_inner_neighbor, t_domain>::template getNumInnerNeighbors<ggg, 0>(); node_tag++)
             // {
             //     // auto mmm = FiniteElement<t_inner_neighbor, t_domain>::template getInnerNeighborNodeConnection<ggg, 0>(node_tag, 0);
             //     auto lll = getInnerNeighbors<t_i, t_j>()[i]->getCurrentCoordinates(node_tag);
@@ -588,7 +588,7 @@ namespace lolita::core
         // template<Integer t_i, Integer t_j>
         // Integer
         // getInnerNeighborOrientation(
-        //     std::shared_ptr<FiniteElement<ElementTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
+        //     std::shared_ptr<FiniteElement<ShapeTraits<t_element, t_domain>::template getInnerNeighbor<t_i, t_j>(), t_domain>> const & ptr_neighbor
         // )
         // const
         // requires(t_element != Node())
@@ -653,7 +653,7 @@ namespace lolita::core
             Integer node_tag
         )
         {
-            return algebra::View<Point const>(ElementTraits<t_element>::reference_nodes_[node_tag].data());
+            return algebra::View<Point const>(ShapeTraits<t_element>::reference_nodes_[node_tag].data());
         }
         
         DenseMatrix<Real, 3, t_element.getNumNodes()>
@@ -676,7 +676,7 @@ namespace lolita::core
         getReferenceCoordinates()
         {
             using t_ReferenceCoordinates = lolita::algebra::Span<DenseMatrix<Real, 3, t_element.getNumNodes(), lolita::algebra::colMajor()> const>;
-            return t_ReferenceCoordinates(ElementTraits<t_element>::reference_nodes_.begin()->begin());
+            return t_ReferenceCoordinates(ShapeTraits<t_element>::reference_nodes_.begin()->begin());
         }
         
         static
@@ -1670,7 +1670,7 @@ namespace lolita::core
             auto constexpr t_component = ElementTraits_ ::template getInnerNeighbor<_i, _j>();
             auto p = Point();
             p.setZero();
-            auto const & elt_reference_nodes = ElementTraits<t_element>::reference_nodes_;
+            auto const & elt_reference_nodes = ShapeTraits<t_element>::reference_nodes_;
             for (auto i = 0; i < t_domain.getDim(); ++i)
             {
                 auto cpt_coordinates = DenseVector<Real, t_component.getNumNodes()>();

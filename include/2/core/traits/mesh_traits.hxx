@@ -14,7 +14,7 @@ namespace lolita::core
 
     private:
 
-        using Elements_ = lolita::utility::tuple_slice_t<typename ShapeLibrary::Elements<ElementView>, 0, t_domain.getDim() + 1>;
+        using Elements_ = lolita::utility::tuple_slice_t<typename ShapeLibrary::Elements<ShapeView>, 0, t_domain.getDim() + 1>;
 
         using Domains_ = lolita::utility::tuple_slice_t<typename DomainLibrary::Domains<DomainView>, 0, t_domain.getDim() + 1>;
 
@@ -45,10 +45,10 @@ namespace lolita::core
         
         template<LagrangeShapeConcept auto t_element>
         static constexpr
-        ElementCoordinates
+        ShapeCoordinates
         getElementCoordinates()
         {
-            auto coordinates = ElementCoordinates(t_element.getDim(), -1);
+            auto coordinates = ShapeCoordinates(t_element.getDim(), -1);
             auto set_coordinates = [&] <Integer t_i = 0> (
                 auto & t_set_coordinates
             )

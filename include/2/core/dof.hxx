@@ -368,7 +368,7 @@ namespace lolita::core
             )
             constexpr mutable
             {
-                auto constexpr t_inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
+                auto constexpr t_inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
                 auto constexpr range = DiscretizationTraits<t_field>::template getTensorBasisSize<t_inner_neighbor, t_domain>();
                 if constexpr (range > 0)
                 {
@@ -379,11 +379,11 @@ namespace lolita::core
                         offset += range;
                     }
                 }
-                if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
+                if constexpr (t_j < ShapeTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
                 {
                     self.template operator ()<t_i, t_j + 1>(self);
                 }
-                else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
+                else if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<>() - 1)
                 {
                     self.template operator ()<t_i + 1, 0>(self);
                 }
@@ -405,8 +405,8 @@ namespace lolita::core
             )
             constexpr mutable
             {
-                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
-                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>();
+                auto constexpr inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
+                auto constexpr num_inner_neighbors = ShapeTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>();
                 for (auto iii = 0; iii < num_inner_neighbors; iii++)
                 {
                     if (kkk == iii && t_a == t_i && t_b == t_j)
@@ -418,11 +418,11 @@ namespace lolita::core
                         num_unknowns += DiscretizationTraits<t_field>::template getTensorBasisSize<inner_neighbor, t_domain>();
                     }
                 }
-                if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
+                if constexpr (t_j < ShapeTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
                 {
                     t_set_num_unknowns.template operator ()<t_i, t_j + 1>(t_set_num_unknowns);
                 }
-                else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
+                else if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<>() - 1)
                 {
                     t_set_num_unknowns.template operator ()<t_i + 1, 0>(t_set_num_unknowns);
                 }
@@ -434,7 +434,7 @@ namespace lolita::core
         template<FieldConcept auto t_field, Integer t_a, Integer t_b>
         Integer
         getNeighborOffset(
-            std::shared_ptr<FiniteElement<ElementTraits<t_element>::template getInnerNeighbor<t_a, t_b>(), t_domain>> const & inner_neighbor
+            std::shared_ptr<FiniteElement<ShapeTraits<t_element>::template getInnerNeighbor<t_a, t_b>(), t_domain>> const & inner_neighbor
         )
         {
             auto num_unknowns = DiscretizationTraits<t_field>::template getTensorBasisSize<t_element, t_domain>();
@@ -443,8 +443,8 @@ namespace lolita::core
             )
             constexpr mutable
             {
-                auto constexpr inner_neighbor = ElementTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
-                auto constexpr num_inner_neighbors = ElementTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>();
+                auto constexpr inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
+                auto constexpr num_inner_neighbors = ShapeTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>();
                 for (auto const & in : this->getFiniteElement().template getInnerNeighbors<t_i, t_j>())
                 {
                     if (utility::areEqual(inner_neighbor, in))
@@ -456,11 +456,11 @@ namespace lolita::core
                         num_unknowns += DiscretizationTraits<t_field>::template getTensorBasisSize<inner_neighbor, t_domain>();
                     }
                 }
-                if constexpr (t_j < ElementTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
+                if constexpr (t_j < ShapeTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
                 {
                     t_set_num_unknowns.template operator ()<t_i, t_j + 1>(t_set_num_unknowns);
                 }
-                else if constexpr (t_i < ElementTraits<t_element>::template getNumInnerNeighbors<>() - 1)
+                else if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<>() - 1)
                 {
                     t_set_num_unknowns.template operator ()<t_i + 1, 0>(t_set_num_unknowns);
                 }
@@ -481,8 +481,8 @@ namespace lolita::core
             )
             constexpr mutable
             {
-                auto constexpr t_cell = ElementTraits<t_element>::template getOuterNeighbor<t_domain, cell_offset, t_i>();
-                auto constexpr t_cell_neighbor = ElementTraits<t_cell>::template getInnerNeighbor<t_j, t_k>();
+                auto constexpr t_cell = ShapeTraits<t_element>::template getOuterNeighbor<t_domain, cell_offset, t_i>();
+                auto constexpr t_cell_neighbor = ShapeTraits<t_cell>::template getInnerNeighbor<t_j, t_k>();
                 for (auto const & cell : this->getFiniteElement().template getOuterNeighbors<cell_offset, t_i>())
                 {
                     for (auto const & cell_neighbor : cell->template getInnerNeighbors<t_j, t_k>())
@@ -499,15 +499,15 @@ namespace lolita::core
                         }
                     }
                 }
-                if constexpr (t_k < ElementTraits<t_cell>::template getNumInnerNeighbors<t_j>() - 1)
+                if constexpr (t_k < ShapeTraits<t_cell>::template getNumInnerNeighbors<t_j>() - 1)
                 {
                     self2.template operator ()<t_i, t_j, t_k + 1>(self2);
                 }
-                else if constexpr (t_j < ElementTraits<t_cell>::template getNumInnerNeighbors<>() - 1)
+                else if constexpr (t_j < ShapeTraits<t_cell>::template getNumInnerNeighbors<>() - 1)
                 {
                     self2.template operator ()<t_i, t_j + 1, 0>(self2);
                 }
-                else if constexpr (t_i < ElementTraits<t_element>::template getNumOuterNeighbors<t_domain, cell_offset>() - 1)
+                else if constexpr (t_i < ShapeTraits<t_element>::template getNumOuterNeighbors<t_domain, cell_offset>() - 1)
                 {
                     self2.template operator ()<t_i + 1, 0, 0>(self2);
                 }
