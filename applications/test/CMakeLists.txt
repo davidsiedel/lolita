@@ -9,7 +9,7 @@ target_link_libraries(${PROJECT_NAME}_test1
 
 target_include_directories(${PROJECT_NAME}_test1
     PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include__>
+    $<INSTALL_INTERFACE:include__>
     PUBLIC ${INCL_DIRS}
 )

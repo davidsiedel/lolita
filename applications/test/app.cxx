@@ -1,52 +1,86 @@
-#include "2/core/traits/_include.hxx"
-#include "2/core/mesh2.hxx"
+// #include "2/core/traits/_include.hxx"
+// #include "2/core/mesh2.hxx"
+// #include "geometry/domain.hxx"
+#include "geometry/shape_.hxx"
+#include "mesh/gmsh.hxx"
+#include "tensor.hxx"
+// #include "quadrature/gauss.hxx"
 
 int
 main(int argc, char** argv)
 {
+    using Node = lolita::geometry::Node;
+    using Quadrangle = lolita::geometry::Quadrangle;
+    using Triangle = lolita::geometry::Triangle;
+    using Tetrahedron = lolita::geometry::Tetrahedron;
+    using Frame = lolita::geometry::CartesianFrame<2>;
+    using NodeNeighbor = lolita::geometry::ShapeOuterNeighborhoodTraits<Node, Frame>::OuterNeighbor<2, 1>;
+    auto constexpr res = lolita::geometry::ShapeOuterNeighborhoodTraits<Node, Frame>::getNumOuterNeighbors<>();
+    std::cout << res << std::endl;
+    static_assert(std::same_as<NodeNeighbor, Quadrangle>);
+    auto constexpr teg = lolita::geometry::ShapeLibraryTraits::getShapeTag<Triangle>();
+    std::cout << teg << std::endl;
 
-    auto constexpr d = lolita::CartesianMesh(2);
-    // auto constexpr hdg = lolita::HybridDiscontinuousGalerkinDiscretization(lolita::MonomialBasis(1), lolita::MonomialBasis(1));
-    auto constexpr displacement = lolita::HdgElement("Displacement", 2, 1, lolita::MonomialBasis(1), lolita::MonomialBasis(1));
-    // auto constexpr displacement = lolita::UnknownField("Displacement", 2, 1, hdg);
-    auto constexpr eps = lolita::SmallStrainOperator(displacement);
-    auto constexpr tra = lolita::TraceOperator(1, 2, displacement, 0, 0);
-    auto constexpr stab = lolita::StabilizationOperator(displacement);
-    auto constexpr quad = lolita::GaussQuadrature(2);
-    auto constexpr pot = lolita::InternalPotential(2, quad, eps);
-    auto constexpr lag = lolita::Lagrangian("1", pot);
-    //
-    auto constexpr young_modulus = lolita::Label("YoungModulus");
-    auto constexpr poisson = lolita::Label("PoissonRatio");
-    auto constexpr damage_h = lolita::Label("Damage");
+    auto constexpr pair = std::pair<int, int>(1, 1);
 
-    auto file_path = "/home/dsiedel/projetcs/lolita/data/meshes/mesh.msh";
-    auto lib_displacement_path = "/home/dsiedel/projetcs/lolita/data/behavior/bhv_micromorphic_displacement/src/libBehaviour.so";
-    auto lib_displacement_label = "MicromorphicDisplacement";
-    auto hyp = mgis::behaviour::Hypothesis::PLANESTRAIN;
+    auto constexpr f1 = pair.first;
+    auto constexpr f2 = pair.second;
 
-    //
-    auto linear_system = lolita::LinearSystem<1>();
-    //
+    std::cout << sizeof(std::tuple<>) << std::endl;
+    std::cout << std::tuple_size_v<std::tuple<>> << std::endl;
 
-    auto elements = lolita::core::MeshFileParser(file_path).template makeFiniteElementSet<d>();
-    elements->setDomainLagrangian<displacement.getDimDomain(), lag>("ROD");
-    elements->setDomainPotential<displacement.getDimDomain(), lag, pot>("ROD", lib_displacement_path, lib_displacement_label, hyp);
-    elements->setLagrangian<displacement.getDimDomain(), lag>("ROD");
-    elements->setPotential<displacement.getDimDomain(), lag, pot>("ROD");
-    //
-    elements->setElementDiscreteField<displacement.getDimDomain(), displacement>("ROD");
-    elements->setElementDiscreteField<displacement.getDimDomain() - 1, displacement>("ROD");
-    elements->addElementDiscreteFieldToLinearSystem<displacement.getDimDomain() - 1, displacement>("ROD", linear_system);
-    //
-    elements->setPotentialStrainOperators<displacement.getDimDomain(), lag, pot>("ROD");
-    elements->setPotentialMaterialProperty<displacement.getDimDomain(), lag, pot, young_modulus>("ROD", [](lolita::Point const & p) { return 200.0; });
-    elements->setPotentialMaterialProperty<displacement.getDimDomain(), lag, pot, poisson>("ROD", [](lolita::Point const & p) { return 200.0; });
-    elements->setPotentialExternalVariable<displacement.getDimDomain(), lag, pot, damage_h>("ROD", [](lolita::Point const & p) { return 200.0; });
-    elements->setPotentialStrains<displacement.getDimDomain(), lag, pot>("ROD");
-    elements->integratePotentialConstitutiveEquation<displacement.getDimDomain(), lag, pot>("ROD");
-    elements->setLagrangianJacobianMatrix<displacement.getDimDomain(), lag>("ROD");
+    // std::cout << lolita::geometry::num_nodes_<lolita::geometry::Node> << std::endl;
+    // std::cout << lolita::geometry::num_nodes_<lolita::geometry::Segment> << std::endl;
+    // std::cout << lolita::geometry::num_nodes_<lolita::geometry::Triangle> << std::endl;
+    // int cc = 0;
 
-    // std::cout << * elements << std::endl;
+    // auto set_tag = [&] <typename Shape> ()
+    // {
+    //     std::cout << "ici : " << Shape::label_ << " " << cc << std::endl;
+    //     cc ++;
+    // };
+
+    // lolita::geometry::ShapeTraits<lolita::geometry::Triangle>::template spanNeighbors<0>(set_tag);
+
+    auto tns = lolita::tensor::StaticTensor<lolita::Real, 3>();
+    static_assert(lolita::tensor::TensorConcept<lolita::tensor::StaticTensor<lolita::Real, 3>, lolita::Real, 1>);
+    static_assert(lolita::tensor::DynamicTensor<lolita::Real, 3>::NumIndices == 3);
+
+    auto constexpr n_ = 3;
+
+    lolita::tensor::DynamicTensor<lolita::Real, 2> td(n_, n_);
+    lolita::tensor::DynamicTensor<lolita::Real, 1> vd(n_);
+    for (int i = 0; i < n_; i++)
+    {
+        vd(i) = 1;
+        for (int j = 0; j < n_; j++)
+        {
+            td(i, j) = 1;
+        }
+    }
+    lolita::tensor::StaticTensor<lolita::Real, n_, n_> ts;
+    lolita::tensor::StaticTensor<lolita::Real, n_> vs;
+    for (int i = 0; i < n_; i++)
+    {
+        vs(i) = 1;
+        for (int j = 0; j < n_; j++)
+        {
+            ts(i, j) = 1;
+        }
+    }
+
+    auto ts0 = std::chrono::high_resolution_clock::now();
+    auto ress = ts * vs;
+    auto ts1 = std::chrono::high_resolution_clock::now();
+
+    auto td0 = std::chrono::high_resolution_clock::now();
+    auto resd = td * vd;
+    auto td1 = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> fd = td1 - td0;
+    std::chrono::duration<double> fs = ts1 - ts0;
+
+    std::cout << "dynamic : " << fd.count() << "s\n";
+    std::cout << "static : " << fs.count() << "s\n";
 
 }

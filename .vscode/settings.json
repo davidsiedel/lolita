@@ -4,6 +4,7 @@
         // "G": "Unix Makefiles",
         // "Eigen3_DIR": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/eigen-3.4.0-bt2lub2kz67aprjrlyd5grngsl2fjttn/share/eigen3/cmake",
         "Eigen3_DIR": "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/eigen-3.4.0-bbv2yf23niycjgl7mymwywzrf27j3qth/share/eigen3/cmake",
+        "Eigen3_USP": "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/eigen-3.4.0-bbv2yf23niycjgl7mymwywzrf27j3qth/include/eigen3/unsupported",
         // "INTEL_MKL_HOME": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/intel-mkl-2020.4.304-tk3fbvq6prehcnhki37mmn2enr7m7r2f",
         "INTEL_MKL_HOME": "/home/dsiedel/spack/opt/spack/linux-ubuntu22.04-skylake/gcc-11.2.0/intel-mkl-2020.4.304-i7pottdolo2rv76u3cpdreobu3kwu5br",
         // "GTEST_ROOT": "/home/dsiedel/spack_old1/opt/spack/linux-ubuntu20.04-skylake/gcc-9.3.0/googletest-1.11.0-fym76qqgkka37m27u25kkn2h2sosbwad",
@@ -19,6 +20,7 @@
         // "CMAKE_FIND_DEBUG_MODE": "ON"
     },
     "files.associations": {
+        "*.mfront": "cpp",
         "string_view": "cpp",
         "any": "cpp",
         "array": "cpp",
@@ -96,7 +98,8 @@
         "pardisosupport": "cpp",
         "sparse": "cpp",
         "cholesky": "cpp",
-        "dense": "cpp"
+        "dense": "cpp",
+        "specialfunctions": "cpp"
     },
     "cSpell.words": [
         "discretization",

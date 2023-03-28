@@ -107,6 +107,22 @@ else()
 endif()
 
 ######################################################################
+## Package: EigenUnsupported
+find_path(EigenUnsupported_INCLUDE_DIRS
+    NAMES	/Eigen/CXX11/src/Tensor/Tensor.h
+    PATHS   ${Eigen3_USP}
+)
+if (EigenUnsupported_INCLUDE_DIRS)
+    message(STATUS "EigenUnsupported found")
+    set(INCL_DIRS ${INCL_DIRS} ${EigenUnsupported_INCLUDE_DIRS})
+    set(HAVE_EigenUnsupported TRUE)
+    add_definitions(-DHAVE_EigenUnsupported)
+else()
+    message(STATUS "EigenUnsupported not found")
+    set(HAVE_EigenUnsupported FALSE)
+endif ()
+
+######################################################################
 ## Package: MGIS
 find_package(MGIS REQUIRED)
 if (MGIS_FOUND)
