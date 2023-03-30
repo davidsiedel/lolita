@@ -1,3 +1,14 @@
+/**
+ * @file shape.hxx
+ * @author David Siedel (davidsiedel@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-03-29
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #ifndef E68CB6A8_1D3D_4E96_928D_FB405436F896
 #define E68CB6A8_1D3D_4E96_928D_FB405436F896
 
@@ -218,18 +229,43 @@ namespace lolita::geometry
 
     } // namespace shape
 
+    /**
+     * @brief 
+     * 
+     * @tparam T_ 
+     */
     template<typename T_>
     concept PointConcept = shape::internal::PointTraits<T_>::value;
-
+    
+    /**
+     * @brief 
+     * 
+     * @tparam T_ 
+     */
     template<typename T_>
     concept CurveConcept = shape::internal::CurveTraits<T_>::value;
 
+    /**
+     * @brief 
+     * 
+     * @tparam T_ 
+     */
     template<typename T_>
     concept FacetConcept = shape::internal::FacetTraits<T_>::value;
 
+    /**
+     * @brief 
+     * 
+     * @tparam T_ 
+     */
     template<typename T_>
     concept SolidConcept = shape::internal::SolidTraits<T_>::value;
-
+    
+    /**
+     * @brief 
+     * 
+     * @tparam T_ 
+     */
     template<typename T_>
     concept ShapeConcept = PointConcept<T_> || CurveConcept<T_> || FacetConcept<T_> || SolidConcept<T_>;
 
@@ -240,7 +276,13 @@ namespace lolita::geometry
     using Tetrahedron = shape::Solid<4, 6, shape::internal::Faces(3, 4)>;
     using Hexahedron = shape::Solid<8, 12, shape::internal::Faces(4, 8)>;
 
-    template<template<typename...> typename T_, typename... U_>
+    /**
+     * @brief 
+     * 
+     * @tparam T_ 
+     * @tparam U_ 
+     */
+    template<template<ShapeConcept, typename...> typename T_, typename... U_>
     using Shapes = std::tuple<
         std::tuple<
             T_<Node, U_...>
@@ -257,6 +299,10 @@ namespace lolita::geometry
         >
     >;
 
+    /**
+     * @brief 
+     * 
+     */
     struct ShapeCoordinates
     {
         
@@ -275,19 +321,35 @@ namespace lolita::geometry
         Integer const j_;
 
     };
-
+    
+    template<FrameConcept Frame_>
     struct ShapeLibraryTraits
     {
 
+        template<template<typename, typename...> typename T_, typename... U_>
+        using MyShapes = tuple_slice_t<Shapes<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
+        
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         * @tparam j_ 
+         */
         template<Integer i_, Integer j_>
-        using Shape = std::tuple_element_t<j_, std::tuple_element_t<i_, Shapes<TypeView>>>::type;
+        using Shape = std::tuple_element_t<j_, std::tuple_element_t<i_, MyShapes<TypeView>>>::type;
 
+        /**
+         * @brief 
+         * 
+         * @tparam Shape_ 
+         * @return constexpr Boolean 
+         */
         template<ShapeConcept Shape_>
         static constexpr
         Boolean
         hasShape()
         {
-            using Shapes_ = std::tuple_element_t<Shape_::getDimShape(), Shapes<TypeView>>;
+            using Shapes_ = std::tuple_element_t<Shape_::getDimShape(), MyShapes<TypeView>>;
             auto tag = false;
             auto set_tag = [&] <Integer i_ = 0> (
                 auto & set_tag_
@@ -307,13 +369,18 @@ namespace lolita::geometry
             return tag;
         }
 
+        /**
+         * @brief 
+         * 
+         * @tparam Shape_ 
+         */
         template<ShapeConcept Shape_>
         static constexpr
         ShapeCoordinates
         getShapeCoordinates()
         requires(hasShape<Shape_>())
         {
-            using Shapes_ = std::tuple_element_t<Shape_::getDimShape(), Shapes<TypeView>>;
+            using Shapes_ = std::tuple_element_t<Shape_::getDimShape(), MyShapes<TypeView>>;
             auto tag = -1;
             auto set_tag = [&] <Integer i_ = 0> (
                 auto & set_tag_
@@ -332,46 +399,62 @@ namespace lolita::geometry
             set_tag(set_tag);
             return ShapeCoordinates(Shape_::getDimShape(), tag);
         }
-
-        template<ShapeConcept Shape_>
+        
+        template<Integer... t_i>
         static constexpr
         Integer
-        getShapeTag()
-        requires(hasShape<Shape_>())
+        getNumElements()
+        requires(sizeof...(t_i) == 0)
         {
-            using Shapes_ = std::tuple_element_t<Shape_::getDimShape(), Shapes<TypeView>>;
-            auto tag = -1;
-            auto set_tag = [&] <Integer i_ = 0> (
-                auto & set_tag_
-            )
-            constexpr mutable
-            {
-                if (std::same_as<Shape_, typename std::tuple_element_t<i_, Shapes_>::type>)
-                {
-                    tag = i_;
-                }
-                if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
-                {
-                    set_tag_.template operator()<i_ + 1>(set_tag_);
-                }
-            };
-            set_tag(set_tag);
-            return tag;
+            return std::tuple_size_v<MyShapes<TypeView>>;
+        }
+        
+        template<Integer... t_i>
+        static constexpr
+        Integer
+        getNumElements()
+        requires(sizeof...(t_i) == 1)
+        {
+            auto constexpr _ = std::array<Integer, 1>{t_i...};
+            return std::tuple_size_v<std::tuple_element_t<_[0], MyShapes<TypeView>>>;
         }
 
     };
 
+    /**
+     * @brief 
+     * 
+     * @tparam Shape_ 
+     */
     template<ShapeConcept Shape_>
     requires(!PointConcept<Shape_>)
     struct ShapeInnerNeighborhoodTraits
     {
-
+        
+        /**
+         * @brief 
+         * 
+         * @tparam T_ 
+         * @tparam U_ 
+         */
         template<template<typename, typename...> typename T_, typename... U_>
         using InnerNeighborhood = typename Shape_::template InnerNeighborhood<T_, U_...>;
 
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         * @tparam j_ 
+         */
         template<Integer i_, Integer j_>
         using InnerNeighbor = std::tuple_element_t<j_, std::tuple_element_t<i_, InnerNeighborhood<TypeView>>>::value_type::type;
 
+        /**
+         * @brief 
+         * 
+         * @tparam Other_ 
+         * @return constexpr Boolean 
+         */
         template<ShapeConcept Other_>
         static constexpr
         Boolean
@@ -404,6 +487,11 @@ namespace lolita::geometry
             }
         }
 
+        /**
+         * @brief 
+         * 
+         * @tparam Other_ 
+         */
         template<ShapeConcept Other_>
         static constexpr
         ShapeCoordinates
@@ -430,6 +518,11 @@ namespace lolita::geometry
             return ShapeCoordinates(Shape_::getDimShape() - Other_::getDimShape() - 1, tag);
         }
         
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         */
         template<Integer... i_>
         static constexpr
         Integer
@@ -440,6 +533,11 @@ namespace lolita::geometry
             return std::tuple_size_v<std::tuple_element_t<_[1], std::tuple_element_t<_[0], InnerNeighborhood<TypeView>>>>;
         }
         
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         */
         template<Integer... i_>
         static constexpr
         Integer
@@ -450,6 +548,11 @@ namespace lolita::geometry
             return std::tuple_size_v<std::tuple_element_t<_[0], InnerNeighborhood<TypeView>>>;
         }
         
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         */
         template<Integer... i_>
         static constexpr
         Integer
@@ -461,16 +564,40 @@ namespace lolita::geometry
 
     };
 
+    /**
+     * @brief 
+     * 
+     * @tparam Shape_ 
+     * @tparam Frame_ 
+     */
     template<ShapeConcept Shape_, FrameConcept Frame_>
     struct ShapeOuterNeighborhoodTraits
     {
 
-        template<template<typename, FrameConcept, typename...> typename T_, typename... U_>
-        using OuterNeighborhood = tuple_slice_t<Shapes<T_, Frame_, U_...>, Shape_::getDimShape(), Frame_::getDimEuclidean() + 1>;
+        /**
+         * @brief 
+         * 
+         * @tparam T_ 
+         * @tparam U_ 
+         */
+        template<template<typename, typename...> typename T_, typename... U_>
+        using OuterNeighborhood = tuple_slice_t<Shapes<T_, U_...>, Shape_::getDimShape(), Frame_::getDimEuclidean() + 1>;
 
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         * @tparam j_ 
+         */
         template<Integer i_, Integer j_>
         using OuterNeighbor = std::tuple_element_t<j_, std::tuple_element_t<i_, OuterNeighborhood<TypeView>>>::type;
 
+        /**
+         * @brief 
+         * 
+         * @tparam Other_ 
+         * @return constexpr Boolean 
+         */
         template<ShapeConcept Other_>
         static constexpr
         Boolean
@@ -503,6 +630,11 @@ namespace lolita::geometry
             }
         }
 
+        /**
+         * @brief 
+         * 
+         * @tparam Other_ 
+         */
         template<ShapeConcept Other_>
         static constexpr
         ShapeCoordinates
@@ -529,6 +661,11 @@ namespace lolita::geometry
             return ShapeCoordinates(Other_::getDimShape() - Shape_::getDimShape(), tag);
         }
         
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         */
         template<Integer... i_>
         static constexpr
         Integer
@@ -539,6 +676,11 @@ namespace lolita::geometry
             return std::tuple_size_v<std::tuple_element_t<_[0], OuterNeighborhood<TypeView>>>;
         }
         
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         */
         template<Integer... i_>
         static constexpr
         Integer

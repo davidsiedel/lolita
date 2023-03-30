@@ -1,46 +1,41 @@
 // #include "2/core/traits/_include.hxx"
 // #include "2/core/mesh2.hxx"
 // #include "geometry/domain.hxx"
-#include "geometry/shape_.hxx"
+
 #include "mesh/gmsh.hxx"
+
 #include "tensor.hxx"
 // #include "quadrature/gauss.hxx"
 
 int
 main(int argc, char** argv)
 {
-    using Node = lolita::geometry::Node;
-    using Quadrangle = lolita::geometry::Quadrangle;
-    using Triangle = lolita::geometry::Triangle;
-    using Tetrahedron = lolita::geometry::Tetrahedron;
+
     using Frame = lolita::geometry::CartesianFrame<2>;
-    using NodeNeighbor = lolita::geometry::ShapeOuterNeighborhoodTraits<Node, Frame>::OuterNeighbor<2, 1>;
-    auto constexpr res = lolita::geometry::ShapeOuterNeighborhoodTraits<Node, Frame>::getNumOuterNeighbors<>();
-    std::cout << res << std::endl;
-    static_assert(std::same_as<NodeNeighbor, Quadrangle>);
-    auto constexpr teg = lolita::geometry::ShapeLibraryTraits::getShapeTag<Triangle>();
-    std::cout << teg << std::endl;
 
-    auto constexpr pair = std::pair<int, int>(1, 1);
+    auto mesh_file_path = "/home/dsiedel/projetcs/lolita/applications/test/mymesh.msh";
+    auto mshone = lolita::mesh::MshOne<Frame>(mesh_file_path);
 
-    auto constexpr f1 = pair.first;
-    auto constexpr f2 = pair.second;
+    // using Node = lolita::geometry::Node;
+    // using Quadrangle = lolita::geometry::Quadrangle;
+    // using Triangle = lolita::geometry::Triangle;
+    // using Tetrahedron = lolita::geometry::Tetrahedron;
+    // using Frame = lolita::geometry::CartesianFrame<2>;
+    // using NodeNeighbor = lolita::geometry::ShapeOuterNeighborhoodTraits<Node, Frame>::OuterNeighbor<2, 1>;
+    // auto constexpr res = lolita::geometry::ShapeOuterNeighborhoodTraits<Node, Frame>::getNumOuterNeighbors<>();
+    // std::cout << res << std::endl;
+    // static_assert(std::same_as<NodeNeighbor, Quadrangle>);
+    // auto constexpr pnt = lolita::geometry::Point<2>();
 
-    std::cout << sizeof(std::tuple<>) << std::endl;
-    std::cout << std::tuple_size_v<std::tuple<>> << std::endl;
+    // auto constexpr pair = std::pair<int, int>(1, 1);
 
-    // std::cout << lolita::geometry::num_nodes_<lolita::geometry::Node> << std::endl;
-    // std::cout << lolita::geometry::num_nodes_<lolita::geometry::Segment> << std::endl;
-    // std::cout << lolita::geometry::num_nodes_<lolita::geometry::Triangle> << std::endl;
-    // int cc = 0;
+    // auto constexpr f1 = pair.first;
+    // auto constexpr f2 = pair.second;
 
-    // auto set_tag = [&] <typename Shape> ()
-    // {
-    //     std::cout << "ici : " << Shape::label_ << " " << cc << std::endl;
-    //     cc ++;
-    // };
+    // std::cout << sizeof(std::tuple<>) << std::endl;
+    // std::cout << std::tuple_size_v<std::tuple<>> << std::endl;
 
-    // lolita::geometry::ShapeTraits<lolita::geometry::Triangle>::template spanNeighbors<0>(set_tag);
+    // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
     auto tns = lolita::tensor::StaticTensor<lolita::Real, 3>();
     static_assert(lolita::tensor::TensorConcept<lolita::tensor::StaticTensor<lolita::Real, 3>, lolita::Real, 1>);

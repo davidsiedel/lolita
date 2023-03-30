@@ -35,6 +35,75 @@ namespace lolita
 
     using namespace config;
 
+    struct File
+    {
+
+    public:
+
+        explicit
+        File(
+            std::basic_string<Character> && file_path
+        )
+        :
+        file_path_(std::move(file_path)),
+        lines_(readLines())
+        {}
+
+        explicit
+        File(
+            std::basic_string<Character> const & file_path
+        )
+        :
+        file_path_(file_path),
+        lines_(readLines())
+        {}
+
+        std::vector<std::basic_string<Character>> const &
+        getContent()
+        const
+        {
+            return lines_;
+        }
+
+        // Boolean
+        // operator==(
+        //     File const & other
+        // )
+        // const
+        // = default;
+
+        // Boolean
+        // operator!=(
+        //     File const & other
+        // )
+        // const
+        // = default;
+
+    private:
+
+        inline
+        std::vector<std::basic_string<Character>>
+        readLines()
+        {
+            auto lines = std::vector<std::basic_string<Character>>();
+            auto file = std::basic_ifstream<Character>(std::forward<std::basic_string<Character>>(file_path_));
+            if (file)
+            {
+                for (std::basic_string<Character> line; std::getline(file, line); )
+                {
+                    lines.push_back(line);
+                }
+                return lines;
+            }
+            throw std::runtime_error("Could not open file");
+        }
+
+        std::basic_string<Character> file_path_;
+
+        std::vector<std::basic_string<Character>> const lines_;
+
+    };
+
     template<typename U_, typename...>
     struct TypeView
     {

@@ -1,182 +1,143 @@
+/**
+ * @file element.hxx
+ * @author David Siedel (davidsiedel@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-03-29
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #ifndef AC1D9F5B_9AFE_4022_8BAA_92E35CEF446A
 #define AC1D9F5B_9AFE_4022_8BAA_92E35CEF446A
 
 #include "geometry/frame.hxx"
-#include "geometry/shape.hxx"
 #include "geometry/domain.hxx"
+#include "geometry/point.hxx"
+#include "geometry/shape.hxx"
+#include "mesh/region.hxx"
 
 namespace lolita::mesh
 {
-
-    /**
-     * @brief 
-     * 
-     * @tparam T 
-     * @tparam t_domain 
-     */
-    template<template<typename, typename...> typename T_, FrameConcept Frame_, typename... U_>
-    struct DomainMap
+    
+    template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_>
+    struct Element
     {
 
     private:
 
-        struct DomainsTraits
-        {
+        template<typename... U_>
+        using ElementPointer_ = std::shared_ptr<Element<U_...>>;
 
-            template<typename Domain_, typename... V_>
-            using Neighbors = std::unordered_map<std::basic_string<Character>, std::shared_ptr<T_<Domain_, V_...>>>;
+        template<typename... U_>
+        using ElementPointers_ = std::vector<std::shared_ptr<Element<U_...>>>;
 
-            using Type = tuple_slice_t<Domains<Neighbors, Frame_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
+        using InnerNeighborhood_ = typename geometry::ShapeInnerNeighborhoodTraits<Shape_>::template InnerNeighborhood<ElementPointer_, Frame_>;
 
-        };
+        using OuterNeighborhood_ = typename geometry::ShapeOuterNeighborhoodTraits<Shape_, Frame_>::template OuterNeighborhood<ElementPointers_, Frame_>;
 
-    public:
-
-        using Domains = typename DomainsTraits::Type;
-
-        DomainMap()
-        {}
-    
-        template<Integer t_i>
-        std::tuple_element_t<t_i, Domains> const &
-        getDomains()
-        const
-        {
-            return std::get<t_i>(domains_);
-        }
-        
-        template<Integer t_i>
-        std::tuple_element_t<t_i, Domains> &
-        getDomains()
-        {
-            return std::get<t_i>(domains_);
-        }
-        
-        Domains domains_;
-        
-    };
-
-    /**
-     * @brief 
-     * 
-     * @tparam T 
-     * @tparam t_domain 
-     */
-    template<template<typename, typename> typename T, typename t_domain>
-    struct DomainSet
-    {
-
-    private:
-
-        template<typename t__dim, typename t__domain>
-        using t__RegionSet = std::vector<std::shared_ptr<T<t__dim, t__domain>>>;
-
-        using t_RegionSet = lolita::utility::tuple_slice_t<typename DomainLibrary::Domains<t__RegionSet, t_domain>, 0, t_domain.getDim() + 1>;
+        using Region_ = Region<geometry::Domain<Shape_::getDimShape()>, Frame_>;
 
     public:
-
-        DomainSet()
-        {}
-    
-        template<Integer t_i>
-        std::tuple_element_t<t_i, t_RegionSet> const &
-        getDomains()
+        
+        std::basic_string<Character>
+        getHash()
         const
         {
-            return std::get<t_i>(domains_);
-        }
-        
-        template<Integer t_i>
-        std::tuple_element_t<t_i, t_RegionSet> &
-        getDomains()
-        {
-            return std::get<t_i>(domains_);
-        }
-        
-        t_RegionSet domains_;
-        
-    };
-    
-    /**
-     * @brief 
-     * 
-     * @tparam T 
-     * @tparam t_domain 
-     */
-    template<template<ShapeConcept auto, typename> typename T, typename t_domain>
-    struct ElementMap
-    {
-
-    private:
-
-        template<ShapeConcept auto t_element, typename t__domain, auto... t__args>
-        using t_ElementMap = std::unordered_map<std::basic_string<Character>, std::shared_ptr<T<t_element, t__domain, t__args...>>>;
-
-        using t_Elements = lolita::utility::tuple_slice_t<typename ShapeLibrary::Elements<t_ElementMap, t_domain>, 0, t_domain.getDim() + 1>;
-
-    public:
-
-        ElementMap()
-        {}
-    
-        template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>> const &
-        getElements()
-        const
-        {
-            return std::get<t_j>(std::get<t_i>(elements_));
+            auto hash = std::basic_stringstream<Character>();
+            for (auto const & node : getInnerNeighbors<Shape_::getDimShape() - 1, 0>())
+            {
+                hash << node->getHash();
+            }
+            return hash.str();
         }
         
         template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>> &
-        getElements()
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighborhood_>> &
+        getOuterNeighbors()
         {
-            return std::get<t_j>(std::get<t_i>(elements_));
+            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
         }
         
-        t_Elements elements_;
+        template<Integer t_i, Integer t_j>
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighborhood_>> const &
+        getOuterNeighbors()
+        const
+        {
+            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
+        }
+        
+        template<Integer t_i, Integer t_j>
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, InnerNeighborhood_>> &
+        getInnerNeighbors()
+        {
+            return std::get<t_j>(std::get<t_i>(inner_neighbors_));
+        }
+        
+        template<Integer t_i, Integer t_j>
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, InnerNeighborhood_>> const &
+        getInnerNeighbors()
+        const
+        {
+            return std::get<t_j>(std::get<t_i>(inner_neighbors_));
+        }
+
+        InnerNeighborhood_ inner_neighbors_;
+
+        OuterNeighborhood_ outer_neighbors_;
+        
+        Natural tag_;
+
+        Region_ domain_;
 
     };
 
-    /**
-     * @brief 
-     * 
-     * @tparam T 
-     * @tparam t_domain 
-     */
-    template<template<ShapeConcept auto, typename> typename T, typename t_domain>
-    struct ElementSet
+    template<geometry::PointConcept Shape_, geometry::FrameConcept Frame_>
+    struct Element<Shape_, Frame_>
     {
 
     private:
 
-        template<ShapeConcept auto t_element, typename t__domain>
-        using t_ElementSet = std::vector<std::shared_ptr<T<t_element, t__domain>>>;
+        template<typename... U_>
+        using ElementPointers_ = std::vector<std::shared_ptr<Element<U_...>>>;
 
-        using t_Elements = lolita::utility::tuple_slice_t<typename ShapeLibrary::Elements<t_ElementSet, t_domain>, 0, t_domain.getDim() + 1>;
+        using OuterNeighborhood_ = typename geometry::ShapeOuterNeighborhoodTraits<Shape_, Frame_>::template OuterNeighborhood<ElementPointers_, Frame_>;
+
+        using Region_ = Region<geometry::Domain<Shape_::getDimShape()>, Frame_>;
 
     public:
-
-        ElementSet()
-        {}
-    
-        template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>> const &
-        getElements()
+        
+        std::basic_string<Character>
+        getHash()
         const
         {
-            return std::get<t_j>(std::get<t_i>(elements_));
+            return std::to_string(this->tag_);
         }
         
         template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, t_Elements>> &
-        getElements()
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighborhood_>> &
+        getOuterNeighbors()
         {
-            return std::get<t_j>(std::get<t_i>(elements_));
+            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
         }
         
-        t_Elements elements_;
+        template<Integer t_i, Integer t_j>
+        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighborhood_>> const &
+        getOuterNeighbors()
+        const
+        {
+            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
+        }
 
+        OuterNeighborhood_ outer_neighbors_;
+        
+        Natural tag_;
+        
+        geometry::Point<Frame_::getDimEuclidean()> coordinates_;
+
+        Region_ domain_;
+        
     };
     
 } // namespace lolita::mesh

@@ -7,17 +7,17 @@
 namespace lolita::geometry
 {
 
-    template<typename Domain_>
-    struct DomainTraits
+    /**
+     * @brief 
+     * 
+     * @tparam T_ 
+     */
+    template<typename T_>
+    concept DomainConcept = requires
     {
 
-        static constexpr
-        Integer
-        getDimension()
-        {
-            return Domain_::dimension_;
-        }
-
+        { T_::getDimDomain() } -> std::same_as<lolita::Integer>;
+        
     };
     
     template<Integer dim_>
@@ -25,11 +25,20 @@ namespace lolita::geometry
     {
 
         static constexpr
-        Integer dimension_ = dim_;
+        Integer
+        getDimDomain()
+        {
+            return dim_;
+        }
 
     };
 
-    template<template<typename, typename...> typename T_, typename... U_>
+    using PointDomain = Domain<0>;
+    using CurveDomain = Domain<1>;
+    using FacetDomain = Domain<2>;
+    using SolidDomain = Domain<3>;
+
+    template<template<DomainConcept, typename...> typename T_, typename... U_>
     using Domains = std::tuple<
         T_<Domain<0>, U_...>,
         T_<Domain<1>, U_...>,
@@ -37,36 +46,32 @@ namespace lolita::geometry
         T_<Domain<3>, U_...>
     >;
 
-    template<typename Domain_, FrameConcept Frame_>
-    struct FiniteDomain
+    template<FrameConcept Frame_>
+    struct DomainLibrary
     {
 
-        explicit
-        FiniteDomain(
-            std::basic_string<Character> const & tag
-        )
-        :
-        tag_(tag)
-        {}
-
-        explicit
-        FiniteDomain(
-            std::basic_string<Character> && tag
-        )
-        :
-        tag_(std::move(tag))
-        {}
-
-        std::basic_string<Character> const &
-        getLabel()
-        const
+        template<template<typename, typename...> typename T_, typename... U_>
+        using MyDomains = tuple_slice_t<Domains<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
+        
+        template<Integer i_>
+        using Domain = std::tuple_element_t<i_, MyDomains<TypeView>>::type;
+        
+        template<DomainConcept Domain_>
+        static constexpr
+        Boolean
+        hasDomain()
         {
-            return tag_;
+            return Domain_::getDimDomain() <= Frame_::getDimEuclidean();
         }
-
-    private:
-
-        std::basic_string<Character> tag_;
+        
+        // template<Integer... t_i>
+        static constexpr
+        Integer
+        getNumDomains()
+        // requires(sizeof...(t_i) == 0)
+        {
+            return std::tuple_size_v<MyDomains<TypeView>>;
+        }
 
     };
 
