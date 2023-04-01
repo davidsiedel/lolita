@@ -104,6 +104,9 @@ namespace lolita
 
     };
 
+    template<typename T_, typename...>
+    using TypeView2 = T_;
+
     template<typename U_, typename...>
     struct TypeView
     {

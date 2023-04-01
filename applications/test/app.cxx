@@ -12,9 +12,22 @@ main(int argc, char** argv)
 {
 
     using Frame = lolita::geometry::CartesianFrame<2>;
+    using Parser3 = lolita::mesh::ElementFactoryMap<Frame>;
 
     auto mesh_file_path = "/home/dsiedel/projetcs/lolita/applications/test/mymesh.msh";
-    auto mshone = lolita::mesh::MshOne<Frame>(mesh_file_path);
+    auto parser3 = Parser3();
+    parser3.template setIt<lolita::mesh::Msh>(mesh_file_path);
+
+    static_assert(std::same_as<lolita::geometry::Node, typename lolita::geometry::ShapeCollection<Frame>::Component<0, 0>>);
+    static_assert(lolita::geometry::ShapeCollection<Frame>::getNumComponents(0) == 1);
+    auto ici = lolita::geometry::ShapeCollection<Frame>();
+    auto cc = ici.getComponent<lolita::geometry::Node>();
+
+    auto constexpr coord = lolita::geometry::ShapeInnerNeighborhood<lolita::geometry::Triangle>::ShapeTraits<lolita::geometry::Segment>::coordinates_;
+    std::cout << coord[0] << ", " << coord[1] << std::endl;
+
+    // auto constexpr res = lolita::geometry::ShapeInnerNeighborhoodTraits<lolita::geometry::Triangle>::getCoordinate<lolita::geometry::Node>(0);
+    // std::cout << res << std::endl;
 
     // using Node = lolita::geometry::Node;
     // using Quadrangle = lolita::geometry::Quadrangle;
@@ -41,7 +54,7 @@ main(int argc, char** argv)
     static_assert(lolita::tensor::TensorConcept<lolita::tensor::StaticTensor<lolita::Real, 3>, lolita::Real, 1>);
     static_assert(lolita::tensor::DynamicTensor<lolita::Real, 3>::NumIndices == 3);
 
-    auto constexpr n_ = 3;
+    auto constexpr n_ = 4;
 
     lolita::tensor::DynamicTensor<lolita::Real, 2> td(n_, n_);
     lolita::tensor::DynamicTensor<lolita::Real, 1> vd(n_);

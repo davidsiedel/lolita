@@ -33,63 +33,91 @@ namespace lolita::mesh
         template<typename... U_>
         using ElementPointers_ = std::vector<std::shared_ptr<Element<U_...>>>;
 
-        using InnerNeighborhood_ = typename geometry::ShapeInnerNeighborhoodTraits<Shape_>::template InnerNeighborhood<ElementPointer_, Frame_>;
+        using InnerNeighborhood_ = geometry::ShapeInnerNeighborhood<Shape_, ElementPointer_, Frame_>;
 
-        using OuterNeighborhood_ = typename geometry::ShapeOuterNeighborhoodTraits<Shape_, Frame_>::template OuterNeighborhood<ElementPointers_, Frame_>;
+        using OuterNeighborhood_ = geometry::ShapeOuterNeighborhood<Shape_, Frame_, ElementPointers_, Frame_>;
 
-        using Region_ = Region<geometry::Domain<Shape_::getDimShape()>, Frame_>;
+        using Region_ = Region<typename Shape_::Domain, Frame_>;
+
+        using Regions_ = std::vector<std::shared_ptr<Region_>>;
 
     public:
+
+        // explicit
+        // Element(
+        //     Natural const & tag
+        // )
+        // :
+        // tag_(tag)
+        // {}
+
+        Element()
+        {}
+
+        void
+        setTag(
+            Natural const & tag
+        )
+        {
+            tag_ = tag;
+        }
         
         std::basic_string<Character>
         getHash()
         const
         {
             auto hash = std::basic_stringstream<Character>();
-            for (auto const & node : getInnerNeighbors<Shape_::getDimShape() - 1, 0>())
+            // for (auto const & node : getInnerNeighborhood().template getComponent<geometry::Node>()<Shape_::getDimShape() - 1, 0>())
+            for (auto const & node : getInnerNeighborhood().template getComponent<geometry::Node>())
             {
                 hash << node->getHash();
             }
             return hash.str();
         }
-        
-        template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighborhood_>> &
-        getOuterNeighbors()
+
+        void
+        addRegion(
+            std::shared_ptr<Region_> const & region
+        )
         {
-            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
+            regions_.push_back(region);
         }
         
-        template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighborhood_>> const &
-        getOuterNeighbors()
+        OuterNeighborhood_ const &
+        getOuterNeighborhood()
         const
         {
-            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
+            return outer_neighborhood_;
         }
         
-        template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, InnerNeighborhood_>> &
-        getInnerNeighbors()
+        OuterNeighborhood_ &
+        getOuterNeighborhood()
         {
-            return std::get<t_j>(std::get<t_i>(inner_neighbors_));
+            return outer_neighborhood_;
         }
         
-        template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, InnerNeighborhood_>> const &
-        getInnerNeighbors()
+        InnerNeighborhood_ const &
+        getInnerNeighborhood()
         const
         {
-            return std::get<t_j>(std::get<t_i>(inner_neighbors_));
+            return inner_neighborhood_;
+        }
+        
+        InnerNeighborhood_ &
+        getInnerNeighborhood()
+        {
+            return inner_neighborhood_;
         }
 
-        InnerNeighborhood_ inner_neighbors_;
+        InnerNeighborhood_ inner_neighborhood_;
 
-        OuterNeighborhood_ outer_neighbors_;
+        OuterNeighborhood_ outer_neighborhood_;
         
         Natural tag_;
 
-        Region_ domain_;
+        // Region_ domain_;
+
+        Regions_ regions_;
 
     };
 
@@ -102,11 +130,24 @@ namespace lolita::mesh
         template<typename... U_>
         using ElementPointers_ = std::vector<std::shared_ptr<Element<U_...>>>;
 
-        using OuterNeighborhood_ = typename geometry::ShapeOuterNeighborhoodTraits<Shape_, Frame_>::template OuterNeighborhood<ElementPointers_, Frame_>;
+        using OuterNeighborhood_ = geometry::ShapeOuterNeighborhood<Shape_, Frame_, ElementPointers_, Frame_>;
 
-        using Region_ = Region<geometry::Domain<Shape_::getDimShape()>, Frame_>;
+        using Region_ = Region<typename Shape_::Domain, Frame_>;
+
+        using Regions_ = std::vector<std::shared_ptr<Region_>>;
 
     public:
+
+        // explicit
+        // Element(
+        //     Natural const & tag
+        // )
+        // :
+        // tag_(tag)
+        // {}
+
+        Element()
+        {}
         
         std::basic_string<Character>
         getHash()
@@ -114,29 +155,53 @@ namespace lolita::mesh
         {
             return std::to_string(this->tag_);
         }
-        
-        template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighborhood_>> &
-        getOuterNeighbors()
+
+        void
+        addRegion(
+            std::shared_ptr<Region_> const & region
+        )
         {
-            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
-        }
-        
-        template<Integer t_i, Integer t_j>
-        std::tuple_element_t<t_j, std::tuple_element_t<t_i, OuterNeighborhood_>> const &
-        getOuterNeighbors()
-        const
-        {
-            return std::get<t_j>(std::get<t_i>(outer_neighbors_));
+            regions_.push_back(region);
         }
 
-        OuterNeighborhood_ outer_neighbors_;
+        void
+        setTag(
+            Natural const & tag
+        )
+        {
+            tag_ = tag;
+        }
+
+        void
+        setCoordinates(
+            geometry::Point<Frame_::getDimEuclidean()> const & point
+        )
+        {
+            coordinates_ = point;
+        }
+        
+        OuterNeighborhood_ const &
+        getOuterNeighborhood()
+        const
+        {
+            return outer_neighborhood_;
+        }
+        
+        OuterNeighborhood_ &
+        getOuterNeighborhood()
+        {
+            return outer_neighborhood_;
+        }
+
+        OuterNeighborhood_ outer_neighborhood_;
         
         Natural tag_;
         
         geometry::Point<Frame_::getDimEuclidean()> coordinates_;
 
-        Region_ domain_;
+        // Region_ domain_;
+
+        Regions_ regions_;
         
     };
     

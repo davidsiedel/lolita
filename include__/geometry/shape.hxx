@@ -29,6 +29,17 @@ namespace lolita::geometry
         struct Point
         {
             
+            /**
+             * @brief 
+             * 
+             */
+            using Domain = geometry::Domain<0>;
+            
+            /**
+             * @brief Get the Dim Shape object
+             * 
+             * @return constexpr Integer 
+             */
             static constexpr
             Integer
             getDimShape()
@@ -36,6 +47,11 @@ namespace lolita::geometry
                 return 0;
             }
             
+            /**
+             * @brief Get the Num Nodes object
+             * 
+             * @return constexpr Integer 
+             */
             static constexpr
             Integer
             getNumNodes()
@@ -64,7 +80,19 @@ namespace lolita::geometry
          */
         struct Curve
         {
+            
+            /**
+             * @brief 
+             * 
+             */
+            using Domain = geometry::Domain<1>;
 
+            /**
+             * @brief 
+             * 
+             * @tparam T_ 
+             * @tparam U_ 
+             */
             template<template<typename, typename...> typename T_, typename... U_>
             using InnerNeighborhood = std::tuple<
                 std::tuple<
@@ -72,6 +100,11 @@ namespace lolita::geometry
                 >
             >;
             
+            /**
+             * @brief Get the Dim Shape object
+             * 
+             * @return constexpr Integer 
+             */
             static constexpr
             Integer
             getDimShape()
@@ -79,6 +112,11 @@ namespace lolita::geometry
                 return 1;
             }
             
+            /**
+             * @brief Get the Num Nodes object
+             * 
+             * @return constexpr Integer 
+             */
             static constexpr
             Integer
             getNumNodes()
@@ -110,7 +148,19 @@ namespace lolita::geometry
         requires(num_points_ >= 3)
         struct Facet
         {
+            
+            /**
+             * @brief 
+             * 
+             */
+            using Domain = geometry::Domain<2>;
 
+            /**
+             * @brief 
+             * 
+             * @tparam T_ 
+             * @tparam U_ 
+             */
             template<template<typename, typename...> typename T_, typename... U_>
             using InnerNeighborhood = std::tuple<
                 std::tuple<
@@ -121,6 +171,11 @@ namespace lolita::geometry
                 >
             >;
             
+            /**
+             * @brief Get the Dim Shape object
+             * 
+             * @return constexpr Integer 
+             */
             static constexpr
             Integer
             getDimShape()
@@ -128,6 +183,11 @@ namespace lolita::geometry
                 return 2;
             }
             
+            /**
+             * @brief Get the Num Nodes object
+             * 
+             * @return constexpr Integer 
+             */
             static constexpr
             Integer
             getNumNodes()
@@ -185,6 +245,18 @@ namespace lolita::geometry
         struct Solid
         {
 
+            /**
+             * @brief 
+             * 
+             */
+            using Domain = geometry::Domain<3>;
+
+            /**
+             * @brief 
+             * 
+             * @tparam T_ 
+             * @tparam U_ 
+             */
             template<template<typename, typename...> typename T_, typename... U_>
             using InnerNeighborhood = std::tuple<
                 std::tuple<
@@ -198,6 +270,11 @@ namespace lolita::geometry
                 >
             >;
             
+            /**
+             * @brief Get the Dim Shape object
+             * 
+             * @return constexpr Integer 
+             */
             static constexpr
             Integer
             getDimShape()
@@ -205,6 +282,11 @@ namespace lolita::geometry
                 return 3;
             }
             
+            /**
+             * @brief Get the Num Nodes object
+             * 
+             * @return constexpr Integer 
+             */
             static constexpr
             Integer
             getNumNodes()
@@ -269,11 +351,40 @@ namespace lolita::geometry
     template<typename T_>
     concept ShapeConcept = PointConcept<T_> || CurveConcept<T_> || FacetConcept<T_> || SolidConcept<T_>;
 
+    /**
+     * @brief 
+     * 
+     */
     using Node = shape::Point;
+
+    /**
+     * @brief 
+     * 
+     */
     using Segment = shape::Curve;
+
+    /**
+     * @brief 
+     * 
+     */
     using Triangle = shape::Facet<3>;
+
+    /**
+     * @brief 
+     * 
+     */
     using Quadrangle = shape::Facet<4>;
+
+    /**
+     * @brief 
+     * 
+     */
     using Tetrahedron = shape::Solid<4, 6, shape::internal::Faces(3, 4)>;
+
+    /**
+     * @brief 
+     * 
+     */
     using Hexahedron = shape::Solid<8, 12, shape::internal::Faces(4, 8)>;
 
     /**
@@ -321,13 +432,23 @@ namespace lolita::geometry
         Integer const j_;
 
     };
-    
-    template<FrameConcept Frame_>
-    struct ShapeLibraryTraits
-    {
 
-        template<template<typename, typename...> typename T_, typename... U_>
-        using MyShapes = tuple_slice_t<Shapes<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
+    /**
+     * @brief 
+     * 
+     * @tparam Frame_ 
+     * @tparam T_ 
+     * @tparam U_ 
+     */
+    template<FrameConcept Frame_, template<typename, typename...> typename T_ = TypeView2, typename... U_>
+    struct ShapeCollection
+    {
+        
+        /**
+         * @brief 
+         * 
+         */
+        using Components = tuple_slice_t<Shapes<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
         
         /**
          * @brief 
@@ -336,38 +457,7 @@ namespace lolita::geometry
          * @tparam j_ 
          */
         template<Integer i_, Integer j_>
-        using Shape = std::tuple_element_t<j_, std::tuple_element_t<i_, MyShapes<TypeView>>>::type;
-
-        /**
-         * @brief 
-         * 
-         * @tparam Shape_ 
-         * @return constexpr Boolean 
-         */
-        template<ShapeConcept Shape_>
-        static constexpr
-        Boolean
-        hasShape()
-        {
-            using Shapes_ = std::tuple_element_t<Shape_::getDimShape(), MyShapes<TypeView>>;
-            auto tag = false;
-            auto set_tag = [&] <Integer i_ = 0> (
-                auto & set_tag_
-            )
-            constexpr mutable
-            {
-                if (std::same_as<Shape_, typename std::tuple_element_t<i_, Shapes_>::type>)
-                {
-                    tag = true;
-                }
-                if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
-                {
-                    set_tag_.template operator()<i_ + 1>(set_tag_);
-                }
-            };
-            set_tag(set_tag);
-            return tag;
-        }
+        using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>;
 
         /**
          * @brief 
@@ -375,49 +465,143 @@ namespace lolita::geometry
          * @tparam Shape_ 
          */
         template<ShapeConcept Shape_>
-        static constexpr
-        ShapeCoordinates
-        getShapeCoordinates()
-        requires(hasShape<Shape_>())
+        struct ShapeTraits
         {
-            using Shapes_ = std::tuple_element_t<Shape_::getDimShape(), MyShapes<TypeView>>;
-            auto tag = -1;
-            auto set_tag = [&] <Integer i_ = 0> (
-                auto & set_tag_
+
+        private:
+            
+            static constexpr
+            Integer
+            getIndex(
+                Integer i
+            )
+            {
+                auto constexpr first_index = Shape_::getDimShape();
+                if (i == 0)
+                {
+                    return first_index;
+                }
+                else
+                {
+                    using Shapes_ = std::tuple_element_t<first_index, typename ShapeCollection<Frame_>::Components>;
+                    auto tag = -1;
+                    auto set_tag = [&] <Integer i_ = 0> (
+                        auto & set_tag_
+                    )
+                    constexpr mutable
+                    {
+                        if (std::same_as<Shape_, typename std::tuple_element_t<i_, Shapes_>>)
+                        {
+                            tag = i_;
+                        }
+                        if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
+                        {
+                            set_tag_.template operator()<i_ + 1>(set_tag_);
+                        }
+                    };
+                    set_tag(set_tag);
+                    return tag;
+                }
+            }
+
+        public:
+            
+            /**
+             * @brief 
+             * 
+             * @return constexpr Boolean 
+             */
+            static constexpr
+            Boolean
+            hasCoordinates()
+            {
+                return getIndex(1) != -1;
+            }
+
+            /**
+             * @brief 
+             * 
+             */
+            static constexpr
+            std::array<Integer, 2> coordinates_ = {getIndex(0), getIndex(1)};
+
+        };
+
+        // template<ShapeConcept Shape_>
+        // static constexpr
+        // std::array<Integer, 2>
+        // getShapeCoordinates()
+        // {
+        //     return ShapeTraits<Shape_>::coordinates_;
+        // }
+
+        static constexpr
+        Integer
+        getNumComponents()
+        {
+            return std::tuple_size_v<Components>;
+        }
+
+        static constexpr
+        Integer
+        getNumComponents(
+            Integer i
+        )
+        {
+            auto size = -1;
+            auto set_size = [&] <Integer i_ = 0> (
+                auto & set_size_
             )
             constexpr mutable
             {
-                if (std::same_as<Shape_, typename std::tuple_element_t<i_, Shapes_>::type>)
+                if (i_ == i)
                 {
-                    tag = i_;
+                    size = std::tuple_size_v<std::tuple_element_t<i_, Components>>;
                 }
-                if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
+                if constexpr (i_ < std::tuple_size_v<Components> - 1)
                 {
-                    set_tag_.template operator()<i_ + 1>(set_tag_);
+                    set_size_.template operator()<i_ + 1>(set_size_);
                 }
             };
-            set_tag(set_tag);
-            return ShapeCoordinates(Shape_::getDimShape(), tag);
+            set_size(set_size);
+            return size;
+        }
+    
+        template<Integer i_, Integer j_>
+        std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> const &
+        getComponent()
+        const
+        {
+            return std::get<j_>(std::get<i_>(components_));
+        }
+    
+        template<ShapeConcept Shape_>
+        std::tuple_element_t<ShapeTraits<Shape_>::coordinates_[1], std::tuple_element_t<ShapeTraits<Shape_>::coordinates_[0], Components>> const &
+        getComponent()
+        const
+        requires(ShapeTraits<Shape_>::hasCoordinates())
+        {
+            return std::get<ShapeTraits<Shape_>::coordinates_[1]>(std::get<ShapeTraits<Shape_>::coordinates_[0]>(components_));
         }
         
-        template<Integer... t_i>
-        static constexpr
-        Integer
-        getNumElements()
-        requires(sizeof...(t_i) == 0)
+        template<Integer i_, Integer j_>
+        std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> &
+        getComponent()
         {
-            return std::tuple_size_v<MyShapes<TypeView>>;
+            return std::get<j_>(std::get<i_>(components_));
         }
-        
-        template<Integer... t_i>
-        static constexpr
-        Integer
-        getNumElements()
-        requires(sizeof...(t_i) == 1)
+    
+        template<ShapeConcept Shape_>
+        std::tuple_element_t<ShapeTraits<Shape_>::coordinates_[1], std::tuple_element_t<ShapeTraits<Shape_>::coordinates_[0], Components>> &
+        getComponent()
+        requires(ShapeTraits<Shape_>::hasCoordinates())
         {
-            auto constexpr _ = std::array<Integer, 1>{t_i...};
-            return std::tuple_size_v<std::tuple_element_t<_[0], MyShapes<TypeView>>>;
+            return std::get<ShapeTraits<Shape_>::coordinates_[1]>(std::get<ShapeTraits<Shape_>::coordinates_[0]>(components_));
         }
+
+    private:
+
+        Components components_;
 
     };
 
@@ -425,21 +609,20 @@ namespace lolita::geometry
      * @brief 
      * 
      * @tparam Shape_ 
+     * @tparam T_ 
+     * @tparam U_ 
      */
-    template<ShapeConcept Shape_>
+    template<ShapeConcept Shape_, template<typename, typename...> typename T_ = TypeView2, typename... U_>
     requires(!PointConcept<Shape_>)
-    struct ShapeInnerNeighborhoodTraits
+    struct ShapeInnerNeighborhood
     {
         
         /**
          * @brief 
          * 
-         * @tparam T_ 
-         * @tparam U_ 
          */
-        template<template<typename, typename...> typename T_, typename... U_>
-        using InnerNeighborhood = typename Shape_::template InnerNeighborhood<T_, U_...>;
-
+        using Components = typename Shape_::template InnerNeighborhood<T_, U_...>;
+        
         /**
          * @brief 
          * 
@@ -447,120 +630,190 @@ namespace lolita::geometry
          * @tparam j_ 
          */
         template<Integer i_, Integer j_>
-        using InnerNeighbor = std::tuple_element_t<j_, std::tuple_element_t<i_, InnerNeighborhood<TypeView>>>::value_type::type;
+        using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>::value_type;
 
         /**
          * @brief 
          * 
-         * @tparam Other_ 
-         * @return constexpr Boolean 
+         * @tparam Neighbor_ 
          */
-        template<ShapeConcept Other_>
-        static constexpr
-        Boolean
-        hasShape()
+        template<ShapeConcept Neighbor_>
+        struct ShapeTraits
         {
-            if (Other_::getDimShape() >= Shape_::getDimShape())
+
+        private:
+            
+            static constexpr
+            Integer
+            getIndex(
+                Integer i
+            )
             {
-                return false;
-            }
-            else
-            {
-                using Shapes_ = std::tuple_element_t<Shape_::getDimShape() - Other_::getDimShape() - 1, InnerNeighborhood<TypeView>>;
-                auto tag = false;
-                auto set_tag = [&] <Integer i_ = 0> (
-                    auto & set_tag_
-                )
-                constexpr mutable
+                auto constexpr first_index = Shape_::getDimShape() - Neighbor_::getDimShape() - 1;
+                if (i == 0)
                 {
-                    if (std::same_as<Other_, typename std::tuple_element_t<i_, Shapes_>::value_type::type>)
+                    return first_index;
+                }
+                else
+                {
+                    using Shapes_ = std::tuple_element_t<first_index, typename ShapeInnerNeighborhood<Shape_>::Components>;
+                    auto tag = -1;
+                    auto set_tag = [&] <Integer i_ = 0> (
+                        auto & set_tag_
+                    )
+                    constexpr mutable
                     {
-                        tag = true;
-                    }
-                    if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
-                    {
-                        set_tag_.template operator()<i_ + 1>(set_tag_);
-                    }
-                };
-                set_tag(set_tag);
-                return tag;
+                        if (std::same_as<Neighbor_, typename std::tuple_element_t<i_, Shapes_>::value_type>)
+                        {
+                            tag = i_;
+                        }
+                        if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
+                        {
+                            set_tag_.template operator()<i_ + 1>(set_tag_);
+                        }
+                    };
+                    set_tag(set_tag);
+                    return tag;
+                }
             }
+
+        public:
+            
+            /**
+             * @brief 
+             * 
+             * @return constexpr Boolean 
+             */
+            static constexpr
+            Boolean
+            hasCoordinates()
+            {
+                return getIndex(1) != -1;
+            }
+
+            /**
+             * @brief 
+             * 
+             */
+            static constexpr
+            std::array<Integer, 2> coordinates_ = {getIndex(0), getIndex(1)};
+
+        };
+
+        // template<ShapeConcept Neighbor_>
+        // static constexpr
+        // Boolean
+        // hasNeighbor()
+        // {
+        //     return ShapeTraits<Neighbor_>::hasCoordinates();
+        // }
+
+        // template<ShapeConcept Neighbor_>
+        // static constexpr
+        // std::array<Integer, 2>
+        // getNeighborCoordinates()
+        // requires(hasNeighbor<Neighbor_>())
+        // {
+        //     return ShapeTraits<Neighbor_>::coordinates_;
+        // }
+
+        static constexpr
+        Integer
+        getNumComponents()
+        {
+            return std::tuple_size_v<Components>;
         }
 
-        /**
-         * @brief 
-         * 
-         * @tparam Other_ 
-         */
-        template<ShapeConcept Other_>
         static constexpr
-        ShapeCoordinates
-        getShapeCoordinates()
-        requires(hasShape<Other_>())
+        Integer
+        getNumComponents(
+            Integer i
+        )
         {
-            using Shapes_ = std::tuple_element_t<Shape_::getDimShape() - Other_::getDimShape() - 1, InnerNeighborhood<TypeView>>;
-            auto tag = -1;
-            auto set_tag = [&] <Integer i_ = 0> (
-                auto & set_tag_
+            auto size = -1;
+            auto set_size = [&] <Integer i_ = 0> (
+                auto & set_size_
             )
             constexpr mutable
             {
-                if (std::same_as<Other_, typename std::tuple_element_t<i_, Shapes_>::value_type::type>)
+                if (i_ == i)
                 {
-                    tag = i_;
+                    size = std::tuple_size_v<std::tuple_element_t<i_, Components>>;
                 }
-                if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
+                if constexpr (i_ < std::tuple_size_v<Components> - 1)
                 {
-                    set_tag_.template operator()<i_ + 1>(set_tag_);
+                    set_size_.template operator()<i_ + 1>(set_size_);
                 }
             };
-            set_tag(set_tag);
-            return ShapeCoordinates(Shape_::getDimShape() - Other_::getDimShape() - 1, tag);
+            set_size(set_size);
+            return size;
         }
-        
-        /**
-         * @brief 
-         * 
-         * @tparam i_ 
-         */
-        template<Integer... i_>
+
         static constexpr
         Integer
-        getNumInnerNeighbors()
-        requires(sizeof...(i_) == 2)
+        getNumComponents(
+            Integer i,
+            Integer j
+        )
         {
-            auto constexpr _ = std::array<Integer, 2>{i_...};
-            return std::tuple_size_v<std::tuple_element_t<_[1], std::tuple_element_t<_[0], InnerNeighborhood<TypeView>>>>;
+            auto size = -1;
+            auto set_size = [&] <Integer i_ = 0, Integer j_ = 0> (
+                auto & set_size_
+            )
+            constexpr mutable
+            {
+                if (i_ == i && j_ == j)
+                {
+                    size = std::tuple_size_v<std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>>;
+                }
+                if constexpr (j_ < std::tuple_size_v<std::tuple_element_t<i_, Components>> - 1)
+                {
+                    set_size_.template operator()<i_, j_ + 1>(set_size_);
+                }
+                else if constexpr (i_ < std::tuple_size_v<Components> - 1)
+                {
+                    set_size_.template operator()<i_ + 1, 0>(set_size_);
+                }
+            };
+            set_size(set_size);
+            return size;
+        }
+    
+        template<Integer i_, Integer j_>
+        std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> const &
+        getComponent()
+        const
+        {
+            return std::get<j_>(std::get<i_>(components_));
+        }
+    
+        template<ShapeConcept Neighbor_>
+        std::tuple_element_t<ShapeTraits<Neighbor_>::coordinates_[1], std::tuple_element_t<ShapeTraits<Neighbor_>::coordinates_[0], Components>> const &
+        getComponent()
+        const
+        requires(ShapeTraits<Neighbor_>::hasCoordinates())
+        {
+            return std::get<ShapeTraits<Neighbor_>::coordinates_[1]>(std::get<ShapeTraits<Neighbor_>::coordinates_[0]>(components_));
         }
         
-        /**
-         * @brief 
-         * 
-         * @tparam i_ 
-         */
-        template<Integer... i_>
-        static constexpr
-        Integer
-        getNumInnerNeighbors()
-        requires(sizeof...(i_) == 1)
+        template<Integer i_, Integer j_>
+        std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> &
+        getComponent()
         {
-            auto constexpr _ = std::array<Integer, 1>{i_...};
-            return std::tuple_size_v<std::tuple_element_t<_[0], InnerNeighborhood<TypeView>>>;
+            return std::get<j_>(std::get<i_>(components_));
         }
-        
-        /**
-         * @brief 
-         * 
-         * @tparam i_ 
-         */
-        template<Integer... i_>
-        static constexpr
-        Integer
-        getNumInnerNeighbors()
-        requires(sizeof...(i_) == 0)
+    
+        template<ShapeConcept Neighbor_>
+        std::tuple_element_t<ShapeTraits<Neighbor_>::coordinates_[1], std::tuple_element_t<ShapeTraits<Neighbor_>::coordinates_[0], Components>> &
+        getComponent()
+        requires(ShapeTraits<Neighbor_>::hasCoordinates())
         {
-            return std::tuple_size_v<InnerNeighborhood<TypeView>>;
+            return std::get<ShapeTraits<Neighbor_>::coordinates_[1]>(std::get<ShapeTraits<Neighbor_>::coordinates_[0]>(components_));
         }
+
+    private:
+
+        Components components_;
 
     };
 
@@ -569,20 +822,19 @@ namespace lolita::geometry
      * 
      * @tparam Shape_ 
      * @tparam Frame_ 
+     * @tparam T_ 
+     * @tparam U_ 
      */
-    template<ShapeConcept Shape_, FrameConcept Frame_>
-    struct ShapeOuterNeighborhoodTraits
+    template<ShapeConcept Shape_, FrameConcept Frame_, template<typename, typename...> typename T_ = TypeView2, typename... U_>
+    struct ShapeOuterNeighborhood
     {
-
+        
         /**
          * @brief 
          * 
-         * @tparam T_ 
-         * @tparam U_ 
          */
-        template<template<typename, typename...> typename T_, typename... U_>
-        using OuterNeighborhood = tuple_slice_t<Shapes<T_, U_...>, Shape_::getDimShape(), Frame_::getDimEuclidean() + 1>;
-
+        using Components = tuple_slice_t<Shapes<T_, U_...>, Shape_::getDimShape(), Frame_::getDimEuclidean() + 1>;;
+        
         /**
          * @brief 
          * 
@@ -590,105 +842,198 @@ namespace lolita::geometry
          * @tparam j_ 
          */
         template<Integer i_, Integer j_>
-        using OuterNeighbor = std::tuple_element_t<j_, std::tuple_element_t<i_, OuterNeighborhood<TypeView>>>::type;
+        using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>;
 
         /**
          * @brief 
          * 
-         * @tparam Other_ 
-         * @return constexpr Boolean 
+         * @tparam Neighbor_ 
          */
-        template<ShapeConcept Other_>
-        static constexpr
-        Boolean
-        hasShape()
+        template<ShapeConcept Neighbor_>
+        struct ShapeTraits
         {
-            if (Other_::getDimShape() < Shape_::getDimShape())
+
+        private:
+            
+            /**
+             * @brief Get the Index object
+             * 
+             * @param i 
+             * @return constexpr Integer 
+             */
+            static constexpr
+            Integer
+            getIndex(
+                Integer i
+            )
             {
-                return false;
-            }
-            else
-            {
-                using Shapes_ = std::tuple_element_t<Other_::getDimShape() - Shape_::getDimShape(), OuterNeighborhood<TypeView>>;
-                auto tag = false;
-                auto set_tag = [&] <Integer i_ = 0> (
-                    auto & set_tag_
-                )
-                constexpr mutable
+                auto constexpr first_index = Neighbor_::getDimShape() - Shape_::getDimShape();
+                if (i == 0)
                 {
-                    if (std::same_as<Other_, typename std::tuple_element_t<i_, Shapes_>::type>)
+                    return first_index;
+                }
+                else
+                {
+                    using Shapes_ = std::tuple_element_t<first_index, typename ShapeOuterNeighborhood<Shape_, Frame_>::Components>;
+                    auto tag = -1;
+                    auto set_tag = [&] <Integer i_ = 0> (
+                        auto & set_tag_
+                    )
+                    constexpr mutable
                     {
-                        tag = true;
-                    }
-                    if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
-                    {
-                        set_tag_.template operator()<i_ + 1>(set_tag_);
-                    }
-                };
-                set_tag(set_tag);
-                return tag;
+                        if (std::same_as<Neighbor_, typename std::tuple_element_t<i_, Shapes_>>)
+                        {
+                            tag = i_;
+                        }
+                        if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
+                        {
+                            set_tag_.template operator()<i_ + 1>(set_tag_);
+                        }
+                    };
+                    set_tag(set_tag);
+                    return tag;
+                }
             }
+
+        public:
+            
+            /**
+             * @brief 
+             * 
+             * @return constexpr Boolean 
+             */
+            static constexpr
+            Boolean
+            hasCoordinates()
+            {
+                return getIndex(1) != -1;
+            }
+
+            /**
+             * @brief 
+             * 
+             */
+            static constexpr
+            std::array<Integer, 2> coordinates_ = {getIndex(0), getIndex(1)};
+
+        };
+
+        // template<ShapeConcept Neighbor_>
+        // static constexpr
+        // std::array<Integer, 2>
+        // getShapeCoordinates()
+        // {
+        //     return ShapeTraits<Neighbor_>::coordinates_;
+        // }
+
+        /**
+         * @brief Get the Num Components object
+         * 
+         * @return constexpr Integer 
+         */
+        static constexpr
+        Integer
+        getNumComponents()
+        {
+            return std::tuple_size_v<Components>;
         }
 
         /**
-         * @brief 
+         * @brief Get the Num Components object
          * 
-         * @tparam Other_ 
+         * @param i 
+         * @return constexpr Integer 
          */
-        template<ShapeConcept Other_>
         static constexpr
-        ShapeCoordinates
-        getShapeCoordinates()
-        requires(hasShape<Other_>())
+        Integer
+        getNumComponents(
+            Integer i
+        )
         {
-            using Shapes_ = std::tuple_element_t<Other_::getDimShape() - Shape_::getDimShape(), OuterNeighborhood<TypeView>>;
-            auto tag = -1;
-            auto set_tag = [&] <Integer i_ = 0> (
-                auto & set_tag_
+            auto size = -1;
+            auto set_size = [&] <Integer i_ = 0> (
+                auto & set_size_
             )
             constexpr mutable
             {
-                if (std::same_as<Other_, typename std::tuple_element_t<i_, Shapes_>::type>)
+                if (i_ == i)
                 {
-                    tag = i_;
+                    size = std::tuple_size_v<std::tuple_element_t<i_, Components>>;
                 }
-                if constexpr (i_ < std::tuple_size_v<Shapes_> - 1)
+                if constexpr (i_ < std::tuple_size_v<Components> - 1)
                 {
-                    set_tag_.template operator()<i_ + 1>(set_tag_);
+                    set_size_.template operator()<i_ + 1>(set_size_);
                 }
             };
-            set_tag(set_tag);
-            return ShapeCoordinates(Other_::getDimShape() - Shape_::getDimShape(), tag);
+            set_size(set_size);
+            return size;
+        }
+
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         * @tparam j_ 
+         * @return std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> const& 
+         */
+        template<Integer i_, Integer j_>
+        std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> const &
+        getComponent()
+        const
+        {
+            return std::get<j_>(std::get<i_>(components_));
+        }
+        
+        /**
+         * @brief 
+         * 
+         * @tparam Neighbor_ 
+         * @return std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> const& 
+         */
+        template<ShapeConcept Neighbor_>
+        std::tuple_element_t<ShapeTraits<Neighbor_>::coordinates_[1], std::tuple_element_t<ShapeTraits<Neighbor_>::coordinates_[0], Components>> const &
+        getComponent()
+        const
+        requires(ShapeTraits<Neighbor_>::hasCoordinates())
+        {
+            return std::get<ShapeTraits<Neighbor_>::coordinates_[1]>(std::get<ShapeTraits<Neighbor_>::coordinates_[0]>(components_));
         }
         
         /**
          * @brief 
          * 
          * @tparam i_ 
+         * @tparam j_ 
+         * @return std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>& 
          */
-        template<Integer... i_>
-        static constexpr
-        Integer
-        getNumOuterNeighbors()
-        requires(sizeof...(i_) == 1)
+        template<Integer i_, Integer j_>
+        std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> &
+        getComponent()
         {
-            auto constexpr _ = std::array<Integer, 1>{i_...};
-            return std::tuple_size_v<std::tuple_element_t<_[0], OuterNeighborhood<TypeView>>>;
+            return std::get<j_>(std::get<i_>(components_));
         }
         
         /**
          * @brief 
          * 
-         * @tparam i_ 
+         * @tparam Neighbor_ 
+         * @return std::tuple_element_t<j_, std::tuple_element_t<i_, Components>> const& 
          */
-        template<Integer... i_>
-        static constexpr
-        Integer
-        getNumOuterNeighbors()
-        requires(sizeof...(i_) == 0)
+        template<ShapeConcept Neighbor_>
+        std::tuple_element_t<ShapeTraits<Neighbor_>::coordinates_[1], std::tuple_element_t<ShapeTraits<Neighbor_>::coordinates_[0], Components>> &
+        getComponent()
+        requires(ShapeTraits<Neighbor_>::hasCoordinates())
         {
-            return std::tuple_size_v<OuterNeighborhood<TypeView>>;
+            return std::get<ShapeTraits<Neighbor_>::coordinates_[1]>(std::get<ShapeTraits<Neighbor_>::coordinates_[0]>(components_));
         }
+
+    private:
+
+        /**
+         * @brief 
+         * 
+         */
+        Components components_;
 
     };
 

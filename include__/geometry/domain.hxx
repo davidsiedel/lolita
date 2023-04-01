@@ -46,32 +46,108 @@ namespace lolita::geometry
         T_<Domain<3>, U_...>
     >;
 
-    template<FrameConcept Frame_>
-    struct DomainLibrary
+    /**
+     * @brief 
+     * 
+     * @tparam Frame_ 
+     * @tparam T_ 
+     * @tparam U_ 
+     */
+    template<FrameConcept Frame_, template<typename, typename...> typename T_ = TypeView2, typename... U_>
+    struct DomainCollection
     {
-
-        template<template<typename, typename...> typename T_, typename... U_>
-        using MyDomains = tuple_slice_t<Domains<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
         
+        /**
+         * @brief 
+         * 
+         */
+        using Components = tuple_slice_t<Domains<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
+        
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         * @tparam j_ 
+         */
         template<Integer i_>
-        using Domain = std::tuple_element_t<i_, MyDomains<TypeView>>::type;
-        
+        using Component = std::tuple_element_t<i_, Components>;
+
+    private:
+
+        /**
+         * @brief 
+         * 
+         * @tparam Shape_ 
+         */
         template<DomainConcept Domain_>
-        static constexpr
-        Boolean
-        hasDomain()
+        struct DomainTraits
         {
-            return Domain_::getDimDomain() <= Frame_::getDimEuclidean();
-        }
-        
-        // template<Integer... t_i>
+            
+            /**
+             * @brief 
+             * 
+             * @return constexpr Boolean 
+             */
+            static constexpr
+            Boolean
+            hasCoordinate()
+            {
+                return Domain_::getDimDomain() < Frame_::getDimEuclidean() + 1;
+            }
+
+            /**
+             * @brief 
+             * 
+             */
+            static constexpr
+            Integer coordinate_ = Domain_::getDimDomain();
+
+        };
+
+    public:
+
         static constexpr
         Integer
-        getNumDomains()
-        // requires(sizeof...(t_i) == 0)
+        getNumComponents()
         {
-            return std::tuple_size_v<MyDomains<TypeView>>;
+            return std::tuple_size_v<Components>;
         }
+    
+        template<Integer i_>
+        std::tuple_element_t<i_, Components> const &
+        getComponent()
+        const
+        {
+            return std::get<i_>(components_);
+        }
+    
+        template<DomainConcept Domain_>
+        std::tuple_element_t<DomainTraits<Domain_>::coordinate_, Components> const &
+        getComponent()
+        const
+        requires(DomainTraits<Domain_>::hasCoordinate())
+        {
+            return std::get<DomainTraits<Domain_>::coordinate_>(components_);
+        }
+        
+        template<Integer i_>
+        std::tuple_element_t<i_, Components> &
+        getComponent()
+        {
+            return std::get<i_>(components_);
+        }
+    
+        template<DomainConcept Domain_>
+        std::tuple_element_t<DomainTraits<Domain_>::coordinate_, Components> &
+        getComponent()
+        requires(DomainTraits<Domain_>::hasCoordinate())
+        {
+            return std::get<DomainTraits<Domain_>::coordinate_>(components_);
+        }
+
+    private:
+
+        Components components_;
 
     };
 

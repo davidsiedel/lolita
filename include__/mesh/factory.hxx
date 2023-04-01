@@ -17,9 +17,7 @@
 #include "geometry/point.hxx"
 #include "geometry/shape.hxx"
 #include "mesh/region.hxx"
-#include "mesh/region_set.hxx"
 #include "mesh/element.hxx"
-#include "mesh/element_set.hxx"
 #include "mesh/gmsh.hxx"
 
 namespace lolita::mesh
@@ -29,7 +27,7 @@ namespace lolita::mesh
     using ShapeNodeConnectivity = std::array<Natural, Shape_::getNumNodes()>;
 
     template<geometry::ShapeConcept Shape_>
-    using ShapeInnerNeighborhoodNodeConnectivity = typename geometry::ShapeInnerNeighborhoodTraits<Shape_>::template InnerNeighborhood<ShapeNodeConnectivity>;
+    using ShapeInnerNeighborhoodNodeConnectivity = typename geometry::ShapeInnerNeighborhood<Shape_, ShapeNodeConnectivity>::Components;
 
     template<typename T_>
     concept MeshFormatConcept = requires
@@ -39,122 +37,21 @@ namespace lolita::mesh
 
     };
 
-    template<MeshFormatConcept, geometry::ShapeConcept Shape_>
+    template<geometry::ShapeConcept Shape_, MeshFormatConcept>
     struct Table;
 
-    template<geometry::FrameConcept Frame_>
-    struct MyElementSet
-    {
-
-        template<typename... T_>
-        using ElementPointer_ = std::shared_ptr<Element<T_...>>;
-
-        template<typename... T_>
-        using RegionPointer_ = std::shared_ptr<Region<T_...>>;
-
-        using Elements_ = ElementSet<ElementPointer_, Frame_>;
-
-        using Regions_ = RegionSet<RegionPointer_, Frame_>;
-
-        Elements_ elements_;
-
-        Regions_ regions_;
-    
-    };
+    template<geometry::FrameConcept Frame_, MeshFormatConcept MeshFormat_>
+    struct MshOne;
 
     template<geometry::FrameConcept Frame_>
-    struct MyElementMap
-    {
+    struct ElementFactoryMap;
 
-    private:
-
-        template<typename... T_>
-        using ElementPointer_ = std::shared_ptr<Element<T_...>>;
-
-        template<typename... T_>
-        using RegionPointer_ = std::shared_ptr<Region<T_...>>;
-
-        using Elements_ = ElementMap<ElementPointer_, Frame_>;
-
-        using Regions_ = RegionMap<RegionPointer_, Frame_>;
-    
-        using MyElementSet_ = MyElementSet<Frame_>;
-
-    public:
-
-        MyElementMap()
-        :
-        elements_(),
-        regions_()
-        {}
-        
-        std::unique_ptr<MyElementSet_>
-        makeElementSet()
-        const
-        {
-            auto finite_element_set = std::make_unique<MyElementSet_>();
-            auto make_sets = [&] <Integer i_ = 0> (
-                auto & make_sets_
-            )
-            mutable
-            {
-                for (auto const & dm : regions_->template getDomains<i_>())
-                {
-                    finite_element_set->regions_.template getDomains<i_>().push_back(dm.second);
-                }
-                if constexpr (i_ < Frame_::getDimEuclidean())
-                {
-                    make_sets_.template operator()<i_ + 1>(make_sets_);
-                }
-            };
-            make_sets(make_sets);
-            auto make_elements = [&] <Integer i_ = 0, Integer j_ = 0> (
-                auto & make_elements_
-            )
-            mutable
-            {
-                for (auto const & element : elements_->template getElements<i_, j_>())
-                {
-                    finite_element_set->elements_.template getElements<i_, j_>().push_back(element.second);
-                }
-                if constexpr (j_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<i_>() - 1)
-                {
-                    make_elements_.template operator()<i_, j_ + 1>(make_elements_);
-                }
-                else if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<>() - 1)
-                {
-                    make_elements_.template operator()<i_ + 1, 0>(make_elements_);
-                }
-            }; 
-            make_elements(make_elements);
-            return finite_element_set;
-        }
-
-    private:
-
-        Elements_ elements_;
-
-        Regions_ regions_;
-
-    };
-
-    /**
-     * @brief A helper class to create a Domain object.
-     * An object of this class is intended to be built by any mesh format parser.
-     * 
-     * @tparam Domain_ 
-     * @tparam Frame_ 
-     */
     template<geometry::DomainConcept Domain_, geometry::FrameConcept Frame_>
     struct RegionFactory
     {
 
     private:
-
-        /**
-         * @brief Alias for FiniteDomain 
-         * 
-         */
+    
         using Region_ = Region<Domain_, Frame_>;
 
     public:
@@ -183,68 +80,38 @@ namespace lolita::mesh
             return hash.str();
         }
         
-        // /**
-        //  * @brief Construct a new Mesh Domain object
-        //  * 
-        //  */
-        // RegionFactory()
-        // :
-        // label_()
-        // {}
-
-        /**
-         * @brief Construct a new Mesh Domain object
-         * 
-         * @param label 
-         */
+        explicit
         RegionFactory(
+            ElementFactoryMap<Frame_> & element_map,
             std::basic_string<Character> const & label
         )
         :
-        label_(label)
+        label_(label),
+        element_map_(element_map),
+        region_(std::make_shared<Region_>(label_))
         {}
-
-        /**
-         * @brief Construct a new Mesh Domain object
-         * 
-         * @param label 
-         */
-        RegionFactory(
-            std::basic_string<Character> && label
-        )
-        :
-        label_(std::move(label))
-        {}
-
-        /**
-         * @brief Get the Label object
-         * 
-         * @return std::basic_string<Character> const& 
-         */
+        
         std::basic_string<Character> const &
         getLabel()
         const
         {
             return label_;
         }
-
-        /**
-         * @brief 
-         * 
-         * @return std::shared_ptr<Region_> 
-         */
-        std::shared_ptr<Region_>
-        letDomain()
+        
+        void
+        makeDomain()
         const
         {
-            return std::make_shared<Domain_>(label_);
+            element_map_.regions2_.template getComponent<Domain_>()[label_] = region_;
         }
 
-        /**
-         * @brief The name of the domain to be built
-         * 
-         */
+    // private:
+        
         std::basic_string<Character> label_;
+
+        std::shared_ptr<Region_> region_;
+
+        ElementFactoryMap<Frame_> & element_map_;
     
     };
 
@@ -253,29 +120,24 @@ namespace lolita::mesh
     {
 
     private:
-        
-        using ElementPointer_ = std::shared_ptr<Element<Shape_, Frame_>>;
 
         using Element_ = Element<Shape_, Frame_>;
 
         using NodeConnectivity_ = ShapeNodeConnectivity<Shape_>;
-        
-        using Region_ = std::shared_ptr<RegionFactory<geometry::Domain<Shape_::getDimShape()>, Frame_>>;
-        
-        using Regions_ = std::vector<std::shared_ptr<RegionFactory<geometry::Domain<Shape_::getDimShape()>, Frame_>>>;
+
+        using Region_ = RegionFactory<typename Shape_::Domain, Frame_>;
 
     public:
 
-        template<typename Mesh_, Integer i_, Integer j_>
+        template<Integer i_, Integer j_, typename Mesh_>
         static constexpr
         Integer
         getInnerNeighborNodeConnection(
             Integer i,
             Integer j
         )
-        requires(!geometry::PointConcept<Shape_>)
         {
-            return std::get<j_>(std::get<i_>(Table<Mesh_, Shape_>::node_connectivity_))[i][j];
+            return std::get<j_>(std::get<i_>(Table<Shape_, Mesh_>::node_connectivity_))[i][j];
         }
         
         static
@@ -304,83 +166,89 @@ namespace lolita::mesh
             return hash.str();
         }
         
-        // ElementFactory()
-        // :
-        // node_tags_(),
-        // finite_element_()
-        // {}
-        
-        explicit
         ElementFactory(
+            ElementFactoryMap<Frame_> & element_map,
             ShapeNodeConnectivity<Shape_> const & node_tags
         )
         :
         node_tags_(node_tags),
-        finite_element_()
+        regions_(),
+        finite_element_(std::make_shared<Element_>()),
+        element_map_(element_map)
         {}
-        
-        void
-        setDomain(
-            Region_ const & domain
-        )
-        {
-            domain_ = domain;
-        }
 
         void
         addRegion(
-            Region_ const & domain
+            std::shared_ptr<Region_> const & region
         )
         {
-            regions_.push_back(domain);
+            regions_.push_back(region);
         }
-        
-        // void
-        // setNodeTag(
-        //     Integer index,
-        //     Natural const & tag
-        // )
-        // {
-        //     node_tags_[index] = tag;
-        // }
-        
-        // Natural const &
-        // getNodeTag(
-        //     Integer index
-        // )
-        // const
-        // {
-        //     return node_tags_[index];
-        // }
-        
-        ShapeNodeConnectivity<Shape_> const &
-        getNodeTags()
-        const
+
+        template<typename Mesh_>
+        void
+        makeElement()
         {
-            return node_tags_;
-        }
-        
-        std::basic_string<Character>
-        getHash()
-        const
-        {
-            auto node_tags = node_tags_;
-            auto hash = std::basic_stringstream<Character>();
-            std::sort(std::execution::par_unseq, node_tags.begin(), node_tags.end());
-            for (auto node_tag : node_tags)
+            auto make_element = [&] <Integer i_ = 0, Integer j_ = 0> (
+                auto & make_element_
+            )
+            mutable
             {
-                hash << std::setfill('0') << std::setw(10) << node_tag;
-            }
-            return hash.str();
+                using t_inner_neighbor = typename geometry::ShapeInnerNeighborhood<Shape_>::template Component<i_, j_>;
+                auto & inner_neighbors = element_map_.elements2_.template getComponent<t_inner_neighbor>();
+                for (auto i = 0; i < geometry::ShapeInnerNeighborhood<Shape_>::getNumComponents(i_, j_); ++i)
+                {
+                    auto inner_neighbor_hash = std::basic_string<Character>();
+                    if constexpr(!std::same_as<t_inner_neighbor, geometry::Node>)
+                    {
+                        auto inner_neighbor_node_tags = ShapeNodeConnectivity<t_inner_neighbor>();
+                        for (auto j = 0; j < t_inner_neighbor::getNumNodes(); ++j)
+                        {
+                            inner_neighbor_node_tags[j] = node_tags_[getInnerNeighborNodeConnection<i_, j_, Mesh_>(i, j)];
+                        }
+                        inner_neighbor_hash = ElementFactory<t_inner_neighbor, Frame_>::makeHash(inner_neighbor_node_tags);
+                        if (!inner_neighbors.contains(inner_neighbor_hash))
+                        {
+                            ElementFactory<t_inner_neighbor, Frame_>(element_map_, inner_neighbor_node_tags).template makeElement<Mesh_>();
+                        }
+                    }
+                    else
+                    {
+                        auto node_tag = node_tags_[getInnerNeighborNodeConnection<i_, j_, Mesh_>(i, 0)];
+                        inner_neighbor_hash = ElementFactory<t_inner_neighbor, Frame_>::makeHash(node_tag);
+                    }
+                    auto & inner_neighbor = inner_neighbors.at(inner_neighbor_hash);
+                    finite_element_->getInnerNeighborhood().template getComponent<t_inner_neighbor>()[i] = inner_neighbor;
+                    inner_neighbor->template getOuterNeighborhood().template getComponent<Shape_>().push_back(finite_element_);
+                }
+                if constexpr (j_ < geometry::ShapeInnerNeighborhood<Shape_>::getNumComponents(i_) - 1)
+                {
+                    make_element_.template operator()<i_, j_ + 1>(make_element_);
+                }
+                else if constexpr (i_ < geometry::ShapeInnerNeighborhood<Shape_>::getNumComponents() - 1)
+                {
+                    make_element_.template operator()<i_ + 1, 0>(make_element_);
+                }
+                if constexpr (i_ == 0 && j_ == 0)
+                {
+                    for (auto const & region : regions_)
+                    {
+                        finite_element_->addRegion(element_map_.regions2_.template getComponent<typename Shape_::Domain>().at(region->getLabel()));
+                    }
+                    finite_element_->setTag(element_map_.elements2_.template getComponent<Shape_>().size());
+                    element_map_.elements2_.template getComponent<Shape_>()[makeHash(node_tags_)] = finite_element_;
+                }
+            };
+            make_element(make_element);
         }
-
-        Region_ domain_;
-
-        Regions_ regions_;
 
         ShapeNodeConnectivity<Shape_> node_tags_;
 
-        ElementPointer_ finite_element_;
+        std::vector<std::shared_ptr<Region_>> regions_;
+
+        std::shared_ptr<Element_> finite_element_;
+        
+        ElementFactoryMap<Frame_> & element_map_;
     
     };
 
@@ -389,33 +257,12 @@ namespace lolita::mesh
     {
 
     private:
-        
-        using ElementPointer_ = std::shared_ptr<Element<Shape_, Frame_>>;
 
         using Element_ = Element<Shape_, Frame_>;
 
-        // using NodeConnectivity_ = ShapeNodeConnectivity<Shape_>;
-        
-        using Region_ = std::shared_ptr<RegionFactory<geometry::Domain<Shape_::getDimShape()>, Frame_>>;
-        
-        using Regions_ = std::vector<std::shared_ptr<RegionFactory<geometry::Domain<Shape_::getDimShape()>, Frame_>>>;
+        using Region_ = RegionFactory<typename Shape_::Domain, Frame_>;
 
     public:
-
-    // private:
-    
-    //     using t_ElementTraits = ShapeTraits<t_element>;
-        
-    //     template<DomainConcept auto t_dim, MeshConcept auto t__domain>
-    //     using t_Dom = MeshDomain<t_dim, t__domain>;
-
-    //     /**
-    //      * @brief The MeshDomain the element is connected to.
-    //      * 
-    //      */
-    //     using MeshDomain_ = typename t_ElementTraits::template DomainConnectivity<t_Dom, t_domain>;
-
-    // public:
 
         static
         std::basic_string<Character>
@@ -427,107 +274,52 @@ namespace lolita::mesh
             hash << std::setfill('0') << std::setw(10) << tag;
             return hash.str();
         }
-
-        // MeshElement()
-        // :
-        // tag_(),
-        // coordinates_(),
-        // finite_element_()
-        // {}
-
-        explicit
+        
         ElementFactory(
-            geometry::Point<Frame_::getDimEuclidean()> coordinates
+            ElementFactoryMap<Frame_> & element_map,
+            Natural const & tag,
+            geometry::Point<Frame_::getDimEuclidean()> const & coordinates
         )
         :
-        tag_(),
+        tag_(tag),
         coordinates_(coordinates),
-        finite_element_()
+        regions_(),
+        finite_element_(std::make_shared<Element_>()),
+        element_map_(element_map)
         {}
 
         void
         addRegion(
-            Region_ const & domain
+            std::shared_ptr<Region_> const & domain
         )
         {
             regions_.push_back(domain);
         }
         
-        // /**
-        //  * @brief Set the domain pointer that the element is connected to.
-        //  * 
-        //  * @param domain The domain pointer to be set.
-        //  */
-        // void
-        // setDomain(
-        //     std::shared_ptr<MeshDomain_> const & domain
-        // )
-        // {
-        //     domain_ = domain;
-        // }
-
-        // void
-        // setTag(
-        //     Natural tag
-        // )
-        // {
-        //     tag_ = tag;
-        // }
-
-        // Natural const &
-        // getNodeTag()
-        // const
-        // {
-        //     return tag_;
-        // }
-
-        // void
-        // setCoordinate(
-        //     Integer i,
-        //     Real const & coordinate
-        // )
-        // {
-        //     coordinates_(i) = coordinate;
-        // }
-        
-        std::basic_string<Character>
-        getHash()
-        const
+        template<typename Mesh_>
+        void
+        makeElement()
         {
-            auto hash = std::basic_stringstream<Character>();
-            hash << std::setfill('0') << std::setw(10) << tag_;
-            return hash.str();
+            finite_element_->setCoordinates(coordinates_);
+            for (auto const & region : regions_)
+            {
+                finite_element_->addRegion(element_map_.regions2_.template getComponent<typename Shape_::Domain>().at(region->getLabel()));
+            }
+            finite_element_->setTag(tag_);
+            element_map_.elements2_.template getComponent<Shape_>()[makeHash(tag_)] = finite_element_;
         }
 
     private:
-
-        ElementPointer_ finite_element_;
-
-        Regions_ regions_;
         
-        /**
-         * @brief A tag that unambiguously identifies the node.
-         * 
-         */
         Natural tag_;
         
-        /**
-         * @brief The coordinates of the node in the mesh.
-         * 
-         */
         geometry::Point<Frame_::getDimEuclidean()> coordinates_;
 
-        /**
-         * @brief A pointer to the FiniteElement to be build.
-         * 
-         */
-        // std::shared_ptr<FiniteElement<t_element, t_domain>> finite_element_;
+        std::vector<std::shared_ptr<Region_>> regions_;
 
-        /**
-         * @brief The MeshDomain the element is connected to.
-         * 
-         */
-        // std::shared_ptr<MeshDomain_> domain_;
+        std::shared_ptr<Element_> finite_element_;
+        
+        ElementFactoryMap<Frame_> & element_map_;
         
     };
     
@@ -538,14 +330,24 @@ namespace lolita::mesh
     private:
 
         template<typename... T_>
-        using ElementPointer_ = std::shared_ptr<ElementFactory<T_...>>;
+        using ElementPointer_ = std::unordered_map<std::basic_string<Character>, std::shared_ptr<ElementFactory<T_...>>>;
 
         template<typename... T_>
-        using RegionPointer_ = std::shared_ptr<RegionFactory<T_...>>;
+        using RegionPointer_ = std::unordered_map<std::basic_string<Character>, std::shared_ptr<RegionFactory<T_...>>>;
 
-        using Elements_ = ElementMap<ElementPointer_, Frame_>;
+        template<typename... T_>
+        using ElementPointer2_ = std::unordered_map<std::basic_string<Character>, std::shared_ptr<Element<T_...>>>;
 
-        using Regions_ = RegionMap<RegionPointer_, Frame_>;
+        template<typename... T_>
+        using RegionPointer2_ = std::unordered_map<std::basic_string<Character>, std::shared_ptr<Region<T_...>>>;
+
+        using Elements_ = geometry::ShapeCollection<Frame_, ElementPointer_, Frame_>;
+
+        using Regions_ = geometry::DomainCollection<Frame_, RegionPointer_, Frame_>;
+
+        using Elements2_ = geometry::ShapeCollection<Frame_, ElementPointer2_, Frame_>;
+
+        using Regions2_ = geometry::DomainCollection<Frame_, RegionPointer2_, Frame_>;
 
         template<geometry::ShapeConcept Shape_>
         static
@@ -564,105 +366,42 @@ namespace lolita::mesh
         )
         requires(!std::same_as<Shape_, geometry::Node>)
         {
-            auto constexpr shape_coordinates = geometry::ShapeLibraryTraits<Frame_>::template getShapeCoordinates<Shape_>();
-            auto constexpr node_coordinates = geometry::ShapeInnerNeighborhoodTraits<Shape_>::template getShapeCoordinates<geometry::Node>();
-            for (auto const & nde : finite_element->template getInnerNeighbors<node_coordinates.i_, node_coordinates.j_>())
-            {
-                auto const & ngs = nde->template getOuterNeighbors<shape_coordinates.i_ - 1, i_>();
-                for (auto const & neighbour : ngs)
-                {
-                    if (((neighbour->getTag() != finite_element->getTag()) && i_ == shape_coordinates.j_) || (i_ != shape_coordinates.j_))
-                    {
-                        auto & element_ngs = finite_element->template getOuterNeighbors<0, i_>();
-                        auto found = false;
-                        for (auto const & ngb: element_ngs)
-                        {
-                            if (ngb->getTag() == neighbour->getTag())
-                            {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found)
-                        {
-                            element_ngs.push_back(neighbour);
-                        }
-                    }
-                }
-            }
-            if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<shape_coordinates.i_>() - 1)
-            {
-                setElementOuterNeighborhood<Shape_, i_ + 1>(finite_element);
-            }
+            // auto constexpr shape_coordinates = geometry::ShapeLibraryTraits<Frame_>::template getShapeCoordinates<Shape_>();
+            // auto constexpr node_coordinates = geometry::ShapeInnerNeighborhoodTraits<Shape_>::template getShapeCoordinates<geometry::Node>();
+            // for (auto const & nde : finite_element->template getInnerNeighbors<node_coordinates.i_, node_coordinates.j_>())
+            // {
+            //     auto const & ngs = nde->template getOuterNeighbors<shape_coordinates.i_ - 1, i_>();
+            //     for (auto const & neighbour : ngs)
+            //     {
+            //         if (((neighbour->getTag() != finite_element->getTag()) && i_ == shape_coordinates.j_) || (i_ != shape_coordinates.j_))
+            //         {
+            //             auto & element_ngs = finite_element->template getOuterNeighbors<0, i_>();
+            //             auto found = false;
+            //             for (auto const & ngb: element_ngs)
+            //             {
+            //                 if (ngb->getTag() == neighbour->getTag())
+            //                 {
+            //                     found = true;
+            //                     break;
+            //                 }
+            //             }
+            //             if (!found)
+            //             {
+            //                 element_ngs.push_back(neighbour);
+            //             }
+            //         }
+            //     }
+            // }
+            // if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<shape_coordinates.i_>() - 1)
+            // {
+            //     setElementOuterNeighborhood<Shape_, i_ + 1>(finite_element);
+            // }
         }
 
     public:
 
         ElementFactoryMap()
         {}
-        
-        std::unique_ptr<MyElementSet<Frame_>>
-        makeElementSet()
-        const
-        {
-            auto element_map = std::make_unique<MyElementMap<Frame_>>();
-            auto make_sets = [&] <Integer i_ = 0> (
-                auto & make_sets_
-            )
-            mutable
-            {
-                for (auto const & dm : regions_->template getDomains<i_>())
-                {
-                    element_map->template getDomains<i_>()[dm.second->getLabel()] = dm.second->letDomain();
-                }
-                if constexpr (i_ < Frame_::getDimEuclidean())
-                {
-                    make_sets_.template operator()<i_ + 1>(make_sets_);
-                }
-            };
-            make_sets(make_sets);
-            auto make_elements = [&] <Integer i_ = 0, Integer j_ = 0> (
-                auto & make_elements_
-            )
-            mutable
-            {
-                auto constexpr t_element = geometry::ShapeLibraryTraits<Frame_>::template getElement<i_, j_>();
-                for (auto const & element : elements_->template getElements<i_, j_>())
-                {
-                    element.second->template makeElement(* element_map);
-                }
-                if constexpr (j_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<i_>() - 1)
-                {
-                    make_elements_.template operator()<i_, j_ + 1>(make_elements_);
-                }
-                else if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::getNumElements() - 1)
-                {
-                    make_elements_.template operator()<i_ + 1, 0>(make_elements_);
-                }
-            };
-            make_elements(make_elements);
-            auto make_elements_outer_neighborhood = [&] <Integer i_ = 0, Integer j_ = 0> (
-                auto & make_elements_outer_neighborhood_
-            )
-            mutable
-            {
-                auto const constexpr t_element = geometry::ShapeLibraryTraits<Frame_>::template getElement<i_, j_>();
-                for (auto & element : element_map->template getElements<i_, j_>())
-                {
-                    setElementOuterNeighborhood<t_element>(element.second);
-                }
-                if constexpr (j_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<i_>() - 1)
-                {
-                    make_elements_outer_neighborhood_.template operator()<i_, j_ + 1>(make_elements_outer_neighborhood_);
-                }
-                else if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::getNumElements() - 1)
-                {
-                    make_elements_outer_neighborhood_.template operator()<i_ + 1, 0>(make_elements_outer_neighborhood_);
-                }
-            };
-            make_elements_outer_neighborhood(make_elements_outer_neighborhood);
-            return element_map->makeElementSet();
-        }
 
         template<geometry::DomainConcept Domain_>
         void
@@ -671,9 +410,9 @@ namespace lolita::mesh
             std::basic_string<Character> const & domain_label
         )
         {
-            auto & regions = regions_.template getDomains<Domain_::getDimDomain()>();
+            auto & regions = regions_.template getComponent<Domain_>();
             auto region_hash = RegionFactory<Domain_, Frame_>::makeHash(domain_tag);
-            regions[region_hash] = std::make_shared<RegionFactory<Domain_, Frame_>>(domain_label);
+            regions[region_hash] = std::make_shared<RegionFactory<Domain_, Frame_>>(* this, domain_label);
         }
 
         template<geometry::DomainConcept Domain_>
@@ -684,7 +423,7 @@ namespace lolita::mesh
         const
         {
             auto region_hash = RegionFactory<Domain_, Frame_>::makeHash(domain_tag);
-            return regions_.template getDomains<Domain_::getDimDomain()>().at(region_hash);
+            return regions_.template getComponent<Domain_>().at(region_hash);
         }
 
         template<geometry::ShapeConcept Shape_>
@@ -694,11 +433,9 @@ namespace lolita::mesh
             ShapeNodeConnectivity<Shape_> const & node_tags
         )
         {
-            auto constexpr shape_coordinates = geometry::ShapeLibraryTraits<Frame_>::template getShapeCoordinates<Shape_>();
-            auto & elements = elements_.template getElements<shape_coordinates.i_, shape_coordinates.j_>();
+            auto & elements = elements_.template getComponent<Shape_>();
             auto element_hash = ElementFactory<Shape_, Frame_>::makeHash(element_tag);
-            // auto const & region = this->template getRegion<geometry::Domain<Shape_::getDimShape()>>(domain_tag);
-            elements[element_hash] = std::make_shared<ElementFactory<Shape_, Frame_>>(node_tags);
+            elements[element_hash] = std::make_shared<ElementFactory<Shape_, Frame_>>(* this, node_tags);
         }
 
         template<geometry::ShapeConcept Shape_>
@@ -709,32 +446,315 @@ namespace lolita::mesh
         )
         requires(std::same_as<Shape_, geometry::Node>)
         {
-            auto constexpr shape_coordinates = geometry::ShapeLibraryTraits<Frame_>::template getShapeCoordinates<Shape_>();
-            auto & elements = elements_.template getElements<shape_coordinates.i_, shape_coordinates.j_>();
+            auto & elements = elements_.template getComponent<Shape_>();
             auto element_hash = ElementFactory<Shape_, Frame_>::makeHash(element_tag);
-            // auto const & region = this->template getRegion<geometry::Domain<Shape_::getDimShape()>>(domain_tag);
-            elements[element_hash] = std::make_shared<ElementFactory<Shape_, Frame_>>(node_coordinates);
+            elements[element_hash] = std::make_shared<ElementFactory<Shape_, Frame_>>(* this, element_tag, node_coordinates);
         }
 
         template<geometry::ShapeConcept Shape_>
         void
-        addElementInDomain(
-            auto const & element_tag,
-            auto const & domain_tag
+        addRegionToElement(
+            auto const & region_tag,
+            auto const & element_tag
         )
         {
-            auto constexpr shape_coordinates = geometry::ShapeLibraryTraits<Frame_>::template getShapeCoordinates<Shape_>();
-            auto & elements = elements_.template getElements<shape_coordinates.i_, shape_coordinates.j_>();
+            auto & elements = elements_.template getComponent<Shape_>();
             auto element_hash = ElementFactory<Shape_, Frame_>::makeHash(element_tag);
-            auto const & region = this->template getRegion<geometry::Domain<Shape_::getDimShape()>>(domain_tag);
+            auto const & region = this->template getRegion<typename Shape_::Domain>(region_tag);
             elements.at(element_hash)->addRegion(region);
         }
+        
+        // template<typename Domain_>
+        // void
+        // makeDomain(
+        //     std::shared_ptr<RegionFactory<Domain_, Frame_>> const & element_fac
+        // )
+        // const
+        // {
+        //     regions2_.template getComponent<Domain_>()[element_fac->getLabel()] = element_fac->region_;
+        // }
 
-    private:
+        // template<geometry::ShapeConcept Shape_, typename Mesh_>
+        // void
+        // makeElement(
+        //     std::shared_ptr<ElementFactory<Shape_, Frame_>> const & element_fac
+        // )
+        // {
+        //     auto make_element = [&] <Integer i_ = 0, Integer j_ = 0> (
+        //         auto & make_element_
+        //     )
+        //     mutable
+        //     {
+        //         // auto const constexpr t_inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<i_, j_>();
+        //         // using InnerNeighborhoodTraits = typename geometry::ShapeInnerNeighborhood<Shape_>;
+        //         // using ICI = geometry::ShapeLibraryTraits<Frame_>;
+        //         // auto const constexpr t_element_coordinates = geometry::ShapeInnerNeighborhoodTraits<Frame_>::template getElementCoordinates<Shape_>();
+        //         // auto const constexpr t_node_coordinates = ShapeTraits<t_element>::template getInnerNeighborCoordinates<Node{}>();
+        //         // auto const constexpr t_inner_neighbor_coordinates = MeshTraits<Frame_>::template getElementCoordinates<t_inner_neighbor>();
+        //         // auto const constexpr t_neighbour_coordinates = ShapeTraits<t_inner_neighbor>::template getOuterNeighborCoordinates<t_domain, Shape_>();
+        //         // auto & inner_neighbors = element_map.template getElements<ICI2::template getCoordinate<t_inner_neighbor>(0), ICI2::template getCoordinate<t_inner_neighbor>(1)>();
+        //         // ::template getCoordinate<t_inner_neighbor>(0);
+        //         // mesh_inner_neighbor.setNodeTag(j, getNodeTag(getInnerNeighborNodeConnection<i_, j_>(i, j)));
+        //                 // auto mesh_inner_neighbor = ElementFactory<t_inner_neighbor, Frame_>(inner_neighbor_node_tags);
+        //                 // mesh_inner_neighbor.getHash();
+        //         // if constexpr (t_is_initialized)
+        //         // {
+        //         //     auto tag = element_map_.elements2_.template getComponent<Shape_>().size();
+        //         //     finite_element_ = std::make_shared<Element_>(Element_(tag));
+        //         // }
+        //         //
+        //         //
+        //         //
+        //         using t_inner_neighbor = typename geometry::ShapeInnerNeighborhood<Shape_>::template Component<i_, j_>;
+        //         // auto constexpr t_is_initialized = ;
+        //         auto & inner_neighbors = elements2_.template getComponent<t_inner_neighbor>();
+        //         for (auto i = 0; i < geometry::ShapeInnerNeighborhood<Shape_>::getNumComponents(i_, j_); ++i)
+        //         {
+        //             auto inner_neighbor_hash = std::basic_string<Character>();
+        //             if constexpr(!std::same_as<t_inner_neighbor, geometry::Node>)
+        //             {
+        //                 auto inner_neighbor_node_tags = ShapeNodeConnectivity<t_inner_neighbor>();
+        //                 for (auto j = 0; j < t_inner_neighbor::getNumNodes(); ++j)
+        //                 {
+        //                     auto ici = ElementFactory<Shape_, Frame_>::getInnerNeighborNodeConnection<t_inner_neighbor, Mesh_>(i, j);
+        //                     inner_neighbor_node_tags[j] = node_tags_[ici];
+        //                     // inner_neighbor_node_tags[j] = node_tags_[getInnerNeighborNodeConnection<Mesh_, i_, j_>(i, j)];
+        //                 }
+        //                 inner_neighbor_hash = ElementFactory<t_inner_neighbor, Frame_>::makeHash(inner_neighbor_node_tags);
+        //                 if (!inner_neighbors.contains(inner_neighbor_hash))
+        //                 {
+        //                     makeElement<t_inner_neighbor, Mesh_>(ElementFactory<t_inner_neighbor, Frame_>(element_map_, inner_neighbor_node_tags));
+        //                     // ElementFactory<t_inner_neighbor, Frame_>(element_map_, inner_neighbor_node_tags).template makeElement<Mesh_>();
+        //                 }
+        //             }
+        //             else
+        //             {
+        //                 auto ici = ElementFactory<Shape_, Frame_>::getInnerNeighborNodeConnection<geometry::Node, Mesh_>(i, 0);
+        //                 auto node_tag = node_tags_[ici];
+        //                 // auto node_tag = node_tags_[getInnerNeighborNodeConnection<Mesh_, i_, j_>(i, 0)];
+        //                 inner_neighbor_hash = ElementFactory<t_inner_neighbor, Frame_>::makeHash(node_tag);
+        //             }
+        //             // std::cout << "inner_neighbor_hash : " << inner_neighbor_hash << std::endl;
+        //             auto & inner_neighbor = inner_neighbors.at(inner_neighbor_hash);
+        //             element_fac->finite_element_->getInnerNeighborhood().template getComponent<t_inner_neighbor>()[i] = inner_neighbor;
+        //             inner_neighbor->template getOuterNeighborhood().template getComponent<Shape_>().push_back(element_fac->finite_element_);
+        //         }
+        //         if constexpr (j_ < geometry::ShapeInnerNeighborhood<Shape_>::getNumComponents(i_) - 1)
+        //         {
+        //             make_element_.template operator()<i_, j_ + 1>(make_element_);
+        //         }
+        //         else if constexpr (i_ < geometry::ShapeInnerNeighborhood<Shape_>::getNumComponents() - 1)
+        //         {
+        //             make_element_.template operator()<i_ + 1, 0>(make_element_);
+        //         }
+        //         if constexpr (i_ == 0 && j_ == 0)
+        //         {
+        //             for (auto const & region : regions_)
+        //             {
+        //                 element_fac->finite_element_->addRegion(regions2_.template getComponent<typename Shape_::Domain>().at(region->getLabel()));
+        //             }
+        //             element_fac->finite_element_->setTag(elements2_.template getComponent<Shape_>().size());
+        //             elements2_.template getComponent<Shape_>()[makeHash(node_tags_)] = finite_element_;
+        //         }
+        //     };
+        //     make_element(make_element);
+        // }
+
+        // template<geometry::PointConcept Shape_, typename Mesh_>
+        // void
+        // makeElement(
+        //     std::shared_ptr<ElementFactory<Shape_, Frame_>> const & element_fac
+        // )
+        // {
+        //     // auto constexpr t_element_coordinates = MeshTraits<t_domain>::template getElementCoordinates<t_element>();
+        //     // finite_element_ = std::make_shared<Element<Shape_, Frame_>>(Element<Shape_, Frame_>(tag_));
+        //     // finite_element_->setTag(element_map_.elements2_.template getComponent<Shape_>().size());
+        //     // if (domain_ != nullptr)
+        //     // {
+        //     //     finite_element_->setDomain(element_set.regions2_.template getDomains<Shape_::getDimShape()>().at(domain_->getLabel()));
+        //     // }
+        //     // finite_element_->setDomain(element_set.template getDomains<t_element.getDim()>().at(domain_->getLabel()));
+        //     element_fac->finite_element_->setCoordinates(element_fac->coordinates_);
+        //     for (auto const & region : element_fac->regions_)
+        //     {
+        //         element_fac->finite_element_->addRegion(regions2_.template getComponent<typename Shape_::Domain>().at(region->getLabel()));
+        //     }
+        //     element_fac->finite_element_->setTag(element_fac->tag_);
+        //     elements2_.template getComponent<Shape_>()[makeHash(tag_)] = element_fac->finite_element_;
+        // }
+
+        template<typename Mesh_>
+        void
+        setIt(
+            std::basic_string<Character> && file_path
+        )
+        {
+            /**
+             * @brief 
+             * 
+             */
+            auto my_one = MshOne<Frame_, Mesh_>(std::forward<std::basic_string<Character>>(file_path));
+            /**
+             * @brief 
+             * 
+             */
+            auto set_regions = [&] <Integer i_ = 0> (
+                auto & set_regions_
+            )
+            mutable
+            {
+                using Domain_ = typename geometry::DomainCollection<Frame_>::template Component<i_>;
+                my_one.template setMeshDomain<Domain_>(* this);
+                if constexpr (i_ < geometry::DomainCollection<Frame_>::getNumComponents() - 1)
+                {
+                    set_regions_.template operator()<i_ + 1>(set_regions_);
+                }
+            };
+            set_regions(set_regions);
+            /**
+             * @brief 
+             * 
+             */
+            auto set_elements = [&] <Integer i_ = 0, Integer j_ = 0> (
+                auto & set_elements_
+            )
+            mutable
+            {
+                using Shape_ = geometry::ShapeCollection<Frame_>::template Component<i_, j_>;
+                my_one.template setMeshElement<Shape_>(* this);
+                if constexpr (j_ < geometry::ShapeCollection<Frame_>::getNumComponents(i_) - 1)
+                {
+                    set_elements_.template operator()<i_, j_ + 1>(set_elements_);
+                }
+                else if constexpr (i_ < geometry::ShapeCollection<Frame_>::getNumComponents() - 1)
+                {
+                    set_elements_.template operator()<i_ + 1, 0>(set_elements_);
+                }
+            };
+            set_elements(set_elements);
+            /**
+             * @brief 
+             * 
+             */
+            auto make_sets = [&] <Integer i_ = 0> (
+                auto & make_sets_
+            )
+            mutable
+            {
+                using Domain_ = geometry::DomainCollection<Frame_>::template Component<i_>;
+                for (auto const & dm : regions_.template getComponent<Domain_>())
+                {
+                    dm.second->makeDomain();
+                }
+                if constexpr (i_ < geometry::DomainCollection<Frame_>::getNumComponents() - 1)
+                {
+                    make_sets_.template operator()<i_ + 1>(make_sets_);
+                }
+            };
+            make_sets(make_sets);
+            auto make_elements = [&] <Integer i_ = 0, Integer j_ = 0> (
+                auto & make_elements_
+            )
+            mutable
+            {
+                // using t_element = typename geometry::ShapeLibraryTraits<Frame_>::template Shape<i_, j_>;
+                using Shape_ = geometry::ShapeCollection<Frame_>::template Component<i_, j_>;
+                for (auto const & element : elements_.template getComponent<Shape_>())
+                {
+                    element.second->template makeElement<Mesh_>();
+                }
+                if constexpr (j_ < geometry::ShapeCollection<Frame_>::getNumComponents(i_) - 1)
+                {
+                    make_elements_.template operator()<i_, j_ + 1>(make_elements_);
+                }
+                else if constexpr (i_ < geometry::ShapeCollection<Frame_>::getNumComponents() - 1)
+                {
+                    make_elements_.template operator()<i_ + 1, 0>(make_elements_);
+                }
+                // if constexpr (j_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<i_>() - 1)
+                // {
+                //     make_elements_.template operator()<i_, j_ + 1>(make_elements_);
+                // }
+                // else if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::getNumElements() - 1)
+                // {
+                //     make_elements_.template operator()<i_ + 1, 0>(make_elements_);
+                // }
+            };
+            make_elements(make_elements);
+        }
+        
+        void
+        setIt2()
+        const
+        {
+            // auto element_map = std::make_unique<MyElementMap<Frame_>>();
+            auto make_sets = [&] <Integer i_ = 0> (
+                auto & make_sets_
+            )
+            mutable
+            {
+                for (auto const & dm : regions_->template getDomains<i_>())
+                {
+                    regions2_.template getDomains<i_>()[dm.second->getLabel()] = dm.second->letDomain();
+                }
+                if constexpr (i_ < Frame_::getDimEuclidean())
+                {
+                    make_sets_.template operator()<i_ + 1>(make_sets_);
+                }
+            };
+            make_sets(make_sets);
+            // auto make_elements = [&] <Integer i_ = 0, Integer j_ = 0> (
+            //     auto & make_elements_
+            // )
+            // mutable
+            // {
+            //     auto constexpr t_element = geometry::ShapeLibraryTraits<Frame_>::template getElement<i_, j_>();
+            //     for (auto const & element : elements_->template getElements<i_, j_>())
+            //     {
+            //         element.second->template makeElement(* element_map);
+            //     }
+            //     if constexpr (j_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<i_>() - 1)
+            //     {
+            //         make_elements_.template operator()<i_, j_ + 1>(make_elements_);
+            //     }
+            //     else if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::getNumElements() - 1)
+            //     {
+            //         make_elements_.template operator()<i_ + 1, 0>(make_elements_);
+            //     }
+            // };
+            // make_elements(make_elements);
+            // auto make_elements_outer_neighborhood = [&] <Integer i_ = 0, Integer j_ = 0> (
+            //     auto & make_elements_outer_neighborhood_
+            // )
+            // mutable
+            // {
+            //     auto const constexpr t_element = geometry::ShapeLibraryTraits<Frame_>::template getElement<i_, j_>();
+            //     for (auto & element : element_map->template getElements<i_, j_>())
+            //     {
+            //         setElementOuterNeighborhood<t_element>(element.second);
+            //     }
+            //     if constexpr (j_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<i_>() - 1)
+            //     {
+            //         make_elements_outer_neighborhood_.template operator()<i_, j_ + 1>(make_elements_outer_neighborhood_);
+            //     }
+            //     else if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::getNumElements() - 1)
+            //     {
+            //         make_elements_outer_neighborhood_.template operator()<i_ + 1, 0>(make_elements_outer_neighborhood_);
+            //     }
+            // };
+            // make_elements_outer_neighborhood(make_elements_outer_neighborhood);
+            // return element_map->makeElementSet();
+        }
+
+    // private:
 
         Elements_ elements_;
 
         Regions_ regions_;
+
+        Elements2_ elements2_;
+
+        Regions2_ regions2_;
 
     };
 
