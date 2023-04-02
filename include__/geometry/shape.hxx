@@ -413,29 +413,6 @@ namespace lolita::geometry
     /**
      * @brief 
      * 
-     */
-    struct ShapeCoordinates
-    {
-        
-        constexpr
-        ShapeCoordinates(
-            Integer i,
-            Integer j
-        )
-        :
-        i_(i),
-        j_(j)
-        {}
-
-        Integer const i_;
-
-        Integer const j_;
-
-    };
-
-    /**
-     * @brief 
-     * 
      * @tparam Frame_ 
      * @tparam T_ 
      * @tparam U_ 
@@ -450,6 +427,15 @@ namespace lolita::geometry
          */
         using Components = tuple_slice_t<Shapes<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
         
+        // /**
+        //  * @brief 
+        //  * 
+        //  * @tparam i_ 
+        //  * @tparam j_ 
+        //  */
+        // template<Integer i_, Integer j_>
+        // using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>;
+        
         /**
          * @brief 
          * 
@@ -457,7 +443,7 @@ namespace lolita::geometry
          * @tparam j_ 
          */
         template<Integer i_, Integer j_>
-        using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>;
+        using Shape = std::tuple_element_t<j_, std::tuple_element_t<i_, typename ShapeCollection<Frame_>::Components>>;
 
         /**
          * @brief 
@@ -527,14 +513,6 @@ namespace lolita::geometry
 
         };
 
-        // template<ShapeConcept Shape_>
-        // static constexpr
-        // std::array<Integer, 2>
-        // getShapeCoordinates()
-        // {
-        //     return ShapeTraits<Shape_>::coordinates_;
-        // }
-
         static constexpr
         Integer
         getNumComponents()
@@ -542,29 +520,57 @@ namespace lolita::geometry
             return std::tuple_size_v<Components>;
         }
 
+        template<Integer i_>
         static constexpr
         Integer
-        getNumComponents(
-            Integer i
+        getNumComponents()
+        {
+            return std::tuple_size_v<std::tuple_element_t<i_, Components>>;
+        }
+
+        static
+        void
+        make(
+            auto const & fun
         )
         {
-            auto size = -1;
-            auto set_size = [&] <Integer i_ = 0> (
-                auto & set_size_
+            auto make_element = [&] <Integer i_ = 0, Integer j_ = 0> (
+                auto & make_element_
             )
-            constexpr mutable
+            mutable
             {
-                if (i_ == i)
+                fun.template operator()<Shape<i_, j_>>();
+                if constexpr (j_ < getNumComponents<i_>() - 1)
                 {
-                    size = std::tuple_size_v<std::tuple_element_t<i_, Components>>;
+                    make_element_.template operator()<i_, j_ + 1>(make_element_);
                 }
-                if constexpr (i_ < std::tuple_size_v<Components> - 1)
+                else if constexpr (i_ < getNumComponents() - 1)
                 {
-                    set_size_.template operator()<i_ + 1>(set_size_);
+                    make_element_.template operator()<i_ + 1, 0>(make_element_);
                 }
             };
-            set_size(set_size);
-            return size;
+            make_element(make_element);
+        }
+
+        template<Integer i_>
+        static
+        void
+        make(
+            auto const & fun
+        )
+        {
+            auto make_element = [&] <Integer j_ = 0> (
+                auto & make_element_
+            )
+            mutable
+            {
+                fun.template operator()<Shape<i_, j_>>();
+                if constexpr (j_ < getNumComponents<i_>() - 1)
+                {
+                    make_element_.template operator()<j_ + 1>(make_element_);
+                }
+            };
+            make_element(make_element);
         }
     
         template<Integer i_, Integer j_>
@@ -623,6 +629,15 @@ namespace lolita::geometry
          */
         using Components = typename Shape_::template InnerNeighborhood<T_, U_...>;
         
+        // /**
+        //  * @brief 
+        //  * 
+        //  * @tparam i_ 
+        //  * @tparam j_ 
+        //  */
+        // template<Integer i_, Integer j_>
+        // using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>;
+        
         /**
          * @brief 
          * 
@@ -630,7 +645,7 @@ namespace lolita::geometry
          * @tparam j_ 
          */
         template<Integer i_, Integer j_>
-        using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>::value_type;
+        using Shape = std::tuple_element_t<j_, std::tuple_element_t<i_, typename ShapeInnerNeighborhood<Shape_>::Components>>::value_type;
 
         /**
          * @brief 
@@ -700,23 +715,6 @@ namespace lolita::geometry
 
         };
 
-        // template<ShapeConcept Neighbor_>
-        // static constexpr
-        // Boolean
-        // hasNeighbor()
-        // {
-        //     return ShapeTraits<Neighbor_>::hasCoordinates();
-        // }
-
-        // template<ShapeConcept Neighbor_>
-        // static constexpr
-        // std::array<Integer, 2>
-        // getNeighborCoordinates()
-        // requires(hasNeighbor<Neighbor_>())
-        // {
-        //     return ShapeTraits<Neighbor_>::coordinates_;
-        // }
-
         static constexpr
         Integer
         getNumComponents()
@@ -724,59 +722,73 @@ namespace lolita::geometry
             return std::tuple_size_v<Components>;
         }
 
+        template<Integer i_>
         static constexpr
         Integer
-        getNumComponents(
-            Integer i
-        )
+        getNumComponents()
         {
-            auto size = -1;
-            auto set_size = [&] <Integer i_ = 0> (
-                auto & set_size_
-            )
-            constexpr mutable
-            {
-                if (i_ == i)
-                {
-                    size = std::tuple_size_v<std::tuple_element_t<i_, Components>>;
-                }
-                if constexpr (i_ < std::tuple_size_v<Components> - 1)
-                {
-                    set_size_.template operator()<i_ + 1>(set_size_);
-                }
-            };
-            set_size(set_size);
-            return size;
+            return std::tuple_size_v<std::tuple_element_t<i_, Components>>;
         }
 
+        template<Integer i_, Integer j_>
         static constexpr
         Integer
-        getNumComponents(
-            Integer i,
-            Integer j
+        getNumComponents()
+        {
+            return std::tuple_size_v<std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>>;
+        }
+
+        template<ShapeConcept Neighbor_>
+        static constexpr
+        Integer
+        getNumComponents()
+        {
+            return getNumComponents<ShapeTraits<Neighbor_>::coordinates_[0], ShapeTraits<Neighbor_>::coordinates_[1]>();
+        }
+
+        static
+        void
+        make(
+            auto const & fun
         )
         {
-            auto size = -1;
-            auto set_size = [&] <Integer i_ = 0, Integer j_ = 0> (
-                auto & set_size_
+            auto make_element = [&] <Integer i_ = 0, Integer j_ = 0> (
+                auto & make_element_
             )
-            constexpr mutable
+            mutable
             {
-                if (i_ == i && j_ == j)
+                fun.template operator()<Shape<i_, j_>>();
+                if constexpr (j_ < getNumComponents<i_>() - 1)
                 {
-                    size = std::tuple_size_v<std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>>;
+                    make_element_.template operator()<i_, j_ + 1>(make_element_);
                 }
-                if constexpr (j_ < std::tuple_size_v<std::tuple_element_t<i_, Components>> - 1)
+                else if constexpr (i_ < getNumComponents() - 1)
                 {
-                    set_size_.template operator()<i_, j_ + 1>(set_size_);
-                }
-                else if constexpr (i_ < std::tuple_size_v<Components> - 1)
-                {
-                    set_size_.template operator()<i_ + 1, 0>(set_size_);
+                    make_element_.template operator()<i_ + 1, 0>(make_element_);
                 }
             };
-            set_size(set_size);
-            return size;
+            make_element(make_element);
+        }
+
+        template<Integer i_>
+        static
+        void
+        make(
+            auto const & fun
+        )
+        {
+            auto make_element = [&] <Integer j_ = 0> (
+                auto & make_element_
+            )
+            mutable
+            {
+                fun.template operator()<Shape<i_, j_>>();
+                if constexpr (j_ < getNumComponents<i_>() - 1)
+                {
+                    make_element_.template operator()<j_ + 1>(make_element_);
+                }
+            };
+            make_element(make_element);
         }
     
         template<Integer i_, Integer j_>
@@ -833,7 +845,16 @@ namespace lolita::geometry
          * @brief 
          * 
          */
-        using Components = tuple_slice_t<Shapes<T_, U_...>, Shape_::getDimShape(), Frame_::getDimEuclidean() + 1>;;
+        using Components = tuple_slice_t<Shapes<T_, U_...>, Shape_::getDimShape() + 1, Frame_::getDimEuclidean() + 1>;
+        
+        // /**
+        //  * @brief 
+        //  * 
+        //  * @tparam i_ 
+        //  * @tparam j_ 
+        //  */
+        // template<Integer i_, Integer j_>
+        // using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>;
         
         /**
          * @brief 
@@ -842,7 +863,7 @@ namespace lolita::geometry
          * @tparam j_ 
          */
         template<Integer i_, Integer j_>
-        using Component = std::tuple_element_t<j_, std::tuple_element_t<i_, Components>>;
+        using Shape = std::tuple_element_t<j_, std::tuple_element_t<i_, typename ShapeOuterNeighborhood<Shape_, Frame_>::Components>>;
 
         /**
          * @brief 
@@ -867,7 +888,7 @@ namespace lolita::geometry
                 Integer i
             )
             {
-                auto constexpr first_index = Neighbor_::getDimShape() - Shape_::getDimShape();
+                auto constexpr first_index = Neighbor_::getDimShape() - Shape_::getDimShape() - 1;
                 if (i == 0)
                 {
                     return first_index;
@@ -918,14 +939,6 @@ namespace lolita::geometry
 
         };
 
-        // template<ShapeConcept Neighbor_>
-        // static constexpr
-        // std::array<Integer, 2>
-        // getShapeCoordinates()
-        // {
-        //     return ShapeTraits<Neighbor_>::coordinates_;
-        // }
-
         /**
          * @brief Get the Num Components object
          * 
@@ -938,35 +951,57 @@ namespace lolita::geometry
             return std::tuple_size_v<Components>;
         }
 
-        /**
-         * @brief Get the Num Components object
-         * 
-         * @param i 
-         * @return constexpr Integer 
-         */
+        template<Integer i_>
         static constexpr
         Integer
-        getNumComponents(
-            Integer i
+        getNumComponents()
+        {
+            return std::tuple_size_v<std::tuple_element_t<i_, Components>>;
+        }
+
+        static
+        void
+        make(
+            auto const & fun
         )
         {
-            auto size = -1;
-            auto set_size = [&] <Integer i_ = 0> (
-                auto & set_size_
+            auto make_element = [&] <Integer i_ = 0, Integer j_ = 0> (
+                auto & make_element_
             )
-            constexpr mutable
+            mutable
             {
-                if (i_ == i)
+                fun.template operator()<Shape<i_, j_>>();
+                if constexpr (j_ < getNumComponents<i_>() - 1)
                 {
-                    size = std::tuple_size_v<std::tuple_element_t<i_, Components>>;
+                    make_element_.template operator()<i_, j_ + 1>(make_element_);
                 }
-                if constexpr (i_ < std::tuple_size_v<Components> - 1)
+                else if constexpr (i_ < getNumComponents() - 1)
                 {
-                    set_size_.template operator()<i_ + 1>(set_size_);
+                    make_element_.template operator()<i_ + 1, 0>(make_element_);
                 }
             };
-            set_size(set_size);
-            return size;
+            make_element(make_element);
+        }
+
+        template<Integer i_>
+        static
+        void
+        make(
+            auto const & fun
+        )
+        {
+            auto make_element = [&] <Integer j_ = 0> (
+                auto & make_element_
+            )
+            mutable
+            {
+                fun.template operator()<Shape<i_, j_>>();
+                if constexpr (j_ < getNumComponents<i_>() - 1)
+                {
+                    make_element_.template operator()<j_ + 1>(make_element_);
+                }
+            };
+            make_element(make_element);
         }
 
         /**

@@ -71,6 +71,15 @@ namespace lolita::geometry
          */
         template<Integer i_>
         using Component = std::tuple_element_t<i_, Components>;
+        
+        /**
+         * @brief 
+         * 
+         * @tparam i_ 
+         * @tparam j_ 
+         */
+        template<Integer i_>
+        using Domain = std::tuple_element_t<i_, typename DomainCollection<Frame_>::Components>;
 
     private:
 
@@ -111,6 +120,36 @@ namespace lolita::geometry
         getNumComponents()
         {
             return std::tuple_size_v<Components>;
+        }
+
+        static
+        void
+        make(
+            auto const & fun
+        )
+        {
+            auto make_element = [&] <Integer i_ = 0> (
+                auto & make_element_
+            )
+            mutable
+            {
+                fun.template operator()<Domain<i_>>();
+                if constexpr (i_ < getNumComponents() - 1)
+                {
+                    make_element_.template operator()<i_ + 1>(make_element_);
+                }
+            };
+            make_element(make_element);
+        }
+
+        template<Integer i_>
+        static
+        void
+        make(
+            auto const & fun
+        )
+        {
+            fun.template operator()<Domain<i_>>();
         }
     
         template<Integer i_>

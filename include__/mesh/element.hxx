@@ -21,45 +21,36 @@
 namespace lolita::mesh
 {
     
-    template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_>
+    template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
     struct Element
     {
 
     private:
 
         template<typename... U_>
-        using ElementPointer_ = std::shared_ptr<Element<U_...>>;
+        using InnerNeighbor_ = std::shared_ptr<Element<U_...>>;
 
-        template<typename... U_>
-        using ElementPointers_ = std::vector<std::shared_ptr<Element<U_...>>>;
+        using InnerNeighborhood_ = geometry::ShapeInnerNeighborhood<Shape_, InnerNeighbor_, Frame_, T_...>;
 
-        using InnerNeighborhood_ = geometry::ShapeInnerNeighborhood<Shape_, ElementPointer_, Frame_>;
+        using Region_ = std::shared_ptr<Region<typename Shape_::Domain, Frame_>>;
 
-        using OuterNeighborhood_ = geometry::ShapeOuterNeighborhood<Shape_, Frame_, ElementPointers_, Frame_>;
-
-        using Region_ = Region<typename Shape_::Domain, Frame_>;
-
-        using Regions_ = std::vector<std::shared_ptr<Region_>>;
+        using Regions_ = std::vector<Region_>;
 
     public:
 
-        // explicit
-        // Element(
-        //     Natural const & tag
-        // )
-        // :
-        // tag_(tag)
-        // {}
-
-        Element()
-        {}
-
-        void
-        setTag(
+        explicit
+        Element(
             Natural const & tag
         )
+        :
+        tag_(tag)
+        {}
+
+        Natural const &
+        getTag()
+        const
         {
-            tag_ = tag;
+            return tag_;
         }
         
         std::basic_string<Character>
@@ -67,7 +58,6 @@ namespace lolita::mesh
         const
         {
             auto hash = std::basic_stringstream<Character>();
-            // for (auto const & node : getInnerNeighborhood().template getComponent<geometry::Node>()<Shape_::getDimShape() - 1, 0>())
             for (auto const & node : getInnerNeighborhood().template getComponent<geometry::Node>())
             {
                 hash << node->getHash();
@@ -77,23 +67,10 @@ namespace lolita::mesh
 
         void
         addRegion(
-            std::shared_ptr<Region_> const & region
+            Region_ const & region
         )
         {
             regions_.push_back(region);
-        }
-        
-        OuterNeighborhood_ const &
-        getOuterNeighborhood()
-        const
-        {
-            return outer_neighborhood_;
-        }
-        
-        OuterNeighborhood_ &
-        getOuterNeighborhood()
-        {
-            return outer_neighborhood_;
         }
         
         InnerNeighborhood_ const &
@@ -109,45 +86,49 @@ namespace lolita::mesh
             return inner_neighborhood_;
         }
 
-        InnerNeighborhood_ inner_neighborhood_;
+    private:
 
-        OuterNeighborhood_ outer_neighborhood_;
+        InnerNeighborhood_ inner_neighborhood_;
         
         Natural tag_;
-
-        // Region_ domain_;
 
         Regions_ regions_;
 
     };
 
-    template<geometry::PointConcept Shape_, geometry::FrameConcept Frame_>
-    struct Element<Shape_, Frame_>
+    template<geometry::FrameConcept Frame_, typename... T_>
+    struct Element<geometry::Node, Frame_, T_...>
     {
 
     private:
 
         template<typename... U_>
-        using ElementPointers_ = std::vector<std::shared_ptr<Element<U_...>>>;
+        using OuterNeighbors_ = std::vector<std::shared_ptr<Element<U_...>>>;
 
-        using OuterNeighborhood_ = geometry::ShapeOuterNeighborhood<Shape_, Frame_, ElementPointers_, Frame_>;
+        using Shape_ = geometry::Node;
 
-        using Region_ = Region<typename Shape_::Domain, Frame_>;
+        using OuterNeighborhood_ = geometry::ShapeOuterNeighborhood<Shape_, Frame_, OuterNeighbors_, Frame_, T_...>;
 
-        using Regions_ = std::vector<std::shared_ptr<Region_>>;
+        using Region_ = std::shared_ptr<Region<typename Shape_::Domain, Frame_>>;
+
+        using Regions_ = std::vector<Region_>;
 
     public:
 
-        // explicit
-        // Element(
-        //     Natural const & tag
-        // )
-        // :
-        // tag_(tag)
-        // {}
-
-        Element()
+        explicit
+        Element(
+            Natural const & tag
+        )
+        :
+        tag_(tag)
         {}
+
+        Natural const &
+        getTag()
+        const
+        {
+            return tag_;
+        }
         
         std::basic_string<Character>
         getHash()
@@ -158,18 +139,10 @@ namespace lolita::mesh
 
         void
         addRegion(
-            std::shared_ptr<Region_> const & region
+            Region_ const & region
         )
         {
             regions_.push_back(region);
-        }
-
-        void
-        setTag(
-            Natural const & tag
-        )
-        {
-            tag_ = tag;
         }
 
         void
@@ -193,13 +166,13 @@ namespace lolita::mesh
             return outer_neighborhood_;
         }
 
+    private:
+
         OuterNeighborhood_ outer_neighborhood_;
         
         Natural tag_;
         
         geometry::Point<Frame_::getDimEuclidean()> coordinates_;
-
-        // Region_ domain_;
 
         Regions_ regions_;
         

@@ -12,14 +12,14 @@ main(int argc, char** argv)
 {
 
     using Frame = lolita::geometry::CartesianFrame<2>;
-    using Parser3 = lolita::mesh::ElementFactoryMap<Frame>;
+    using Parser3 = lolita::mesh::ElementFactoryMap<Frame, lolita::mesh::Msh>;
 
     auto mesh_file_path = "/home/dsiedel/projetcs/lolita/applications/test/mymesh.msh";
     auto parser3 = Parser3();
-    parser3.template setIt<lolita::mesh::Msh>(mesh_file_path);
+    parser3.setIt(mesh_file_path);
 
-    static_assert(std::same_as<lolita::geometry::Node, typename lolita::geometry::ShapeCollection<Frame>::Component<0, 0>>);
-    static_assert(lolita::geometry::ShapeCollection<Frame>::getNumComponents(0) == 1);
+    static_assert(std::same_as<lolita::geometry::Node, typename lolita::geometry::ShapeCollection<Frame>::Shape<0, 0>>);
+    static_assert(lolita::geometry::ShapeCollection<Frame>::getNumComponents<0>() == 1);
     auto ici = lolita::geometry::ShapeCollection<Frame>();
     auto cc = ici.getComponent<lolita::geometry::Node>();
 

@@ -15,6 +15,8 @@ namespace lolita::mesh
     struct Msh
     {
 
+        using NodeTag = Integer;
+
         static constexpr
         std::basic_string_view<Character>
         getFileNameExtension()
@@ -282,7 +284,7 @@ namespace lolita::mesh
         template<geometry::DomainConcept Domain_>
         void
         setMeshDomain(
-            ElementFactoryMap<Frame_> & my_map_
+            ElementFactoryMap<Frame_, Msh> & my_map_
         )
         const
         {
@@ -312,7 +314,7 @@ namespace lolita::mesh
         template<geometry::ShapeConcept Shape_>
         void
         setMeshElement(
-            ElementFactoryMap<Frame_> & my_map_
+            ElementFactoryMap<Frame_, Msh> & my_map_
         )
         const
         requires(std::same_as<Shape_, geometry::Node>)
@@ -369,7 +371,7 @@ namespace lolita::mesh
         template<geometry::ShapeConcept Shape_>
         void
         setMeshElement(
-            ElementFactoryMap<Frame_> & my_map_
+            ElementFactoryMap<Frame_, Msh> & my_map_
         )
         const
         {
@@ -407,11 +409,11 @@ namespace lolita::mesh
                             line_stream >> node_tag;
                             node_tags[k] = node_tag - 1;
                         }
-                        my_map_.template addElement<Shape_>(element_tag, node_tags);
+                        my_map_.template addElement<Shape_>(node_tags);
                         auto const & geometric_entity = getGeometricEntity<Domain_>(entity_tag);
                         for (auto const & physical_entity_tag : geometric_entity.getPhysicalEntityTags())
                         {
-                            my_map_.template addRegionToElement<Shape_>(physical_entity_tag, element_tag);
+                            my_map_.template addRegionToElement<Shape_>(physical_entity_tag, node_tags);
                         }
                         offset += 1;
                     }
@@ -430,196 +432,6 @@ namespace lolita::mesh
         GeometricEntities_ geometric_entities_;
 
     };
-
-    // template<geometry::FrameConcept Frame_>
-    // struct MyElementMap
-    // {
-
-    // private:
-
-    //     template<typename... T_>
-    //     using ElementPointer_ = std::shared_ptr<Element<T_...>>;
-
-    //     template<typename... T_>
-    //     using RegionPointer_ = std::shared_ptr<Region<T_...>>;
-
-    //     using Elements_ = ElementMap<ElementPointer_, Frame_>;
-
-    //     using Regions_ = RegionMap<RegionPointer_, Frame_>;
-    
-    //     using MyElementSet_ = MyElementSet<Frame_>;
-
-    // public:
-
-    //     MyElementMap()
-    //     :
-    //     my_map_(),
-    //     elements_(),
-    //     regions_()
-    //     {}
-        
-    //     std::unique_ptr<MyElementSet_>
-    //     makeElementSet()
-    //     const
-    //     {
-    //         auto finite_element_set = std::make_unique<MyElementSet_>();
-    //         auto make_sets = [&] <Integer i_ = 0> (
-    //             auto & make_sets_
-    //         )
-    //         mutable
-    //         {
-    //             for (auto const & dm : regions_->template getDomains<i_>())
-    //             {
-    //                 finite_element_set->regions_.template getDomains<i_>().push_back(dm.second);
-    //             }
-    //             if constexpr (i_ < Frame_::getDimEuclidean())
-    //             {
-    //                 make_sets_.template operator()<i_ + 1>(make_sets_);
-    //             }
-    //         };
-    //         make_sets(make_sets);
-    //         auto make_elements = [&] <Integer i_ = 0, Integer j_ = 0> (
-    //             auto & make_elements_
-    //         )
-    //         mutable
-    //         {
-    //             for (auto const & element : elements_->template getElements<i_, j_>())
-    //             {
-    //                 finite_element_set->elements_.template getElements<i_, j_>().push_back(element.second);
-    //             }
-    //             if constexpr (j_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<i_>() - 1)
-    //             {
-    //                 make_elements_.template operator()<i_, j_ + 1>(make_elements_);
-    //             }
-    //             else if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<>() - 1)
-    //             {
-    //                 make_elements_.template operator()<i_ + 1, 0>(make_elements_);
-    //             }
-    //         }; 
-    //         make_elements(make_elements);
-    //         return finite_element_set;
-    //     }
-
-    //     template<typename Mesh>
-    //     void
-    //     setIt(
-    //         std::basic_string<Character> && file_path
-    //     )
-    //     {
-    //         auto my_one = MshOne<Frame_, Mesh>(std::forward<std::basic_string<Character>>(file_path));
-    //         auto set_regions = [&] <Integer i_ = 0> (
-    //             auto & set_regions_
-    //         )
-    //         mutable
-    //         {
-    //             using Domain_ = typename geometry::DomainLibrary<Frame_>::template Domain<i_>;
-    //             my_one.template setMeshDomain<Domain_>(my_map_);
-    //             if constexpr (i_ < geometry::DomainLibrary<Frame_>::getNumDomains() - 1)
-    //             {
-    //                 set_regions_.template operator()<i_ + 1>(set_regions_);
-    //             }
-    //         };
-    //         set_regions(set_regions);
-    //         auto set_elements = [&] <Integer i_ = 0, Integer j_ = 0> (
-    //             auto & set_elements_
-    //         )
-    //         mutable
-    //         {
-    //             using Shape_ = geometry::ShapeLibraryTraits<Frame_>::template Shape<i_, j_>;
-    //             my_one.template setMeshElement<Shape_>(my_map_);
-    //             if constexpr (j_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<i_>() - 1)
-    //             {
-    //                 set_elements_.template operator()<i_, j_ + 1>(set_elements_);
-    //             }
-    //             else if constexpr (i_ < geometry::ShapeLibraryTraits<Frame_>::template getNumElements<>() - 1)
-    //             {
-    //                 set_elements_.template operator()<i_ + 1, 0>(set_elements_);
-    //             }
-    //         };
-    //         set_elements(set_elements);
-    //     }
-        
-    //     // void
-    //     // makeElement(
-    //     //     FiniteElementMap<t_domain> & element_map
-    //     // )
-    //     // {
-    //     //     auto make_element = [&] <Integer t_i = 0, Integer t_j = 0> (
-    //     //         auto & self
-    //     //     )
-    //     //     mutable
-    //     //     {
-    //     //         auto const constexpr t_inner_neighbor = ShapeTraits<t_element>::template getInnerNeighbor<t_i, t_j>();
-    //     //         auto const constexpr t_is_initialized = t_i == 0 && t_j == 0;
-    //     //         auto const constexpr t_element_coordinates = MeshTraits<t_domain>::template getElementCoordinates<t_element>();
-    //     //         auto const constexpr t_node_coordinates = ShapeTraits<t_element>::template getInnerNeighborCoordinates<Node{}>();
-    //     //         auto const constexpr t_inner_neighbor_coordinates = MeshTraits<t_domain>::template getElementCoordinates<t_inner_neighbor>();
-    //     //         auto const constexpr t_neighbour_coordinates = ShapeTraits<t_inner_neighbor>::template getOuterNeighborCoordinates<t_domain, t_element>();
-    //     //         auto & inner_neighbors = element_map.template getElements<t_inner_neighbor_coordinates.getDim(), t_inner_neighbor_coordinates.getTag()>();
-    //     //         if constexpr (t_is_initialized)
-    //     //         {
-    //     //             auto tag = element_map.template getElements<t_element_coordinates.getDim(), t_element_coordinates.getTag()>().size();
-    //     //             finite_element_ = std::make_shared<FiniteElement<t_element, t_domain>>(FiniteElement<t_element, t_domain>(tag));
-    //     //         }
-    //     //         for (auto i = 0; i < ShapeTraits<t_element>::template getNumInnerNeighbors<t_i, t_j>(); ++i)
-    //     //         {
-    //     //             auto inner_neighbor_hash = std::basic_string<Character>();
-    //     //             if constexpr(t_inner_neighbor != Node())
-    //     //             {
-    //     //                 auto mesh_inner_neighbor = MeshElement<t_inner_neighbor, t_domain>();
-    //     //                 for (auto j = 0; j < t_inner_neighbor.num_nodes_; ++j)
-    //     //                 {
-    //     //                     mesh_inner_neighbor.setNodeTag(j, getNodeTag(getInnerNeighborNodeConnection<t_i, t_j>(i, j)));
-    //     //                 }
-    //     //                 inner_neighbor_hash = mesh_inner_neighbor.getHash();
-    //     //                 if (!inner_neighbors.contains(inner_neighbor_hash))
-    //     //                 {
-    //     //                     mesh_inner_neighbor.makeElement(element_map);
-    //     //                 }
-    //     //             }
-    //     //             else
-    //     //             {
-    //     //                 inner_neighbor_hash = MeshElement<t_inner_neighbor, t_domain>::getHash(getNodeTag(getInnerNeighborNodeConnection<t_i, t_j>(i, 0)));
-    //     //             }
-    //     //             auto & inner_neighbor = inner_neighbors.at(inner_neighbor_hash);
-    //     //             finite_element_->template getInnerNeighbors<t_i, t_j>()[i] = inner_neighbor;
-    //     //             inner_neighbor->template getOuterNeighbors<t_neighbour_coordinates.dim_, t_neighbour_coordinates.tag_>().push_back(finite_element_);
-    //     //         }
-    //     //         if constexpr (t_j < ShapeTraits<t_element>::template getNumInnerNeighbors<t_i>() - 1)
-    //     //         {
-    //     //             self.template operator()<t_i, t_j + 1>(self);
-    //     //         }
-    //     //         else if constexpr (t_i < ShapeTraits<t_element>::template getNumInnerNeighbors<>() - 1)
-    //     //         {
-    //     //             self.template operator()<t_i + 1, 0>(self);
-    //     //         }
-    //     //         if constexpr (t_is_initialized)
-    //     //         {
-    //     //             // for (auto const & domain : domains_)
-    //     //             // {
-    //     //             //     finite_element_->addDomain(element_map.template getDomains<t_element.getDim()>().at(domain->getLabel()));
-    //     //             // }
-    //     //             if (domain_ != nullptr)
-    //     //             {
-    //     //                 finite_element_->setDomain(element_map.template getDomains<t_element.getDim()>().at(domain_->getLabel()));
-    //     //             }                    
-    //     //             // finite_element_->setDomain(element_map.template getDomains<t_element.getDim()>().at(domain_->getLabel()));
-    //     //             finite_element_->setCoordinates(finite_element_->getCurrentCentroid());
-    //     //             element_map.template getElements<t_element_coordinates.getDim(), t_element_coordinates.getTag()>()[getHash(node_tags_)] = finite_element_;
-    //     //         }
-    //     //     };
-    //     //     make_element(make_element);
-    //     // }
-
-    // private:
-
-    //     ElementFactoryMap<Frame_> my_map_;
-
-    //     Elements_ elements_;
-
-    //     Regions_ regions_;
-
-    // };
  
 } // namespace lolita::mesh
 
