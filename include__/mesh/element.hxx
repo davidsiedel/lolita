@@ -25,7 +25,7 @@ namespace lolita::mesh
     struct Element;
     
     template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
-    struct ElementConnection
+    struct ElementConnectivity
     {
 
     private:
@@ -100,7 +100,7 @@ namespace lolita::mesh
     
     template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
     requires(geometry::PointConcept<Shape_>)
-    struct ElementConnection<Shape_, Frame_, T_...>
+    struct ElementConnectivity<Shape_, Frame_, T_...>
     {
 
     private:
@@ -136,6 +136,19 @@ namespace lolita::mesh
             return std::get<j>(std::get<i>(outer_neighborhood_));
         }
 
+        geometry::Point<Frame_::getDimEuclidean()> const &
+        getCoordinates()
+        const
+        {
+            return coordinates_;
+        }
+
+        geometry::Point<Frame_::getDimEuclidean()> &
+        getCoordinates()
+        {
+            return coordinates_;
+        }
+
         void
         setCoordinates(
             geometry::Point<Frame_::getDimEuclidean()> const & point
@@ -154,7 +167,7 @@ namespace lolita::mesh
     
     template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
     requires(geometry::CellConcept<Frame_, Shape_>)
-    struct ElementConnection<Shape_, Frame_, T_...>
+    struct ElementConnectivity<Shape_, Frame_, T_...>
     {
 
     private:
@@ -197,8 +210,10 @@ namespace lolita::mesh
     };
     
     template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
-    struct Element : ElementConnection<Shape_, Frame_, T_...>
+    struct Element
     {
+
+        using Connectivity_ = ElementConnectivity<Shape_, Frame_, T_...>;
 
         using Region_ = std::shared_ptr<Region<typename Shape_::Domain, Frame_>>;
 
@@ -230,7 +245,7 @@ namespace lolita::mesh
             else
             {
                 auto hash = std::basic_stringstream<Character>();
-                for (auto const & node : this->template getInnerNeighbors<geometry::Node>())
+                for (auto const & node : getConnectivity().template getInnerNeighbors<geometry::Node>())
                 {
                     hash << node->getHash();
                 }
@@ -246,7 +261,22 @@ namespace lolita::mesh
             regions_.push_back(region);
         }
 
+        Connectivity_ const &
+        getConnectivity()
+        const
+        {
+            return connectivity_;
+        }
+
+        Connectivity_ &
+        getConnectivity()
+        {
+            return connectivity_;
+        }
+
     private:
+
+        Connectivity_ connectivity_;
         
         Natural tag_;
 

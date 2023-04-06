@@ -1,3 +1,14 @@
+/**
+ * @file gauss.hxx
+ * @author David Siedel (davidsiedel@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-04-06
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #ifndef E603E856_5AEE_4096_91AA_872A653000CB
 #define E603E856_5AEE_4096_91AA_872A653000CB
 

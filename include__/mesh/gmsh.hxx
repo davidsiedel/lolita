@@ -7,24 +7,10 @@
 #include "geometry/frame.hxx"
 #include "mesh/element.hxx"
 #include "mesh/region.hxx"
-#include "mesh/factory.hxx"
+#include "mesh/mesh.hxx"
 
 namespace lolita::mesh
 {
-
-    struct Msh
-    {
-
-        using NodeTag = Integer;
-
-        static constexpr
-        std::basic_string_view<Character>
-        getFileNameExtension()
-        {
-            return "msh";
-        }
-
-    };
 
     template<>
     struct Table<geometry::Segment, Msh>
@@ -144,7 +130,7 @@ namespace lolita::mesh
     };
 
     template<geometry::FrameConcept Frame_>
-    struct MshOne<Frame_, Msh>
+    struct MeshFileParser<Frame_, Msh>
     {
 
         template<typename... T_>
@@ -170,7 +156,7 @@ namespace lolita::mesh
         }
 
         explicit
-        MshOne(
+        MeshFileParser(
             std::basic_string<Character> const & file_path
         )
         :
@@ -180,7 +166,7 @@ namespace lolita::mesh
         }
 
         explicit
-        MshOne(
+        MeshFileParser(
             std::basic_string<Character> && file_path
         )
         :
