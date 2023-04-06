@@ -3,6 +3,7 @@
 // #include "geometry/domain.hxx"
 
 #include "mesh/gmsh.hxx"
+#include "physics/field.hxx"
 
 #include "tensor.hxx"
 // #include "quadrature/gauss.hxx"
@@ -18,13 +19,32 @@ main(int argc, char** argv)
     auto parser3 = Parser3();
     parser3.setIt(mesh_file_path);
 
-    static_assert(std::same_as<lolita::geometry::Node, typename lolita::geometry::ShapeCollection<Frame>::Shape<0, 0>>);
-    static_assert(lolita::geometry::ShapeCollection<Frame>::getNumComponents<0>() == 1);
-    auto ici = lolita::geometry::ShapeCollection<Frame>();
-    auto cc = ici.getComponent<lolita::geometry::Node>();
+    // auto elem_label = "0000000017000000001800000000230000000024";
+    // auto curve_label = "00000000150000000017";
+    // auto const & quad_element = parser3.elements2_.getComponent<lolita::geometry::Quadrangle>()[elem_label];
+    // auto const & line_element = parser3.elements2_.getComponent<lolita::geometry::Segment>()[curve_label];
+    // //
+    // auto telem0 = std::chrono::high_resolution_clock::now();
+    // // auto segs0 = quad_element->getNeighbors<lolita::geometry::Segment>();
+    // auto telem1 = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elem_dur = telem1 - telem0;
+    // std::cout << "neighborhood : " << elem_dur.count() << "s\n";
+    // //
+    // auto tneigh0 = std::chrono::high_resolution_clock::now();
+    // auto segs1 = quad_element->getInnerNeighbors<lolita::geometry::Segment>();
+    // auto tneigh1 = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elem_nei = tneigh1 - tneigh0;
+    // std::cout << "neighborhood : " << elem_nei.count() << "s\n";
+    // std::cout << "sizeof quad : " << sizeof(* quad_element) << std::endl;
+    // std::cout << "sizeof line : " << sizeof(* line_element) << std::endl;
 
-    auto constexpr coord = lolita::geometry::ShapeInnerNeighborhood<lolita::geometry::Triangle>::ShapeTraits<lolita::geometry::Segment>::coordinates_;
-    std::cout << coord[0] << ", " << coord[1] << std::endl;
+    // static_assert(std::same_as<lolita::geometry::Node, typename lolita::geometry::ShapeCollection<Frame>::Shape<0, 0>>);
+    // static_assert(lolita::geometry::ShapeCollection<Frame>::getNumComponents<0>() == 1);
+    // auto ici = lolita::geometry::ShapeCollection<Frame>();
+    // auto cc = ici.getComponent<lolita::geometry::Node>();
+
+    // auto constexpr coord = lolita::geometry::ShapeInnerNeighborhood<lolita::geometry::Triangle>::ShapeTraits<lolita::geometry::Segment>::coordinates_;
+    // std::cout << coord[0] << ", " << coord[1] << std::endl;
 
     // auto constexpr res = lolita::geometry::ShapeInnerNeighborhoodTraits<lolita::geometry::Triangle>::getCoordinate<lolita::geometry::Node>(0);
     // std::cout << res << std::endl;
@@ -90,5 +110,7 @@ main(int argc, char** argv)
 
     std::cout << "dynamic : " << fd.count() << "s\n";
     std::cout << "static : " << fs.count() << "s\n";
+    // lolita::tensor::DynamicTensor<lolita::Real, 1> resss = resd;
+    // std::cout << resss << std::endl;
 
 }

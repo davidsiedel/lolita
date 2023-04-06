@@ -40,80 +40,130 @@ namespace lolita::geometry
 
     template<template<DomainConcept, typename...> typename T_, typename... U_>
     using Domains = std::tuple<
-        T_<Domain<0>, U_...>,
-        T_<Domain<1>, U_...>,
-        T_<Domain<2>, U_...>,
-        T_<Domain<3>, U_...>
+        T_<PointDomain, U_...>,
+        T_<CurveDomain, U_...>,
+        T_<FacetDomain, U_...>,
+        T_<SolidDomain, U_...>
     >;
-
-    /**
-     * @brief 
-     * 
-     * @tparam Frame_ 
-     * @tparam T_ 
-     * @tparam U_ 
-     */
-    template<FrameConcept Frame_, template<typename, typename...> typename T_ = TypeView2, typename... U_>
-    struct DomainCollection
+    
+    template<FrameConcept Frame_>
+    struct DomainCollectionTraits
     {
+
+        template<template<typename, typename...> typename T_ = TypeView, typename... U_>
+        using Collection = tuple_slice_t<Domains<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
         
-        /**
-         * @brief 
-         * 
-         */
-        using Components = tuple_slice_t<Domains<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
-        
-        /**
-         * @brief 
-         * 
-         * @tparam i_ 
-         * @tparam j_ 
-         */
         template<Integer i_>
-        using Component = std::tuple_element_t<i_, Components>;
-        
-        /**
-         * @brief 
-         * 
-         * @tparam i_ 
-         * @tparam j_ 
-         */
-        template<Integer i_>
-        using Domain = std::tuple_element_t<i_, typename DomainCollection<Frame_>::Components>;
+        using Domain = std::tuple_element_t<i_, Collection<>>;
 
     private:
-
-        /**
-         * @brief 
-         * 
-         * @tparam Shape_ 
-         */
+    
         template<DomainConcept Domain_>
         struct DomainTraits
         {
             
-            /**
-             * @brief 
-             * 
-             * @return constexpr Boolean 
-             */
             static constexpr
             Boolean
             hasCoordinate()
             {
                 return Domain_::getDimDomain() < Frame_::getDimEuclidean() + 1;
             }
-
-            /**
-             * @brief 
-             * 
-             */
+            
             static constexpr
             Integer coordinate_ = Domain_::getDimDomain();
 
         };
 
     public:
+    
+        template<DomainConcept Domain_>
+        static constexpr
+        Integer
+        getDomainIndex()
+        requires(DomainTraits<Domain_>::hasCoordinate())
+        {
+            return DomainTraits<Domain_>::coordinate_;
+        }
+
+        static constexpr
+        Integer
+        getNumComponents()
+        {
+            return std::tuple_size_v<Collection<>>;
+        }
+
+        static
+        void
+        apply(
+            auto const & fun
+        )
+        {
+            auto apply = [&] <Integer i_ = 0> (
+                auto & apply_
+            )
+            mutable
+            {
+                fun.template operator()<Domain<i_>>();
+                if constexpr (i_ < getNumComponents() - 1)
+                {
+                    apply_.template operator()<i_ + 1>(apply_);
+                }
+            };
+            apply(apply);
+        }
+
+        template<Integer i_>
+        static
+        void
+        apply(
+            auto const & fun
+        )
+        {
+            fun.template operator()<Domain<i_>>();
+        }
+
+    };
+    
+    template<FrameConcept Frame_, template<typename, typename...> typename T_ = TypeView, typename... U_>
+    struct DomainCollection
+    {
+        
+        using Components = tuple_slice_t<Domains<T_, U_...>, 0, Frame_::getDimEuclidean() + 1>;
+        
+        // template<Integer i_>
+        // using Component = std::tuple_element_t<i_, Components>;
+        
+        template<Integer i_>
+        using Domain = std::tuple_element_t<i_, typename DomainCollection<Frame_>::Components>;
+
+    private:
+    
+        template<DomainConcept Domain_>
+        struct DomainTraits
+        {
+            
+            static constexpr
+            Boolean
+            hasCoordinate()
+            {
+                return Domain_::getDimDomain() < Frame_::getDimEuclidean() + 1;
+            }
+            
+            static constexpr
+            Integer coordinate_ = Domain_::getDimDomain();
+
+        };
+
+    public:
+    
+        template<DomainConcept Domain_>
+        static constexpr
+        Integer
+        getDomainIndex()
+        requires(DomainTraits<Domain_>::hasCoordinate())
+        {
+            return Domain_::coordinate_;
+        }
 
         static constexpr
         Integer
@@ -124,28 +174,28 @@ namespace lolita::geometry
 
         static
         void
-        make(
+        apply(
             auto const & fun
         )
         {
-            auto make_element = [&] <Integer i_ = 0> (
-                auto & make_element_
+            auto apply = [&] <Integer i_ = 0> (
+                auto & apply_
             )
             mutable
             {
                 fun.template operator()<Domain<i_>>();
                 if constexpr (i_ < getNumComponents() - 1)
                 {
-                    make_element_.template operator()<i_ + 1>(make_element_);
+                    apply_.template operator()<i_ + 1>(apply_);
                 }
             };
-            make_element(make_element);
+            apply(apply);
         }
 
         template<Integer i_>
         static
         void
-        make(
+        apply(
             auto const & fun
         )
         {

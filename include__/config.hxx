@@ -25,7 +25,7 @@ namespace lolita
 
         using Index =       unsigned short;
 
-        using Natural =     unsigned long long;
+        using Natural =     unsigned long;
 
         using Real =        double;
 
@@ -65,20 +65,6 @@ namespace lolita
             return lines_;
         }
 
-        // Boolean
-        // operator==(
-        //     File const & other
-        // )
-        // const
-        // = default;
-
-        // Boolean
-        // operator!=(
-        //     File const & other
-        // )
-        // const
-        // = default;
-
     private:
 
         inline
@@ -105,15 +91,7 @@ namespace lolita
     };
 
     template<typename T_, typename...>
-    using TypeView2 = T_;
-
-    template<typename U_, typename...>
-    struct TypeView
-    {
-
-        using type = U_;
-
-    };
+    using TypeView = T_;
 
     /**
      * Hello
@@ -128,7 +106,6 @@ namespace lolita
     {
 
         using type = typename tuple_concatenation_traits<T_, typename tuple_concatenation_traits<U_...>::type>::type;
-        // using type = typename tuple_concatenation_traits<std::tuple<T_>, typename tuple_concatenation_traits<U_...>::type>::type;
 
     };
 
@@ -236,6 +213,20 @@ namespace lolita
 
     template<typename T_, Integer i_, Integer j_>
     using tuple_slice_t = typename tuple_slice_traits<T_, i_, j_>::type;
+
+    // template<typename T_, Integer... i_>
+    // struct tuple_types_traits;
+
+    // template<typename... T_, Integer... i_>
+    // struct tuple_types_traits<std::tuple<T_...>, i_...>
+    // {
+
+    //     using type = std::tuple<std::tuple_element_t<i_, std::tuple<T_...>>...>;
+
+    // };
+
+    // template<typename T_, Integer... i_>
+    // using tuple_types_t = typename tuple_types_traits<T_, i_...>::type;
 
 } // namespace lolita
 

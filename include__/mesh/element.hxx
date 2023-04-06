@@ -22,7 +22,10 @@ namespace lolita::mesh
 {
     
     template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
-    struct Element
+    struct Element;
+    
+    template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
+    struct ElementConnection
     {
 
     private:
@@ -30,74 +33,74 @@ namespace lolita::mesh
         template<typename... U_>
         using InnerNeighbor_ = std::shared_ptr<Element<U_...>>;
 
-        using InnerNeighborhood_ = geometry::ShapeInnerNeighborhood<Shape_, InnerNeighbor_, Frame_, T_...>;
+        template<typename... U_>
+        using OuterNeighbors_ = std::vector<std::shared_ptr<Element<U_...>>>;
 
-        using Region_ = std::shared_ptr<Region<typename Shape_::Domain, Frame_>>;
+        using InnerNeighborhoodTraits_ = geometry::ShapeInnerNeighborhoodTraits<Shape_>;
 
-        using Regions_ = std::vector<Region_>;
+        using OuterNeighborhoodTraits_ = geometry::ShapeOuterNeighborhoodTraits<Shape_, Frame_>;
 
     public:
 
-        explicit
-        Element(
-            Natural const & tag
-        )
-        :
-        tag_(tag)
-        {}
+        using InnerNeighborhood = typename InnerNeighborhoodTraits_::template InnerNeighborhood<InnerNeighbor_, Frame_, T_...>;
 
-        Natural const &
-        getTag()
+        using OuterNeighborhood = typename OuterNeighborhoodTraits_::template OuterNeighborhood<OuterNeighbors_, Frame_, T_...>;
+
+        template<geometry::ShapeConcept Neighbor_>
+        using InnerNeighbors = std::array<InnerNeighbor_<Neighbor_, Frame_, T_...>, InnerNeighborhoodTraits_::template getNumComponents<Neighbor_>()>;
+
+        template<geometry::ShapeConcept Neighbor_>
+        using OuterNeighbors = OuterNeighbors_<Neighbor_, Frame_, T_...>;
+
+        template<geometry::ShapeConcept Neighbor_>
+        InnerNeighbors<Neighbor_> const &
+        getInnerNeighbors()
         const
         {
-            return tag_;
-        }
-        
-        std::basic_string<Character>
-        getHash()
-        const
-        {
-            auto hash = std::basic_stringstream<Character>();
-            for (auto const & node : getInnerNeighborhood().template getComponent<geometry::Node>())
-            {
-                hash << node->getHash();
-            }
-            return hash.str();
+            auto constexpr i = InnerNeighborhoodTraits_::template getShapeIndex<Neighbor_>(0);
+            auto constexpr j = InnerNeighborhoodTraits_::template getShapeIndex<Neighbor_>(1);
+            return std::get<j>(std::get<i>(inner_neighborhood_));
         }
 
-        void
-        addRegion(
-            Region_ const & region
-        )
+        template<geometry::ShapeConcept Neighbor_>
+        InnerNeighbors<Neighbor_> &
+        getInnerNeighbors()
         {
-            regions_.push_back(region);
+            auto constexpr i = InnerNeighborhoodTraits_::template getShapeIndex<Neighbor_>(0);
+            auto constexpr j = InnerNeighborhoodTraits_::template getShapeIndex<Neighbor_>(1);
+            return std::get<j>(std::get<i>(inner_neighborhood_));
         }
-        
-        InnerNeighborhood_ const &
-        getInnerNeighborhood()
+
+        template<geometry::ShapeConcept Neighbor_>
+        OuterNeighbors<Neighbor_> const &
+        getOuterNeighbors()
         const
         {
-            return inner_neighborhood_;
+            auto constexpr i = OuterNeighborhoodTraits_::template getShapeIndex<Neighbor_>(0);
+            auto constexpr j = OuterNeighborhoodTraits_::template getShapeIndex<Neighbor_>(1);
+            return std::get<j>(std::get<i>(outer_neighborhood_));
         }
-        
-        InnerNeighborhood_ &
-        getInnerNeighborhood()
+
+        template<geometry::ShapeConcept Neighbor_>
+        OuterNeighbors<Neighbor_> &
+        getOuterNeighbors()
         {
-            return inner_neighborhood_;
+            auto constexpr i = OuterNeighborhoodTraits_::template getShapeIndex<Neighbor_>(0);
+            auto constexpr j = OuterNeighborhoodTraits_::template getShapeIndex<Neighbor_>(1);
+            return std::get<j>(std::get<i>(outer_neighborhood_));
         }
 
     private:
 
-        InnerNeighborhood_ inner_neighborhood_;
-        
-        Natural tag_;
+        OuterNeighborhood outer_neighborhood_;
 
-        Regions_ regions_;
+        InnerNeighborhood inner_neighborhood_;
 
     };
-
-    template<geometry::FrameConcept Frame_, typename... T_>
-    struct Element<geometry::Node, Frame_, T_...>
+    
+    template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
+    requires(geometry::PointConcept<Shape_>)
+    struct ElementConnection<Shape_, Frame_, T_...>
     {
 
     private:
@@ -105,44 +108,32 @@ namespace lolita::mesh
         template<typename... U_>
         using OuterNeighbors_ = std::vector<std::shared_ptr<Element<U_...>>>;
 
-        using Shape_ = geometry::Node;
-
-        using OuterNeighborhood_ = geometry::ShapeOuterNeighborhood<Shape_, Frame_, OuterNeighbors_, Frame_, T_...>;
-
-        using Region_ = std::shared_ptr<Region<typename Shape_::Domain, Frame_>>;
-
-        using Regions_ = std::vector<Region_>;
+        using OuterNeighborhoodTraits_ = geometry::ShapeOuterNeighborhoodTraits<Shape_, Frame_>;
 
     public:
 
-        explicit
-        Element(
-            Natural const & tag
-        )
-        :
-        tag_(tag)
-        {}
+        using OuterNeighborhood = typename OuterNeighborhoodTraits_::template OuterNeighborhood<OuterNeighbors_, Frame_, T_...>;
 
-        Natural const &
-        getTag()
+        template<geometry::ShapeConcept Neighbor_>
+        using OuterNeighbors = OuterNeighbors_<Neighbor_, Frame_, T_...>;
+
+        template<geometry::ShapeConcept Neighbor_>
+        OuterNeighbors<Neighbor_> const &
+        getOuterNeighbors()
         const
         {
-            return tag_;
-        }
-        
-        std::basic_string<Character>
-        getHash()
-        const
-        {
-            return std::to_string(this->tag_);
+            auto constexpr i = OuterNeighborhoodTraits_::template getShapeIndex<Neighbor_>(0);
+            auto constexpr j= OuterNeighborhoodTraits_::template getShapeIndex<Neighbor_>(1);
+            return std::get<j>(std::get<i>(outer_neighborhood_));
         }
 
-        void
-        addRegion(
-            Region_ const & region
-        )
+        template<geometry::ShapeConcept Neighbor_>
+        OuterNeighbors<Neighbor_> &
+        getOuterNeighbors()
         {
-            regions_.push_back(region);
+            auto constexpr i = OuterNeighborhoodTraits_::template getShapeIndex<Neighbor_>(0);
+            auto constexpr j = OuterNeighborhoodTraits_::template getShapeIndex<Neighbor_>(1);
+            return std::get<j>(std::get<i>(outer_neighborhood_));
         }
 
         void
@@ -152,30 +143,115 @@ namespace lolita::mesh
         {
             coordinates_ = point;
         }
+
+    private:
         
-        OuterNeighborhood_ const &
-        getOuterNeighborhood()
+        geometry::Point<Frame_::getDimEuclidean()> coordinates_;
+
+        OuterNeighborhood outer_neighborhood_;
+
+    };
+    
+    template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
+    requires(geometry::CellConcept<Frame_, Shape_>)
+    struct ElementConnection<Shape_, Frame_, T_...>
+    {
+
+    private:
+
+        template<typename... U_>
+        using InnerNeighbor_ = std::shared_ptr<Element<U_...>>;
+
+        using InnerNeighborhoodTraits_ = geometry::ShapeInnerNeighborhoodTraits<Shape_>;
+
+    public:
+
+        using InnerNeighborhood = typename InnerNeighborhoodTraits_::template InnerNeighborhood<InnerNeighbor_, Frame_, T_...>;
+
+        template<geometry::ShapeConcept Neighbor_>
+        using InnerNeighbors = std::array<InnerNeighbor_<Neighbor_, Frame_, T_...>, InnerNeighborhoodTraits_::template getNumComponents<Neighbor_>()>;
+
+        template<geometry::ShapeConcept Neighbor_>
+        InnerNeighbors<Neighbor_> const &
+        getInnerNeighbors()
         const
         {
-            return outer_neighborhood_;
+            auto constexpr i = InnerNeighborhoodTraits_::template getShapeIndex<Neighbor_>(0);
+            auto constexpr j = InnerNeighborhoodTraits_::template getShapeIndex<Neighbor_>(1);
+            return std::get<j>(std::get<i>(inner_neighborhood_));
         }
-        
-        OuterNeighborhood_ &
-        getOuterNeighborhood()
+
+        template<geometry::ShapeConcept Neighbor_>
+        InnerNeighbors<Neighbor_> &
+        getInnerNeighbors()
         {
-            return outer_neighborhood_;
+            auto constexpr i = InnerNeighborhoodTraits_::template getShapeIndex<Neighbor_>(0);
+            auto constexpr j = InnerNeighborhoodTraits_::template getShapeIndex<Neighbor_>(1);
+            return std::get<j>(std::get<i>(inner_neighborhood_));
         }
 
     private:
 
-        OuterNeighborhood_ outer_neighborhood_;
+        InnerNeighborhood inner_neighborhood_;
+
+    };
+    
+    template<geometry::ShapeConcept Shape_, geometry::FrameConcept Frame_, typename... T_>
+    struct Element : ElementConnection<Shape_, Frame_, T_...>
+    {
+
+        using Region_ = std::shared_ptr<Region<typename Shape_::Domain, Frame_>>;
+
+        using Regions_ = std::vector<Region_>;
+
+        explicit
+        Element(
+            Natural const & tag
+        )
+        :
+        tag_(tag)
+        {}
+
+        Natural const &
+        getTag()
+        const
+        {
+            return tag_;
+        }
+        
+        std::basic_string<Character>
+        getHash()
+        const
+        {
+            if constexpr (geometry::PointConcept<Shape_>)
+            {
+                return std::to_string(tag_);
+            }
+            else
+            {
+                auto hash = std::basic_stringstream<Character>();
+                for (auto const & node : this->template getInnerNeighbors<geometry::Node>())
+                {
+                    hash << node->getHash();
+                }
+                return hash.str();
+            }
+        }
+
+        void
+        addRegion(
+            Region_ const & region
+        )
+        {
+            regions_.push_back(region);
+        }
+
+    private:
         
         Natural tag_;
-        
-        geometry::Point<Frame_::getDimEuclidean()> coordinates_;
 
         Regions_ regions_;
-        
+
     };
     
 } // namespace lolita::mesh

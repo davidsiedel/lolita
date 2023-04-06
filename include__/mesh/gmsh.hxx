@@ -110,19 +110,6 @@ namespace lolita::mesh
 
     };
 
-    template<typename T_>
-    concept ReaderConcept = requires(
-        std::remove_reference_t<T_> const & t
-    )
-    {
-        // TODO : express the fact that is has these member functions...
-        // { t.template setMeshDomain<Domain_>(m) } -> std::same_as<void>;
-        // { t.template setMeshElement<Shape_>(m) } -> std::same_as<void>;
-        // { t.file_ } -> std::same_as<File>;
-        // requires(std::same_as<decltype(t.file_), File>);
-        requires(true);
-    };
-
     template<geometry::DomainConcept Domain_, geometry::FrameConcept Frame_>
     struct GeometricEntity
     {

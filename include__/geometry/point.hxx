@@ -13,8 +13,6 @@
 #define DA6BDF79_2135_42C7_A76F_92B4C1BD50EF
 
 #include "config.hxx"
-// #include "numerics.hxx"
-// #include "geometry/frame.hxx"
 #include "tensor.hxx"
 
 namespace lolita::geometry

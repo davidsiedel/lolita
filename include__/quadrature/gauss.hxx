@@ -9,8 +9,8 @@ namespace lolita::quadrature
     template<geometry::ShapeConcept Shape_, Integer k_>
     struct GaussQuadrature;
 
-    template<>
-    struct GaussQuadrature<geometry::Node, 0>
+    template<Integer k_>
+    struct GaussQuadrature<geometry::Node, k_>
     {
 
         static constexpr
@@ -62,6 +62,25 @@ namespace lolita::quadrature
         static constexpr 
         std::array<Real, size_> reference_weights_ = {
             +0.5000000000000000,
+        };
+
+    };
+
+    template<>
+    struct GaussQuadrature<geometry::Quadrangle, 0>
+    {
+
+        static constexpr
+        Integer size_ = 1;
+        
+        static constexpr 
+        std::array<std::array<Real, 3>, size_> reference_points_ = {
+            +0.0000000000000000, +0.0000000000000000, +0.0000000000000000,
+        };
+        
+        static constexpr 
+        std::array<Real, size_> reference_weights_ = {
+            +0.2500000000000000,
         };
 
     };
