@@ -159,7 +159,24 @@ namespace lolita::mesh
         template<typename... T_>
         using GeometricEntities1 = std::unordered_map<std::basic_string<Character>, GeometricEntity<T_...>>;
 
-        using GeometricEntities_ = geometry::DomainCollection<Frame_, GeometricEntities1, Frame_>;
+        using GeometricEntities_ = typename geometry::DomainCollectionTraits<Frame_>::template Collection<GeometricEntities1, Frame_>;
+
+        template<geometry::DomainConcept Domain_>
+        GeometricEntities1<Domain_, Frame_> const &
+        getGeometricEntities()
+        const
+        {
+            auto constexpr i_ = geometry::DomainCollectionTraits<Frame_>::template getDomainIndex<Domain_>();
+            return std::get<i_>(geometric_entities_);
+        }
+
+        template<geometry::DomainConcept Domain_>
+        GeometricEntities1<Domain_, Frame_> &
+        getGeometricEntities()
+        {
+            auto constexpr i_ = geometry::DomainCollectionTraits<Frame_>::template getDomainIndex<Domain_>();
+            return std::get<i_>(geometric_entities_);
+        }
 
         explicit
         MshOne(
@@ -188,7 +205,7 @@ namespace lolita::mesh
             GeometricEntity<Domain_, Frame_> const & geometric_entity
         )
         {
-            geometric_entities_.template getComponent<Domain_>()[GeometricEntity<Domain_, Frame_>::makeHash(tag)] = geometric_entity;
+            getGeometricEntities<Domain_>()[GeometricEntity<Domain_, Frame_>::makeHash(tag)] = geometric_entity;
         }
 
         template<geometry::DomainConcept Domain_>
@@ -198,7 +215,7 @@ namespace lolita::mesh
         )
         const
         {
-            return geometric_entities_.template getComponent<Domain_>().at(GeometricEntity<Domain_, Frame_>::makeHash(tag));
+            return getGeometricEntities<Domain_>().at(GeometricEntity<Domain_, Frame_>::makeHash(tag));
         }
         
         void

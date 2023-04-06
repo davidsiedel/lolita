@@ -27,7 +27,7 @@ namespace lolita::mesh
     using ShapeNodeConnectivity = std::array<Natural, Shape_::getNumNodes()>;
 
     template<geometry::ShapeConcept Shape_>
-    using ShapeInnerNeighborhoodNodeConnectivity = typename geometry::ShapeInnerNeighborhood<Shape_, ShapeNodeConnectivity>::Components;
+    using ShapeInnerNeighborhoodNodeConnectivity = typename geometry::ShapeInnerNeighborhoodTraits<Shape_>::template InnerNeighborhood<ShapeNodeConnectivity>;
 
     template<typename T_>
     concept MeshFormatConcept = requires
@@ -271,7 +271,7 @@ namespace lolita::mesh
             std::cout << "making element : " << element->getTag() << " : " << makeElementHash<Shape_>(node_tags) << std::endl;
             auto add_neighbors = [&] <geometry::ShapeConcept Neighbor_> ()
             {
-                for (auto i = 0; i < geometry::ShapeInnerNeighborhood<Shape_>::template getNumComponents<Neighbor_>(); ++i)
+                for (auto i = 0; i < geometry::ShapeInnerNeighborhoodTraits<Shape_>::template getNumComponents<Neighbor_>(); ++i)
                 {
                     auto inner_neighbor_hash = std::basic_string<Character>();
                     if constexpr (geometry::PointConcept<Neighbor_>)
@@ -297,7 +297,7 @@ namespace lolita::mesh
                     inner_neighbor->template getOuterNeighbors<Shape_>().push_back(element);
                 }
             };
-            geometry::ShapeInnerNeighborhood<Shape_>::apply(add_neighbors);
+            geometry::ShapeInnerNeighborhoodTraits<Shape_>::apply(add_neighbors);
         }
 
         template<geometry::ShapeConcept Shape_>
@@ -357,12 +357,12 @@ namespace lolita::mesh
             {
                 my_one.template setMeshDomain<Domain_>(* this);
             };
-            geometry::DomainCollection<Frame_>::apply(set_regions);
+            geometry::DomainCollectionTraits<Frame_>::apply(set_regions);
             auto set_elements = [&] <geometry::ShapeConcept Shape_> ()
             {
                 my_one.template setMeshElement<Shape_>(* this);
             };
-            geometry::ShapeCollection<Frame_>::apply(set_elements);
+            geometry::ShapeCollectionTraits<Frame_>::apply(set_elements);
         }
 
     private:
