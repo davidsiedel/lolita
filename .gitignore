@@ -44,5 +44,7 @@ tmp.*
 applications/micromorphic_damage_alessi/data/mesh/test.inp
 applications/micromorphic_damage_alessi/data/mesh/test2.inp
 
+**/.VSCodeCounter/
+
 **/include_/
 

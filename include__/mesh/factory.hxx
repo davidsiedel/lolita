@@ -18,7 +18,6 @@
 #include "geometry/shape.hxx"
 #include "mesh/region.hxx"
 #include "mesh/element.hxx"
-#include "mesh/gmsh.hxx"
 
 namespace lolita::mesh
 {
@@ -57,6 +56,65 @@ namespace lolita::mesh
 
     template<geometry::FrameConcept Frame_, MeshFormatConcept MeshFormat_>
     struct MshOne;
+    
+    template<geometry::FrameConcept Frame_, MeshFormatConcept MeshFormat_>
+    struct MeshFactory;
+
+    struct MeshFile
+    {
+
+    public:
+
+        explicit
+        MeshFile(
+            std::basic_string<Character> && file_path
+        )
+        :
+        file_path_(std::move(file_path)),
+        lines_(readLines())
+        {}
+
+        explicit
+        MeshFile(
+            std::basic_string<Character> const & file_path
+        )
+        :
+        file_path_(file_path),
+        lines_(readLines())
+        {}
+
+        inline
+        std::vector<std::basic_string<Character>> const &
+        getContent()
+        const
+        {
+            return lines_;
+        }
+
+    private:
+
+        inline
+        std::vector<std::basic_string<Character>>
+        readLines()
+        {
+            auto lines = std::vector<std::basic_string<Character>>();
+            auto file = std::basic_ifstream<Character>(std::forward<std::basic_string<Character>>(file_path_));
+            if (file)
+            {
+                for (std::basic_string<Character> line; std::getline(file, line); )
+                {
+                    lines.push_back(line);
+                }
+                return lines;
+            }
+            throw std::runtime_error("Could not open file");
+        }
+
+        std::basic_string<Character> file_path_;
+
+        std::vector<std::basic_string<Character>> const lines_;
+
+    };
 
     template<geometry::FrameConcept Frame_, typename... T_>
     struct Mesh
@@ -123,8 +181,8 @@ namespace lolita::mesh
 
     };
     
-    template<geometry::FrameConcept Frame_, MeshFormatConcept Mesh_>
-    struct ElementFactoryMap
+    template<geometry::FrameConcept Frame_, MeshFormatConcept MeshFormat_>
+    struct MeshFactory
     {
 
     private:
@@ -138,6 +196,8 @@ namespace lolita::mesh
         using ElementTagsCollection_ = typename geometry::ShapeCollectionTraits<Frame_>::template Collection<ElementTags_, Frame_>;
 
         using RegionTagsCollection_ = typename geometry::DomainCollectionTraits<Frame_>::template Collection<RegionTags_, Frame_>;
+
+        using Mesh_ = std::unique_ptr<Mesh<Frame_>>;
         
         template<geometry::DomainConcept Domain_>
         static
@@ -203,7 +263,7 @@ namespace lolita::mesh
         {
             auto constexpr i_ = geometry::ShapeInnerNeighborhoodTraits<Shape_>::template getShapeIndex<Neighbor_>(0);
             auto constexpr j_ = geometry::ShapeInnerNeighborhoodTraits<Shape_>::template getShapeIndex<Neighbor_>(1);
-            return std::get<j_>(std::get<i_>(Table<Shape_, Mesh_>::node_connectivity_))[i][j];
+            return std::get<j_>(std::get<i_>(Table<Shape_, MeshFormat_>::node_connectivity_))[i][j];
         }
     
         template<geometry::DomainConcept Domain_>
@@ -244,7 +304,11 @@ namespace lolita::mesh
 
     public:
 
-        ElementFactoryMap()
+        MeshFactory()
+        :
+        mesh_(std::make_unique<Mesh<Frame_>>()),
+        element_tags_collection_(),
+        region_tags_collection_()
         {}
 
         template<geometry::DomainConcept Domain_>
@@ -254,8 +318,8 @@ namespace lolita::mesh
             std::basic_string<Character> const & domain_label
         )
         {
-            getRegionTags<Domain_>()[makeRegionHash<Domain_>(domain_tag)] = mesh_.template getRegions<Domain_>().size();
-            mesh_.template getRegions<Domain_>().push_back(std::make_shared<Region<Domain_, Frame_>>(domain_label));
+            getRegionTags<Domain_>()[makeRegionHash<Domain_>(domain_tag)] = mesh_->template getRegions<Domain_>().size();
+            mesh_->template getRegions<Domain_>().push_back(std::make_shared<Region<Domain_, Frame_>>(domain_label));
             std::cout << "adding region : " << domain_label << std::endl;
         }
 
@@ -265,9 +329,9 @@ namespace lolita::mesh
             ShapeNodeConnectivity<Shape_> const & node_tags
         )
         {
-            getElementTags<Shape_>()[makeElementHash<Shape_>(node_tags)] = mesh_.template getElements<Shape_>().size();
-            auto element = std::make_shared<Element<Shape_, Frame_>>(mesh_.template getElements<Shape_>().size());
-            mesh_.template getElements<Shape_>().push_back(element);
+            getElementTags<Shape_>()[makeElementHash<Shape_>(node_tags)] = mesh_->template getElements<Shape_>().size();
+            auto element = std::make_shared<Element<Shape_, Frame_>>(mesh_->template getElements<Shape_>().size());
+            mesh_->template getElements<Shape_>().push_back(element);
             std::cout << "making element : " << element->getTag() << " : " << makeElementHash<Shape_>(node_tags) << std::endl;
             auto add_neighbors = [&] <geometry::ShapeConcept Neighbor_> ()
             {
@@ -292,7 +356,7 @@ namespace lolita::mesh
                             addElement<Neighbor_>(inner_neighbor_node_tags);
                         }
                     }
-                    auto & inner_neighbor = mesh_.template getElements<Neighbor_>()[getElementTags<Neighbor_>().at(inner_neighbor_hash)];
+                    auto & inner_neighbor = mesh_->template getElements<Neighbor_>()[getElementTags<Neighbor_>().at(inner_neighbor_hash)];
                     element->template getInnerNeighbors<Neighbor_>()[i] = inner_neighbor;
                     inner_neighbor->template getOuterNeighbors<Shape_>().push_back(element);
                 }
@@ -308,9 +372,9 @@ namespace lolita::mesh
         )
         requires(geometry::PointConcept<Shape_>)
         {
-            getElementTags<Shape_>()[makeElementHash<Shape_>(element_tag)] = mesh_.template getElements<Shape_>().size();
-            auto element = std::make_shared<Element<Shape_, Frame_>>(mesh_.template getElements<Shape_>().size());
-            mesh_.template getElements<Shape_>().push_back(element);
+            getElementTags<Shape_>()[makeElementHash<Shape_>(element_tag)] = mesh_->template getElements<Shape_>().size();
+            auto element = std::make_shared<Element<Shape_, Frame_>>(mesh_->template getElements<Shape_>().size());
+            mesh_->template getElements<Shape_>().push_back(element);
             element->setCoordinates(node_coordinates);
             std::cout << "making node : " << element->getTag() << " : " << makeElementHash<Shape_>(element_tag) << std::endl;
         }
@@ -324,8 +388,8 @@ namespace lolita::mesh
         {
             auto element_index = getElementTags<Shape_>().at(makeElementHash<Shape_>(node_tags));
             auto region_index = getRegionTags<typename Shape_::Domain>().at(makeRegionHash<typename Shape_::Domain>(region_tag));
-            auto const & element = mesh_.template getElements<Shape_>()[element_index];
-            auto const & region = mesh_.template getRegions<typename Shape_::Domain>()[region_index];
+            auto const & element = mesh_->template getElements<Shape_>()[element_index];
+            auto const & region = mesh_->template getRegions<typename Shape_::Domain>()[region_index];
             element->addRegion(region);
             std::cout << "adding region : " << region->getLabel() << " to element : " << makeElementHash<Shape_>(node_tags) << std::endl;
         }
@@ -340,19 +404,19 @@ namespace lolita::mesh
         {
             auto element_index = getElementTags<Shape_>().at(makeElementHash<Shape_>(node_tag));
             auto region_index = getRegionTags<typename Shape_::Domain>().at(makeRegionHash<typename Shape_::Domain>(region_tag));
-            auto const & element = mesh_.template getElements<Shape_>()[element_index];
-            auto const & region = mesh_.template getRegions<typename Shape_::Domain>()[region_index];
+            auto const & element = mesh_->template getElements<Shape_>()[element_index];
+            auto const & region = mesh_->template getRegions<typename Shape_::Domain>()[region_index];
             element->addRegion(region);
             std::cout << "adding region : " << region->getLabel() << " to element : " << makeElementHash<Shape_>(node_tag) << std::endl;
         }
         
-        void
-        setIt(
+        Mesh_
+        makeMesh(
             std::basic_string<Character> && file_path
         )
-        requires(ReaderConcept<MshOne<Frame_, Mesh_>>)
+        requires(ReaderConcept<MshOne<Frame_, MeshFormat_>>)
         {
-            auto my_one = MshOne<Frame_, Mesh_>(std::forward<std::basic_string<Character>>(file_path));
+            auto my_one = MshOne<Frame_, MeshFormat_>(std::forward<std::basic_string<Character>>(file_path));
             auto set_regions = [&] <geometry::DomainConcept Domain_> ()
             {
                 my_one.template setMeshDomain<Domain_>(* this);
@@ -363,11 +427,12 @@ namespace lolita::mesh
                 my_one.template setMeshElement<Shape_>(* this);
             };
             geometry::ShapeCollectionTraits<Frame_>::apply(set_elements);
+            return std::move(mesh_);
         }
 
     private:
 
-        Mesh<Frame_> mesh_;
+        Mesh_ mesh_;
 
         ElementTagsCollection_ element_tags_collection_;
 

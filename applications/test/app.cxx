@@ -2,7 +2,7 @@
 // #include "2/core/mesh2.hxx"
 // #include "geometry/domain.hxx"
 
-#include "mesh/gmsh.hxx"
+#include "mesh/mesh.hxx"
 #include "physics/field.hxx"
 
 #include "tensor.hxx"
@@ -13,11 +13,13 @@ main(int argc, char** argv)
 {
 
     using Frame = lolita::geometry::CartesianFrame<2>;
-    using Parser3 = lolita::mesh::ElementFactoryMap<Frame, lolita::mesh::Msh>;
+    using Parser3 = lolita::mesh::MeshFactory<Frame, lolita::mesh::Msh>;
+    using MyMesh = lolita::mesh::MyMesh<Frame>;
 
     auto mesh_file_path = "/home/dsiedel/projetcs/lolita/applications/test/mymesh.msh";
-    auto parser3 = Parser3();
-    parser3.setIt(mesh_file_path);
+
+    auto my_mesh = MyMesh(mesh_file_path);
+    my_mesh.working();
 
     // auto elem_label = "0000000017000000001800000000230000000024";
     // auto curve_label = "00000000150000000017";

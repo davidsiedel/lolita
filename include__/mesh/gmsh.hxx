@@ -27,15 +27,6 @@ namespace lolita::mesh
     };
 
     template<>
-    struct Table<geometry::Node, Msh>
-    {
-
-        static constexpr
-        Integer tag_ = 15;
-
-    };
-
-    template<>
     struct Table<geometry::Segment, Msh>
     {
 
@@ -288,7 +279,7 @@ namespace lolita::mesh
         template<geometry::DomainConcept Domain_>
         void
         setMeshDomain(
-            ElementFactoryMap<Frame_, Msh> & my_map_
+            MeshFactory<Frame_, Msh> & my_map_
         )
         const
         {
@@ -318,7 +309,7 @@ namespace lolita::mesh
         template<geometry::ShapeConcept Shape_>
         void
         setMeshElement(
-            ElementFactoryMap<Frame_, Msh> & my_map_
+            MeshFactory<Frame_, Msh> & my_map_
         )
         const
         requires(std::same_as<Shape_, geometry::Node>)
@@ -375,7 +366,7 @@ namespace lolita::mesh
         template<geometry::ShapeConcept Shape_>
         void
         setMeshElement(
-            ElementFactoryMap<Frame_, Msh> & my_map_
+            MeshFactory<Frame_, Msh> & my_map_
         )
         const
         {
@@ -431,7 +422,7 @@ namespace lolita::mesh
 
     private:
 
-        File file_;
+        MeshFile file_;
 
         GeometricEntities_ geometric_entities_;
 

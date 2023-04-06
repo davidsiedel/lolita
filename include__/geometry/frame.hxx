@@ -12,6 +12,8 @@
 #ifndef FBA75E4B_A209_4011_87A7_FF975994C267
 #define FBA75E4B_A209_4011_87A7_FF975994C267
 
+#include "config.hxx"
+
 namespace lolita::geometry
 {
 
